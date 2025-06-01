@@ -3,22 +3,22 @@
 # These owners will be the default owners for everything in
 # the repo. Unless a later match takes precedence,
 
-erpnext/accounts/               @deepeshgarg007 @ruthra-kumar
-erpnext/assets/                 @khushi8112 @deepeshgarg007
-erpnext/regional                @deepeshgarg007 @ruthra-kumar
-erpnext/selling                 @deepeshgarg007 @ruthra-kumar
-erpnext/support/                @deepeshgarg007
+prodman/accounts/               @deepeshgarg007 @ruthra-kumar
+prodman/assets/                 @khushi8112 @deepeshgarg007
+prodman/regional                @deepeshgarg007 @ruthra-kumar
+prodman/selling                 @deepeshgarg007 @ruthra-kumar
+prodman/support/                @deepeshgarg007
 pos*                            
 
-erpnext/buying/                 @rohitwaghchaure
-erpnext/maintenance/            @rohitwaghchaure
-erpnext/manufacturing/          @rohitwaghchaure
-erpnext/quality_management/     @rohitwaghchaure
-erpnext/stock/                  @rohitwaghchaure
-erpnext/subcontracting          @rohitwaghchaure
+prodman/buying/                 @rohitwaghchaure
+prodman/maintenance/            @rohitwaghchaure
+prodman/manufacturing/          @rohitwaghchaure
+prodman/quality_management/     @rohitwaghchaure
+prodman/stock/                  @rohitwaghchaure
+prodman/subcontracting          @rohitwaghchaure
 
-erpnext/controllers/            @deepeshgarg007 @rohitwaghchaure
-erpnext/patches/                @deepeshgarg007 
+prodman/controllers/            @deepeshgarg007 @rohitwaghchaure
+prodman/patches/                @deepeshgarg007 
 
 .github/                        @deepeshgarg007
 pyproject.toml                  @akhilnarang

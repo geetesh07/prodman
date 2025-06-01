@@ -1,55 +1,55 @@
 accounts:
-- erpnext/accounts/*
-- erpnext/controllers/accounts_controller.py
-- erpnext/controllers/taxes_and_totals.py
+- prodman/accounts/*
+- prodman/controllers/accounts_controller.py
+- prodman/controllers/taxes_and_totals.py
 
 stock:
-- erpnext/stock/*
-- erpnext/controllers/stock_controller.py
-- erpnext/controllers/item_variant.py
+- prodman/stock/*
+- prodman/controllers/stock_controller.py
+- prodman/controllers/item_variant.py
 
 assets:
-- erpnext/assets/*
+- prodman/assets/*
 
 regional:
-- erpnext/regional/*
+- prodman/regional/*
 
 selling:
-- erpnext/selling/*
-- erpnext/controllers/selling_controller.py
+- prodman/selling/*
+- prodman/controllers/selling_controller.py
 
 buying:
-- erpnext/buying/*
-- erpnext/controllers/buying_controller.py
+- prodman/buying/*
+- prodman/controllers/buying_controller.py
 
 support:
-- erpnext/support/*
+- prodman/support/*
 
 POS:
 - pos*
 
 ecommerce:
-- erpnext/e_commerce/*
+- prodman/e_commerce/*
 
 maintenance:
-- erpnext/maintenance/*
+- prodman/maintenance/*
 
 manufacturing:
-- erpnext/manufacturing/*
+- prodman/manufacturing/*
 
 crm:
-- erpnext/crm/*
+- prodman/crm/*
 
 HR:
-- erpnext/hr/*
+- prodman/hr/*
 
 payroll:
-- erpnext/payroll*
+- prodman/payroll*
 
 projects:
-- erpnext/projects/*
+- prodman/projects/*
 
 # Any python files modifed but no test files modified
 needs-tests:
-- any: ['erpnext/**/*.py']
-  all: ['!erpnext/**/test*.py']
+- any: ['prodman/**/*.py']
+  all: ['!prodman/**/test*.py']
