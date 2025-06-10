@@ -170,25 +170,13 @@ def add_standard_navbar_items():
 		{
 			"item_label": "Documentation",
 			"item_type": "Route",
-			"route": "https://docs.prodman.com/",
-			"is_standard": 1,
-		},
-		{
-			"item_label": "User Forum",
-			"item_type": "Route",
-			"route": "https://discuss.frappe.io",
-			"is_standard": 1,
-		},
-		{
-			"item_label": "Frappe School",
-			"item_type": "Route",
-			"route": "https://frappe.io/school?utm_source=in_app",
+			"route": "https://docs.ntechnosolution.com/",
 			"is_standard": 1,
 		},
 		{
 			"item_label": "Report an Issue",
 			"item_type": "Route",
-			"route": "https://github.com/frappe/prodman/issues",
+			"route": "https://github.com/geetesh07/prodman/issues",
 			"is_standard": 1,
 		},
 	]
