@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-from frappe.tests.utils import FrappeTestCase
+from nts.tests.utils import ntsTestCase
 
 
-class TestProcurementTracker(FrappeTestCase):
+class TestProcurementTracker(ntsTestCase):
 	pass

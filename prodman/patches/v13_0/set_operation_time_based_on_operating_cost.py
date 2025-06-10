@@ -1,11 +1,11 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("manufacturing", "doctype", "bom")
-	frappe.reload_doc("manufacturing", "doctype", "bom_operation")
+	nts.reload_doc("manufacturing", "doctype", "bom")
+	nts.reload_doc("manufacturing", "doctype", "bom_operation")
 
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		UPDATE
 			`tabBOM Operation`

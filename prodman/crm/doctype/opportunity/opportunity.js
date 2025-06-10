@@ -1,10 +1,10 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
-frappe.provide("prodman.crm");
+nts.provide("prodman.crm");
 prodman.pre_sales.set_as_lost("Opportunity");
 prodman.sales_common.setup_selling_controller();
 
-frappe.ui.form.on("Opportunity", {
+nts.ui.form.on("Opportunity", {
 	setup: function (frm) {
 		frm.custom_make_buttons = {
 			Quotation: "Quotation",
@@ -25,7 +25,7 @@ frappe.ui.form.on("Opportunity", {
 	validate: function (frm) {
 		if (frm.doc.status == "Lost" && !frm.doc.lost_reasons.length) {
 			frm.trigger("set_as_lost_dialog");
-			frappe.throw(__("Lost Reasons are required in case opportunity is Lost."));
+			nts.throw(__("Lost Reasons are required in case opportunity is Lost."));
 		}
 	},
 
@@ -136,10 +136,10 @@ frappe.ui.form.on("Opportunity", {
 		}
 
 		if (!frm.is_new()) {
-			frappe.contacts.render_address_and_contact(frm);
+			nts.contacts.render_address_and_contact(frm);
 			// frm.trigger('render_contact_day_html');
 		} else {
-			frappe.contacts.clear_address_and_contact(frm);
+			nts.contacts.clear_address_and_contact(frm);
 		}
 
 		if (frm.doc.opportunity_from && frm.doc.party_name) {
@@ -149,18 +149,18 @@ frappe.ui.form.on("Opportunity", {
 
 	set_contact_link: function (frm) {
 		if (frm.doc.opportunity_from == "Customer" && frm.doc.party_name) {
-			frappe.dynamic_link = { doc: frm.doc, fieldname: "party_name", doctype: "Customer" };
+			nts.dynamic_link = { doc: frm.doc, fieldname: "party_name", doctype: "Customer" };
 		} else if (frm.doc.opportunity_from == "Lead" && frm.doc.party_name) {
-			frappe.dynamic_link = { doc: frm.doc, fieldname: "party_name", doctype: "Lead" };
+			nts.dynamic_link = { doc: frm.doc, fieldname: "party_name", doctype: "Lead" };
 		} else if (frm.doc.opportunity_from == "Prospect" && frm.doc.party_name) {
-			frappe.dynamic_link = { doc: frm.doc, fieldname: "party_name", doctype: "Prospect" };
+			nts.dynamic_link = { doc: frm.doc, fieldname: "party_name", doctype: "Prospect" };
 		}
 	},
 
 	currency: function (frm) {
 		let company_currency = prodman.get_currency(frm.doc.company);
 		if (company_currency != frm.doc.currency) {
-			frappe.call({
+			nts.call({
 				method: "prodman.setup.utils.get_exchange_rate",
 				args: {
 					from_currency: frm.doc.currency,
@@ -203,14 +203,14 @@ frappe.ui.form.on("Opportunity", {
 	},
 
 	make_supplier_quotation: function (frm) {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.crm.doctype.opportunity.opportunity.make_supplier_quotation",
 			frm: frm,
 		});
 	},
 
 	make_request_for_quotation: function (frm) {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.crm.doctype.opportunity.opportunity.make_request_for_quotation",
 			frm: frm,
 		});
@@ -235,7 +235,7 @@ frappe.ui.form.on("Opportunity", {
 
 		let item_grid = frm.fields_dict.items.grid;
 		$.each(["base_rate", "base_amount"], function (i, fname) {
-			if (frappe.meta.get_docfield(item_grid.doctype, fname))
+			if (nts.meta.get_docfield(item_grid.doctype, fname))
 				item_grid.set_column_disp(fname, frm.doc.currency != company_currency);
 		});
 		frm.refresh_fields();
@@ -255,12 +255,12 @@ frappe.ui.form.on("Opportunity", {
 		});
 	},
 });
-frappe.ui.form.on("Opportunity Item", {
+nts.ui.form.on("Opportunity Item", {
 	calculate: function (frm, cdt, cdn) {
-		let row = frappe.get_doc(cdt, cdn);
-		frappe.model.set_value(cdt, cdn, "amount", flt(row.qty) * flt(row.rate));
-		frappe.model.set_value(cdt, cdn, "base_rate", flt(frm.doc.conversion_rate) * flt(row.rate));
-		frappe.model.set_value(cdt, cdn, "base_amount", flt(frm.doc.conversion_rate) * flt(row.amount));
+		let row = nts.get_doc(cdt, cdn);
+		nts.model.set_value(cdt, cdn, "amount", flt(row.qty) * flt(row.rate));
+		nts.model.set_value(cdt, cdn, "base_rate", flt(frm.doc.conversion_rate) * flt(row.rate));
+		nts.model.set_value(cdt, cdn, "base_amount", flt(frm.doc.conversion_rate) * flt(row.amount));
 		frm.trigger("calculate_total");
 	},
 	qty: function (frm, cdt, cdn) {
@@ -272,16 +272,16 @@ frappe.ui.form.on("Opportunity Item", {
 });
 
 // TODO commonify this code
-prodman.crm.Opportunity = class Opportunity extends frappe.ui.form.Controller {
+prodman.crm.Opportunity = class Opportunity extends nts.ui.form.Controller {
 	onload() {
 		if (!this.frm.doc.status) {
 			this.frm.set_value("status", "Open");
 		}
-		if (!this.frm.doc.company && frappe.defaults.get_user_default("Company")) {
-			this.frm.set_value("company", frappe.defaults.get_user_default("Company"));
+		if (!this.frm.doc.company && nts.defaults.get_user_default("Company")) {
+			this.frm.set_value("company", nts.defaults.get_user_default("Company"));
 		}
 		if (!this.frm.doc.currency) {
-			this.frm.set_value("currency", frappe.defaults.get_user_default("Currency"));
+			this.frm.set_value("currency", nts.defaults.get_user_default("Currency"));
 		}
 
 		this.setup_queries();
@@ -322,14 +322,14 @@ prodman.crm.Opportunity = class Opportunity extends frappe.ui.form.Controller {
 	}
 
 	create_quotation() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.crm.doctype.opportunity.opportunity.make_quotation",
 			frm: cur_frm,
 		});
 	}
 
 	make_customer() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.crm.doctype.opportunity.opportunity.make_customer",
 			frm: cur_frm,
 		});
@@ -359,13 +359,13 @@ extend_cscript(cur_frm.cscript, new prodman.crm.Opportunity({ frm: cur_frm }));
 cur_frm.cscript.item_code = function (doc, cdt, cdn) {
 	var d = locals[cdt][cdn];
 	if (d.item_code) {
-		return frappe.call({
+		return nts.call({
 			method: "prodman.crm.doctype.opportunity.opportunity.get_item_details",
 			args: { item_code: d.item_code },
 			callback: function (r, rt) {
 				if (r.message) {
 					$.each(r.message, function (k, v) {
-						frappe.model.set_value(cdt, cdn, k, v);
+						nts.model.set_value(cdt, cdn, k, v);
 					});
 					refresh_field("image_view", d.name, "items");
 				}

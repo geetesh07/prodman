@@ -1,20 +1,20 @@
-import frappe
-from frappe.query_builder.functions import Sum
-from frappe.utils import flt, getdate
+import nts
+from nts.query_builder.functions import Sum
+from nts.utils import flt, getdate
 
 from prodman.accounts.utils import get_fiscal_year
 from prodman.stock.doctype.purchase_receipt.purchase_receipt import adjust_incoming_rate_for_pr
 
 
 def execute():
-	if not frappe.db.get_single_value("Buying Settings", "set_landed_cost_based_on_purchase_invoice_rate"):
+	if not nts.db.get_single_value("Buying Settings", "set_landed_cost_based_on_purchase_invoice_rate"):
 		return
 
-	for company in frappe.get_all("Company", pluck="name"):
-		table = frappe.qb.DocType("Purchase Receipt Item")
-		parent = frappe.qb.DocType("Purchase Receipt")
+	for company in nts.get_all("Company", pluck="name"):
+		table = nts.qb.DocType("Purchase Receipt Item")
+		parent = nts.qb.DocType("Purchase Receipt")
 		query = (
-			frappe.qb.from_(table)
+			nts.qb.from_(table)
 			.join(parent)
 			.on(table.parent == parent.name)
 			.select(
@@ -33,7 +33,7 @@ def execute():
 		posting_date = "2024-04-01"
 
 		# Get the last accounting period end date
-		accounting_period = frappe.get_all(
+		accounting_period = nts.get_all(
 			"Accounting Period", {"company": company}, ["end_date"], order_by="end_date desc", limit=1
 		)
 		if (
@@ -44,7 +44,7 @@ def execute():
 			posting_date = accounting_period[0].end_date
 
 		# Get the last period closing voucher end date
-		period_closing_voucher = frappe.get_all(
+		period_closing_voucher = nts.get_all(
 			"Period Closing Voucher",
 			{"company": company, "docstatus": 1},
 			["period_end_date"],
@@ -58,16 +58,16 @@ def execute():
 		):
 			posting_date = period_closing_voucher[0].period_end_date
 
-		acc_frozen_upto = frappe.db.get_single_value("Accounts Settings", "acc_frozen_upto")
+		acc_frozen_upto = nts.db.get_single_value("Accounts Settings", "acc_frozen_upto")
 		if acc_frozen_upto and getdate(acc_frozen_upto) > getdate(posting_date):
 			posting_date = acc_frozen_upto
 
-		stock_frozen_upto = frappe.db.get_single_value("Stock Settings", "stock_frozen_upto")
+		stock_frozen_upto = nts.db.get_single_value("Stock Settings", "stock_frozen_upto")
 		if stock_frozen_upto and getdate(stock_frozen_upto) > getdate(posting_date):
 			posting_date = stock_frozen_upto
 
 		try:
-			fiscal_year = get_fiscal_year(frappe.utils.datetime.date.today())
+			fiscal_year = get_fiscal_year(nts.utils.datetime.date.today())
 		except Exception:
 			return
 		else:
@@ -80,7 +80,7 @@ def execute():
 			item_wise_billed_qty = get_billed_qty_against_purchase_receipt([item.name for item in result])
 
 			purchase_receipts = set()
-			precision = frappe.get_precision("Purchase Receipt Item", "amount")
+			precision = nts.get_precision("Purchase Receipt Item", "amount")
 			for item in result:
 				adjusted_amt = 0.0
 
@@ -98,7 +98,7 @@ def execute():
 				)
 
 				if adjusted_amt != item.amount_difference_with_purchase_invoice:
-					frappe.db.set_value(
+					nts.db.set_value(
 						"Purchase Receipt Item",
 						item.name,
 						"amount_difference_with_purchase_invoice",
@@ -108,13 +108,13 @@ def execute():
 					purchase_receipts.add(item.parent)
 
 			for pr in purchase_receipts:
-				adjust_incoming_rate_for_pr(frappe.get_doc("Purchase Receipt", pr))
+				adjust_incoming_rate_for_pr(nts.get_doc("Purchase Receipt", pr))
 
 
 def get_billed_qty_against_purchase_receipt(pr_names):
-	table = frappe.qb.DocType("Purchase Invoice Item")
+	table = nts.qb.DocType("Purchase Invoice Item")
 	query = (
-		frappe.qb.from_(table)
+		nts.qb.from_(table)
 		.select(table.pr_detail, Sum(table.qty).as_("qty"))
 		.where((table.pr_detail.isin(pr_names)) & (table.docstatus == 1))
 		.groupby(table.pr_detail)
@@ -122,5 +122,5 @@ def get_billed_qty_against_purchase_receipt(pr_names):
 	invoice_data = query.run(as_list=1)
 
 	if not invoice_data:
-		return frappe._dict()
-	return frappe._dict(invoice_data)
+		return nts._dict()
+	return nts._dict(invoice_data)

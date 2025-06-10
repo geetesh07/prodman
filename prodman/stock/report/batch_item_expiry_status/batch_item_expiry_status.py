@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import Date
+import nts
+from nts import _
+from nts.query_builder.functions import Date
 
 
 def execute(filters=None):
@@ -18,13 +18,13 @@ def execute(filters=None):
 
 def validate_filters(filters):
 	if not filters:
-		frappe.throw(_("Please select the required filters"))
+		nts.throw(_("Please select the required filters"))
 
 	if not filters.get("from_date"):
-		frappe.throw(_("'From Date' is required"))
+		nts.throw(_("'From Date' is required"))
 
 	if not filters.get("to_date"):
-		frappe.throw(_("'To Date' is required"))
+		nts.throw(_("'To Date' is required"))
 
 
 def get_columns():
@@ -51,7 +51,7 @@ def get_data(filters):
 				batch.stock_uom,
 				batch.batch_qty,
 				batch.expiry_date,
-				max((batch.expiry_date - frappe.utils.datetime.date.today()).days, 0)
+				max((batch.expiry_date - nts.utils.datetime.date.today()).days, 0)
 				if batch.expiry_date
 				else None,
 			]
@@ -61,9 +61,9 @@ def get_data(filters):
 
 
 def get_batch_details(filters):
-	batch = frappe.qb.DocType("Batch")
+	batch = nts.qb.DocType("Batch")
 	query = (
-		frappe.qb.from_(batch)
+		nts.qb.from_(batch)
 		.select(
 			batch.name,
 			batch.creation,

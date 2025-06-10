@@ -1,15 +1,15 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 from datetime import date
 
-import frappe
-from frappe import _, bold
-from frappe.core.doctype.role.role import get_users
-from frappe.model.document import Document
-from frappe.query_builder.functions import Sum
-from frappe.utils import add_days, cint, flt, formatdate, get_datetime, getdate
+import nts
+from nts import _, bold
+from nts.core.doctype.role.role import get_users
+from nts.model.document import Document
+from nts.query_builder.functions import Sum
+from nts.utils import add_days, cint, flt, formatdate, get_datetime, getdate
 
 from prodman.accounts.utils import get_fiscal_year
 from prodman.controllers.item_variant import ItemTemplateCannotHaveStock
@@ -18,15 +18,15 @@ from prodman.stock.serial_batch_bundle import SerialBatchBundle
 from prodman.stock.stock_ledger import get_previous_sle
 
 
-class StockFreezeError(frappe.ValidationError):
+class StockFreezeError(nts.ValidationError):
 	pass
 
 
-class BackDatedStockTransaction(frappe.ValidationError):
+class BackDatedStockTransaction(nts.ValidationError):
 	pass
 
 
-class InventoryDimensionNegativeStockError(frappe.ValidationError):
+class InventoryDimensionNegativeStockError(nts.ValidationError):
 	pass
 
 
@@ -40,7 +40,7 @@ class StockLedgerEntry(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		actual_qty: DF.Float
 		auto_created_serial_and_batch_bundle: DF.Check
@@ -80,7 +80,7 @@ class StockLedgerEntry(Document):
 		Temporarily name doc for fast insertion
 		name will be changed using autoname options (in a scheduled job)
 		"""
-		self.name = frappe.generate_hash(txt="", length=10)
+		self.name = nts.generate_hash(txt="", length=10)
 		if self.meta.autoname == "hash":
 			self.to_rename = 0
 
@@ -112,7 +112,7 @@ class StockLedgerEntry(Document):
 		if not dimensions:
 			return
 
-		flt_precision = cint(frappe.db.get_default("float_precision")) or 2
+		flt_precision = cint(nts.db.get_default("float_precision")) or 2
 		for dimension, values in dimensions.items():
 			dimension_value = values.get("value")
 			available_qty = self.get_available_qty_after_prev_transaction(dimension, dimension_value)
@@ -122,9 +122,9 @@ class StockLedgerEntry(Document):
 				self.throw_validation_error(diff, dimension, dimension_value)
 
 	def get_available_qty_after_prev_transaction(self, dimension, dimension_value):
-		sle = frappe.qb.DocType("Stock Ledger Entry")
+		sle = nts.qb.DocType("Stock Ledger Entry")
 		available_qty = (
-			frappe.qb.from_(sle)
+			nts.qb.from_(sle)
 			.select(Sum(sle.actual_qty))
 			.where(
 				(sle.item_code == self.item_code)
@@ -143,16 +143,16 @@ class StockLedgerEntry(Document):
 			"{0} units of {1} are required in {2} with the inventory dimension: {3} ({4}) on {5} {6} for {7} to complete the transaction."
 		).format(
 			abs(diff),
-			frappe.get_desk_link("Item", self.item_code),
-			frappe.get_desk_link("Warehouse", self.warehouse),
-			frappe.bold(dimension),
-			frappe.bold(dimension_value),
+			nts.get_desk_link("Item", self.item_code),
+			nts.get_desk_link("Warehouse", self.warehouse),
+			nts.bold(dimension),
+			nts.bold(dimension_value),
 			self.posting_date,
 			self.posting_time,
-			frappe.get_desk_link(self.voucher_type, self.voucher_no),
+			nts.get_desk_link(self.voucher_type, self.voucher_no),
 		)
 
-		frappe.throw(
+		nts.throw(
 			msg, title=_("Inventory Dimension Negative Stock"), exc=InventoryDimensionNegativeStockError
 		)
 
@@ -172,7 +172,7 @@ class StockLedgerEntry(Document):
 		self.check_stock_frozen_date()
 
 		# Added to handle few test cases where serial_and_batch_bundles are not required
-		if frappe.flags.in_test and frappe.flags.ignore_serial_batch_bundle_validation:
+		if nts.flags.in_test and nts.flags.ignore_serial_batch_bundle_validation:
 			return
 
 		if not self.get("via_landed_cost_voucher"):
@@ -189,16 +189,16 @@ class StockLedgerEntry(Document):
 		mandatory = ["warehouse", "posting_date", "voucher_type", "voucher_no", "company"]
 		for k in mandatory:
 			if not self.get(k):
-				frappe.throw(_("{0} is required").format(self.meta.get_label(k)))
+				nts.throw(_("{0} is required").format(self.meta.get_label(k)))
 
 		if self.voucher_type != "Stock Reconciliation" and not self.actual_qty:
-			frappe.throw(_("Actual Qty is mandatory"))
+			nts.throw(_("Actual Qty is mandatory"))
 
 	def validate_serial_batch_no_bundle(self):
 		if self.is_cancelled == 1:
 			return
 
-		item_detail = frappe.get_cached_value(
+		item_detail = nts.get_cached_value(
 			"Item",
 			self.item_code,
 			["has_serial_no", "has_batch_no", "is_stock_item", "has_variants", "stock_uom"],
@@ -234,18 +234,18 @@ class StockLedgerEntry(Document):
 		if self.serial_and_batch_bundle and not (item_detail.has_serial_no or item_detail.has_batch_no):
 			self.throw_error_message(f"Serial No and Batch No are not allowed for Item {self.item_code}")
 
-	def throw_error_message(self, message, exception=frappe.ValidationError):
-		frappe.throw(_(message), exception)
+	def throw_error_message(self, message, exception=nts.ValidationError):
+		nts.throw(_(message), exception)
 
 	def check_stock_frozen_date(self):
-		stock_settings = frappe.get_cached_doc("Stock Settings")
+		stock_settings = nts.get_cached_doc("Stock Settings")
 
 		if stock_settings.stock_frozen_upto:
 			if (
 				getdate(self.posting_date) <= getdate(stock_settings.stock_frozen_upto)
-				and stock_settings.stock_auth_role not in frappe.get_roles()
+				and stock_settings.stock_auth_role not in nts.get_roles()
 			):
-				frappe.throw(
+				nts.throw(
 					_("Stock transactions before {0} are frozen").format(
 						formatdate(stock_settings.stock_frozen_upto)
 					),
@@ -257,8 +257,8 @@ class StockLedgerEntry(Document):
 			older_than_x_days_ago = (
 				add_days(getdate(self.posting_date), stock_frozen_upto_days) <= date.today()
 			)
-			if older_than_x_days_ago and stock_settings.stock_auth_role not in frappe.get_roles():
-				frappe.throw(
+			if older_than_x_days_ago and stock_settings.stock_auth_role not in nts.get_roles():
+				nts.throw(
 					_("Not allowed to update stock transactions older than {0}").format(
 						stock_frozen_upto_days
 					),
@@ -276,10 +276,10 @@ class StockLedgerEntry(Document):
 			):
 				return
 
-			expiry_date = frappe.db.get_value("Batch", self.batch_no, "expiry_date")
+			expiry_date = nts.db.get_value("Batch", self.batch_no, "expiry_date")
 			if expiry_date:
 				if getdate(self.posting_date) > getdate(expiry_date):
-					frappe.throw(
+					nts.throw(
 						_("Batch {0} of Item {1} has expired.").format(self.batch_no, self.item_code)
 					)
 
@@ -299,13 +299,13 @@ class StockLedgerEntry(Document):
 		is_group_warehouse(self.warehouse)
 
 	def validate_with_last_transaction_posting_time(self):
-		authorized_role = frappe.db.get_single_value(
+		authorized_role = nts.db.get_single_value(
 			"Stock Settings", "role_allowed_to_create_edit_back_dated_transactions"
 		)
 		if authorized_role:
 			authorized_users = get_users(authorized_role)
-			if authorized_users and frappe.session.user not in authorized_users:
-				last_transaction_time = frappe.db.sql(
+			if authorized_users and nts.session.user not in authorized_users:
+				last_transaction_time = nts.db.sql(
 					"""
 					select MAX(timestamp(posting_date, posting_time)) as posting_time
 					from `tabStock Ledger Entry`
@@ -323,26 +323,26 @@ class StockLedgerEntry(Document):
 					last_transaction_time
 				):
 					msg = _("Last Stock Transaction for item {0} under warehouse {1} was on {2}.").format(
-						frappe.bold(self.item_code),
-						frappe.bold(self.warehouse),
-						frappe.bold(last_transaction_time),
+						nts.bold(self.item_code),
+						nts.bold(self.warehouse),
+						nts.bold(last_transaction_time),
 					)
 
 					msg += "<br><br>" + _(
 						"You are not authorized to make/edit Stock Transactions for Item {0} under warehouse {1} before this time."
-					).format(frappe.bold(self.item_code), frappe.bold(self.warehouse))
+					).format(nts.bold(self.item_code), nts.bold(self.warehouse))
 
 					msg += "<br><br>" + _("Please contact any of the following users to {} this transaction.")
 					msg += "<br>" + "<br>".join(authorized_users)
-					frappe.throw(msg, BackDatedStockTransaction, title=_("Backdated Stock Entry"))
+					nts.throw(msg, BackDatedStockTransaction, title=_("Backdated Stock Entry"))
 
 	def on_cancel(self):
 		msg = _("Individual Stock Ledger Entry cannot be cancelled.")
 		msg += "<br>" + _("Please cancel related transaction.")
-		frappe.throw(msg)
+		nts.throw(msg)
 
 
 def on_doctype_update():
-	frappe.db.add_index("Stock Ledger Entry", ["voucher_no", "voucher_type"])
-	frappe.db.add_index("Stock Ledger Entry", ["batch_no", "item_code", "warehouse"])
-	frappe.db.add_index("Stock Ledger Entry", ["item_code", "warehouse", "posting_datetime", "creation"])
+	nts.db.add_index("Stock Ledger Entry", ["voucher_no", "voucher_type"])
+	nts.db.add_index("Stock Ledger Entry", ["batch_no", "item_code", "warehouse"])
+	nts.db.add_index("Stock Ledger Entry", ["item_code", "warehouse", "posting_datetime", "creation"])

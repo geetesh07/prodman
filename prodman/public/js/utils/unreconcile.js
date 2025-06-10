@@ -1,4 +1,4 @@
-frappe.provide("prodman.accounts");
+nts.provide("prodman.accounts");
 
 prodman.accounts.unreconcile_payment = {
 	add_unreconcile_btn(frm) {
@@ -13,7 +13,7 @@ prodman.accounts.unreconcile_payment = {
 				return;
 			}
 
-			frappe.call({
+			nts.call({
 				method: "prodman.accounts.doctype.unreconcile_payment.unreconcile_payment.doc_has_references",
 				args: {
 					doctype: frm.doc.doctype,
@@ -111,7 +111,7 @@ prodman.accounts.unreconcile_payment = {
 			];
 
 			// get linked payments
-			frappe.call({
+			nts.call({
 				method: "prodman.accounts.doctype.unreconcile_payment.unreconcile_payment.get_linked_payments_for_doc",
 				args: {
 					company: frm.doc.company,
@@ -126,7 +126,7 @@ prodman.accounts.unreconcile_payment = {
 							return r.message;
 						};
 
-						let d = new frappe.ui.Dialog({
+						let d = new nts.ui.Dialog({
 							title: __("UnReconcile Allocations"),
 							fields: unreconcile_dialog_fields,
 							size: "large",
@@ -144,7 +144,7 @@ prodman.accounts.unreconcile_payment = {
 									);
 									d.hide();
 								} else {
-									frappe.msgprint(__("No Selection"));
+									nts.msgprint(__("No Selection"));
 								}
 							},
 						});
@@ -157,7 +157,7 @@ prodman.accounts.unreconcile_payment = {
 	},
 
 	create_unreconcile_docs(selection_map) {
-		frappe.call({
+		nts.call({
 			method: "prodman.accounts.doctype.unreconcile_payment.unreconcile_payment.create_unreconcile_doc_for_selection",
 			args: {
 				selections: selection_map,

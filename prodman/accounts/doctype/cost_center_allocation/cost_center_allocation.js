@@ -1,7 +1,7 @@
-// Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2022, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Cost Center Allocation", {
+nts .ui.form.on("Cost Center Allocation", {
 	setup: function (frm) {
 		frm.set_query("main_cost_center", function () {
 			return {

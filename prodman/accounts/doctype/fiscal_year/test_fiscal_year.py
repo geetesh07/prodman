@@ -1,21 +1,21 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import unittest
 
-import frappe
-from frappe.utils import now_datetime
+import nts 
+from nts .utils import now_datetime
 
 test_ignore = ["Company"]
 
 
 class TestFiscalYear(unittest.TestCase):
 	def test_extra_year(self):
-		if frappe.db.exists("Fiscal Year", "_Test Fiscal Year 2000"):
-			frappe.delete_doc("Fiscal Year", "_Test Fiscal Year 2000")
+		if nts .db.exists("Fiscal Year", "_Test Fiscal Year 2000"):
+			nts .delete_doc("Fiscal Year", "_Test Fiscal Year 2000")
 
-		fy = frappe.get_doc(
+		fy = nts .get_doc(
 			{
 				"doctype": "Fiscal Year",
 				"year": "_Test Fiscal Year 2000",
@@ -24,7 +24,7 @@ class TestFiscalYear(unittest.TestCase):
 			}
 		)
 
-		self.assertRaises(frappe.exceptions.InvalidDates, fy.insert)
+		self.assertRaises(nts .exceptions.InvalidDates, fy.insert)
 
 
 def test_record_generator():

@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import copy
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 from prodman.stock.doctype.serial_no.serial_no import get_serial_nos as get_serial_nos_from_sle
 from prodman.stock.stock_ledger import get_stock_ledger_entries
@@ -105,7 +105,7 @@ def get_data(filters):
 	bundle_wise_serial_nos = get_serial_nos(filters, serial_bundle_ids)
 
 	for row in stock_ledgers:
-		args = frappe._dict(
+		args = nts._dict(
 			{
 				"posting_date": row.posting_date,
 				"posting_time": row.posting_time,
@@ -126,7 +126,7 @@ def get_data(filters):
 		)
 		args.party_type = party_field.title() if party_field else None
 		args.party = (
-			frappe.db.get_value(row.voucher_type, row.voucher_no, party_field) if party_field else None
+			nts.db.get_value(row.voucher_type, row.voucher_no, party_field) if party_field else None
 		)
 
 		serial_nos = []
@@ -170,7 +170,7 @@ def get_serial_nos(filters, serial_bundle_ids):
 	if filters.get("serial_no"):
 		bundle_filters["serial_no"] = filters.get("serial_no")
 
-	for d in frappe.get_all(
+	for d in nts.get_all(
 		"Serial and Batch Entry",
 		fields=["serial_no", "parent", "stock_value_difference as valuation_rate"],
 		filters=bundle_filters,

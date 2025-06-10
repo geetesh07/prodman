@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _, msgprint, qb
-from frappe.query_builder import Criterion
+import nts
+from nts import _, msgprint, qb
+from nts.query_builder import Criterion
 
 from prodman import get_company_currency
 
@@ -57,7 +57,7 @@ def get_columns(filters):
 		{
 			"label": _(filters["doc_type"]),
 			"options": filters["doc_type"],
-			"fieldname": frappe.scrub(filters["doc_type"]),
+			"fieldname": nts.scrub(filters["doc_type"]),
 			"fieldtype": "Link",
 			"width": 140,
 		},
@@ -153,7 +153,7 @@ def get_entries(filters):
 		qty_field = "qty"
 	conditions, values = get_conditions(filters, date_field)
 
-	entries = frappe.db.sql(
+	entries = nts.db.sql(
 		"""
 		SELECT
 			dt.name, dt.customer, dt.territory, dt.{} as posting_date, dt_item.item_code,
@@ -202,7 +202,7 @@ def get_conditions(filters, date_field):
 			values.append(filters[field])
 
 	if filters.get("sales_person"):
-		lft, rgt = frappe.get_value("Sales Person", filters.get("sales_person"), ["lft", "rgt"])
+		lft, rgt = nts.get_value("Sales Person", filters.get("sales_person"), ["lft", "rgt"])
 		conditions.append(
 			f"exists(select name from `tabSales Person` where lft >= {lft} and rgt <= {rgt} and name=st.sales_person)"
 		)
@@ -233,7 +233,7 @@ def get_items(filters):
 	if filters.get("item_group"):
 		# Handle 'Parent' nodes as well.
 		item_group = qb.DocType("Item Group")
-		lft, rgt = frappe.db.get_all(
+		lft, rgt = nts.db.get_all(
 			"Item Group", filters={"name": filters.get("item_group")}, fields=["lft", "rgt"], as_list=True
 		)[0]
 		item_group_query = (
@@ -251,7 +251,7 @@ def get_items(filters):
 
 def get_item_details():
 	item_details = {}
-	for d in frappe.db.sql("""SELECT `name`, `item_group`, `brand` FROM `tabItem`""", as_dict=1):
+	for d in nts.db.sql("""SELECT `name`, `item_group`, `brand` FROM `tabItem`""", as_dict=1):
 		item_details.setdefault(d.name, d)
 
 	return item_details

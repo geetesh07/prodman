@@ -1,9 +1,9 @@
-import frappe
-from frappe.utils import cstr
+import nts
+from nts.utils import cstr
 
 
 def execute():
-	reposts = frappe.get_all(
+	reposts = nts.get_all(
 		"Repost Item Valuation",
 		{"status": "Failed", "modified": [">", "2021-10-05"]},
 		["name", "modified", "error_log"],
@@ -11,4 +11,4 @@ def execute():
 
 	for repost in reposts:
 		if "check_freezing_date" in cstr(repost.error_log):
-			frappe.db.set_value("Repost Item Valuation", repost.name, "status", "Queued")
+			nts.db.set_value("Repost Item Valuation", repost.name, "status", "Queued")

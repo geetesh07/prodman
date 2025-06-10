@@ -1,7 +1,7 @@
-// Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2022, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Repost Payment Ledger", {
+nts .ui.form.on("Repost Payment Ledger", {
 	setup: function (frm) {
 		frm.set_query("voucher_type", () => {
 			return {
@@ -40,13 +40,13 @@ frappe.ui.form.on("Repost Payment Ledger", {
 			var btn_label = __("Repost in background");
 
 			frm.add_custom_button(btn_label, () => {
-				frappe.call({
+				nts .call({
 					method: "prodman.accounts.doctype.repost_payment_ledger.repost_payment_ledger.execute_repost_payment_ledger",
 					args: {
 						docname: frm.doc.name,
 					},
 				});
-				frappe.msgprint(__("Reposting in the background."));
+				nts .msgprint(__("Reposting in the background."));
 			});
 		}
 	},

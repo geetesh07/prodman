@@ -1,8 +1,8 @@
 # Copyright (c) 2021, Wahni Green Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-# import frappe
-from frappe.model.document import Document
+# import nts 
+from nts .model.document import Document
 
 
 class CurrencyExchangeSettingsDetails(Document):
@@ -12,7 +12,7 @@ class CurrencyExchangeSettingsDetails(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		key: DF.Data
 		parent: DF.Data

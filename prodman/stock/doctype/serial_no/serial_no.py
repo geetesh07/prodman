@@ -1,14 +1,14 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 
-import frappe
-from frappe import ValidationError, _
-from frappe.model.naming import make_autoname
-from frappe.query_builder.functions import Coalesce
-from frappe.utils import cint, cstr, getdate, nowdate, safe_json_loads
+import nts
+from nts import ValidationError, _
+from nts.model.naming import make_autoname
+from nts.query_builder.functions import Coalesce
+from nts.utils import cint, cstr, getdate, nowdate, safe_json_loads
 
 from prodman.controllers.stock_controller import StockController
 
@@ -32,7 +32,7 @@ class SerialNo(StockController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		amc_expiry_date: DF.Date | None
 		asset: DF.Link | None
@@ -63,7 +63,7 @@ class SerialNo(StockController):
 
 	def validate(self):
 		if self.get("__islocal") and self.warehouse and not self.via_stock_ledger:
-			frappe.throw(
+			nts.throw(
 				_(
 					"New Serial No cannot have Warehouse. Warehouse must be set by Stock Entry or Purchase Receipt"
 				),
@@ -75,11 +75,11 @@ class SerialNo(StockController):
 
 	def validate_warehouse(self):
 		if not self.get("__islocal"):
-			item_code, warehouse = frappe.db.get_value("Serial No", self.name, ["item_code", "warehouse"])
+			item_code, warehouse = nts.db.get_value("Serial No", self.name, ["item_code", "warehouse"])
 			if not self.via_stock_ledger and item_code != self.item_code:
-				frappe.throw(_("Item Code cannot be changed for Serial No."), SerialNoCannotCannotChangeError)
+				nts.throw(_("Item Code cannot be changed for Serial No."), SerialNoCannotCannotChangeError)
 			if not self.via_stock_ledger and warehouse != self.warehouse:
-				frappe.throw(_("Warehouse cannot be changed for Serial No."), SerialNoCannotCannotChangeError)
+				nts.throw(_("Warehouse cannot be changed for Serial No."), SerialNoCannotCannotChangeError)
 
 	def set_maintenance_status(self):
 		if not self.warranty_expiry_date and not self.amc_expiry_date:
@@ -98,7 +98,7 @@ class SerialNo(StockController):
 			self.maintenance_status = "Under Warranty"
 
 	def on_trash(self):
-		sl_entries = frappe.db.sql(
+		sl_entries = nts.db.sql(
 			"""select serial_no from `tabStock Ledger Entry`
 			where serial_no like %s and item_code=%s and is_cancelled=0""",
 			("%%%s%%" % self.name, self.item_code),
@@ -113,7 +113,7 @@ class SerialNo(StockController):
 				break
 
 		if sle_exists:
-			frappe.throw(
+			nts.throw(
 				_("Cannot delete Serial No {0}, as it is used in stock transactions").format(self.name)
 			)
 
@@ -128,7 +128,7 @@ def get_available_serial_nos(serial_no_series, qty) -> list[str]:
 
 def get_new_serial_number(series):
 	sr_no = make_autoname(series, "Serial No")
-	if frappe.db.exists("Serial No", sr_no):
+	if nts.db.exists("Serial No", sr_no):
 		sr_no = get_new_serial_number(series)
 	return sr_no
 
@@ -150,8 +150,8 @@ def get_serial_nos(serial_no):
 
 
 def get_serial_nos_from_sle_list(bundles):
-	table = frappe.qb.DocType("Serial and Batch Entry")
-	query = frappe.qb.from_(table).select(table.parent, table.serial_no).where(table.parent.isin(bundles))
+	table = nts.qb.DocType("Serial and Batch Entry")
+	query = nts.qb.from_(table).select(table.parent, table.serial_no).where(table.parent.isin(bundles))
 	data = query.run(as_dict=True)
 
 	result = {}
@@ -169,18 +169,18 @@ def clean_serial_no_string(serial_no: str) -> str:
 
 
 def update_maintenance_status():
-	serial_nos = frappe.db.sql(
+	serial_nos = nts.db.sql(
 		"""select name from `tabSerial No` where (amc_expiry_date<%s or
 		warranty_expiry_date<%s) and maintenance_status not in ('Out of Warranty', 'Out of AMC')""",
 		(nowdate(), nowdate()),
 	)
 	for serial_no in serial_nos:
-		doc = frappe.get_doc("Serial No", serial_no[0])
+		doc = nts.get_doc("Serial No", serial_no[0])
 		doc.set_maintenance_status()
-		frappe.db.set_value("Serial No", doc.name, "maintenance_status", doc.maintenance_status)
+		nts.db.set_value("Serial No", doc.name, "maintenance_status", doc.maintenance_status)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def auto_fetch_serial_number(
 	qty: int,
 	item_code: str,
@@ -190,7 +190,7 @@ def auto_fetch_serial_number(
 	for_doctype: str | None = None,
 	exclude_sr_nos=None,
 ) -> list[str]:
-	filters = frappe._dict({"item_code": item_code, "warehouse": warehouse})
+	filters = nts._dict({"item_code": item_code, "warehouse": warehouse})
 
 	if exclude_sr_nos is None:
 		exclude_sr_nos = []
@@ -217,15 +217,15 @@ def auto_fetch_serial_number(
 	return sorted([d.get("name") for d in serial_numbers])
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_pos_reserved_serial_nos(filters):
 	if isinstance(filters, str):
 		filters = json.loads(filters)
 
-	POSInvoice = frappe.qb.DocType("POS Invoice")
-	POSInvoiceItem = frappe.qb.DocType("POS Invoice Item")
+	POSInvoice = nts.qb.DocType("POS Invoice")
+	POSInvoiceItem = nts.qb.DocType("POS Invoice Item")
 	query = (
-		frappe.qb.from_(POSInvoice)
+		nts.qb.from_(POSInvoice)
 		.from_(POSInvoiceItem)
 		.select(POSInvoice.is_return, POSInvoiceItem.serial_no)
 		.where(
@@ -262,10 +262,10 @@ def fetch_serial_numbers(filters, qty, do_not_include=None):
 
 	batch_nos = filters.get("batch_no")
 	expiry_date = filters.get("expiry_date")
-	serial_no = frappe.qb.DocType("Serial No")
+	serial_no = nts.qb.DocType("Serial No")
 
 	query = (
-		frappe.qb.from_(serial_no)
+		nts.qb.from_(serial_no)
 		.select(serial_no.name)
 		.where((serial_no.item_code == filters["item_code"]) & (serial_no.warehouse == filters["warehouse"]))
 		.orderby(serial_no.creation)
@@ -279,7 +279,7 @@ def fetch_serial_numbers(filters, qty, do_not_include=None):
 		query = query.where(serial_no.batch_no.isin(batch_nos))
 
 	if expiry_date:
-		batch = frappe.qb.DocType("Batch")
+		batch = nts.qb.DocType("Batch")
 		query = (
 			query.left_join(batch)
 			.on(serial_no.batch_no == batch.name)

@@ -1,11 +1,11 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 import json
 
-import frappe
-from frappe.model import mapper
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days, nowdate, today
+import nts 
+from nts .model import mapper
+from nts .tests.utils import nts TestCase
+from nts .utils import add_days, nowdate, today
 
 from prodman import get_default_cost_center
 from prodman.accounts.doctype.payment_entry.test_payment_entry import get_payment_entry
@@ -22,7 +22,7 @@ from prodman.accounts.doctype.sales_invoice.test_sales_invoice import (
 test_dependencies = ["Company", "Cost Center"]
 
 
-class TestDunning(FrappeTestCase):
+class TestDunning(nts TestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
@@ -63,7 +63,7 @@ class TestDunning(FrappeTestCase):
 		pe.submit()
 
 		for overdue_payment in dunning.overdue_payments:
-			outstanding_amount = frappe.get_value(
+			outstanding_amount = nts .get_value(
 				"Sales Invoice", overdue_payment.sales_invoice, "outstanding_amount"
 			)
 			self.assertEqual(outstanding_amount, 0)
@@ -146,7 +146,7 @@ def create_dunning(overdue_days, dunning_type_name=None):
 	dunning = create_dunning_from_sales_invoice(sales_invoice.name)
 
 	if dunning_type_name:
-		dunning_type = frappe.get_doc("Dunning Type", dunning_type_name)
+		dunning_type = nts .get_doc("Dunning Type", dunning_type_name)
 		dunning.dunning_type = dunning_type.name
 		dunning.rate_of_interest = dunning_type.rate_of_interest
 		dunning.dunning_fee = dunning_type.dunning_fee
@@ -158,10 +158,10 @@ def create_dunning(overdue_days, dunning_type_name=None):
 
 def create_dunning_type(title, fee, interest, is_default):
 	company = "_Test Company"
-	if frappe.db.exists("Dunning Type", f"{title} - _TC"):
+	if nts .db.exists("Dunning Type", f"{title} - _TC"):
 		return
 
-	dunning_type = frappe.new_doc("Dunning Type")
+	dunning_type = nts .new_doc("Dunning Type")
 	dunning_type.dunning_type = title
 	dunning_type.company = company
 	dunning_type.is_default = is_default
@@ -182,8 +182,8 @@ def create_dunning_type(title, fee, interest, is_default):
 
 def get_income_account(company):
 	return (
-		frappe.get_value("Company", company, "default_income_account")
-		or frappe.get_all(
+		nts .get_value("Company", company, "default_income_account")
+		or nts .get_all(
 			"Account",
 			filters={"is_group": 0, "company": company},
 			or_filters={
@@ -202,8 +202,8 @@ def create_payment_terms_template_for_dunning():
 	create_payment_term("_Test Payment Term 1 for Dunning")
 	create_payment_term("_Test Payment Term 2 for Dunning")
 
-	if not frappe.db.exists("Payment Terms Template", "_Test 50-50 for Dunning"):
-		frappe.get_doc(
+	if not nts .db.exists("Payment Terms Template", "_Test 50-50 for Dunning"):
+		nts .get_doc(
 			{
 				"doctype": "Payment Terms Template",
 				"template_name": "_Test 50-50 for Dunning",

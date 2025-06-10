@@ -1,9 +1,9 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2020, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts 
 
 from prodman.accounts.doctype.accounting_dimension.test_accounting_dimension import (
 	create_dimension,
@@ -47,8 +47,8 @@ class TestAccountingDimensionFilter(unittest.TestCase):
 	def tearDown(self):
 		disable_dimension_filter()
 		disable_dimension()
-		frappe.flags.accounting_dimensions_details = None
-		frappe.flags.dimension_filter_map = None
+		nts .flags.accounting_dimensions_details = None
+		nts .flags.dimension_filter_map = None
 
 		for si in self.invoice_list:
 			si.load_from_db()
@@ -57,8 +57,8 @@ class TestAccountingDimensionFilter(unittest.TestCase):
 
 
 def create_accounting_dimension_filter():
-	if not frappe.db.get_value("Accounting Dimension Filter", {"accounting_dimension": "Cost Center"}):
-		frappe.get_doc(
+	if not nts .db.get_value("Accounting Dimension Filter", {"accounting_dimension": "Cost Center"}):
+		nts .get_doc(
 			{
 				"doctype": "Accounting Dimension Filter",
 				"accounting_dimension": "Cost Center",
@@ -76,12 +76,12 @@ def create_accounting_dimension_filter():
 			}
 		).insert()
 	else:
-		doc = frappe.get_doc("Accounting Dimension Filter", {"accounting_dimension": "Cost Center"})
+		doc = nts .get_doc("Accounting Dimension Filter", {"accounting_dimension": "Cost Center"})
 		doc.disabled = 0
 		doc.save()
 
-	if not frappe.db.get_value("Accounting Dimension Filter", {"accounting_dimension": "Department"}):
-		frappe.get_doc(
+	if not nts .db.get_value("Accounting Dimension Filter", {"accounting_dimension": "Department"}):
+		nts .get_doc(
 			{
 				"doctype": "Accounting Dimension Filter",
 				"accounting_dimension": "Department",
@@ -93,16 +93,16 @@ def create_accounting_dimension_filter():
 			}
 		).insert()
 	else:
-		doc = frappe.get_doc("Accounting Dimension Filter", {"accounting_dimension": "Department"})
+		doc = nts .get_doc("Accounting Dimension Filter", {"accounting_dimension": "Department"})
 		doc.disabled = 0
 		doc.save()
 
 
 def disable_dimension_filter():
-	doc = frappe.get_doc("Accounting Dimension Filter", {"accounting_dimension": "Cost Center"})
+	doc = nts .get_doc("Accounting Dimension Filter", {"accounting_dimension": "Cost Center"})
 	doc.disabled = 1
 	doc.save()
 
-	doc = frappe.get_doc("Accounting Dimension Filter", {"accounting_dimension": "Department"})
+	doc = nts .get_doc("Accounting Dimension Filter", {"accounting_dimension": "Department"})
 	doc.disabled = 1
 	doc.save()

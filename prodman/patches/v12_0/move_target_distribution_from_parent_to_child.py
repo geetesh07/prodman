@@ -1,16 +1,16 @@
-# Copyright (c) 2017, Frappe and Contributors
+# Copyright (c) 2017, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("setup", "doctype", "target_detail")
-	frappe.reload_doc("core", "doctype", "prepared_report")
+	nts.reload_doc("setup", "doctype", "target_detail")
+	nts.reload_doc("core", "doctype", "prepared_report")
 
 	for d in ["Sales Person", "Sales Partner", "Territory"]:
-		frappe.db.sql(
+		nts.db.sql(
 			"""
             UPDATE `tab{child_doc}`, `tab{parent_doc}`
             SET
@@ -21,6 +21,6 @@ def execute():
         """.format(parent_doc=d, child_doc="Target Detail")
 		)
 
-	frappe.delete_doc("Report", "Sales Partner-wise Transaction Summary")
-	frappe.delete_doc("Report", "Sales Person Target Variance Item Group-Wise")
-	frappe.delete_doc("Report", "Territory Target Variance Item Group-Wise")
+	nts.delete_doc("Report", "Sales Partner-wise Transaction Summary")
+	nts.delete_doc("Report", "Sales Person Target Variance Item Group-Wise")
+	nts.delete_doc("Report", "Territory Target Variance Item Group-Wise")

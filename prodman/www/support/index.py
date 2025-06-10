@@ -1,10 +1,10 @@
-import frappe
+import nts
 
 
 def get_context(context):
 	context.no_cache = 1
 	context.align_greeting = ""
-	setting = frappe.get_doc("Support Settings")
+	setting = nts.get_doc("Support Settings")
 
 	context.greeting_title = setting.greeting_title
 	context.greeting_subtitle = setting.greeting_subtitle
@@ -16,7 +16,7 @@ def get_context(context):
 		if favorite_articles:
 			for article in favorite_articles:
 				name_list.append(article.name)
-		for record in frappe.get_all(
+		for record in nts.get_all(
 			"Help Article",
 			fields=["title", "content", "route", "category"],
 			filters={"name": ["not in", tuple(name_list)], "published": 1},
@@ -30,7 +30,7 @@ def get_context(context):
 
 
 def get_favorite_articles_by_page_view():
-	return frappe.db.sql(
+	return nts.db.sql(
 		"""
 			SELECT
 				t1.name as name,
@@ -55,7 +55,7 @@ def get_favorite_articles_by_page_view():
 def get_favorite_articles(favorite_articles):
 	favorite_article_list = []
 	for article in favorite_articles:
-		description = frappe.utils.strip_html(article.content)
+		description = nts.utils.strip_html(article.content)
 		if len(description) > 120:
 			description = description[:120] + "..."
 		favorite_article_dict = {
@@ -70,9 +70,9 @@ def get_favorite_articles(favorite_articles):
 
 def get_help_article_list():
 	help_article_list = []
-	category_list = frappe.get_all("Help Category", fields="name")
+	category_list = nts.get_all("Help Category", fields="name")
 	for category in category_list:
-		help_articles = frappe.get_all(
+		help_articles = nts.get_all(
 			"Help Article",
 			fields="*",
 			filters={"category": category.name, "published": 1},

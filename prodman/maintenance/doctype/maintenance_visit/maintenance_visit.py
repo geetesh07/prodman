@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import format_date, get_datetime
+import nts
+from nts import _
+from nts.utils import format_date, get_datetime
 
 from prodman.utilities.transaction_base import TransactionBase
 
@@ -16,7 +16,7 @@ class MaintenanceVisit(TransactionBase):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.maintenance.doctype.maintenance_visit_purpose.maintenance_visit_purpose import (
 			MaintenanceVisitPurpose,
@@ -48,27 +48,27 @@ class MaintenanceVisit(TransactionBase):
 
 	def validate_serial_no(self):
 		for d in self.get("purposes"):
-			if d.serial_no and not frappe.db.exists("Serial No", d.serial_no):
-				frappe.throw(_("Serial No {0} does not exist").format(d.serial_no))
+			if d.serial_no and not nts.db.exists("Serial No", d.serial_no):
+				nts.throw(_("Serial No {0} does not exist").format(d.serial_no))
 
 	def validate_purpose_table(self):
 		if not self.purposes:
-			frappe.throw(_("Add Items in the Purpose Table"), title=_("Purposes Required"))
+			nts.throw(_("Add Items in the Purpose Table"), title=_("Purposes Required"))
 
 	def validate_maintenance_date(self):
 		if self.maintenance_type == "Scheduled":
 			if self.maintenance_schedule_detail:
-				item_ref = frappe.db.get_value(
+				item_ref = nts.db.get_value(
 					"Maintenance Schedule Detail", self.maintenance_schedule_detail, "item_reference"
 				)
 				if item_ref:
-					start_date, end_date = frappe.db.get_value(
+					start_date, end_date = nts.db.get_value(
 						"Maintenance Schedule Item", item_ref, ["start_date", "end_date"]
 					)
 					if get_datetime(self.mntc_date) < get_datetime(start_date) or get_datetime(
 						self.mntc_date
 					) > get_datetime(end_date):
-						frappe.throw(
+						nts.throw(
 							_("Date must be between {0} and {1}").format(
 								format_date(start_date), format_date(end_date)
 							)
@@ -76,19 +76,19 @@ class MaintenanceVisit(TransactionBase):
 			else:
 				for purpose in self.purposes:
 					if purpose.maintenance_schedule_detail:
-						item_ref = frappe.db.get_value(
+						item_ref = nts.db.get_value(
 							"Maintenance Schedule Detail",
 							purpose.maintenance_schedule_detail,
 							"item_reference",
 						)
 						if item_ref:
-							start_date, end_date = frappe.db.get_value(
+							start_date, end_date = nts.db.get_value(
 								"Maintenance Schedule Item", item_ref, ["start_date", "end_date"]
 							)
 							if get_datetime(self.mntc_date) < get_datetime(start_date) or get_datetime(
 								self.mntc_date
 							) > get_datetime(end_date):
-								frappe.throw(
+								nts.throw(
 									_("Date must be between {0} and {1}").format(
 										format_date(start_date), format_date(end_date)
 									)
@@ -107,22 +107,22 @@ class MaintenanceVisit(TransactionBase):
 			actual_date = self.mntc_date
 
 		if self.maintenance_schedule_detail:
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Maintenance Schedule Detail", self.maintenance_schedule_detail, "completion_status", status
 			)
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Maintenance Schedule Detail", self.maintenance_schedule_detail, "actual_date", actual_date
 			)
 		else:
 			for purpose in self.purposes:
 				if purpose.maintenance_schedule_detail:
-					frappe.db.set_value(
+					nts.db.set_value(
 						"Maintenance Schedule Detail",
 						purpose.maintenance_schedule_detail,
 						"completion_status",
 						status,
 					)
-					frappe.db.set_value(
+					nts.db.set_value(
 						"Maintenance Schedule Detail",
 						purpose.maintenance_schedule_detail,
 						"actual_date",
@@ -143,7 +143,7 @@ class MaintenanceVisit(TransactionBase):
 						elif self.completion_status == "Partially Completed":
 							status = "Work In Progress"
 					else:
-						nm = frappe.db.sql(
+						nm = nts.db.sql(
 							"select t1.name, t1.mntc_date, t2.service_person, t2.work_done from `tabMaintenance Visit` t1, `tabMaintenance Visit Purpose` t2 where t2.parent = t1.name and t1.completion_status = 'Partially Completed' and t2.prevdoc_docname = %s and t1.name!=%s and t1.docstatus = 1 order by t1.name desc limit 1",
 							(d.prevdoc_docname, self.name),
 						)
@@ -159,7 +159,7 @@ class MaintenanceVisit(TransactionBase):
 							service_person = None
 							work_done = None
 
-					wc_doc = frappe.get_doc("Warranty Claim", d.prevdoc_docname)
+					wc_doc = nts.get_doc("Warranty Claim", d.prevdoc_docname)
 					wc_doc.update(
 						{
 							"resolution_date": mntc_date,
@@ -180,7 +180,7 @@ class MaintenanceVisit(TransactionBase):
 				# check_for_doctype = d.prevdoc_doctype
 
 		if check_for_docname:
-			check = frappe.db.sql(
+			check = nts.db.sql(
 				"select t1.name from `tabMaintenance Visit` t1, `tabMaintenance Visit Purpose` t2 where t2.parent = t1.name and t1.name!=%s and t2.prevdoc_docname=%s and t1.docstatus = 1 and (t1.mntc_date > %s or (t1.mntc_date = %s and t1.mntc_time > %s))",
 				(self.name, check_for_docname, self.mntc_date, self.mntc_date, self.mntc_time),
 			)
@@ -188,7 +188,7 @@ class MaintenanceVisit(TransactionBase):
 			if check:
 				check_lst = [x[0] for x in check]
 				check_lst = ",".join(check_lst)
-				frappe.throw(
+				nts.throw(
 					_("Cancel Material Visits {0} before cancelling this Maintenance Visit").format(check_lst)
 				)
 				raise Exception

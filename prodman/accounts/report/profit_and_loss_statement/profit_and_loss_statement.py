@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import flt
+import nts 
+from nts  import _
+from nts .utils import flt
 
 from prodman.accounts.report.financial_statements import (
 	compute_growth_view_data,
@@ -59,7 +59,7 @@ def execute(filters=None):
 
 	columns = get_columns(filters.periodicity, period_list, filters.accumulated_values, filters.company)
 
-	currency = filters.presentation_currency or frappe.get_cached_value(
+	currency = filters.presentation_currency or nts .get_cached_value(
 		"Company", filters.company, "default_currency"
 	)
 	chart = get_chart_data(filters, columns, income, expense, net_profit_loss, currency)
@@ -136,7 +136,7 @@ def get_net_profit_loss(income, expense, period_list, company, currency=None, co
 		"account_name": "'" + _("Profit for the year") + "'",
 		"account": "'" + _("Profit for the year") + "'",
 		"warn_if_negative": True,
-		"currency": currency or frappe.get_cached_value("Company", company, "default_currency"),
+		"currency": currency or nts .get_cached_value("Company", company, "default_currency"),
 	}
 
 	has_value = False

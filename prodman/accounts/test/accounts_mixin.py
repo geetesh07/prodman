@@ -1,13 +1,13 @@
-import frappe
-from frappe import qb
+import nts 
+from nts  import qb
 
 from prodman.stock.doctype.item.test_item import create_item
 
 
 class AccountsTestMixin:
 	def create_customer(self, customer_name="_Test Customer", currency=None):
-		if not frappe.db.exists("Customer", customer_name):
-			customer = frappe.new_doc("Customer")
+		if not nts .db.exists("Customer", customer_name):
+			customer = nts .new_doc("Customer")
 			customer.customer_name = customer_name
 			customer.type = "Individual"
 
@@ -19,8 +19,8 @@ class AccountsTestMixin:
 			self.customer = customer_name
 
 	def create_supplier(self, supplier_name="_Test Supplier", currency=None):
-		if not frappe.db.exists("Supplier", supplier_name):
-			supplier = frappe.new_doc("Supplier")
+		if not nts .db.exists("Supplier", supplier_name):
+			supplier = nts .new_doc("Supplier")
 			supplier.supplier_name = supplier_name
 			supplier.supplier_type = "Individual"
 			supplier.supplier_group = "Local"
@@ -38,10 +38,10 @@ class AccountsTestMixin:
 
 	def create_company(self, company_name="_Test Company", abbr="_TC"):
 		self.company_abbr = abbr
-		if frappe.db.exists("Company", company_name):
-			company = frappe.get_doc("Company", company_name)
+		if nts .db.exists("Company", company_name):
+			company = nts .get_doc("Company", company_name)
 		else:
-			company = frappe.get_doc(
+			company = nts .get_doc(
 				{
 					"doctype": "Company",
 					"company_name": company_name,
@@ -66,21 +66,21 @@ class AccountsTestMixin:
 
 		# Deferred revenue, expense and bank accounts
 		other_accounts = [
-			frappe._dict(
+			nts ._dict(
 				{
 					"attribute_name": "deferred_revenue",
 					"account_name": "Deferred Revenue",
 					"parent_account": "Current Liabilities - " + abbr,
 				}
 			),
-			frappe._dict(
+			nts ._dict(
 				{
 					"attribute_name": "deferred_expense",
 					"account_name": "Deferred Expense",
 					"parent_account": "Current Assets - " + abbr,
 				}
 			),
-			frappe._dict(
+			nts ._dict(
 				{
 					"attribute_name": "bank",
 					"account_name": "HDFC",
@@ -88,7 +88,7 @@ class AccountsTestMixin:
 					"account_type": "Bank",
 				}
 			),
-			frappe._dict(
+			nts ._dict(
 				{
 					"attribute_name": "advance_received",
 					"account_name": "Advance Received",
@@ -96,7 +96,7 @@ class AccountsTestMixin:
 					"account_type": "Receivable",
 				}
 			),
-			frappe._dict(
+			nts ._dict(
 				{
 					"attribute_name": "advance_paid",
 					"account_name": "Advance Paid",
@@ -107,10 +107,10 @@ class AccountsTestMixin:
 		]
 		for acc in other_accounts:
 			acc_name = acc.account_name + " - " + abbr
-			if frappe.db.exists("Account", acc_name):
+			if nts .db.exists("Account", acc_name):
 				setattr(self, acc.attribute_name, acc_name)
 			else:
-				new_acc = frappe.get_doc(
+				new_acc = nts .get_doc(
 					{
 						"doctype": "Account",
 						"account_name": acc.account_name,
@@ -125,30 +125,30 @@ class AccountsTestMixin:
 		self.identify_default_warehouses()
 
 	def enable_advance_as_liability(self):
-		company = frappe.get_doc("Company", self.company)
+		company = nts .get_doc("Company", self.company)
 		company.book_advance_payments_in_separate_party_account = True
 		company.default_advance_received_account = self.advance_received
 		company.default_advance_paid_account = self.advance_paid
 		company.save()
 
 	def disable_advance_as_liability(self):
-		company = frappe.get_doc("Company", self.company)
+		company = nts .get_doc("Company", self.company)
 		company.book_advance_payments_in_separate_party_account = False
 		company.default_advance_paid_account = company.default_advance_received_account = None
 		company.save()
 
 	def identify_default_warehouses(self):
-		for w in frappe.db.get_all(
+		for w in nts .db.get_all(
 			"Warehouse", filters={"company": self.company}, fields=["name", "warehouse_name"]
 		):
 			setattr(self, "warehouse_" + w.warehouse_name.lower().strip().replace(" ", "_"), w.name)
 
 	def create_usd_receivable_account(self):
 		account_name = "Debtors USD"
-		if not frappe.db.get_value(
+		if not nts .db.get_value(
 			"Account", filters={"account_name": account_name, "company": self.company}
 		):
-			acc = frappe.new_doc("Account")
+			acc = nts .new_doc("Account")
 			acc.account_name = account_name
 			acc.parent_account = "Accounts Receivable - " + self.company_abbr
 			acc.company = self.company
@@ -156,21 +156,21 @@ class AccountsTestMixin:
 			acc.account_type = "Receivable"
 			acc.insert()
 		else:
-			name = frappe.db.get_value(
+			name = nts .db.get_value(
 				"Account",
 				filters={"account_name": account_name, "company": self.company},
 				fieldname="name",
 				pluck=True,
 			)
-			acc = frappe.get_doc("Account", name)
+			acc = nts .get_doc("Account", name)
 		self.debtors_usd = acc.name
 
 	def create_usd_payable_account(self):
 		account_name = "Creditors USD"
-		if not frappe.db.get_value(
+		if not nts .db.get_value(
 			"Account", filters={"account_name": account_name, "company": self.company}
 		):
-			acc = frappe.new_doc("Account")
+			acc = nts .new_doc("Account")
 			acc.account_name = account_name
 			acc.parent_account = "Accounts Payable - " + self.company_abbr
 			acc.company = self.company
@@ -178,13 +178,13 @@ class AccountsTestMixin:
 			acc.account_type = "Payable"
 			acc.insert()
 		else:
-			name = frappe.db.get_value(
+			name = nts .db.get_value(
 				"Account",
 				filters={"account_name": account_name, "company": self.company},
 				fieldname="name",
 				pluck=True,
 			)
-			acc = frappe.get_doc("Account", name)
+			acc = nts .get_doc("Account", name)
 		self.creditors_usd = acc.name
 
 	def clear_old_entries(self):

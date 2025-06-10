@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _, session
-from frappe.utils import comma_or, cstr, flt, has_common
+import nts
+from nts import _, session
+from nts.utils import comma_or, cstr, flt, has_common
 
 from prodman.utilities.transaction_base import TransactionBase
 
@@ -16,7 +16,7 @@ class AuthorizationControl(TransactionBase):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 	# end: auto-generated types
 
@@ -28,7 +28,7 @@ class AuthorizationControl(TransactionBase):
 				amt_list.append(flt(x[0]))
 			max_amount = max(amt_list)
 
-			app_dtl = frappe.db.sql(
+			app_dtl = nts.db.sql(
 				"""select approving_user, approving_role from `tabAuthorization Rule`
 				where transaction = {} and (value = {} or value > {})
 				and docstatus != 2 and based_on = {} and company = {} {}""".format(
@@ -38,7 +38,7 @@ class AuthorizationControl(TransactionBase):
 			)
 
 			if not app_dtl:
-				app_dtl = frappe.db.sql(
+				app_dtl = nts.db.sql(
 					"""select approving_user, approving_role from `tabAuthorization Rule`
 					where transaction = {} and (value = {} or value > {}) and docstatus != 2
 					and based_on = {} and ifnull(company,'') = '' {}""".format(
@@ -53,18 +53,18 @@ class AuthorizationControl(TransactionBase):
 				if d[1]:
 					appr_roles.append(d[1])
 
-			if not has_common(appr_roles, frappe.get_roles()) and not has_common(
+			if not has_common(appr_roles, nts.get_roles()) and not has_common(
 				appr_users, [session["user"]]
 			):
-				frappe.msgprint(_("Not authroized since {0} exceeds limits").format(_(based_on)))
-				frappe.throw(_("Can be approved by {0}").format(comma_or(appr_roles + appr_users)))
+				nts.msgprint(_("Not authroized since {0} exceeds limits").format(_(based_on)))
+				nts.throw(_("Can be approved by {0}").format(comma_or(appr_roles + appr_users)))
 
 	def validate_auth_rule(self, doctype_name, total, based_on, cond, company, master_name=""):
 		chk = 1
 		add_cond1, add_cond2 = "", ""
 		if based_on in ["Itemwise Discount", "Item Group wise Discount"]:
-			add_cond1 += " and master_name = " + frappe.db.escape(cstr(master_name))
-			itemwise_exists = frappe.db.sql(
+			add_cond1 += " and master_name = " + nts.db.escape(cstr(master_name))
+			itemwise_exists = nts.db.sql(
 				"""select value from `tabAuthorization Rule`
 				where transaction = {} and value <= {}
 				and based_on = {} and company = {} and docstatus != 2 {} {}""".format(
@@ -74,7 +74,7 @@ class AuthorizationControl(TransactionBase):
 			)
 
 			if not itemwise_exists:
-				itemwise_exists = frappe.db.sql(
+				itemwise_exists = nts.db.sql(
 					"""select value from `tabAuthorization Rule`
 					where transaction = {} and value <= {} and based_on = {}
 					and ifnull(company,'') = ''	and docstatus != 2 {} {}""".format(
@@ -92,7 +92,7 @@ class AuthorizationControl(TransactionBase):
 			if based_on in ["Itemwise Discount", "Item Group wise Discount"]:
 				add_cond2 += " and ifnull(master_name,'') = ''"
 
-			appr = frappe.db.sql(
+			appr = nts.db.sql(
 				"""select value from `tabAuthorization Rule`
 				where transaction = {} and value <= {} and based_on = {}
 				and company = {} and docstatus != 2 {} {}""".format("%s", "%s", "%s", "%s", cond, add_cond2),
@@ -100,7 +100,7 @@ class AuthorizationControl(TransactionBase):
 			)
 
 			if not appr:
-				appr = frappe.db.sql(
+				appr = nts.db.sql(
 					"""select value from `tabAuthorization Rule`
 					where transaction = {} and value <= {} and based_on = {}
 					and ifnull(company,'') = '' and docstatus != 2 {} {}""".format(
@@ -118,9 +118,9 @@ class AuthorizationControl(TransactionBase):
 		auth_value = av_dis
 
 		if val == 1:
-			add_cond += " and system_user = {}".format(frappe.db.escape(session["user"]))
+			add_cond += " and system_user = {}".format(nts.db.escape(session["user"]))
 		elif val == 2:
-			add_cond += " and system_role IN %s" % ("('" + "','".join(frappe.get_roles()) + "')")
+			add_cond += " and system_role IN %s" % ("('" + "','".join(nts.get_roles()) + "')")
 		else:
 			add_cond += " and ifnull(system_user,'') = '' and ifnull(system_role,'') = ''"
 
@@ -132,7 +132,7 @@ class AuthorizationControl(TransactionBase):
 					customer = doc_obj.customer
 				else:
 					customer = doc_obj.customer_name
-				add_cond = f" and master_name = {frappe.db.escape(customer)}"
+				add_cond = f" and master_name = {nts.db.escape(customer)}"
 		if based_on == "Itemwise Discount":
 			if doc_obj:
 				for t in doc_obj.get("items"):
@@ -149,7 +149,7 @@ class AuthorizationControl(TransactionBase):
 			self.validate_auth_rule(doctype_name, auth_value, based_on, add_cond, company)
 
 	def validate_approving_authority(self, doctype_name, company, total, doc_obj=""):
-		if not frappe.db.count("Authorization Rule"):
+		if not nts.db.count("Authorization Rule"):
 			return
 
 		av_dis = 0
@@ -176,7 +176,7 @@ class AuthorizationControl(TransactionBase):
 		# Check for authorization set for individual user
 		based_on = [
 			x[0]
-			for x in frappe.db.sql(
+			for x in nts.db.sql(
 				"""select distinct based_on from `tabAuthorization Rule`
 			where transaction = %s and system_user = %s
 			and (company = %s or ifnull(company,'')='') and docstatus != 2""",
@@ -195,7 +195,7 @@ class AuthorizationControl(TransactionBase):
 		# Check for authorization set on particular roles
 		based_on = [
 			x[0]
-			for x in frappe.db.sql(
+			for x in nts.db.sql(
 				"""select based_on
 			from `tabAuthorization Rule`
 			where transaction = {} and system_role IN ({}) and based_on IN ({})
@@ -203,7 +203,7 @@ class AuthorizationControl(TransactionBase):
 			and docstatus != 2
 		""".format(
 					"%s",
-					"'" + "','".join(frappe.get_roles()) + "'",
+					"'" + "','".join(nts.get_roles()) + "'",
 					"'" + "','".join(final_based_on) + "'",
 					"%s",
 				),
@@ -225,7 +225,7 @@ class AuthorizationControl(TransactionBase):
 
 	def get_value_based_rule(self, doctype_name, employee, total_claimed_amount, company):
 		val_lst = []
-		val = frappe.db.sql(
+		val = nts.db.sql(
 			"""select value from `tabAuthorization Rule`
 			where transaction=%s and (to_emp=%s or
 				to_designation IN (select designation from `tabEmployee` where name=%s))
@@ -234,7 +234,7 @@ class AuthorizationControl(TransactionBase):
 		)
 
 		if not val:
-			val = frappe.db.sql(
+			val = nts.db.sql(
 				"""select value from `tabAuthorization Rule`
 				where transaction=%s and (to_emp=%s or
 					to_designation IN (select designation from `tabEmployee` where name=%s))
@@ -248,7 +248,7 @@ class AuthorizationControl(TransactionBase):
 			val_lst.append(0)
 
 		max_val = max(val_lst)
-		rule = frappe.db.sql(
+		rule = nts.db.sql(
 			"""select name, to_emp, to_designation, approving_role, approving_user
 			from `tabAuthorization Rule`
 			where transaction=%s and company = %s
@@ -259,7 +259,7 @@ class AuthorizationControl(TransactionBase):
 		)
 
 		if not rule:
-			rule = frappe.db.sql(
+			rule = nts.db.sql(
 				"""select name, to_emp, to_designation, approving_role, approving_user
 				from `tabAuthorization Rule`
 				where transaction=%s and ifnull(company,'') = ''

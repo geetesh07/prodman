@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import calendar
 
-import frappe
-from frappe import _
-from frappe.utils import cint, cstr, getdate
+import nts
+from nts import _
+from nts.utils import cint, cstr, getdate
 
 
 def execute(filters=None):
@@ -112,12 +112,12 @@ def get_data_by_territory(filters, common_columns):
 	customers_in = get_customer_stats(filters, tree_view=True)
 
 	territory_dict = {}
-	for t in frappe.db.sql(
+	for t in nts.db.sql(
 		"""SELECT name, lft, parent_territory, is_group FROM `tabTerritory` ORDER BY lft""", as_dict=1
 	):
 		territory_dict.update({t.name: {"parent": t.parent_territory, "is_group": t.is_group}})
 
-	depth_map = frappe._dict()
+	depth_map = nts._dict()
 	for name, info in territory_dict.items():
 		default = depth_map.get(info["parent"]) + 1 if info["parent"] else 0
 		depth_map.setdefault(name, default)
@@ -162,7 +162,7 @@ def get_customer_stats(filters, tree_view=False):
 	customers = []
 	customers_in = {}
 
-	for si in frappe.db.sql(
+	for si in nts.db.sql(
 		f"""select territory, posting_date, customer, base_grand_total from `tabSales Invoice`
 		where docstatus=1 and posting_date <= %(to_date)s
 		{company_condition} order by posting_date""",

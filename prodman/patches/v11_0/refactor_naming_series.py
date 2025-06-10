@@ -1,9 +1,9 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+import nts
+from nts.custom.doctype.property_setter.property_setter import make_property_setter
 
 doctype_series_map = {
 	"Additional Salary": "HR-ADS-.YY.-.MM.-",
@@ -65,7 +65,7 @@ doctype_series_map = {
 
 
 def execute():
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		update `tabProperty Setter`
 		set name=concat(doc_type, '-', field_name, '-', property)
@@ -79,12 +79,12 @@ def execute():
 
 def set_series(doctype, options, default):
 	def _make_property_setter(property_name, value):
-		property_setter = frappe.db.exists(
+		property_setter = nts.db.exists(
 			"Property Setter",
 			{"doc_type": doctype, "field_name": "naming_series", "property": property_name},
 		)
 		if property_setter:
-			frappe.db.set_value("Property Setter", property_setter, "value", value)
+			nts.db.set_value("Property Setter", property_setter, "value", value)
 		else:
 			make_property_setter(doctype, "naming_series", "options", value, "Text")
 
@@ -97,20 +97,20 @@ def get_series():
 	series_to_set = {}
 
 	for doctype in doctype_series_map:
-		if not frappe.db.exists("DocType", doctype):
+		if not nts.db.exists("DocType", doctype):
 			continue
-		if not frappe.db.a_row_exists(doctype):
+		if not nts.db.a_row_exists(doctype):
 			continue
-		if not frappe.db.has_column(doctype, "naming_series"):
+		if not nts.db.has_column(doctype, "naming_series"):
 			continue
-		if not frappe.get_meta(doctype).has_field("naming_series"):
+		if not nts.get_meta(doctype).has_field("naming_series"):
 			continue
 		series_to_preserve = list(filter(None, get_series_to_preserve(doctype)))
 		default_series = get_default_series(doctype)
 
 		if not series_to_preserve:
 			continue
-		existing_series = (frappe.get_meta(doctype).get_field("naming_series").options or "").split("\n")
+		existing_series = (nts.get_meta(doctype).get_field("naming_series").options or "").split("\n")
 		existing_series = list(filter(None, [d.strip() for d in existing_series]))
 
 		# set naming series property setter
@@ -123,7 +123,7 @@ def get_series():
 
 
 def get_series_to_preserve(doctype):
-	series_to_preserve = frappe.db.sql_list(
+	series_to_preserve = nts.db.sql_list(
 		f"""select distinct naming_series from `tab{doctype}` where ifnull(naming_series, '') != ''"""
 	)
 	series_to_preserve.sort()
@@ -131,6 +131,6 @@ def get_series_to_preserve(doctype):
 
 
 def get_default_series(doctype):
-	field = frappe.get_meta(doctype).get_field("naming_series")
+	field = nts.get_meta(doctype).get_field("naming_series")
 	default_series = field.get("default", "") if field else ""
 	return default_series

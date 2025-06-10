@@ -1,13 +1,13 @@
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import today
+import nts 
+from nts .tests.utils import nts TestCase
+from nts .utils import today
 
 from prodman.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
 from prodman.accounts.report.supplier_ledger_summary.supplier_ledger_summary import execute
 from prodman.accounts.test.accounts_mixin import AccountsTestMixin
 
 
-class TestSupplierLedgerSummary(FrappeTestCase, AccountsTestMixin):
+class TestSupplierLedgerSummary(nts TestCase, AccountsTestMixin):
 	def setUp(self):
 		self.create_company()
 		self.create_supplier()
@@ -15,17 +15,17 @@ class TestSupplierLedgerSummary(FrappeTestCase, AccountsTestMixin):
 		self.clear_old_entries()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def create_purchase_invoice(self, do_not_submit=False):
-		frappe.set_user("Administrator")
+		nts .set_user("Administrator")
 		pi = make_purchase_invoice(
 			item=self.item,
 			company=self.company,
 			supplier=self.supplier,
 			is_return=False,
 			update_stock=False,
-			posting_date=frappe.utils.datetime.date(2021, 5, 1),
+			posting_date=nts .utils.datetime.date(2021, 5, 1),
 			do_not_save=1,
 			rate=300,
 			price_list_rate=300,
@@ -63,7 +63,7 @@ class TestSupplierLedgerSummary(FrappeTestCase, AccountsTestMixin):
 	def test_supplier_ledger_summary_with_filters(self):
 		self.create_purchase_invoice()
 
-		supplier_group = frappe.db.get_value("Supplier", self.supplier, "supplier_group")
+		supplier_group = nts .db.get_value("Supplier", self.supplier, "supplier_group")
 
 		filters = {
 			"company": self.company,

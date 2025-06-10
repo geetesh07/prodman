@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Address And Contacts"] = {
+nts.query_reports["Address And Contacts"] = {
 	filters: [
 		{
 			reqd: 1,
@@ -22,9 +22,9 @@ frappe.query_reports["Address And Contacts"] = {
 			label: __("Party Name"),
 			fieldtype: "Dynamic Link",
 			get_options: function () {
-				let party_type = frappe.query_report.get_filter_value("party_type");
+				let party_type = nts.query_report.get_filter_value("party_type");
 				if (!party_type) {
-					frappe.throw(__("Please select Party Type first"));
+					nts.throw(__("Please select Party Type first"));
 				}
 				return party_type;
 			},

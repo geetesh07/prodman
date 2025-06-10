@@ -1,8 +1,8 @@
 import datetime
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days, add_months, nowdate
+import nts
+from nts.tests.utils import ntsTestCase
+from nts.utils import add_days, add_months, nowdate
 
 from prodman.selling.doctype.sales_order.sales_order import make_sales_invoice
 from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
@@ -14,24 +14,24 @@ from prodman.stock.doctype.item.test_item import create_item
 test_dependencies = ["Sales Order", "Item", "Sales Invoice", "Payment Terms Template", "Customer"]
 
 
-class TestPaymentTermsStatusForSalesOrder(FrappeTestCase):
+class TestPaymentTermsStatusForSalesOrder(ntsTestCase):
 	def setUp(self):
 		self.cleanup_old_entries()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def cleanup_old_entries(self):
-		frappe.db.delete("Sales Invoice", filters={"company": "_Test Company"})
-		frappe.db.delete("Sales Order", filters={"company": "_Test Company"})
+		nts.db.delete("Sales Invoice", filters={"company": "_Test Company"})
+		nts.db.delete("Sales Order", filters={"company": "_Test Company"})
 
 	def create_payment_terms_template(self):
 		# create template for 50-50 payments
 		template = None
-		if frappe.db.exists("Payment Terms Template", "_Test 50-50"):
-			template = frappe.get_doc("Payment Terms Template", "_Test 50-50")
+		if nts.db.exists("Payment Terms Template", "_Test 50-50"):
+			template = nts.get_doc("Payment Terms Template", "_Test 50-50")
 		else:
-			template = frappe.get_doc(
+			template = nts.get_doc(
 				{
 					"doctype": "Payment Terms Template",
 					"template_name": "_Test 50-50",
@@ -84,7 +84,7 @@ class TestPaymentTermsStatusForSalesOrder(FrappeTestCase):
 		sinv.insert()
 		sinv.submit()
 		columns, data, message, chart = execute(
-			frappe._dict(
+			nts._dict(
 				{
 					"company": "_Test Company",
 					"period_start_date": "2021-06-01",
@@ -128,17 +128,17 @@ class TestPaymentTermsStatusForSalesOrder(FrappeTestCase):
 
 	def create_exchange_rate(self, date):
 		# make an entry in Currency Exchange list. serves as a static exchange rate
-		if frappe.db.exists(
+		if nts.db.exists(
 			{"doctype": "Currency Exchange", "date": date, "from_currency": "USD", "to_currency": "INR"}
 		):
 			return
 		else:
-			doc = frappe.get_doc(
+			doc = nts.get_doc(
 				{
 					"doctype": "Currency Exchange",
 					"date": date,
 					"from_currency": "USD",
-					"to_currency": frappe.get_cached_value("Company", "_Test Company", "default_currency"),
+					"to_currency": nts.get_cached_value("Company", "_Test Company", "default_currency"),
 					"exchange_rate": 70,
 					"for_buying": True,
 					"for_selling": True,
@@ -176,7 +176,7 @@ class TestPaymentTermsStatusForSalesOrder(FrappeTestCase):
 		sinv.insert()
 		sinv.submit()
 		columns, data, message, chart = execute(
-			frappe._dict(
+			nts._dict(
 				{
 					"company": "_Test Company",
 					"period_start_date": "2021-06-01",
@@ -197,7 +197,7 @@ class TestPaymentTermsStatusForSalesOrder(FrappeTestCase):
 				"description": "_Test 50-50",
 				"due_date": datetime.date(2021, 6, 30),
 				"invoice_portion": 50.0,
-				"currency": frappe.get_cached_value("Company", "_Test Company", "default_currency"),
+				"currency": nts.get_cached_value("Company", "_Test Company", "default_currency"),
 				"base_payment_amount": 3500000.0,
 				"paid_amount": 3500000.0,
 				"invoices": "," + sinv.name,
@@ -211,7 +211,7 @@ class TestPaymentTermsStatusForSalesOrder(FrappeTestCase):
 				"description": "_Test 50-50",
 				"due_date": datetime.date(2021, 7, 15),
 				"invoice_portion": 50.0,
-				"currency": frappe.get_cached_value("Company", "_Test Company", "default_currency"),
+				"currency": nts.get_cached_value("Company", "_Test Company", "default_currency"),
 				"base_payment_amount": 3500000.0,
 				"paid_amount": 700000.0,
 				"invoices": "," + sinv.name,
@@ -345,7 +345,7 @@ class TestPaymentTermsStatusForSalesOrder(FrappeTestCase):
 
 		for idx, g in enumerate(group_filters, 0):
 			# build filter
-			filters = frappe._dict({}).update(base_filters).update(g)
+			filters = nts._dict({}).update(base_filters).update(g)
 			with self.subTest(filters=filters):
 				columns, data, message, chart = execute(filters)
 				self.assertEqual(data, expected_values_for_group_filters[idx])
@@ -379,7 +379,7 @@ class TestPaymentTermsStatusForSalesOrder(FrappeTestCase):
 
 		first_due_date = add_days(add_months(transaction_date, -1), 15)
 		columns, data, message, chart = execute(
-			frappe._dict(
+			nts._dict(
 				{
 					"company": "_Test Company",
 					"item": item.item_code,

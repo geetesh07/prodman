@@ -1,6 +1,6 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Asset Maintenance Team", {
+nts .ui.form.on("Asset Maintenance Team", {
 	refresh: function () {},
 });

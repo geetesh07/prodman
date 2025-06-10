@@ -1,12 +1,12 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2019, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.query_builder import Criterion
-from frappe.query_builder.functions import IfNull
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .query_builder import Criterion
+from nts .query_builder.functions import IfNull
 
 pricing_rule_fields = [
 	"apply_on",
@@ -70,7 +70,7 @@ product_discount_fields = [
 ]
 
 
-class TransactionExists(frappe.ValidationError):
+class TransactionExists(nts .ValidationError):
 	pass
 
 
@@ -81,7 +81,7 @@ class PromotionalScheme(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.campaign_item.campaign_item import CampaignItem
 		from prodman.accounts.doctype.customer_group_item.customer_group_item import CustomerGroupItem
@@ -144,9 +144,9 @@ class PromotionalScheme(Document):
 
 	def validate(self):
 		if not self.selling and not self.buying:
-			frappe.throw(_("Either 'Selling' or 'Buying' must be selected"), title=_("Mandatory"))
+			nts .throw(_("Either 'Selling' or 'Buying' must be selected"), title=_("Mandatory"))
 		if not (self.price_discount_slabs or self.product_discount_slabs):
-			frappe.throw(_("Price or product discount slabs are required"))
+			nts .throw(_("Price or product discount slabs are required"))
 
 		self.validate_applicable_for()
 		self.validate_pricing_rules()
@@ -154,11 +154,11 @@ class PromotionalScheme(Document):
 
 	def validate_applicable_for(self):
 		if self.applicable_for:
-			applicable_for = frappe.scrub(self.applicable_for)
+			applicable_for = nts .scrub(self.applicable_for)
 
 			if not self.get(applicable_for):
-				msg = f"The field {frappe.bold(self.applicable_for)} is required"
-				frappe.throw(_(msg))
+				msg = f"The field {nts .bold(self.applicable_for)} is required"
+				nts .throw(_(msg))
 
 	def validate_pricing_rules(self):
 		if self.is_new():
@@ -169,7 +169,7 @@ class PromotionalScheme(Document):
 		if not invalid_pricing_rule:
 			return
 
-		if frappe.db.exists(
+		if nts .db.exists(
 			"Pricing Rule Detail",
 			{
 				"pricing_rule": ["in", invalid_pricing_rule],
@@ -179,9 +179,9 @@ class PromotionalScheme(Document):
 			raise_for_transaction_exists(self.name)
 
 		for doc in invalid_pricing_rule:
-			frappe.delete_doc("Pricing Rule", doc)
+			nts .delete_doc("Pricing Rule", doc)
 
-		frappe.msgprint(
+		nts .msgprint(
 			_("The following invalid Pricing Rules are deleted:")
 			+ "<br><br><ul><li>"
 			+ "</li><li>".join(invalid_pricing_rule)
@@ -189,12 +189,12 @@ class PromotionalScheme(Document):
 		)
 
 	def get_invalid_pricing_rules(self):
-		pr = frappe.qb.DocType("Pricing Rule")
+		pr = nts .qb.DocType("Pricing Rule")
 		conditions = []
 		conditions.append(pr.promotional_scheme == self.name)
 
 		if self.applicable_for:
-			applicable_for = frappe.scrub(self.applicable_for)
+			applicable_for = nts .scrub(self.applicable_for)
 			applicable_for_list = [d.get(applicable_for) for d in self.get(applicable_for)]
 
 			conditions.append(
@@ -207,12 +207,12 @@ class PromotionalScheme(Document):
 		else:
 			conditions.append(IfNull(pr.applicable_for, "") != "")
 
-		return frappe.qb.from_(pr).select(pr.name).where(Criterion.all(conditions)).run(pluck=True)
+		return nts .qb.from_(pr).select(pr.name).where(Criterion.all(conditions)).run(pluck=True)
 
 	def on_update(self):
 		self.validate()
 		pricing_rules = (
-			frappe.get_all(
+			nts .get_all(
 				"Pricing Rule",
 				fields=["promotional_scheme_id", "name", "creation"],
 				filters={"promotional_scheme": self.name, "applicable_for": self.applicable_for},
@@ -227,7 +227,7 @@ class PromotionalScheme(Document):
 			if self.product_discount_slabs:
 				for slab in self.product_discount_slabs:
 					if slab.is_recursive:
-						frappe.throw(
+						nts .throw(
 							_("Recursive Discounts with Mixed condition is not supported by the system")
 						)
 
@@ -248,22 +248,22 @@ class PromotionalScheme(Document):
 				doc.insert()
 			else:
 				doc.save()
-				frappe.msgprint(_("Pricing Rule {0} is updated").format(doc.name))
+				nts .msgprint(_("Pricing Rule {0} is updated").format(doc.name))
 
 		if count:
-			frappe.msgprint(_("New {0} pricing rules are created").format(count))
+			nts .msgprint(_("New {0} pricing rules are created").format(count))
 
 	def on_trash(self):
-		for rule in frappe.get_all("Pricing Rule", {"promotional_scheme": self.name}):
-			frappe.delete_doc("Pricing Rule", rule.name)
+		for rule in nts .get_all("Pricing Rule", {"promotional_scheme": self.name}):
+			nts .delete_doc("Pricing Rule", rule.name)
 
 
 def raise_for_transaction_exists(name):
-	msg = f"""You can't change the {frappe.bold(_('Applicable For'))}
-		because transactions are present against the Promotional Scheme {frappe.bold(name)}. """
+	msg = f"""You can't change the {nts .bold(_('Applicable For'))}
+		because transactions are present against the Promotional Scheme {nts .bold(name)}. """
 	msg += "Kindly disable this Promotional Scheme and create new for new Applicable For."
 
-	frappe.throw(_(msg), TransactionExists)
+	nts .throw(_(msg), TransactionExists)
 
 
 def get_pricing_rules(doc, rules=None):
@@ -285,7 +285,7 @@ def _get_pricing_rules(doc, child_doc, discount_fields, rules=None):
 		rules = {}
 	new_doc = []
 	args = get_args_for_pricing_rule(doc)
-	applicable_for = frappe.scrub(doc.get("applicable_for"))
+	applicable_for = nts .scrub(doc.get("applicable_for"))
 
 	for _idx, d in enumerate(doc.get(child_doc)):
 		if d.name in rules:
@@ -339,7 +339,7 @@ def get_pricing_rule_docname(
 		fields.append(applicable_for)
 		filters[applicable_for] = applicable_for_value
 
-	docname = frappe.get_all("Pricing Rule", fields=fields, filters=filters)
+	docname = nts .get_all("Pricing Rule", fields=fields, filters=filters)
 	return docname[0].name if docname else ""
 
 
@@ -347,9 +347,9 @@ def prepare_pricing_rule(
 	args, doc, child_doc, discount_fields, d, docname=None, applicable_for=None, value=None
 ):
 	if docname:
-		pr = frappe.get_doc("Pricing Rule", docname)
+		pr = nts .get_doc("Pricing Rule", docname)
 	else:
-		pr = frappe.new_doc("Pricing Rule")
+		pr = nts .new_doc("Pricing Rule")
 
 	pr.title = doc.name
 	temp_args = args.copy()
@@ -378,7 +378,7 @@ def set_args(args, pr, doc, child_doc, discount_fields, child_doc_fields):
 		if doc.get(field):
 			pr.set(field, [])
 
-		apply_on = frappe.scrub(doc.get("apply_on"))
+		apply_on = nts .scrub(doc.get("apply_on"))
 		for d in doc.get(field):
 			pr.append(field, {apply_on: d.get(apply_on), "uom": d.uom})
 
@@ -387,7 +387,7 @@ def set_args(args, pr, doc, child_doc, discount_fields, child_doc_fields):
 
 def get_args_for_pricing_rule(doc):
 	args = {"promotional_scheme": doc.name}
-	applicable_for = frappe.scrub(doc.get("applicable_for"))
+	applicable_for = nts .scrub(doc.get("applicable_for"))
 
 	for d in pricing_rule_fields:
 		if d == applicable_for:

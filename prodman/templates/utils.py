@@ -1,21 +1,21 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.utils import escape_html
+import nts
+from nts.utils import escape_html
 
 
-@frappe.whitelist(allow_guest=True)
+@nts.whitelist(allow_guest=True)
 def send_message(sender, message, subject="Website Query"):
-	from frappe.www.contact import send_message as website_send_message
+	from nts.www.contact import send_message as website_send_message
 
 	website_send_message(sender, message, subject)
 
 	message = escape_html(message)
 
 	lead = customer = None
-	customer = frappe.db.sql(
+	customer = nts.db.sql(
 		"""select distinct dl.link_name from `tabDynamic Link` dl
 		left join `tabContact` c on dl.parent=c.name where dl.link_doctype='Customer'
 		and c.email_id = %s""",
@@ -23,13 +23,13 @@ def send_message(sender, message, subject="Website Query"):
 	)
 
 	if not customer:
-		lead = frappe.db.get_value("Lead", dict(email_id=sender))
+		lead = nts.db.get_value("Lead", dict(email_id=sender))
 		if not lead:
-			new_lead = frappe.get_doc(
+			new_lead = nts.get_doc(
 				dict(doctype="Lead", email_id=sender, lead_name=sender.split("@")[0].title())
 			).insert(ignore_permissions=True)
 
-	opportunity = frappe.get_doc(
+	opportunity = nts.get_doc(
 		dict(
 			doctype="Opportunity",
 			opportunity_from="Customer" if customer else "Lead",
@@ -48,7 +48,7 @@ def send_message(sender, message, subject="Website Query"):
 
 	opportunity.insert(ignore_permissions=True)
 
-	comm = frappe.get_doc(
+	comm = nts.get_doc(
 		{
 			"doctype": "Communication",
 			"subject": subject,

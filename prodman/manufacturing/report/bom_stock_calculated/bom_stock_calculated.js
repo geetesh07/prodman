@@ -1,7 +1,7 @@
 // Copyright (c) 2016, Epoch Consulting and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["BOM Stock Calculated"] = {
+nts.query_reports["BOM Stock Calculated"] = {
 	filters: [
 		{
 			fieldname: "bom",

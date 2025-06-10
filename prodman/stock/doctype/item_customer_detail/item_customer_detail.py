@@ -1,8 +1,8 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-from frappe.model.document import Document
+from nts.model.document import Document
 
 
 class ItemCustomerDetail(Document):
@@ -12,7 +12,7 @@ class ItemCustomerDetail(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		customer_group: DF.Link | None
 		customer_name: DF.Link | None

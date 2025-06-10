@@ -1,12 +1,12 @@
-# Copyright (c) 2020, Frappe and Contributors
+# Copyright (c) 2020, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	warehouse_perm = frappe.get_all(
+	warehouse_perm = nts.get_all(
 		"User Permission",
 		fields=["count(*) as p_count", "is_default", "user"],
 		filters={"allow": "Warehouse"},
@@ -20,7 +20,7 @@ def execute():
 	for perm_data in warehouse_perm:
 		if perm_data.p_count == 1 or (
 			perm_data.p_count > 1
-			and frappe.get_all(
+			and nts.get_all(
 				"User Permission",
 				filters={"user": perm_data.user, "allow": "warehouse", "is_default": 1},
 				limit=1,
@@ -33,14 +33,14 @@ def execute():
 		return
 
 	for doctype in ["Sales Invoice", "Delivery Note"]:
-		if not frappe.get_meta(doctype + " Item").get_field("target_warehouse").hidden:
+		if not nts.get_meta(doctype + " Item").get_field("target_warehouse").hidden:
 			continue
 
 		cond = ""
 		if doctype == "Sales Invoice":
 			cond = " AND parent_doc.update_stock = 1"
 
-		data = frappe.db.sql(
+		data = nts.db.sql(
 			f""" SELECT parent_doc.name as name, child_doc.name as child_name
 			FROM
 				`tab{doctype}` parent_doc, `tab{doctype} Item` child_doc
@@ -54,13 +54,13 @@ def execute():
 
 		if data:
 			names = [d.child_name for d in data]
-			frappe.db.sql(
+			nts.db.sql(
 				""" UPDATE `tab{} Item` set target_warehouse = null
 				WHERE name in ({}) """.format(doctype, ",".join(["%s"] * len(names))),
 				tuple(names),
 			)
 
-			frappe.db.sql(
+			nts.db.sql(
 				""" UPDATE `tabPacked Item` set target_warehouse = null
 				WHERE parenttype = '{}' and parent_detail_docname in ({})
 			""".format(doctype, ",".join(["%s"] * len(names))),
@@ -70,7 +70,7 @@ def execute():
 			parent_names = list(set([d.name for d in data]))
 
 			for d in parent_names:
-				doc = frappe.get_doc(doctype, d)
+				doc = nts.get_doc(doctype, d)
 				if doc.docstatus != 1:
 					continue
 
@@ -83,13 +83,13 @@ def execute():
 				doc.update_stock_ledger()
 				doc.make_gl_entries()
 
-	if frappe.get_meta("Sales Order Item").get_field("target_warehouse").hidden:
-		frappe.db.sql(
+	if nts.get_meta("Sales Order Item").get_field("target_warehouse").hidden:
+		nts.db.sql(
 			""" UPDATE `tabSales Order Item` set target_warehouse = null
 			WHERE creation > '2020-04-16' and docstatus < 2 """
 		)
 
-		frappe.db.sql(
+		nts.db.sql(
 			""" UPDATE `tabPacked Item` set target_warehouse = null
 			WHERE creation > '2020-04-16' and docstatus < 2 and parenttype = 'Sales Order' """
 		)

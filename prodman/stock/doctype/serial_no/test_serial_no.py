@@ -1,13 +1,13 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 # prodman - web based ERP (http://prodman.com)
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _dict
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts import _dict
+from nts.tests.utils import ntsTestCase
 
 from prodman.stock.doctype.delivery_note.test_delivery_note import create_delivery_note
 from prodman.stock.doctype.item.test_item import make_item
@@ -22,17 +22,17 @@ from prodman.stock.doctype.stock_entry.test_stock_entry import make_serialized_i
 from prodman.stock.doctype.warehouse.test_warehouse import create_warehouse
 
 test_dependencies = ["Item"]
-test_records = frappe.get_test_records("Serial No")
+test_records = nts.get_test_records("Serial No")
 
 
-class TestSerialNo(FrappeTestCase):
+class TestSerialNo(ntsTestCase):
 	def tearDown(self):
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def test_cannot_create_direct(self):
-		frappe.delete_doc_if_exists("Serial No", "_TCSER0001")
+		nts.delete_doc_if_exists("Serial No", "_TCSER0001")
 
-		sr = frappe.new_doc("Serial No")
+		sr = nts.new_doc("Serial No")
 		sr.item_code = "_Test Serialized Item"
 		sr.warehouse = "_Test Warehouse - _TC"
 		sr.serial_no = "_TCSER0001"
@@ -52,7 +52,7 @@ class TestSerialNo(FrappeTestCase):
 
 		create_delivery_note(item_code="_Test Serialized Item With Series", qty=1, serial_no=[serial_nos[0]])
 
-		serial_no = frappe.get_doc("Serial No", serial_nos[0])
+		serial_no = nts.get_doc("Serial No", serial_nos[0])
 
 		# check Serial No details after delivery
 		self.assertEqual(serial_no.warehouse, None)
@@ -80,7 +80,7 @@ class TestSerialNo(FrappeTestCase):
 		se = make_serialized_item(target_warehouse="_Test Warehouse - _TC")
 		serial_nos = get_serial_nos_from_bundle(se.get("items")[0].serial_and_batch_bundle)
 
-		sn_doc = frappe.get_doc("Serial No", serial_nos[0])
+		sn_doc = nts.get_doc("Serial No", serial_nos[0])
 
 		# check Serial No details after purchase in first company
 		self.assertEqual(sn_doc.warehouse, "_Test Warehouse - _TC")
@@ -94,7 +94,7 @@ class TestSerialNo(FrappeTestCase):
 
 		# try cancelling the first Serial No Receipt, even though it is delivered
 		# block cancellation is Serial No is out of the warehouse
-		self.assertRaises(frappe.ValidationError, se.cancel)
+		self.assertRaises(nts.ValidationError, se.cancel)
 
 		# receive serial no in second company
 		wh = create_warehouse("_Test Warehouse", company="_Test Company 1")
@@ -110,7 +110,7 @@ class TestSerialNo(FrappeTestCase):
 		self.assertEqual(sn_doc.warehouse, wh)
 		# try cancelling the delivery from the first company
 		# block cancellation as Serial No belongs to different company
-		self.assertRaises(frappe.ValidationError, dn.cancel)
+		self.assertRaises(nts.ValidationError, dn.cancel)
 
 		# deliver from second company
 		create_delivery_note(
@@ -127,9 +127,9 @@ class TestSerialNo(FrappeTestCase):
 		self.assertEqual(sn_doc.warehouse, None)
 
 		# cannot cancel any intermediate document before last Delivery Note
-		self.assertRaises(frappe.ValidationError, se.cancel)
-		self.assertRaises(frappe.ValidationError, dn.cancel)
-		self.assertRaises(frappe.ValidationError, pr.cancel)
+		self.assertRaises(nts.ValidationError, se.cancel)
+		self.assertRaises(nts.ValidationError, dn.cancel)
+		self.assertRaises(nts.ValidationError, pr.cancel)
 
 	def test_inter_company_transfer_fallback_on_cancel(self):
 		"""
@@ -140,7 +140,7 @@ class TestSerialNo(FrappeTestCase):
 		# Receipt in **first** company
 		se = make_serialized_item(target_warehouse="_Test Warehouse - _TC")
 		serial_nos = get_serial_nos_from_bundle(se.get("items")[0].serial_and_batch_bundle)
-		sn_doc = frappe.get_doc("Serial No", serial_nos[0])
+		sn_doc = nts.get_doc("Serial No", serial_nos[0])
 
 		# Delivery from first company
 		dn = create_delivery_note(
@@ -194,8 +194,8 @@ class TestSerialNo(FrappeTestCase):
 		serial_nos = ["LOWVALUATION", "HIGHVALUATION"]
 
 		for serial_no in serial_nos:
-			if not frappe.db.exists("Serial No", serial_no):
-				frappe.get_doc(
+			if not nts.db.exists("Serial No", serial_no):
+				nts.get_doc(
 					{"doctype": "Serial No", "item_code": item_code, "serial_no": serial_no}
 				).insert()
 
@@ -209,14 +209,14 @@ class TestSerialNo(FrappeTestCase):
 		out = create_delivery_note(item_code=item_code, qty=1, serial_no=[serial_nos[0]], do_not_submit=True)
 
 		bundle = out.items[0].serial_and_batch_bundle
-		doc = frappe.get_doc("Serial and Batch Bundle", bundle)
+		doc = nts.get_doc("Serial and Batch Bundle", bundle)
 		doc.entries[0].serial_no = serial_nos[1]
 		doc.save()
 
 		out.save()
 		out.submit()
 
-		value_diff = frappe.db.get_value(
+		value_diff = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_no": out.name, "voucher_type": "Delivery Note"},
 			"stock_value_difference",
@@ -321,7 +321,7 @@ class TestSerialNo(FrappeTestCase):
 		self.assertEqual(sorted(all_serials), fetched_serials)
 
 		# expiry date
-		frappe.db.set_value("Batch", batch1, "expiry_date", "1980-01-01")
+		nts.db.set_value("Batch", batch1, "expiry_date", "1980-01-01")
 		non_expired_serials = get_auto_serial_nos(
 			_dict({"qty": 5, "item_code": item_code, "warehouse": warehouse, "batches": [batch1]})
 		)

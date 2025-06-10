@@ -1,34 +1,34 @@
-# Copyright (c) 2018, Frappe and Contributors
+# Copyright (c) 2018, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
 	# add holiday list and employee group fields in SLA
 	# change response and resolution time in priorities child table
-	if frappe.db.exists("DocType", "Service Level Agreement"):
-		sla_details = frappe.db.get_all("Service Level Agreement", fields=["name", "service_level"])
-		priorities = frappe.db.get_all(
+	if nts.db.exists("DocType", "Service Level Agreement"):
+		sla_details = nts.db.get_all("Service Level Agreement", fields=["name", "service_level"])
+		priorities = nts.db.get_all(
 			"Service Level Priority",
 			fields=["*"],
 			filters={"parenttype": ("in", ["Service Level Agreement", "Service Level"])},
 		)
 
-		frappe.reload_doc("support", "doctype", "service_level_agreement")
-		frappe.reload_doc("support", "doctype", "pause_sla_on_status")
-		frappe.reload_doc("support", "doctype", "service_level_priority")
-		frappe.reload_doc("support", "doctype", "service_day")
+		nts.reload_doc("support", "doctype", "service_level_agreement")
+		nts.reload_doc("support", "doctype", "pause_sla_on_status")
+		nts.reload_doc("support", "doctype", "service_level_priority")
+		nts.reload_doc("support", "doctype", "service_day")
 
 		for entry in sla_details:
-			values = frappe.db.get_value(
+			values = nts.db.get_value(
 				"Service Level", entry.service_level, ["holiday_list", "employee_group"]
 			)
 			if values:
 				holiday_list = values[0]
 				employee_group = values[1]
-				frappe.db.set_value(
+				nts.db.set_value(
 					"Service Level Agreement",
 					entry.name,
 					{"holiday_list": holiday_list, "employee_group": employee_group},
@@ -42,7 +42,7 @@ def execute():
 				resolution_time = convert_to_seconds(
 					priority.resolution_time, priority.resolution_time_period
 				)
-				frappe.db.set_value(
+				nts.db.set_value(
 					"Service Level Priority",
 					priority.name,
 					{"response_time": response_time, "resolution_time": resolution_time},
@@ -54,19 +54,19 @@ def execute():
 
 		# copy Service Levels to Service Level Agreements
 		sl = [entry.service_level for entry in sla_details]
-		if frappe.db.exists("DocType", "Service Level"):
-			service_levels = frappe.db.get_all(
+		if nts.db.exists("DocType", "Service Level"):
+			service_levels = nts.db.get_all(
 				"Service Level", filters={"service_level": ("not in", sl)}, fields=["*"]
 			)
 			for entry in service_levels:
-				sla = frappe.new_doc("Service Level Agreement")
+				sla = nts.new_doc("Service Level Agreement")
 				sla.service_level = entry.service_level
 				sla.holiday_list = entry.holiday_list
 				sla.employee_group = entry.employee_group
 				sla.flags.ignore_validate = True
 				sla = sla.insert(ignore_mandatory=True)
 
-				frappe.db.sql(
+				nts.db.sql(
 					"""
 					UPDATE
 						`tabService Day`
@@ -81,7 +81,7 @@ def execute():
 
 				priority_list = priority_dict.get(entry.name)
 				if priority_list:
-					sla = frappe.get_doc("Service Level Agreement", sla.name)
+					sla = nts.get_doc("Service Level Agreement", sla.name)
 					for priority in priority_list:
 						row = sla.append(
 							"priorities",
@@ -99,7 +99,7 @@ def execute():
 						row.db_update()
 					sla.db_update()
 
-	frappe.delete_doc_if_exists("DocType", "Service Level")
+	nts.delete_doc_if_exists("DocType", "Service Level")
 
 
 def convert_to_seconds(value, unit):

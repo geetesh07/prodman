@@ -37,4 +37,4 @@ import "./financial_statements.js";
 import "./sales_trends_filters.js";
 import "./purchase_trends_filters.js";
 
-// import { sum } from 'frappe/public/utils/util.js'
+// import { sum } from 'nts/public/utils/util.js'

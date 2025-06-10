@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Production Plan Summary"] = {
+nts.query_reports["Production Plan Summary"] = {
 	filters: [
 		{
 			fieldname: "production_plan",

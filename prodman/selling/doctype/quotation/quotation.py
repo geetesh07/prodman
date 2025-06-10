@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.mapper import get_mapped_doc
-from frappe.utils import flt, getdate, nowdate
+import nts
+from nts import _
+from nts.model.mapper import get_mapped_doc
+from nts.utils import flt, getdate, nowdate
 
 from prodman.controllers.selling_controller import SellingController
 
@@ -19,7 +19,7 @@ class Quotation(SellingController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.accounts.doctype.payment_schedule.payment_schedule import PaymentSchedule
 		from prodman.accounts.doctype.pricing_rule_detail.pricing_rule_detail import PricingRuleDetail
@@ -150,7 +150,7 @@ class Quotation(SellingController):
 
 	def validate_valid_till(self):
 		if self.valid_till and getdate(self.valid_till) < getdate(self.transaction_date):
-			frappe.throw(_("Valid till date cannot be before transaction date"))
+			nts.throw(_("Valid till date cannot be before transaction date"))
 
 	def set_has_alternative_item(self):
 		"""Mark 'Has Alternative Item' for rows."""
@@ -166,7 +166,7 @@ class Quotation(SellingController):
 		"""
 		If permitted in settings and any item has 0 qty, the SO has unit price items.
 		"""
-		if not frappe.db.get_single_value("Selling Settings", "allow_zero_qty_in_quotation"):
+		if not nts.db.get_single_value("Selling Settings", "allow_zero_qty_in_quotation"):
 			return
 
 		self.has_unit_price_items = any(
@@ -198,7 +198,7 @@ class Quotation(SellingController):
 
 		def is_in_sales_order(row):
 			in_sales_order = bool(
-				frappe.db.exists(
+				nts.db.exists(
 					"Sales Order Item",
 					{"quotation_item": row.name, "item_code": row.item_code, "docstatus": 1},
 				)
@@ -221,20 +221,20 @@ class Quotation(SellingController):
 
 	def update_lead(self):
 		if self.quotation_to == "Lead" and self.party_name:
-			frappe.get_doc("Lead", self.party_name).set_status(update=True)
+			nts.get_doc("Lead", self.party_name).set_status(update=True)
 
 	def set_customer_name(self):
 		if self.party_name and self.quotation_to == "Customer":
-			self.customer_name = frappe.db.get_value("Customer", self.party_name, "customer_name")
+			self.customer_name = nts.db.get_value("Customer", self.party_name, "customer_name")
 		elif self.party_name and self.quotation_to == "Lead":
-			lead_name, company_name = frappe.db.get_value(
+			lead_name, company_name = nts.db.get_value(
 				"Lead", self.party_name, ["lead_name", "company_name"]
 			)
 			self.customer_name = company_name or lead_name
 		elif self.party_name and self.quotation_to == "Prospect":
 			self.customer_name = self.party_name
 		elif self.party_name and self.quotation_to == "CRM Deal":
-			self.customer_name = frappe.db.get_value("CRM Deal", self.party_name, "organization")
+			self.customer_name = nts.db.get_value("CRM Deal", self.party_name, "organization")
 
 	def update_opportunity(self, status):
 		for opportunity in set(d.prevdoc_docname for d in self.get("items")):
@@ -248,13 +248,13 @@ class Quotation(SellingController):
 		if not opportunity:
 			opportunity = self.opportunity
 
-		opp = frappe.get_doc("Opportunity", opportunity)
+		opp = nts.get_doc("Opportunity", opportunity)
 		opp.set_status(status=status, update=True)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def declare_enquiry_lost(self, lost_reasons_list, competitors, detailed_reason=None):
 		if not (self.is_fully_ordered() or self.is_partially_ordered()):
-			get_lost_reasons = frappe.get_list("Quotation Lost Reason", fields=["name"])
+			get_lost_reasons = nts.get_list("Quotation Lost Reason", fields=["name"])
 			lost_reasons_lst = [reason.get("name") for reason in get_lost_reasons]
 			self.db_set("status", "Lost")
 
@@ -265,9 +265,9 @@ class Quotation(SellingController):
 				if reason.get("lost_reason") in lost_reasons_lst:
 					self.append("lost_reasons", reason)
 				else:
-					frappe.throw(
+					nts.throw(
 						_("Invalid lost reason {0}, please create a new lost reason").format(
-							frappe.bold(reason.get("lost_reason"))
+							nts.bold(reason.get("lost_reason"))
 						)
 					)
 
@@ -279,11 +279,11 @@ class Quotation(SellingController):
 			self.save()
 
 		else:
-			frappe.throw(_("Cannot set as Lost as Sales Order is made."))
+			nts.throw(_("Cannot set as Lost as Sales Order is made."))
 
 	def on_submit(self):
 		# Check for Approving Authority
-		frappe.get_doc("Authorization Control").validate_approving_authority(
+		nts.get_doc("Authorization Control").validate_approving_authority(
 			self.doctype, self.company, self.base_grand_total, self
 		)
 
@@ -346,18 +346,18 @@ def get_list_context(context=None):
 	return list_context
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_sales_order(source_name: str, target_doc=None):
-	if not frappe.db.get_singles_value(
+	if not nts.db.get_singles_value(
 		"Selling Settings", "allow_sales_order_creation_for_expired_quotation"
 	):
-		quotation = frappe.db.get_value(
+		quotation = nts.db.get_value(
 			"Quotation", source_name, ["transaction_date", "valid_till"], as_dict=1
 		)
 		if quotation.valid_till and (
 			quotation.valid_till < quotation.transaction_date or quotation.valid_till < getdate(nowdate())
 		):
-			frappe.throw(_("Validity period of this quotation has ended."))
+			nts.throw(_("Validity period of this quotation has ended."))
 
 	return _make_sales_order(source_name, target_doc)
 
@@ -366,10 +366,10 @@ def _make_sales_order(source_name, target_doc=None, ignore_permissions=False):
 	customer = _make_customer(source_name, ignore_permissions)
 	ordered_items = get_ordered_items(source_name)
 
-	selected_rows = [x.get("name") for x in frappe.flags.get("args", {}).get("selected_items", [])]
+	selected_rows = [x.get("name") for x in nts.flags.get("args", {}).get("selected_items", [])]
 
 	# 0 qty is accepted, as the qty uncertain for some items
-	has_unit_price_items = frappe.db.get_value("Quotation", source_name, "has_unit_price_items")
+	has_unit_price_items = nts.db.get_value("Quotation", source_name, "has_unit_price_items")
 
 	def is_unit_price_row(source) -> bool:
 		return has_unit_price_items and source.qty == 0
@@ -393,7 +393,7 @@ def _make_sales_order(source_name, target_doc=None, ignore_permissions=False):
 
 		if source.referral_sales_partner:
 			target.sales_partner = source.referral_sales_partner
-			target.commission_rate = frappe.get_value(
+			target.commission_rate = nts.get_value(
 				"Sales Partner", source.referral_sales_partner, "commission_rate"
 			)
 
@@ -466,7 +466,7 @@ def set_expired_status():
 			and so_item.prevdoc_docname = `tabQuotation`.name"""
 
 	# if not exists any SO, set status as Expired
-	frappe.db.multisql(
+	nts.db.multisql(
 		{
 			"mariadb": f"""UPDATE `tabQuotation`  SET `tabQuotation`.status = 'Expired' WHERE {cond} and not exists({so_against_quo})""",
 			"postgres": f"""UPDATE `tabQuotation` SET status = 'Expired' FROM `tabSales Order`, `tabSales Order Item` WHERE {cond} and not exists({so_against_quo})""",
@@ -475,7 +475,7 @@ def set_expired_status():
 	)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_sales_invoice(source_name, target_doc=None):
 	return _make_sales_invoice(source_name, target_doc)
 
@@ -518,7 +518,7 @@ def _make_sales_invoice(source_name, target_doc=None, ignore_permissions=False):
 
 
 def _make_customer(source_name, ignore_permissions=False):
-	quotation = frappe.db.get_value(
+	quotation = nts.db.get_value(
 		"Quotation",
 		source_name,
 		["order_type", "quotation_to", "party_name", "customer_name"],
@@ -526,17 +526,17 @@ def _make_customer(source_name, ignore_permissions=False):
 	)
 
 	if quotation.quotation_to == "Customer":
-		return frappe.get_doc("Customer", quotation.party_name)
+		return nts.get_doc("Customer", quotation.party_name)
 
 	# Check if a Customer already exists for the Lead or Prospect.
 	existing_customer = None
 	if quotation.quotation_to == "Lead":
-		existing_customer = frappe.db.get_value("Customer", {"lead_name": quotation.party_name})
+		existing_customer = nts.db.get_value("Customer", {"lead_name": quotation.party_name})
 	elif quotation.quotation_to == "Prospect":
-		existing_customer = frappe.db.get_value("Customer", {"prospect_name": quotation.party_name})
+		existing_customer = nts.db.get_value("Customer", {"prospect_name": quotation.party_name})
 
 	if existing_customer:
-		return frappe.get_doc("Customer", existing_customer)
+		return nts.get_doc("Customer", existing_customer)
 
 	# If no Customer exists, create a new Customer or Prospect.
 	if quotation.quotation_to == "Lead":
@@ -556,7 +556,7 @@ def create_customer_from_lead(lead_name, ignore_permissions=False):
 	try:
 		customer.insert()
 		return customer
-	except frappe.MandatoryError as e:
+	except nts.MandatoryError as e:
 		handle_mandatory_error(e, customer, lead_name)
 
 
@@ -569,22 +569,22 @@ def create_customer_from_prospect(prospect_name, ignore_permissions=False):
 	try:
 		customer.insert()
 		return customer
-	except frappe.MandatoryError as e:
+	except nts.MandatoryError as e:
 		handle_mandatory_error(e, customer, prospect_name)
 
 
 def handle_mandatory_error(e, customer, lead_name):
-	from frappe.utils import get_link_to_form
+	from nts.utils import get_link_to_form
 
 	mandatory_fields = e.args[0].split(":")[1].split(",")
 	mandatory_fields = [_(customer.meta.get_label(field.strip())) for field in mandatory_fields]
 
-	frappe.local.message_log = []
+	nts.local.message_log = []
 	message = _("Could not auto create Customer due to the following missing mandatory field(s):") + "<br>"
 	message += "<br><ul><li>" + "</li><li>".join(mandatory_fields) + "</li></ul>"
 	message += _("Please create Customer from Lead {0}.").format(get_link_to_form("Lead", lead_name))
 
-	frappe.throw(message, title=_("Mandatory Missing"))
+	nts.throw(message, title=_("Mandatory Missing"))
 
 
 def get_ordered_items(quotation: str):
@@ -601,8 +601,8 @@ def get_ordered_items(quotation: str):
 	}
 	```
 	"""
-	return frappe._dict(
-		frappe.get_all(
+	return nts._dict(
+		nts.get_all(
 			"Sales Order Item",
 			filters={"prevdoc_docname": quotation, "docstatus": 1},
 			fields=["quotation_item", "sum(qty)"],

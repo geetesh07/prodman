@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
 from urllib.parse import urlparse
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import nowdate
+import nts
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import nowdate
 
 from prodman.buying.doctype.request_for_quotation.request_for_quotation import (
 	RequestforQuotation,
@@ -21,7 +21,7 @@ from prodman.stock.doctype.item.test_item import make_item
 from prodman.templates.pages.rfq import check_supplier_has_docname_access
 
 
-class TestRequestforQuotation(FrappeTestCase):
+class TestRequestforQuotation(ntsTestCase):
 	def test_rfq_qty(self):
 		rfq = make_request_for_quotation(qty=0, do_not_save=True)
 		with self.assertRaises(InvalidQtyError):
@@ -77,8 +77,8 @@ class TestRequestforQuotation(FrappeTestCase):
 		self.assertEqual(sq1.get("items")[0].qty, 5)
 
 	def test_make_supplier_quotation_with_special_characters(self):
-		frappe.delete_doc_if_exists("Supplier", "_Test Supplier '1", force=1)
-		supplier = frappe.new_doc("Supplier")
+		nts.delete_doc_if_exists("Supplier", "_Test Supplier '1", force=1)
+		supplier = nts.new_doc("Supplier")
 		supplier.supplier_name = "_Test Supplier '1"
 		supplier.supplier_group = "_Test Supplier Group"
 		supplier.insert()
@@ -88,12 +88,12 @@ class TestRequestforQuotation(FrappeTestCase):
 		sq = make_supplier_quotation_from_rfq(rfq.name, for_supplier=supplier_wt_appos[0].get("supplier"))
 		sq.submit()
 
-		frappe.form_dict.name = rfq.name
+		nts.form_dict.name = rfq.name
 
 		self.assertEqual(check_supplier_has_docname_access(supplier_wt_appos[0].get("supplier")), True)
 
 		# reset form_dict
-		frappe.form_dict.name = None
+		nts.form_dict.name = None
 
 	def test_make_supplier_quotation_from_portal(self):
 		rfq = make_request_for_quotation()
@@ -101,7 +101,7 @@ class TestRequestforQuotation(FrappeTestCase):
 		rfq.supplier = rfq.suppliers[0].supplier
 		supplier_quotation_name = create_supplier_quotation(rfq)
 
-		supplier_quotation_doc = frappe.get_doc("Supplier Quotation", supplier_quotation_name)
+		supplier_quotation_doc = nts.get_doc("Supplier Quotation", supplier_quotation_name)
 
 		self.assertEqual(supplier_quotation_doc.supplier, rfq.get("suppliers")[0].supplier)
 		self.assertEqual(supplier_quotation_doc.get("items")[0].request_for_quotation, rfq.name)
@@ -111,7 +111,7 @@ class TestRequestforQuotation(FrappeTestCase):
 
 	def test_make_multi_uom_supplier_quotation(self):
 		item_code = "_Test Multi UOM RFQ Item"
-		if not frappe.db.exists("Item", item_code):
+		if not nts.db.exists("Item", item_code):
 			item = make_item(item_code, {"stock_uom": "_Test UOM"})
 			row = item.append("uoms", {"uom": "Kg", "conversion_factor": 2})
 			row.db_update()
@@ -123,7 +123,7 @@ class TestRequestforQuotation(FrappeTestCase):
 		self.assertEqual(rfq.items[0].stock_qty, 10)
 
 		supplier_quotation_name = create_supplier_quotation(rfq)
-		supplier_quotation = frappe.get_doc("Supplier Quotation", supplier_quotation_name)
+		supplier_quotation = nts.get_doc("Supplier Quotation", supplier_quotation_name)
 
 		self.assertEqual(supplier_quotation.items[0].qty, 5)
 		self.assertEqual(supplier_quotation.items[0].stock_qty, 10)
@@ -153,10 +153,10 @@ class TestRequestforQuotation(FrappeTestCase):
 	def test_get_pdf(self):
 		rfq = make_request_for_quotation()
 		get_pdf(rfq.name, rfq.get("suppliers")[0].supplier)
-		self.assertEqual(frappe.local.response.type, "pdf")
+		self.assertEqual(nts.local.response.type, "pdf")
 
 	def test_portal_user_with_new_supplier(self):
-		supplier_doc = frappe.get_doc(
+		supplier_doc = nts.get_doc(
 			{
 				"doctype": "Supplier",
 				"supplier_name": "Test Supplier for RFQ",
@@ -203,7 +203,7 @@ class TestRequestforQuotation(FrappeTestCase):
 		rfq.supplier = rfq.suppliers[0].supplier
 		sq_name = create_supplier_quotation(rfq)
 
-		sq = frappe.get_doc("Supplier Quotation", sq_name)
+		sq = nts.get_doc("Supplier Quotation", sq_name)
 		self.assertEqual(len(sq.items), 1)
 		self.assertEqual(sq.items[0].qty, 0)
 		self.assertEqual(sq.items[0].item_code, rfq.items[0].item_code)
@@ -213,9 +213,9 @@ def make_request_for_quotation(**args) -> "RequestforQuotation":
 	"""
 	:param supplier_data: List containing supplier data
 	"""
-	args = frappe._dict(args)
+	args = nts._dict(args)
 	supplier_data = args.get("supplier_data") if args.get("supplier_data") else get_supplier_data()
-	rfq = frappe.new_doc("Request for Quotation")
+	rfq = nts.new_doc("Request for Quotation")
 	rfq.transaction_date = nowdate()
 	rfq.status = "Draft"
 	rfq.company = "_Test Company"

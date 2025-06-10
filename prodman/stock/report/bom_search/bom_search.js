@@ -1,7 +1,7 @@
-// Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and Contributors and contributors
+// Copyright (c) 2013, nts Technologies Pvt. Ltd. and Contributors and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["BOM Search"] = {
+nts.query_reports["BOM Search"] = {
 	filters: [
 		{
 			fieldname: "item1",

@@ -1,28 +1,28 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Delayed Order Report"] = {
+nts.query_reports["Delayed Order Report"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_default("company"),
+			default: nts.defaults.get_default("company"),
 			reqd: 1,
 		},
 		{
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.month_start(),
+			default: nts.datetime.month_start(),
 			reqd: 1,
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.now_date(),
+			default: nts.datetime.now_date(),
 			reqd: 1,
 		},
 		{

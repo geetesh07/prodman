@@ -1,11 +1,11 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe import qb
-from frappe.query_builder.functions import Sum
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, nowdate, today
+import nts 
+from nts  import qb
+from nts .query_builder.functions import Sum
+from nts .tests.utils import nts TestCase, change_settings
+from nts .utils import add_days, nowdate, today
 
 from prodman.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from prodman.accounts.doctype.payment_request.payment_request import make_payment_request
@@ -16,7 +16,7 @@ from prodman.stock.doctype.item.test_item import make_item
 from prodman.stock.doctype.purchase_receipt.test_purchase_receipt import get_gl_entries, make_purchase_receipt
 
 
-class TestRepostAccountingLedger(AccountsTestMixin, FrappeTestCase):
+class TestRepostAccountingLedger(AccountsTestMixin, nts TestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_customer()
@@ -24,7 +24,7 @@ class TestRepostAccountingLedger(AccountsTestMixin, FrappeTestCase):
 		update_repost_settings()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def test_01_basic_functions(self):
 		si = create_sales_invoice(
@@ -37,7 +37,7 @@ class TestRepostAccountingLedger(AccountsTestMixin, FrappeTestCase):
 			rate=100,
 		)
 
-		preq = frappe.get_doc(
+		preq = nts .get_doc(
 			make_payment_request(
 				dt=si.doctype,
 				dn=si.name,
@@ -49,14 +49,14 @@ class TestRepostAccountingLedger(AccountsTestMixin, FrappeTestCase):
 		preq.save().submit()
 
 		# Test Validation Error
-		ral = frappe.new_doc("Repost Accounting Ledger")
+		ral = nts .new_doc("Repost Accounting Ledger")
 		ral.company = self.company
 		ral.delete_cancelled_entries = True
 		ral.append("vouchers", {"voucher_type": si.doctype, "voucher_no": si.name})
 		ral.append(
 			"vouchers", {"voucher_type": preq.doctype, "voucher_no": preq.name}
 		)  # this should throw validation error
-		self.assertRaises(frappe.ValidationError, ral.save)
+		self.assertRaises(nts .ValidationError, ral.save)
 		ral.vouchers.pop()
 		preq.cancel()
 		preq.delete()
@@ -67,8 +67,8 @@ class TestRepostAccountingLedger(AccountsTestMixin, FrappeTestCase):
 		ral.save()
 
 		# manually set an incorrect debit amount in DB
-		gle = frappe.db.get_all("GL Entry", filters={"voucher_no": si.name, "account": self.debit_to})
-		frappe.db.set_value("GL Entry", gle[0], "debit", 90)
+		gle = nts .db.get_all("GL Entry", filters={"voucher_no": si.name, "account": self.debit_to})
+		nts .db.set_value("GL Entry", gle[0], "debit", 90)
 
 		gl = qb.DocType("GL Entry")
 		res = (
@@ -111,15 +111,15 @@ class TestRepostAccountingLedger(AccountsTestMixin, FrappeTestCase):
 		si.items[0].service_end_date = add_days(nowdate(), 90)
 		si.save().submit()
 
-		ral = frappe.new_doc("Repost Accounting Ledger")
+		ral = nts .new_doc("Repost Accounting Ledger")
 		ral.company = self.company
 		ral.append("vouchers", {"voucher_type": si.doctype, "voucher_no": si.name})
-		self.assertRaises(frappe.ValidationError, ral.save)
+		self.assertRaises(nts .ValidationError, ral.save)
 
 	@change_settings("Accounts Settings", {"delete_linked_ledger_entries": 1})
 	def test_04_pcv_validation(self):
 		# Clear old GL entries so PCV can be submitted.
-		gl = frappe.qb.DocType("GL Entry")
+		gl = nts .qb.DocType("GL Entry")
 		qb.from_(gl).delete().where(gl.company == self.company).run()
 
 		si = create_sales_invoice(
@@ -132,7 +132,7 @@ class TestRepostAccountingLedger(AccountsTestMixin, FrappeTestCase):
 			rate=100,
 		)
 		fy = get_fiscal_year(today(), company=self.company)
-		pcv = frappe.get_doc(
+		pcv = nts .get_doc(
 			{
 				"doctype": "Period Closing Voucher",
 				"transaction_date": today(),
@@ -147,10 +147,10 @@ class TestRepostAccountingLedger(AccountsTestMixin, FrappeTestCase):
 		)
 		pcv.save().submit()
 
-		ral = frappe.new_doc("Repost Accounting Ledger")
+		ral = nts .new_doc("Repost Accounting Ledger")
 		ral.company = self.company
 		ral.append("vouchers", {"voucher_type": si.doctype, "voucher_no": si.name})
-		self.assertRaises(frappe.ValidationError, ral.save)
+		self.assertRaises(nts .ValidationError, ral.save)
 
 		pcv.reload()
 		pcv.cancel()
@@ -171,15 +171,15 @@ class TestRepostAccountingLedger(AccountsTestMixin, FrappeTestCase):
 		pe.save().submit()
 
 		# with deletion flag set
-		ral = frappe.new_doc("Repost Accounting Ledger")
+		ral = nts .new_doc("Repost Accounting Ledger")
 		ral.company = self.company
 		ral.delete_cancelled_entries = True
 		ral.append("vouchers", {"voucher_type": si.doctype, "voucher_no": si.name})
 		ral.append("vouchers", {"voucher_type": pe.doctype, "voucher_no": pe.name})
 		ral.save().submit()
 
-		self.assertIsNone(frappe.db.exists("GL Entry", {"voucher_no": si.name, "is_cancelled": 1}))
-		self.assertIsNone(frappe.db.exists("GL Entry", {"voucher_no": pe.name, "is_cancelled": 1}))
+		self.assertIsNone(nts .db.exists("GL Entry", {"voucher_no": si.name, "is_cancelled": 1}))
+		self.assertIsNone(nts .db.exists("GL Entry", {"voucher_no": pe.name, "is_cancelled": 1}))
 
 	def test_05_without_deletion_flag(self):
 		si = create_sales_invoice(
@@ -196,15 +196,15 @@ class TestRepostAccountingLedger(AccountsTestMixin, FrappeTestCase):
 		pe.save().submit()
 
 		# without deletion flag set
-		ral = frappe.new_doc("Repost Accounting Ledger")
+		ral = nts .new_doc("Repost Accounting Ledger")
 		ral.company = self.company
 		ral.delete_cancelled_entries = False
 		ral.append("vouchers", {"voucher_type": si.doctype, "voucher_no": si.name})
 		ral.append("vouchers", {"voucher_type": pe.doctype, "voucher_no": pe.name})
 		ral.save().submit()
 
-		self.assertIsNotNone(frappe.db.exists("GL Entry", {"voucher_no": si.name, "is_cancelled": 1}))
-		self.assertIsNotNone(frappe.db.exists("GL Entry", {"voucher_no": pe.name, "is_cancelled": 1}))
+		self.assertIsNotNone(nts .db.exists("GL Entry", {"voucher_no": si.name, "is_cancelled": 1}))
+		self.assertIsNotNone(nts .db.exists("GL Entry", {"voucher_no": pe.name, "is_cancelled": 1}))
 
 	def test_06_repost_purchase_receipt(self):
 		from prodman.accounts.doctype.account.test_account import create_account
@@ -221,7 +221,7 @@ class TestRepostAccountingLedger(AccountsTestMixin, FrappeTestCase):
 			company=self.company,
 		)
 
-		company = frappe.get_doc("Company", self.company)
+		company = nts .get_doc("Company", self.company)
 		company.enable_provisional_accounting_for_non_stock_items = 1
 		company.default_provisional_account = provisional_account
 		company.save()
@@ -240,14 +240,14 @@ class TestRepostAccountingLedger(AccountsTestMixin, FrappeTestCase):
 		self.assertEqual(expected_pr_gles, pr_gl_entries)
 
 		# change the provisional account
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Purchase Receipt Item",
 			pr.items[0].name,
 			"provisional_expense_account",
 			another_provisional_account,
 		)
 
-		repost_doc = frappe.new_doc("Repost Accounting Ledger")
+		repost_doc = nts .new_doc("Repost Accounting Ledger")
 		repost_doc.company = self.company
 		repost_doc.delete_cancelled_entries = True
 		repost_doc.append("vouchers", {"voucher_type": pr.doctype, "voucher_no": pr.name})
@@ -281,7 +281,7 @@ def update_repost_settings():
 		"Journal Entry",
 		"Purchase Receipt",
 	]
-	repost_settings = frappe.get_doc("Repost Accounting Ledger Settings")
+	repost_settings = nts .get_doc("Repost Accounting Ledger Settings")
 	for x in allowed_types:
 		repost_settings.append("allowed_types", {"document_type": x, "allowed": True})
 		repost_settings.save()

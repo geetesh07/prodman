@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import unittest
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
+import nts 
+from nts .tests.utils import nts TestCase, change_settings
 
 from prodman.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
@@ -15,7 +15,7 @@ from prodman.stock.doctype.item.test_item import make_item
 from prodman.stock.get_item_details import get_item_details
 
 
-class TestPricingRule(FrappeTestCase):
+class TestPricingRule(nts TestCase):
 	def setUp(self):
 		delete_existing_pricing_rules()
 		setup_pricing_rule_data()
@@ -24,7 +24,7 @@ class TestPricingRule(FrappeTestCase):
 		delete_existing_pricing_rules()
 
 	def test_pricing_rule_for_discount(self):
-		from frappe import MandatoryError
+		from nts  import MandatoryError
 
 		from prodman.stock.get_item_details import get_item_details
 
@@ -40,9 +40,9 @@ class TestPricingRule(FrappeTestCase):
 			"discount_percentage": 10,
 			"company": "_Test Company",
 		}
-		frappe.get_doc(test_record.copy()).insert()
+		nts .get_doc(test_record.copy()).insert()
 
-		args = frappe._dict(
+		args = nts ._dict(
 			{
 				"item_code": "_Test Item",
 				"company": "_Test Company",
@@ -60,7 +60,7 @@ class TestPricingRule(FrappeTestCase):
 		details = get_item_details(args)
 		self.assertEqual(details.get("discount_percentage"), 10)
 
-		prule = frappe.get_doc(test_record.copy())
+		prule = nts .get_doc(test_record.copy())
 		prule.priority = 1
 		prule.applicable_for = "Customer"
 		prule.title = "_Test Pricing Rule for Customer"
@@ -72,7 +72,7 @@ class TestPricingRule(FrappeTestCase):
 		details = get_item_details(args)
 		self.assertEqual(details.get("discount_percentage"), 20)
 
-		prule = frappe.get_doc(test_record.copy())
+		prule = nts .get_doc(test_record.copy())
 		prule.apply_on = "Item Group"
 		prule.items = []
 		prule.append("item_groups", {"item_group": "All Item Groups"})
@@ -84,7 +84,7 @@ class TestPricingRule(FrappeTestCase):
 		details = get_item_details(args)
 		self.assertEqual(details.get("discount_percentage"), 10)
 
-		prule = frappe.get_doc(test_record.copy())
+		prule = nts .get_doc(test_record.copy())
 		prule.applicable_for = "Campaign"
 		prule.campaign = "_Test Campaign"
 		prule.title = "_Test Pricing Rule for Campaign"
@@ -96,7 +96,7 @@ class TestPricingRule(FrappeTestCase):
 		details = get_item_details(args)
 		self.assertEqual(details.get("discount_percentage"), 5)
 
-		frappe.db.sql("update `tabPricing Rule` set priority=NULL where campaign='_Test Campaign'")
+		nts .db.sql("update `tabPricing Rule` set priority=NULL where campaign='_Test Campaign'")
 		from prodman.accounts.doctype.pricing_rule.utils import MultiplePricingRuleConflict
 
 		self.assertRaises(MultiplePricingRuleConflict, get_item_details, args)
@@ -125,9 +125,9 @@ class TestPricingRule(FrappeTestCase):
 			"margin_rate_or_amount": 10,
 			"company": "_Test Company",
 		}
-		frappe.get_doc(test_record.copy()).insert()
+		nts .get_doc(test_record.copy()).insert()
 
-		item_price = frappe.get_doc(
+		item_price = nts .get_doc(
 			{
 				"doctype": "Item Price",
 				"price_list": "_Test Price List 2",
@@ -138,7 +138,7 @@ class TestPricingRule(FrappeTestCase):
 
 		item_price.insert(ignore_permissions=True)
 
-		args = frappe._dict(
+		args = nts ._dict(
 			{
 				"item_code": "_Test FG Item 2",
 				"company": "_Test Company",
@@ -183,9 +183,9 @@ class TestPricingRule(FrappeTestCase):
 			"customer_group": "All Customer Groups",
 			"company": "_Test Company",
 		}
-		frappe.get_doc(test_record.copy()).insert()
+		nts .get_doc(test_record.copy()).insert()
 
-		args = frappe._dict(
+		args = nts ._dict(
 			{
 				"item_code": "Mixed Cond Item 1",
 				"item_group": "Products",
@@ -208,8 +208,8 @@ class TestPricingRule(FrappeTestCase):
 	def test_pricing_rule_for_variants(self):
 		from prodman.stock.get_item_details import get_item_details
 
-		if not frappe.db.exists("Item", "Test Variant PRT"):
-			frappe.get_doc(
+		if not nts .db.exists("Item", "Test Variant PRT"):
+			nts .get_doc(
 				{
 					"doctype": "Item",
 					"item_code": "Test Variant PRT",
@@ -224,7 +224,7 @@ class TestPricingRule(FrappeTestCase):
 				}
 			).insert()
 
-		frappe.get_doc(
+		nts .get_doc(
 			{
 				"doctype": "Pricing Rule",
 				"title": "_Test Pricing Rule 1",
@@ -243,7 +243,7 @@ class TestPricingRule(FrappeTestCase):
 			}
 		).insert()
 
-		args = frappe._dict(
+		args = nts ._dict(
 			{
 				"item_code": "Test Variant PRT",
 				"company": "_Test Company",
@@ -263,7 +263,7 @@ class TestPricingRule(FrappeTestCase):
 		self.assertEqual(details.get("discount_percentage"), 7.5)
 
 		# add a new pricing rule for that item code, it should take priority
-		frappe.get_doc(
+		nts .get_doc(
 			{
 				"doctype": "Pricing Rule",
 				"title": "_Test Pricing Rule 2",
@@ -305,10 +305,10 @@ class TestPricingRule(FrappeTestCase):
 			"discount_percentage": 17.5,
 			"company": "_Test Company",
 		}
-		frappe.get_doc(test_record.copy()).insert()
+		nts .get_doc(test_record.copy()).insert()
 
-		if not frappe.db.get_value("UOM Conversion Detail", {"parent": "_Test Item", "uom": "box"}):
-			item = frappe.get_doc("Item", "_Test Item")
+		if not nts .db.get_value("UOM Conversion Detail", {"parent": "_Test Item", "uom": "box"}):
+			item = nts .get_doc("Item", "_Test Item")
 			item.append("uoms", {"uom": "Box", "conversion_factor": 5})
 			item.save(ignore_permissions=True)
 
@@ -316,7 +316,7 @@ class TestPricingRule(FrappeTestCase):
 		so = make_sales_order(item_code="_Test Item", qty=1, uom="Box", do_not_submit=True)
 		so.items[0].price_list_rate = 100
 		so.submit()
-		so = frappe.get_doc("Sales Order", so.name)
+		so = nts .get_doc("Sales Order", so.name)
 		self.assertEqual(so.items[0].discount_percentage, 17.5)
 		self.assertEqual(so.items[0].rate, 82.5)
 
@@ -324,12 +324,12 @@ class TestPricingRule(FrappeTestCase):
 		so = make_sales_order(item_code="_Test Item", qty=2, uom="Box", do_not_submit=True)
 		so.items[0].price_list_rate = 100
 		so.submit()
-		so = frappe.get_doc("Sales Order", so.name)
+		so = nts .get_doc("Sales Order", so.name)
 		self.assertEqual(so.items[0].discount_percentage, 0)
 		self.assertEqual(so.items[0].rate, 100)
 
 	def test_pricing_rule_with_margin_and_discount(self):
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
 		make_pricing_rule(
 			selling=1, margin_type="Percentage", margin_rate_or_amount=10, discount_percentage=10
 		)
@@ -346,7 +346,7 @@ class TestPricingRule(FrappeTestCase):
 		self.assertEqual(item.rate, 990)
 
 	def test_pricing_rule_with_margin_and_discount_amount(self):
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
 		make_pricing_rule(
 			selling=1,
 			margin_type="Percentage",
@@ -366,7 +366,7 @@ class TestPricingRule(FrappeTestCase):
 		self.assertEqual(item.rate, 990)
 
 	def test_pricing_rule_for_product_discount_on_same_item(self):
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
 		test_record = {
 			"doctype": "Pricing Rule",
 			"title": "_Test Pricing Rule",
@@ -388,7 +388,7 @@ class TestPricingRule(FrappeTestCase):
 			"free_qty": 1,
 			"company": "_Test Company",
 		}
-		frappe.get_doc(test_record.copy()).insert()
+		nts .get_doc(test_record.copy()).insert()
 
 		# With pricing rule
 		so = make_sales_order(item_code="_Test Item", qty=1)
@@ -397,7 +397,7 @@ class TestPricingRule(FrappeTestCase):
 		self.assertEqual(so.items[1].item_code, "_Test Item")
 
 	def test_pricing_rule_for_product_discount_on_different_item(self):
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
 		test_record = {
 			"doctype": "Pricing Rule",
 			"title": "_Test Pricing Rule",
@@ -420,7 +420,7 @@ class TestPricingRule(FrappeTestCase):
 			"free_qty": 1,
 			"company": "_Test Company",
 		}
-		frappe.get_doc(test_record.copy()).insert()
+		nts .get_doc(test_record.copy()).insert()
 
 		# With pricing rule
 		so = make_sales_order(item_code="_Test Item", qty=1)
@@ -430,7 +430,7 @@ class TestPricingRule(FrappeTestCase):
 
 	def test_dont_enforce_free_item_qty(self):
 		# this test is only for testing non-enforcement as all other tests in this file already test with enforcement
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
 		test_record = {
 			"doctype": "Pricing Rule",
 			"title": "_Test Pricing Rule",
@@ -453,7 +453,7 @@ class TestPricingRule(FrappeTestCase):
 			"free_qty": 1,
 			"company": "_Test Company",
 		}
-		pricing_rule = frappe.get_doc(test_record.copy()).insert()
+		pricing_rule = nts .get_doc(test_record.copy()).insert()
 
 		# With enforcement
 		so = make_sales_order(item_code="_Test Item", qty=1, do_not_submit=True)
@@ -477,7 +477,7 @@ class TestPricingRule(FrappeTestCase):
 		self.assertEqual(len(so.items), 1)
 
 	def test_cumulative_pricing_rule(self):
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Cumulative Pricing Rule")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Cumulative Pricing Rule")
 		test_record = {
 			"doctype": "Pricing Rule",
 			"title": "_Test Cumulative Pricing Rule",
@@ -499,12 +499,12 @@ class TestPricingRule(FrappeTestCase):
 			"discount_percentage": 17.5,
 			"price_or_product_discount": "Price",
 			"company": "_Test Company",
-			"valid_from": frappe.utils.nowdate(),
-			"valid_upto": frappe.utils.nowdate(),
+			"valid_from": nts .utils.nowdate(),
+			"valid_upto": nts .utils.nowdate(),
 		}
-		frappe.get_doc(test_record.copy()).insert()
+		nts .get_doc(test_record.copy()).insert()
 
-		args = frappe._dict(
+		args = nts ._dict(
 			{
 				"item_code": "_Test Item",
 				"company": "_Test Company",
@@ -517,7 +517,7 @@ class TestPricingRule(FrappeTestCase):
 				"order_type": "Sales",
 				"customer": "_Test Customer",
 				"name": None,
-				"transaction_date": frappe.utils.nowdate(),
+				"transaction_date": nts .utils.nowdate(),
 			}
 		)
 		details = get_item_details(args)
@@ -525,7 +525,7 @@ class TestPricingRule(FrappeTestCase):
 		self.assertTrue(details)
 
 	def test_pricing_rule_for_condition(self):
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
 
 		make_pricing_rule(
 			selling=1,
@@ -574,11 +574,11 @@ class TestPricingRule(FrappeTestCase):
 		self.assertEqual(si.items[0].discount_percentage, 30)
 		si.delete()
 
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 1")
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 2")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 1")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 2")
 
 	def test_multiple_pricing_rules_with_apply_discount_on_discounted_rate(self):
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
 
 		make_pricing_rule(
 			discount_percentage=20,
@@ -600,8 +600,8 @@ class TestPricingRule(FrappeTestCase):
 		self.assertEqual(si.items[0].discount_percentage, 28)
 		si.delete()
 
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 1")
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 2")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 1")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 2")
 
 	def test_item_price_with_pricing_rule(self):
 		item = make_item("Water Flask")
@@ -624,7 +624,7 @@ class TestPricingRule(FrappeTestCase):
 			"margin_rate_or_amount": 2,
 			"company": "_Test Company",
 		}
-		rule = frappe.get_doc(pricing_rule_record)
+		rule = nts .get_doc(pricing_rule_record)
 		rule.insert()
 
 		si = create_sales_invoice(do_not_save=True, item_code="Water Flask")
@@ -639,7 +639,7 @@ class TestPricingRule(FrappeTestCase):
 
 		si.delete()
 		rule.delete()
-		frappe.get_doc("Item Price", {"item_code": "Water Flask"}).delete()
+		nts .get_doc("Item Price", {"item_code": "Water Flask"}).delete()
 		item.delete()
 
 	def test_item_price_with_blank_uom_pricing_rule(self):
@@ -668,7 +668,7 @@ class TestPricingRule(FrappeTestCase):
 			"rate": 101,
 			"company": "_Test Company",
 		}
-		rule = frappe.get_doc(pricing_rule_record)
+		rule = nts .get_doc(pricing_rule_record)
 		rule.insert()
 
 		si = create_sales_invoice(
@@ -695,7 +695,7 @@ class TestPricingRule(FrappeTestCase):
 
 		si.delete()
 		rule.delete()
-		frappe.get_doc("Item Price", {"item_code": "Item Blank UOM"}).delete()
+		nts .get_doc("Item Price", {"item_code": "Item Blank UOM"}).delete()
 
 		item.delete()
 
@@ -726,7 +726,7 @@ class TestPricingRule(FrappeTestCase):
 			"rate": 101,
 			"company": "_Test Company",
 		}
-		rule = frappe.get_doc(pricing_rule_record)
+		rule = nts .get_doc(pricing_rule_record)
 		rule.insert()
 
 		si = create_sales_invoice(
@@ -753,12 +753,12 @@ class TestPricingRule(FrappeTestCase):
 
 		si.delete()
 		rule.delete()
-		frappe.get_doc("Item Price", {"item_code": "Item UOM other than Stock"}).delete()
+		nts .get_doc("Item Price", {"item_code": "Item UOM other than Stock"}).delete()
 
 		item.delete()
 
 	def test_item_group_price_with_blank_uom_pricing_rule(self):
-		group = frappe.get_doc(doctype="Item Group", item_group_name="_Test Pricing Rule Item Group")
+		group = nts .get_doc(doctype="Item Group", item_group_name="_Test Pricing Rule Item Group")
 		group.save()
 		properties = {
 			"item_code": "Item with Group Blank UOM",
@@ -786,7 +786,7 @@ class TestPricingRule(FrappeTestCase):
 			"rate": 101,
 			"company": "_Test Company",
 		}
-		rule = frappe.get_doc(pricing_rule_record)
+		rule = nts .get_doc(pricing_rule_record)
 		rule.insert()
 
 		si = create_sales_invoice(
@@ -813,12 +813,12 @@ class TestPricingRule(FrappeTestCase):
 
 		si.delete()
 		rule.delete()
-		frappe.get_doc("Item Price", {"item_code": "Item with Group Blank UOM"}).delete()
+		nts .get_doc("Item Price", {"item_code": "Item with Group Blank UOM"}).delete()
 		item.delete()
 		group.delete()
 
 	def test_item_group_price_with_selling_uom_pricing_rule(self):
-		group = frappe.get_doc(doctype="Item Group", item_group_name="_Test Pricing Rule Item Group UOM")
+		group = nts .get_doc(doctype="Item Group", item_group_name="_Test Pricing Rule Item Group UOM")
 		group.save()
 		properties = {
 			"item_code": "Item with Group UOM other than Stock",
@@ -847,7 +847,7 @@ class TestPricingRule(FrappeTestCase):
 			"rate": 101,
 			"company": "_Test Company",
 		}
-		rule = frappe.get_doc(pricing_rule_record)
+		rule = nts .get_doc(pricing_rule_record)
 		rule.insert()
 
 		si = create_sales_invoice(
@@ -879,7 +879,7 @@ class TestPricingRule(FrappeTestCase):
 
 		si.delete()
 		rule.delete()
-		frappe.get_doc("Item Price", {"item_code": "Item with Group UOM other than Stock"}).delete()
+		nts .get_doc("Item Price", {"item_code": "Item with Group UOM other than Stock"}).delete()
 		item.delete()
 		group.delete()
 
@@ -905,19 +905,19 @@ class TestPricingRule(FrappeTestCase):
 			"company": "_Test Company",
 		}
 
-		rule = frappe.get_doc(pricing_rule_record)
+		rule = nts .get_doc(pricing_rule_record)
 		rule.rate_or_discount = "Rate"
 		rule.rate = 100.0
 		rule.insert()
 
-		rule1 = frappe.get_doc(pricing_rule_record)
+		rule1 = nts .get_doc(pricing_rule_record)
 		rule1.currency = "USD"
 		rule1.rate_or_discount = "Rate"
 		rule1.rate = 2.0
 		rule1.priority = 1
 		rule1.insert()
 
-		args = frappe._dict(
+		args = nts ._dict(
 			{
 				"item_code": "Test Sanitizer Item",
 				"company": "_Test Company",
@@ -930,14 +930,14 @@ class TestPricingRule(FrappeTestCase):
 				"order_type": "Sales",
 				"customer": "_Test Customer",
 				"name": None,
-				"transaction_date": frappe.utils.nowdate(),
+				"transaction_date": nts .utils.nowdate(),
 			}
 		)
 
 		details = get_item_details(args)
 		self.assertEqual(details.price_list_rate, 2.0)
 
-		args = frappe._dict(
+		args = nts ._dict(
 			{
 				"item_code": "Test Sanitizer Item",
 				"company": "_Test Company",
@@ -950,7 +950,7 @@ class TestPricingRule(FrappeTestCase):
 				"order_type": "Sales",
 				"customer": "_Test Customer",
 				"name": None,
-				"transaction_date": frappe.utils.nowdate(),
+				"transaction_date": nts .utils.nowdate(),
 			}
 		)
 
@@ -959,7 +959,7 @@ class TestPricingRule(FrappeTestCase):
 
 	def test_pricing_rule_for_transaction(self):
 		make_item("Water Flask 1")
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
 		make_pricing_rule(
 			selling=1,
 			min_qty=5,
@@ -982,7 +982,7 @@ class TestPricingRule(FrappeTestCase):
 
 	def test_pricing_rule_for_transaction_with_condition(self):
 		make_item("PR Transaction Condition")
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
 		make_pricing_rule(
 			selling=1,
 			min_qty=0,
@@ -1024,7 +1024,7 @@ class TestPricingRule(FrappeTestCase):
 			"discount_percentage": 20,
 			"company": "_Test Company",
 		}
-		rule = frappe.get_doc(pricing_rule_record)
+		rule = nts .get_doc(pricing_rule_record)
 		rule.insert()
 
 		si = create_sales_invoice(do_not_save=True, item_code="Water Flask")
@@ -1043,7 +1043,7 @@ class TestPricingRule(FrappeTestCase):
 
 		si.delete()
 		rule.delete()
-		frappe.get_doc("Item Price", {"item_code": "Water Flask"}).delete()
+		nts .get_doc("Item Price", {"item_code": "Water Flask"}).delete()
 		item.delete()
 
 	def test_multiple_pricing_rules_with_min_qty(self):
@@ -1075,8 +1075,8 @@ class TestPricingRule(FrappeTestCase):
 		self.assertEqual(item.discount_percentage, 30)
 		si.delete()
 
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule with Min Qty - 1")
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule with Min Qty - 2")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule with Min Qty - 1")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule with Min Qty - 2")
 
 	def test_pricing_rule_for_other_items_cond_with_amount(self):
 		item = make_item("Water Flask New")
@@ -1103,7 +1103,7 @@ class TestPricingRule(FrappeTestCase):
 			"discount_percentage": 10,
 			"company": "_Test Company",
 		}
-		rule = frappe.get_doc(pricing_rule_record)
+		rule = nts .get_doc(pricing_rule_record)
 		rule.insert()
 
 		si = create_sales_invoice(do_not_save=True, item_code=item.name)
@@ -1141,7 +1141,7 @@ class TestPricingRule(FrappeTestCase):
 		rule.delete()
 
 	def test_pricing_rule_for_product_free_item_rounded_qty_and_recursion(self):
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
 		test_record = {
 			"doctype": "Pricing Rule",
 			"title": "_Test Pricing Rule",
@@ -1164,7 +1164,7 @@ class TestPricingRule(FrappeTestCase):
 			"recurse_for": 2,
 			"company": "_Test Company",
 		}
-		frappe.get_doc(test_record.copy()).insert()
+		nts .get_doc(test_record.copy()).insert()
 
 		# With pricing rule
 		so = make_sales_order(item_code="_Test Item", qty=5)
@@ -1186,7 +1186,7 @@ class TestPricingRule(FrappeTestCase):
 		self.assertEqual(len(so.items), 1)
 
 	def test_pricing_rule_for_product_free_item_round_free_qty(self):
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
 		test_record = {
 			"doctype": "Pricing Rule",
 			"title": "_Test Pricing Rule",
@@ -1209,7 +1209,7 @@ class TestPricingRule(FrappeTestCase):
 			"recurse_for": 100,
 			"company": "_Test Company",
 		}
-		frappe.get_doc(test_record.copy()).insert()
+		nts .get_doc(test_record.copy()).insert()
 
 		# With pricing rule
 		so = make_sales_order(item_code="_Test Item", qty=100)
@@ -1225,8 +1225,8 @@ class TestPricingRule(FrappeTestCase):
 		self.assertEqual(so.items[1].qty, 10)
 
 	def test_apply_multiple_pricing_rules_for_discount_percentage_and_amount(self):
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 1")
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 2")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 1")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 2")
 		test_record = {
 			"doctype": "Pricing Rule",
 			"title": "_Test Pricing Rule 1",
@@ -1246,7 +1246,7 @@ class TestPricingRule(FrappeTestCase):
 			"company": "_Test Company",
 		}
 
-		frappe.get_doc(test_record.copy()).insert()
+		nts .get_doc(test_record.copy()).insert()
 
 		test_record = {
 			"doctype": "Pricing Rule",
@@ -1267,19 +1267,19 @@ class TestPricingRule(FrappeTestCase):
 			"company": "_Test Company",
 		}
 
-		frappe.get_doc(test_record.copy()).insert()
+		nts .get_doc(test_record.copy()).insert()
 
 		so = make_sales_order(item_code="_Test Item", qty=1, price_list_rate=1000, do_not_submit=True)
 		self.assertEqual(so.items[0].discount_amount, 200)
 		self.assertEqual(so.items[0].rate, 800)
 
-		frappe.delete_doc_if_exists("Sales Order", so.name)
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 1")
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 2")
+		nts .delete_doc_if_exists("Sales Order", so.name)
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 1")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 2")
 
 	def test_priority_of_multiple_pricing_rules(self):
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 1")
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 2")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 1")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 2")
 
 		test_record = {
 			"doctype": "Pricing Rule",
@@ -1301,7 +1301,7 @@ class TestPricingRule(FrappeTestCase):
 			"company": "_Test Company",
 		}
 
-		frappe.get_doc(test_record.copy()).insert()
+		nts .get_doc(test_record.copy()).insert()
 
 		test_record = {
 			"doctype": "Pricing Rule",
@@ -1323,15 +1323,15 @@ class TestPricingRule(FrappeTestCase):
 			"company": "_Test Company",
 		}
 
-		frappe.get_doc(test_record.copy()).insert()
+		nts .get_doc(test_record.copy()).insert()
 
 		so = make_sales_order(item_code="_Test Item", qty=1, price_list_rate=1000, do_not_submit=True)
 		self.assertEqual(so.items[0].discount_percentage, 20)
 		self.assertEqual(so.items[0].rate, 800)
 
-		frappe.delete_doc_if_exists("Sales Order", so.name)
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 1")
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 2")
+		nts .delete_doc_if_exists("Sales Order", so.name)
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 1")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule 2")
 
 	def test_pricing_rules_with_and_without_apply_multiple(self):
 		item = make_item("PR Item 99")
@@ -1376,11 +1376,11 @@ class TestPricingRule(FrappeTestCase):
 		]
 
 		for item_group_priority, item_code_priority in [(2, 4), (4, 2)]:
-			item_group_rule = frappe.get_doc(test_records[0].copy())
+			item_group_rule = nts .get_doc(test_records[0].copy())
 			item_group_rule.priority = item_group_priority
 			item_group_rule.insert()
 
-			item_code_rule = frappe.get_doc(test_records[1].copy())
+			item_code_rule = nts .get_doc(test_records[1].copy())
 			item_code_rule.priority = item_code_priority
 			item_code_rule.insert()
 
@@ -1405,10 +1405,10 @@ class TestPricingRule(FrappeTestCase):
 		)
 		pricing_rule.mixed_conditions = True
 		pricing_rule.is_recursive = True
-		self.assertRaises(frappe.ValidationError, pricing_rule.save)
+		self.assertRaises(nts .ValidationError, pricing_rule.save)
 
 	def test_ignore_pricing_rule_for_credit_note(self):
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
 		pricing_rule = make_pricing_rule(
 			discount_percentage=20,
 			selling=1,
@@ -1439,7 +1439,7 @@ class TestPricingRule(FrappeTestCase):
 		si.cancel()
 
 	def test_ignore_pricing_rule_for_debit_note(self):
-		frappe.delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
+		nts .delete_doc_if_exists("Pricing Rule", "_Test Pricing Rule")
 		pricing_rule = make_pricing_rule(
 			discount_percentage=20,
 			buying=1,
@@ -1475,9 +1475,9 @@ test_dependencies = ["Campaign"]
 
 
 def make_pricing_rule(**args):
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 
-	doc = frappe.get_doc(
+	doc = nts .get_doc(
 		{
 			"doctype": "Pricing Rule",
 			"title": args.title or "_Test Pricing Rule",
@@ -1532,8 +1532,8 @@ def make_pricing_rule(**args):
 
 
 def setup_pricing_rule_data():
-	if not frappe.db.exists("Campaign", "_Test Campaign"):
-		frappe.get_doc(
+	if not nts .db.exists("Campaign", "_Test Campaign"):
+		nts .get_doc(
 			{"doctype": "Campaign", "campaign_name": "_Test Campaign", "name": "_Test Campaign"}
 		).insert()
 
@@ -1545,11 +1545,11 @@ def delete_existing_pricing_rules():
 		"Pricing Rule Item Group",
 		"Pricing Rule Brand",
 	]:
-		frappe.db.sql(f"delete from `tab{doctype}`")
+		nts .db.sql(f"delete from `tab{doctype}`")
 
 
 def make_item_price(item, price_list_name, item_price):
-	frappe.get_doc(
+	nts .get_doc(
 		{
 			"doctype": "Item Price",
 			"price_list": price_list_name,

@@ -1,14 +1,14 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 
-import frappe
-from frappe.custom.doctype.property_setter.property_setter import make_property_setter
-from frappe.test_runner import make_test_objects
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, today
+import nts
+from nts.custom.doctype.property_setter.property_setter import make_property_setter
+from nts.test_runner import make_test_objects
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import add_days, today
 
 from prodman.controllers.item_variant import (
 	InvalidItemAttributeValueError,
@@ -34,12 +34,12 @@ test_dependencies = ["Warehouse", "Item Group", "Item Tax Template", "Brand", "I
 
 def make_item(item_code=None, properties=None, uoms=None, barcode=None):
 	if not item_code:
-		item_code = frappe.generate_hash(length=16)
+		item_code = nts.generate_hash(length=16)
 
-	if frappe.db.exists("Item", item_code):
-		return frappe.get_doc("Item", item_code)
+	if nts.db.exists("Item", item_code):
+		return nts.get_doc("Item", item_code)
 
-	item = frappe.get_doc(
+	item = nts.get_doc(
 		{
 			"doctype": "Item",
 			"item_code": item_code,
@@ -74,24 +74,24 @@ def make_item(item_code=None, properties=None, uoms=None, barcode=None):
 	return item
 
 
-class TestItem(FrappeTestCase):
+class TestItem(ntsTestCase):
 	def setUp(self):
 		super().setUp()
-		frappe.flags.attribute_values = None
+		nts.flags.attribute_values = None
 
 	def get_item(self, idx):
 		item_code = test_records[idx].get("item_code")
-		if not frappe.db.exists("Item", item_code):
-			item = frappe.copy_doc(test_records[idx])
+		if not nts.db.exists("Item", item_code):
+			item = nts.copy_doc(test_records[idx])
 			item.insert()
 		else:
-			item = frappe.get_doc("Item", item_code)
+			item = nts.get_doc("Item", item_code)
 		return item
 
 	def test_get_item_details(self):
 		# delete modified item price record and make as per test_records
-		frappe.db.sql("""delete from `tabItem Price`""")
-		frappe.db.sql("""delete from `tabBin`""")
+		nts.db.sql("""delete from `tabItem Price`""")
+		nts.db.sql("""delete from `tabBin`""")
 
 		to_check = {
 			"item_code": "_Test Item",
@@ -133,7 +133,7 @@ class TestItem(FrappeTestCase):
 		)
 
 		company = "_Test Company"
-		currency = frappe.get_cached_value("Company", company, "default_currency")
+		currency = nts.get_cached_value("Company", company, "default_currency")
 
 		details = get_item_details(
 			{
@@ -259,7 +259,7 @@ class TestItem(FrappeTestCase):
 			)
 
 	def test_item_defaults(self):
-		frappe.delete_doc_if_exists("Item", "Test Item With Defaults", force=1)
+		nts.delete_doc_if_exists("Item", "Test Item With Defaults", force=1)
 		make_item(
 			"Test Item With Defaults",
 			{
@@ -323,7 +323,7 @@ class TestItem(FrappeTestCase):
 			self.assertEqual(value, purchase_item_details.get(key))
 
 	def test_item_default_validations(self):
-		with self.assertRaises(frappe.ValidationError) as ve:
+		with self.assertRaises(nts.ValidationError) as ve:
 			make_item(
 				"Bad Item defaults",
 				{
@@ -346,22 +346,22 @@ class TestItem(FrappeTestCase):
 		)
 
 	def test_item_attribute_change_after_variant(self):
-		frappe.delete_doc_if_exists("Item", "_Test Variant Item-L", force=1)
+		nts.delete_doc_if_exists("Item", "_Test Variant Item-L", force=1)
 
 		variant = create_variant("_Test Variant Item", {"Test Size": "Large"})
 		variant.save()
 
-		attribute = frappe.get_doc("Item Attribute", "Test Size")
+		attribute = nts.get_doc("Item Attribute", "Test Size")
 		attribute.item_attribute_values = []
 
 		# reset flags
-		frappe.flags.attribute_values = None
+		nts.flags.attribute_values = None
 
 		self.assertRaises(InvalidItemAttributeValueError, attribute.save)
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def test_make_item_variant(self):
-		frappe.delete_doc_if_exists("Item", "_Test Variant Item-L", force=1)
+		nts.delete_doc_if_exists("Item", "_Test Variant Item-L", force=1)
 
 		variant = create_variant("_Test Variant Item", {"Test Size": "Large"})
 		variant.save()
@@ -372,20 +372,20 @@ class TestItem(FrappeTestCase):
 		self.assertRaises(ItemVariantExistsError, variant.save)
 
 	def test_copy_fields_from_template_to_variants(self):
-		frappe.delete_doc_if_exists("Item", "_Test Variant Item-XL", force=1)
+		nts.delete_doc_if_exists("Item", "_Test Variant Item-XL", force=1)
 
 		fields = [{"field_name": "item_group"}, {"field_name": "is_stock_item"}]
 		allow_fields = [d.get("field_name") for d in fields]
 		set_item_variant_settings(fields)
 
-		if not frappe.db.get_value(
+		if not nts.db.get_value(
 			"Item Attribute Value", {"parent": "Test Size", "attribute_value": "Extra Large"}, "name"
 		):
-			item_attribute = frappe.get_doc("Item Attribute", "Test Size")
+			item_attribute = nts.get_doc("Item Attribute", "Test Size")
 			item_attribute.append("item_attribute_values", {"attribute_value": "Extra Large", "abbr": "XL"})
 			item_attribute.save()
 
-		template = frappe.get_doc("Item", "_Test Variant Item")
+		template = nts.get_doc("Item", "_Test Variant Item")
 		template.item_group = "_Test Item Group D"
 		template.save()
 
@@ -394,31 +394,31 @@ class TestItem(FrappeTestCase):
 		variant.item_name = "_Test Variant Item-XL"
 		variant.save()
 
-		variant = frappe.get_doc("Item", "_Test Variant Item-XL")
+		variant = nts.get_doc("Item", "_Test Variant Item-XL")
 		for fieldname in allow_fields:
 			self.assertEqual(template.get(fieldname), variant.get(fieldname))
 
-		template = frappe.get_doc("Item", "_Test Variant Item")
+		template = nts.get_doc("Item", "_Test Variant Item")
 		template.item_group = "_Test Item Group Desktops"
 		template.save()
 
 	def test_make_item_variant_with_numeric_values(self):
 		# cleanup
-		for d in frappe.db.get_all("Item", filters={"variant_of": "_Test Numeric Template Item"}):
-			frappe.delete_doc_if_exists("Item", d.name)
+		for d in nts.db.get_all("Item", filters={"variant_of": "_Test Numeric Template Item"}):
+			nts.delete_doc_if_exists("Item", d.name)
 
-		frappe.delete_doc_if_exists("Item", "_Test Numeric Template Item")
-		frappe.delete_doc_if_exists("Item Attribute", "Test Item Length")
+		nts.delete_doc_if_exists("Item", "_Test Numeric Template Item")
+		nts.delete_doc_if_exists("Item Attribute", "Test Item Length")
 
-		frappe.db.sql(
+		nts.db.sql(
 			"""delete from `tabItem Variant Attribute`
 			where attribute='Test Item Length' """
 		)
 
-		frappe.flags.attribute_values = None
+		nts.flags.attribute_values = None
 
 		# make item attribute
-		frappe.get_doc(
+		nts.get_doc(
 			{
 				"doctype": "Item Attribute",
 				"attribute_name": "Test Item Length",
@@ -465,20 +465,20 @@ class TestItem(FrappeTestCase):
 		variant.save()
 
 	def test_item_merging(self):
-		old = create_item(frappe.generate_hash(length=20)).name
-		new = create_item(frappe.generate_hash(length=20)).name
+		old = create_item(nts.generate_hash(length=20)).name
+		new = create_item(nts.generate_hash(length=20)).name
 
 		make_stock_entry(item_code=old, target="_Test Warehouse - _TC", qty=1, rate=100)
 		make_stock_entry(item_code=old, target="_Test Warehouse 1 - _TC", qty=1, rate=100)
 		make_stock_entry(item_code=new, target="_Test Warehouse 1 - _TC", qty=1, rate=100)
 
-		frappe.rename_doc("Item", old, new, merge=True)
+		nts.rename_doc("Item", old, new, merge=True)
 
-		self.assertFalse(frappe.db.exists("Item", old))
+		self.assertFalse(nts.db.exists("Item", old))
 
-		self.assertTrue(frappe.db.get_value("Bin", {"item_code": new, "warehouse": "_Test Warehouse - _TC"}))
+		self.assertTrue(nts.db.get_value("Bin", {"item_code": new, "warehouse": "_Test Warehouse - _TC"}))
 		self.assertTrue(
-			frappe.db.get_value("Bin", {"item_code": new, "warehouse": "_Test Warehouse 1 - _TC"})
+			nts.db.get_value("Bin", {"item_code": new, "warehouse": "_Test Warehouse 1 - _TC"})
 		)
 
 	def test_item_merging_with_product_bundle(self):
@@ -494,16 +494,16 @@ class TestItem(FrappeTestCase):
 		make_product_bundle("Test Item Bundle Item 2", bundle_items, qty=2)
 
 		with self.assertRaises(DataValidationError):
-			frappe.rename_doc("Item", "Test Item Bundle Item 1", "Test Item Bundle Item 2", merge=True)
+			nts.rename_doc("Item", "Test Item Bundle Item 1", "Test Item Bundle Item 2", merge=True)
 
 		bundle1.delete()
-		frappe.rename_doc("Item", "Test Item Bundle Item 1", "Test Item Bundle Item 2", merge=True)
+		nts.rename_doc("Item", "Test Item Bundle Item 1", "Test Item Bundle Item 2", merge=True)
 
-		self.assertFalse(frappe.db.exists("Item", "Test Item Bundle Item 1"))
+		self.assertFalse(nts.db.exists("Item", "Test Item Bundle Item 1"))
 
 	def test_uom_conversion_factor(self):
-		if frappe.db.exists("Item", "Test Item UOM"):
-			frappe.delete_doc("Item", "Test Item UOM")
+		if nts.db.exists("Item", "Test Item UOM"):
+			nts.delete_doc("Item", "Test Item UOM")
 
 		item_doc = make_item(
 			"Test Item UOM", {"stock_uom": "Gram", "uoms": [dict(uom="Carat"), dict(uom="Kg")]}
@@ -532,36 +532,36 @@ class TestItem(FrappeTestCase):
 		).name
 
 		for manufacturer in ["DFSS", "DASA", "ASAAS"]:
-			if not frappe.db.exists("Manufacturer", manufacturer):
-				m_doc = frappe.new_doc("Manufacturer")
+			if not nts.db.exists("Manufacturer", manufacturer):
+				m_doc = nts.new_doc("Manufacturer")
 				m_doc.short_name = manufacturer
 				m_doc.insert()
 
-		self.assertFalse(frappe.db.exists("Item Manufacturer", {"manufacturer": "DFSS"}))
+		self.assertFalse(nts.db.exists("Item Manufacturer", {"manufacturer": "DFSS"}))
 		variant = get_variant(template, manufacturer="DFSS", manufacturer_part_no="DFSS-123")
 
-		item_manufacturer = frappe.db.exists(
+		item_manufacturer = nts.db.exists(
 			"Item Manufacturer", {"manufacturer": "DFSS", "item_code": variant.name}
 		)
 		self.assertTrue(item_manufacturer)
 
-		frappe.delete_doc("Item Manufacturer", item_manufacturer)
+		nts.delete_doc("Item Manufacturer", item_manufacturer)
 
 	def test_stock_exists_against_template_item(self):
-		stock_item = frappe.get_all("Stock Ledger Entry", fields=["item_code"], limit=1)
+		stock_item = nts.get_all("Stock Ledger Entry", fields=["item_code"], limit=1)
 		if stock_item:
 			item_code = stock_item[0].item_code
 
-			item_doc = frappe.get_doc("Item", item_code)
+			item_doc = nts.get_doc("Item", item_code)
 			item_doc.has_variants = 1
 			self.assertRaises(StockExistsForTemplate, item_doc.save)
 
 	def test_add_item_barcode(self):
 		# Clean up
-		frappe.db.sql("""delete from `tabItem Barcode`""")
+		nts.db.sql("""delete from `tabItem Barcode`""")
 		item_code = "Test Item Barcode"
-		if frappe.db.exists("Item", item_code):
-			frappe.delete_doc("Item", item_code)
+		if nts.db.exists("Item", item_code):
+			nts.delete_doc("Item", item_code)
 
 		# Create new item and add barcodes
 		barcode_properties_list = [
@@ -587,13 +587,13 @@ class TestItem(FrappeTestCase):
 		]
 		create_item(item_code)
 		for barcode_properties in barcode_properties_list:
-			item_doc = frappe.get_doc("Item", item_code)
+			item_doc = nts.get_doc("Item", item_code)
 			new_barcode = item_doc.append("barcodes")
 			new_barcode.update(barcode_properties)
 			item_doc.save()
 
 		# Check values saved correctly
-		barcodes = frappe.get_all(
+		barcodes = nts.get_all(
 			"Item Barcode", fields=["barcode", "barcode_type"], filters={"parent": item_code}
 		)
 
@@ -607,13 +607,13 @@ class TestItem(FrappeTestCase):
 			self.assertEqual(value, details.get(key))
 
 		# Add barcode again - should cause DuplicateEntryError
-		item_doc = frappe.get_doc("Item", item_code)
+		item_doc = nts.get_doc("Item", item_code)
 		new_barcode = item_doc.append("barcodes")
 		new_barcode.update(barcode_properties_list[0])
-		self.assertRaises(frappe.UniqueValidationError, item_doc.save)
+		self.assertRaises(nts.UniqueValidationError, item_doc.save)
 
 		# Add invalid barcode - should cause InvalidBarcode
-		item_doc = frappe.get_doc("Item", item_code)
+		item_doc = nts.get_doc("Item", item_code)
 		new_barcode = item_doc.append("barcodes")
 		new_barcode.barcode = "9999999999999"
 		new_barcode.barcode_type = "EAN"
@@ -637,7 +637,7 @@ class TestItem(FrappeTestCase):
 	def test_index_creation(self):
 		"check if index is getting created in db"
 
-		indices = frappe.db.sql("show index from tabItem", as_dict=1)
+		indices = nts.db.sql("show index from tabItem", as_dict=1)
 		expected_columns = {"item_code", "item_name", "item_group"}
 		for index in indices:
 			expected_columns.discard(index.get("Column_name"))
@@ -658,9 +658,9 @@ class TestItem(FrappeTestCase):
 
 	def test_check_stock_uom_with_bin(self):
 		# this item has opening stock and stock_uom set in test_records.
-		item = frappe.get_doc("Item", "_Test Item")
+		item = nts.get_doc("Item", "_Test Item")
 		item.stock_uom = "Gram"
-		self.assertRaises(frappe.ValidationError, item.save)
+		self.assertRaises(nts.ValidationError, item.save)
 
 	def test_check_stock_uom_with_bin_no_sle(self):
 		from prodman.stock.stock_balance import update_bin_qty
@@ -672,7 +672,7 @@ class TestItem(FrappeTestCase):
 		update_bin_qty(item.item_code, "_Test Warehouse - _TC", {"reserved_qty": 10})
 
 		item.stock_uom = "Kilometer"
-		self.assertRaises(frappe.ValidationError, item.save)
+		self.assertRaises(nts.ValidationError, item.save)
 
 		update_bin_qty(item.item_code, "_Test Warehouse - _TC", {"reserved_qty": 0})
 
@@ -680,13 +680,13 @@ class TestItem(FrappeTestCase):
 		item.stock_uom = "Kilometer"
 		try:
 			item.save()
-		except frappe.ValidationError as e:
+		except nts.ValidationError as e:
 			self.fail(f"UoM change not allowed even though no SLE / BIN with positive qty exists: {e}")
 
 	def test_erasure_of_old_conversions(self):
 		item = create_item("_item change uom")
 		item.stock_uom = "Gram"
-		item.append("uoms", frappe._dict(uom="Box", conversion_factor=2))
+		item.append("uoms", nts._dict(uom="Box", conversion_factor=2))
 		item.save()
 		item.reload()
 		item.stock_uom = "Nos"
@@ -694,16 +694,16 @@ class TestItem(FrappeTestCase):
 		self.assertEqual(len(item.uoms), 1)
 
 	def test_validate_stock_item(self):
-		self.assertRaises(frappe.ValidationError, validate_is_stock_item, "_Test Non Stock Item")
+		self.assertRaises(nts.ValidationError, validate_is_stock_item, "_Test Non Stock Item")
 
 		try:
 			validate_is_stock_item("_Test Item")
-		except frappe.ValidationError as e:
+		except nts.ValidationError as e:
 			self.fail(f"stock item considered non-stock item: {e}")
 
 	@change_settings("Stock Settings", {"item_naming_by": "Naming Series"})
 	def test_autoname_series(self):
-		item = frappe.new_doc("Item")
+		item = nts.new_doc("Item")
 		item.item_group = "All Item Groups"
 		item.save()  # if item code saved without item_code then series worked
 
@@ -796,7 +796,7 @@ class TestItem(FrappeTestCase):
 			item = make_item(properties=properties)
 			transaction = transaction_creator(item.name)
 			item.has_batch_no = 1
-			self.assertRaises(frappe.ValidationError, item.save)
+			self.assertRaises(nts.ValidationError, item.save)
 
 			transaction.cancel()
 			# should be allowed now
@@ -808,7 +808,7 @@ class TestItem(FrappeTestCase):
 		"""Check if item code with special characters are allowed."""
 		item = make_item(properties={"item_code": "Test Item Code With Special Characters"})
 		for _row in range(3):
-			item.append("customer_items", {"ref_code": frappe.generate_hash("", 120)})
+			item.append("customer_items", {"ref_code": nts.generate_hash("", 120)})
 		item.save()
 		self.assertTrue(len(item.customer_code) > 140)
 
@@ -823,14 +823,14 @@ class TestItem(FrappeTestCase):
 		self.assertEqual(item.is_stock_item, 0)
 
 		# Step - 3: Create Product Bundle
-		pb = frappe.new_doc("Product Bundle")
+		pb = nts.new_doc("Product Bundle")
 		pb.new_item_code = item.name
 		pb.flags.ignore_mandatory = True
 		pb.save()
 
 		# Step - 4: Try to enable Maintain Stock, should throw a validation error
 		item.is_stock_item = 1
-		self.assertRaises(frappe.ValidationError, item.save)
+		self.assertRaises(nts.ValidationError, item.save)
 		item.reload()
 
 		# Step - 5: Delete Product Bundle
@@ -867,7 +867,7 @@ class TestItem(FrappeTestCase):
 
 		item_doc = make_item("_Test Group Warehouse For Reorder Item", {"is_stock_item": 1})
 		warehouse = create_warehouse("_Test Warehouse - _TC")
-		warehouse_doc = frappe.get_doc("Warehouse", warehouse)
+		warehouse_doc = nts.get_doc("Warehouse", warehouse)
 		warehouse_doc.db_set("parent_warehouse", "")
 
 		item_doc.append(
@@ -881,24 +881,24 @@ class TestItem(FrappeTestCase):
 			},
 		)
 
-		self.assertRaises(frappe.ValidationError, item_doc.save)
+		self.assertRaises(nts.ValidationError, item_doc.save)
 
 
 def set_item_variant_settings(fields):
-	doc = frappe.get_doc("Item Variant Settings")
+	doc = nts.get_doc("Item Variant Settings")
 	doc.set("fields", fields)
 	doc.save()
 
 
 def make_item_variant():
-	if not frappe.db.exists("Item", "_Test Variant Item-S"):
+	if not nts.db.exists("Item", "_Test Variant Item-S"):
 		variant = create_variant("_Test Variant Item", """{"Test Size": "Small"}""")
 		variant.item_code = "_Test Variant Item-S"
 		variant.item_name = "_Test Variant Item-S"
 		variant.save()
 
 
-test_records = frappe.get_test_records("Item")
+test_records = nts.get_test_records("Item")
 
 
 def create_item(
@@ -917,8 +917,8 @@ def create_item(
 	selling_cost_center=None,
 	company="_Test Company",
 ):
-	if not frappe.db.exists("Item", item_code):
-		item = frappe.new_doc("Item")
+	if not nts.db.exists("Item", item_code):
+		item = nts.new_doc("Item")
 		item.item_code = item_code
 		item.item_name = item_code
 		item.description = item_code
@@ -943,5 +943,5 @@ def create_item(
 		)
 		item.save()
 	else:
-		item = frappe.get_doc("Item", item_code)
+		item = nts.get_doc("Item", item_code)
 	return item

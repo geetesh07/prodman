@@ -1,20 +1,20 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.query_reports["Item-wise Sales Register"] = {
+nts .query_reports["Item-wise Sales Register"] = {
 	filters: [
 		{
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+			default: nts .datetime.add_months(nts .datetime.get_today(), -1),
 			reqd: 1,
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.get_today(),
+			default: nts .datetime.get_today(),
 			reqd: 1,
 		},
 		{
@@ -28,7 +28,7 @@ frappe.query_reports["Item-wise Sales Register"] = {
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts .defaults.get_user_default("Company"),
 		},
 		{
 			fieldname: "mode_of_payment",
@@ -42,7 +42,7 @@ frappe.query_reports["Item-wise Sales Register"] = {
 			fieldtype: "Link",
 			options: "Warehouse",
 			get_query: function () {
-				const company = frappe.query_report.get_filter_value("company");
+				const company = nts .query_report.get_filter_value("company");
 				return {
 					filters: { company: company },
 				};

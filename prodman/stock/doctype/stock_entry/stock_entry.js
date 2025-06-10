@@ -1,11 +1,11 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors // License: GNU General Public License v3. See license.txt
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.stock");
-frappe.provide("prodman.accounts.dimensions");
+nts.provide("prodman.stock");
+nts.provide("prodman.accounts.dimensions");
 
 prodman.landed_cost_taxes_and_charges.setup_triggers("Stock Entry");
 
-frappe.ui.form.on("Stock Entry", {
+nts.ui.form.on("Stock Entry", {
 	setup: function (frm) {
 		frm.ignore_doctypes_on_cancel_all = ["Serial and Batch Bundle"];
 
@@ -54,7 +54,7 @@ frappe.ui.form.on("Stock Entry", {
 			};
 		});
 
-		frappe.db.get_value(
+		nts.db.get_value(
 			"Stock Settings",
 			{ name: "Stock Settings" },
 			"sample_retention_warehouse",
@@ -84,7 +84,7 @@ frappe.ui.form.on("Stock Entry", {
 			let filters = {};
 
 			if (!item.item_code) {
-				frappe.throw(__("Please enter Item Code to get Batch Number"));
+				nts.throw(__("Please enter Item Code to get Batch Number"));
 			} else {
 				if (
 					in_list(
@@ -99,7 +99,7 @@ frappe.ui.form.on("Stock Entry", {
 				) {
 					filters = {
 						item_code: item.item_code,
-						posting_date: frm.doc.posting_date || frappe.datetime.nowdate(),
+						posting_date: frm.doc.posting_date || nts.datetime.nowdate(),
 					};
 				} else {
 					filters = {
@@ -143,9 +143,9 @@ frappe.ui.form.on("Stock Entry", {
 		frm.add_fetch("bom_no", "inspection_required", "inspection_required");
 		prodman.accounts.dimensions.setup_dimension_filters(frm, frm.doctype);
 
-		frappe.db.get_single_value("Stock Settings", "disable_serial_no_and_batch_selector").then((value) => {
+		nts.db.get_single_value("Stock Settings", "disable_serial_no_and_batch_selector").then((value) => {
 			if (value) {
-				frappe.flags.hide_serial_batch_dialog = true;
+				nts.flags.hide_serial_batch_dialog = true;
 			}
 		});
 		attach_bom_items(frm.doc.bom_no);
@@ -200,7 +200,7 @@ frappe.ui.form.on("Stock Entry", {
 	},
 
 	outgoing_stock_entry: function (frm) {
-		frappe.call({
+		nts.call({
 			doc: frm.doc,
 			method: "set_items_for_stock_in",
 			callback: function () {
@@ -217,8 +217,8 @@ frappe.ui.form.on("Stock Entry", {
 			frm.add_custom_button(
 				__("Material Request"),
 				function () {
-					frappe.model.with_doctype("Material Request", function () {
-						var mr = frappe.model.get_new_doc("Material Request");
+					nts.model.with_doctype("Material Request", function () {
+						var mr = nts.model.get_new_doc("Material Request");
 						var items = frm.get_field("items").grid.get_selected_children();
 						if (!items.length) {
 							items = frm.doc.items;
@@ -226,7 +226,7 @@ frappe.ui.form.on("Stock Entry", {
 
 						mr.work_order = frm.doc.work_order;
 						items.forEach(function (item) {
-							var mr_item = frappe.model.add_child(mr, "items");
+							var mr_item = nts.model.add_child(mr, "items");
 							mr_item.item_code = item.item_code;
 							mr_item.item_name = item.item_name;
 							mr_item.uom = item.uom;
@@ -237,9 +237,9 @@ frappe.ui.form.on("Stock Entry", {
 							mr_item.image = item.image;
 							mr_item.qty = item.qty;
 							mr_item.warehouse = item.s_warehouse;
-							mr_item.required_date = frappe.datetime.nowdate();
+							mr_item.required_date = nts.datetime.nowdate();
 						});
-						frappe.set_route("Form", "Material Request", mr.name);
+						nts.set_route("Form", "Material Request", mr.name);
 					});
 				},
 				__("Create")
@@ -274,7 +274,7 @@ frappe.ui.form.on("Stock Entry", {
 				frm.doc.per_transferred < 100
 			) {
 				frm.add_custom_button(__("End Transit"), function () {
-					frappe.model.open_mapped_doc({
+					nts.model.open_mapped_doc({
 						method: "prodman.stock.doctype.stock_entry.stock_entry.make_stock_in_entry",
 						frm: frm,
 					});
@@ -285,12 +285,12 @@ frappe.ui.form.on("Stock Entry", {
 				frm.add_custom_button(
 					__("Received Stock Entries"),
 					function () {
-						frappe.route_options = {
+						nts.route_options = {
 							outgoing_stock_entry: frm.doc.name,
 							docstatus: ["!=", 2],
 						};
 
-						frappe.set_route("List", "Stock Entry");
+						nts.set_route("List", "Stock Entry");
 					},
 					__("View")
 				);
@@ -369,7 +369,7 @@ frappe.ui.form.on("Stock Entry", {
 			frm.add_custom_button(
 				__("Expired Batches"),
 				function () {
-					frappe.call({
+					nts.call({
 						method: "prodman.stock.doctype.stock_entry.stock_entry.get_expired_batch_items",
 						freeze: true,
 						callback: function (r) {
@@ -496,20 +496,20 @@ frappe.ui.form.on("Stock Entry", {
 	},
 
 	validate_purpose_consumption: function (frm) {
-		frappe
+		nts
 			.call({
 				method: "prodman.manufacturing.doctype.manufacturing_settings.manufacturing_settings.is_material_consumption_enabled",
 			})
 			.then((r) => {
 				if (cint(r.message) == 0 && frm.doc.purpose == "Material Consumption for Manufacture") {
 					frm.set_value("purpose", "Manufacture");
-					frappe.throw(__("Material Consumption is not set in Manufacturing Settings."));
+					nts.throw(__("Material Consumption is not set in Manufacturing Settings."));
 				}
 			});
 	},
 
 	make_retention_stock_entry: function (frm) {
-		frappe.call({
+		nts.call({
 			method: "prodman.stock.doctype.stock_entry.stock_entry.move_sample_to_retention_warehouse",
 			args: {
 				company: frm.doc.company,
@@ -517,10 +517,10 @@ frappe.ui.form.on("Stock Entry", {
 			},
 			callback: function (r) {
 				if (r.message) {
-					var doc = frappe.model.sync(r.message)[0];
-					frappe.set_route("Form", doc.doctype, doc.name);
+					var doc = nts.model.sync(r.message)[0];
+					nts.set_route("Form", doc.doctype, doc.name);
 				} else {
-					frappe.msgprint(
+					nts.msgprint(
 						__("Retention Stock Entry already created or Sample Quantity not provided")
 					);
 				}
@@ -552,13 +552,13 @@ frappe.ui.form.on("Stock Entry", {
 		};
 
 		if (item.item_code || item.serial_no) {
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.utils.get_incoming_rate",
 				args: {
 					args: args,
 				},
 				callback: function (r) {
-					frappe.model.set_value(cdt, cdn, "basic_rate", r.message || 0.0);
+					nts.model.set_value(cdt, cdn, "basic_rate", r.message || 0.0);
 					frm.events.calculate_basic_amount(frm, item);
 				},
 			});
@@ -568,7 +568,7 @@ frappe.ui.form.on("Stock Entry", {
 	get_warehouse_details: function (frm, cdt, cdn) {
 		var child = locals[cdt][cdn];
 		if (!child.bom_no) {
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.doctype.stock_entry.stock_entry.get_warehouse_details",
 				args: {
 					args: {
@@ -593,7 +593,7 @@ frappe.ui.form.on("Stock Entry", {
 						}
 
 						fields.forEach((field) => {
-							frappe.model.set_value(cdt, cdn, field, r.message[field] || 0.0);
+							nts.model.set_value(cdt, cdn, field, r.message[field] || 0.0);
 						});
 						frm.events.calculate_basic_amount(frm, child);
 					}
@@ -666,7 +666,7 @@ frappe.ui.form.on("Stock Entry", {
 			fields.splice(1, 1);
 		}
 
-		let d = new frappe.ui.Dialog({
+		let d = new nts.ui.Dialog({
 			title: __("Get Items from BOM"),
 			fields: fields,
 		});
@@ -674,17 +674,17 @@ frappe.ui.form.on("Stock Entry", {
 			let values = d.get_values();
 			if (!values) return;
 			values["company"] = frm.doc.company;
-			if (!frm.doc.company) frappe.throw(__("Company field is required"));
-			frappe.call({
+			if (!frm.doc.company) nts.throw(__("Company field is required"));
+			nts.call({
 				method: "prodman.manufacturing.doctype.bom.bom.get_bom_items",
 				args: values,
 				callback: function (r) {
 					if (!r.message) {
-						frappe.throw(__("BOM does not contain any stock item"));
+						nts.throw(__("BOM does not contain any stock item"));
 					} else {
 						prodman.utils.remove_empty_first_row(frm, "items");
 						$.each(r.message, function (i, item) {
-							let d = frappe.model.add_child(cur_frm.doc, "Stock Entry Detail", "items");
+							let d = nts.model.add_child(cur_frm.doc, "Stock Entry Detail", "items");
 							d.item_code = item.item_code;
 							d.item_name = item.item_name;
 							d.item_group = item.item_group;
@@ -716,7 +716,7 @@ frappe.ui.form.on("Stock Entry", {
 	},
 
 	calculate_total_additional_costs: function (frm) {
-		const total_additional_costs = frappe.utils.sum(
+		const total_additional_costs = nts.utils.sum(
 			(frm.doc.additional_costs || []).map(function (c) {
 				return flt(c.base_amount);
 			})
@@ -766,7 +766,7 @@ frappe.ui.form.on("Stock Entry", {
 		) {
 			let dt = frm.doc.from_warehouse ? "Warehouse" : "Company";
 			let dn = frm.doc.from_warehouse ? frm.doc.from_warehouse : frm.doc.company;
-			frappe.db.get_value(dt, dn, "default_in_transit_warehouse", (r) => {
+			nts.db.get_value(dt, dn, "default_in_transit_warehouse", (r) => {
 				if (r.default_in_transit_warehouse) {
 					frm.set_value("to_warehouse", r.default_in_transit_warehouse);
 				}
@@ -823,7 +823,7 @@ frappe.ui.form.on("Stock Entry", {
 	},
 });
 
-frappe.ui.form.on("Stock Entry Detail", {
+nts.ui.form.on("Stock Entry Detail", {
 	set_basic_rate_manually(frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
 		frm.fields_dict.items.grid.update_docfield_property(
@@ -845,9 +845,9 @@ frappe.ui.form.on("Stock Entry Detail", {
 		frm.events.get_warehouse_details(frm, cdt, cdn);
 
 		// set allow_zero_valuation_rate to 0 if s_warehouse is selected.
-		let item = frappe.get_doc(cdt, cdn);
+		let item = nts.get_doc(cdt, cdn);
 		if (item.s_warehouse) {
-			frappe.model.set_value(cdt, cdn, "allow_zero_valuation_rate", 0);
+			nts.model.set_value(cdt, cdn, "allow_zero_valuation_rate", 0);
 		}
 	},
 
@@ -863,7 +863,7 @@ frappe.ui.form.on("Stock Entry Detail", {
 	uom(doc, cdt, cdn) {
 		var d = locals[cdt][cdn];
 		if (d.uom && d.item_code) {
-			return frappe.call({
+			return nts.call({
 				method: "prodman.stock.doctype.stock_entry.stock_entry.get_uom_details",
 				args: {
 					item_code: d.item_code,
@@ -872,7 +872,7 @@ frappe.ui.form.on("Stock Entry Detail", {
 				},
 				callback: function (r) {
 					if (r.message) {
-						frappe.model.set_value(cdt, cdn, r.message);
+						nts.model.set_value(cdt, cdn, r.message);
 					}
 				},
 			});
@@ -898,7 +898,7 @@ frappe.ui.form.on("Stock Entry Detail", {
 				allow_zero_valuation: 1,
 			};
 
-			return frappe.call({
+			return nts.call({
 				doc: frm.doc,
 				method: "get_item_details",
 				args: args,
@@ -909,7 +909,7 @@ frappe.ui.form.on("Stock Entry Detail", {
 							if (v) {
 								// set_value trigger barcode function and barcode set qty to 1 in stock_controller.js, to avoid this set value manually instead of set value.
 								if (k != "barcode") {
-									frappe.model.set_value(cdt, cdn, k, v); // qty and it's subsequent fields weren't triggered
+									nts.model.set_value(cdt, cdn, k, v); // qty and it's subsequent fields weren't triggered
 								} else {
 									d.barcode = v;
 								}
@@ -924,13 +924,13 @@ frappe.ui.form.on("Stock Entry Detail", {
 
 						if (
 							no_batch_serial_number_value &&
-							!frappe.flags.hide_serial_batch_dialog &&
-							!frappe.flags.dialog_set
+							!nts.flags.hide_serial_batch_dialog &&
+							!nts.flags.dialog_set
 						) {
-							frappe.flags.dialog_set = true;
+							nts.flags.dialog_set = true;
 							prodman.stock.select_batch_and_serial_no(frm, d);
 						} else {
-							frappe.flags.dialog_set = false;
+							nts.flags.dialog_set = false;
 						}
 					}
 				},
@@ -954,7 +954,7 @@ frappe.ui.form.on("Stock Entry Detail", {
 		let row = locals[cdt][cdn];
 
 		if (row.batch_no) {
-			frappe.model.set_value(cdt, cdn, {
+			nts.model.set_value(cdt, cdn, {
 				use_serial_batch_fields: 1,
 				serial_and_batch_bundle: "",
 			});
@@ -972,7 +972,7 @@ frappe.ui.form.on("Stock Entry Detail", {
 var validate_sample_quantity = function (frm, cdt, cdn) {
 	var d = locals[cdt][cdn];
 	if (d.sample_quantity && frm.doc.purpose == "Material Receipt") {
-		frappe.call({
+		nts.call({
 			method: "prodman.stock.doctype.stock_entry.stock_entry.validate_sample_quantity",
 			args: {
 				batch_no: d.batch_no,
@@ -981,13 +981,13 @@ var validate_sample_quantity = function (frm, cdt, cdn) {
 				qty: d.transfer_qty,
 			},
 			callback: (r) => {
-				frappe.model.set_value(cdt, cdn, "sample_quantity", r.message);
+				nts.model.set_value(cdt, cdn, "sample_quantity", r.message);
 			},
 		});
 	}
 };
 
-frappe.ui.form.on("Landed Cost Taxes and Charges", {
+nts.ui.form.on("Landed Cost Taxes and Charges", {
 	amount: function (frm, cdt, cdn) {
 		frm.events.set_base_amount(frm, cdt, cdn);
 	},
@@ -1053,7 +1053,7 @@ prodman.stock.StockEntry = class StockEntry extends prodman.stock.StockControlle
 			this.frm.add_fetch("subcontracting_order", "supplier", "supplier");
 		}
 
-		frappe.dynamic_link = { doc: this.frm.doc, fieldname: "supplier", doctype: "Supplier" };
+		nts.dynamic_link = { doc: this.frm.doc, fieldname: "supplier", doctype: "Supplier" };
 		this.frm.set_query("supplier_address", prodman.queries.address_query);
 	}
 
@@ -1082,10 +1082,10 @@ prodman.stock.StockEntry = class StockEntry extends prodman.stock.StockControlle
 	}
 
 	serial_no(doc, cdt, cdn) {
-		var item = frappe.get_doc(cdt, cdn);
+		var item = nts.get_doc(cdt, cdn);
 
 		if (item.serial_no) {
-			frappe.model.set_value(cdt, cdn, {
+			nts.model.set_value(cdt, cdn, {
 				use_serial_batch_fields: 1,
 				serial_and_batch_bundle: "",
 			});
@@ -1103,7 +1103,7 @@ prodman.stock.StockEntry = class StockEntry extends prodman.stock.StockControlle
 					valid_serial_nos.push(serialnos[i]);
 				}
 			}
-			frappe.model.set_value(
+			nts.model.set_value(
 				item.doctype,
 				item.name,
 				"qty",
@@ -1116,18 +1116,18 @@ prodman.stock.StockEntry = class StockEntry extends prodman.stock.StockControlle
 		if (
 			this.frm.is_new() &&
 			this.frm.doc?.items &&
-			cint(frappe.user_defaults?.use_serial_batch_fields) === 1
+			cint(nts.user_defaults?.use_serial_batch_fields) === 1
 		) {
 			this.frm.doc.items.forEach((item) => {
 				if (!item.serial_and_batch_bundle) {
-					frappe.model.set_value(item.doctype, item.name, "use_serial_batch_fields", 1);
+					nts.model.set_value(item.doctype, item.name, "use_serial_batch_fields", 1);
 				}
 			});
 		}
 	}
 
 	scan_barcode() {
-		frappe.flags.dialog_set = false;
+		nts.flags.dialog_set = false;
 		const barcode_scanner = new prodman.utils.BarcodeScanner({ frm: this.frm });
 		barcode_scanner.process_scan();
 	}
@@ -1138,7 +1138,7 @@ prodman.stock.StockEntry = class StockEntry extends prodman.stock.StockControlle
 	}
 
 	refresh_serial_batch_bundle_field() {
-		frappe.route_hooks.after_submit = (frm_obj) => {
+		nts.route_hooks.after_submit = (frm_obj) => {
 			frm_obj.reload_doc();
 		};
 	}
@@ -1149,7 +1149,7 @@ prodman.stock.StockEntry = class StockEntry extends prodman.stock.StockControlle
 
 	company() {
 		if (this.frm.doc.company) {
-			var company_doc = frappe.get_doc(":Company", this.frm.doc.company);
+			var company_doc = nts.get_doc(":Company", this.frm.doc.company);
 			if (company_doc.default_letter_head) {
 				this.frm.set_value("letter_head", company_doc.default_letter_head);
 			}
@@ -1190,7 +1190,7 @@ prodman.stock.StockEntry = class StockEntry extends prodman.stock.StockControlle
 				this.frm.doc.purpose
 			)
 		) {
-			frappe.model.remove_from_locals("Work Order", this.frm.doc.work_order);
+			nts.model.remove_from_locals("Work Order", this.frm.doc.work_order);
 		}
 	}
 
@@ -1201,7 +1201,7 @@ prodman.stock.StockEntry = class StockEntry extends prodman.stock.StockControlle
 	get_items() {
 		var me = this;
 		if (!this.frm.doc.fg_completed_qty || !this.frm.doc.bom_no)
-			frappe.throw(__("BOM and Manufacturing Quantity are required"));
+			nts.throw(__("BOM and Manufacturing Quantity are required"));
 
 		if (this.frm.doc.work_order || this.frm.doc.bom_no) {
 			// if work order / bom is mentioned, get items
@@ -1227,7 +1227,7 @@ prodman.stock.StockEntry = class StockEntry extends prodman.stock.StockControlle
 			return;
 		}
 
-		return frappe.call({
+		return nts.call({
 			method: "prodman.stock.doctype.stock_entry.stock_entry.get_work_order_details",
 			args: {
 				work_order: me.frm.doc.work_order,
@@ -1267,21 +1267,21 @@ prodman.stock.StockEntry = class StockEntry extends prodman.stock.StockControlle
 	}
 
 	add_excise_button() {
-		if (frappe.boot.sysdefaults.country === "India")
+		if (nts.boot.sysdefaults.country === "India")
 			this.frm.add_custom_button(
 				__("Excise Invoice"),
 				function () {
-					var excise = frappe.model.make_new_doc_and_get_name("Journal Entry");
+					var excise = nts.model.make_new_doc_and_get_name("Journal Entry");
 					excise = locals["Journal Entry"][excise];
 					excise.voucher_type = "Excise Entry";
-					frappe.set_route("Form", "Journal Entry", excise.name);
+					nts.set_route("Form", "Journal Entry", excise.name);
 				},
 				__("Create")
 			);
 	}
 
 	items_add(doc, cdt, cdn) {
-		var row = frappe.get_doc(cdt, cdn);
+		var row = nts.get_doc(cdt, cdn);
 
 		if (!(row.expense_account && row.cost_center)) {
 			this.frm.script_manager.copy_from_first_row("items", row, ["expense_account", "cost_center"]);
@@ -1290,8 +1290,8 @@ prodman.stock.StockEntry = class StockEntry extends prodman.stock.StockControlle
 		if (!row.s_warehouse) row.s_warehouse = this.frm.doc.from_warehouse;
 		if (!row.t_warehouse) row.t_warehouse = this.frm.doc.to_warehouse;
 
-		if (cint(frappe.user_defaults?.use_serial_batch_fields)) {
-			frappe.model.set_value(row.doctype, row.name, "use_serial_batch_fields", 1);
+		if (cint(nts.user_defaults?.use_serial_batch_fields)) {
+			nts.model.set_value(row.doctype, row.name, "use_serial_batch_fields", 1);
 		}
 	}
 
@@ -1372,7 +1372,7 @@ prodman.stock.StockEntry = class StockEntry extends prodman.stock.StockControlle
 prodman.stock.select_batch_and_serial_no = (frm, item) => {
 	let path = "assets/prodman/js/utils/serial_no_batch_selector.js";
 
-	frappe.db.get_value("Item", item.item_code, ["has_batch_no", "has_serial_no"]).then((r) => {
+	nts.db.get_value("Item", item.item_code, ["has_batch_no", "has_serial_no"]).then((r) => {
 		if (r.message && (r.message.has_batch_no || r.message.has_serial_no)) {
 			item.has_serial_no = r.message.has_serial_no;
 			item.has_batch_no = r.message.has_batch_no;
@@ -1380,7 +1380,7 @@ prodman.stock.select_batch_and_serial_no = (frm, item) => {
 
 			new prodman.SerialBatchPackageSelector(frm, item, (r) => {
 				if (r) {
-					frappe.model.set_value(item.doctype, item.name, {
+					nts.model.set_value(item.doctype, item.name, {
 						serial_and_batch_bundle: r.name,
 						use_serial_batch_fields: 0,
 						basic_rate: r.avg_rate,
@@ -1404,7 +1404,7 @@ function attach_bom_items(bom_no) {
 	}
 
 	if (check_should_not_attach_bom_items(bom_no)) return;
-	frappe.db.get_doc("BOM", bom_no).then((bom) => {
+	nts.db.get_doc("BOM", bom_no).then((bom) => {
 		const { name, items } = bom;
 		prodman.stock.bom = { name, items: {} };
 		items.forEach((item) => {

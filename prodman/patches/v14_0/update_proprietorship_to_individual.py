@@ -1,7 +1,7 @@
-import frappe
+import nts
 
 
 def execute():
 	for doctype in ["Customer", "Supplier"]:
 		field = doctype.lower() + "_type"
-		frappe.db.set_value(doctype, {field: "Proprietorship"}, field, "Individual")
+		nts.db.set_value(doctype, {field: "Proprietorship"}, field, "Individual")

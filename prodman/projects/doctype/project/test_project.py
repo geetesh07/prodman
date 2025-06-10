@@ -1,24 +1,24 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days, getdate, nowdate
+import nts
+from nts.tests.utils import ntsTestCase
+from nts.utils import add_days, getdate, nowdate
 
 from prodman.projects.doctype.project_template.test_project_template import make_project_template
 from prodman.projects.doctype.task.test_task import create_task
 from prodman.selling.doctype.sales_order.sales_order import make_project as make_project_from_so
 from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
 
-test_records = frappe.get_test_records("Project")
+test_records = nts.get_test_records("Project")
 test_ignore = ["Sales Order"]
 
 
-class TestProject(FrappeTestCase):
+class TestProject(ntsTestCase):
 	def test_project_with_template_having_no_parent_and_depend_tasks(self):
 		project_name = "Test Project with Template - No Parent and Dependend Tasks"
-		frappe.db.sql(""" delete from tabTask where project = %s """, project_name)
-		frappe.delete_doc("Project", project_name)
+		nts.db.sql(""" delete from tabTask where project = %s """, project_name)
+		nts.delete_doc("Project", project_name)
 
 		task1 = task_exists("Test Template Task with No Parent and Dependency")
 		if not task1:
@@ -32,7 +32,7 @@ class TestProject(FrappeTestCase):
 
 		template = make_project_template("Test Project Template - No Parent and Dependend Tasks", [task1])
 		project = get_project(project_name, template)
-		tasks = frappe.get_all(
+		tasks = nts.get_all(
 			"Task",
 			["subject", "exp_end_date", "depends_on_tasks", "priority"],
 			dict(project=project.name),
@@ -47,11 +47,11 @@ class TestProject(FrappeTestCase):
 	def test_project_template_having_parent_child_tasks(self):
 		project_name = "Test Project with Template - Tasks with Parent-Child Relation"
 
-		if frappe.db.get_value("Project", {"project_name": project_name}, "name"):
-			project_name = frappe.db.get_value("Project", {"project_name": project_name}, "name")
+		if nts.db.get_value("Project", {"project_name": project_name}, "name"):
+			project_name = nts.db.get_value("Project", {"project_name": project_name}, "name")
 
-		frappe.db.sql(""" delete from tabTask where project = %s """, project_name)
-		frappe.delete_doc("Project", project_name)
+		nts.db.sql(""" delete from tabTask where project = %s """, project_name)
+		nts.delete_doc("Project", project_name)
 
 		task1 = task_exists("Test Template Task Parent")
 		if not task1:
@@ -83,7 +83,7 @@ class TestProject(FrappeTestCase):
 			"Test Project Template  - Tasks with Parent-Child Relation", [task1, task2, task3]
 		)
 		project = get_project(project_name, template)
-		tasks = frappe.get_all(
+		tasks = nts.get_all(
 			"Task",
 			["subject", "exp_end_date", "depends_on_tasks", "name", "parent_task"],
 			dict(project=project.name),
@@ -105,8 +105,8 @@ class TestProject(FrappeTestCase):
 
 	def test_project_template_having_dependent_tasks(self):
 		project_name = "Test Project with Template - Dependent Tasks"
-		frappe.db.sql(""" delete from tabTask where project = %s  """, project_name)
-		frappe.delete_doc("Project", project_name)
+		nts.db.sql(""" delete from tabTask where project = %s  """, project_name)
+		nts.delete_doc("Project", project_name)
 
 		task1 = task_exists("Test Template Task for Dependency")
 		if not task1:
@@ -126,7 +126,7 @@ class TestProject(FrappeTestCase):
 
 		template = make_project_template("Test Project with Template - Dependent Tasks", [task1, task2])
 		project = get_project(project_name, template)
-		tasks = frappe.get_all(
+		tasks = nts.get_all(
 			"Task",
 			["subject", "exp_end_date", "depends_on_tasks", "name"],
 			dict(project=project.name),
@@ -187,7 +187,7 @@ class TestProject(FrappeTestCase):
 
 		# Step - 4: Create Project against the Project Template
 		project = get_project("Project with common Task Subject", project_template)
-		project_tasks = frappe.get_all(
+		project_tasks = nts.get_all(
 			"Task", {"project": project.name}, ["subject", "parent_task", "is_group"]
 		)
 
@@ -201,10 +201,10 @@ class TestProject(FrappeTestCase):
 
 	def test_project_having_no_tasks_complete(self):
 		project_name = "Test Project - No Tasks Completion"
-		frappe.db.sql(""" delete from tabTask where project = %s """, project_name)
-		frappe.delete_doc("Project", project_name)
+		nts.db.sql(""" delete from tabTask where project = %s """, project_name)
+		nts.delete_doc("Project", project_name)
 
-		project = frappe.get_doc(
+		project = nts.get_doc(
 			{
 				"doctype": "Project",
 				"project_name": project_name,
@@ -214,7 +214,7 @@ class TestProject(FrappeTestCase):
 			}
 		).insert()
 
-		tasks = frappe.get_all(
+		tasks = nts.get_all(
 			"Task",
 			["subject", "exp_end_date", "depends_on_tasks", "name", "parent_task"],
 			dict(project=project.name),
@@ -229,7 +229,7 @@ class TestProject(FrappeTestCase):
 
 
 def get_project(name, template):
-	project = frappe.get_doc(
+	project = nts.get_doc(
 		dict(
 			doctype="Project",
 			project_name=name,
@@ -244,12 +244,12 @@ def get_project(name, template):
 
 
 def make_project(args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
-	if args.project_name and frappe.db.exists("Project", {"project_name": args.project_name}):
-		return frappe.get_doc("Project", {"project_name": args.project_name})
+	if args.project_name and nts.db.exists("Project", {"project_name": args.project_name}):
+		return nts.get_doc("Project", {"project_name": args.project_name})
 
-	project = frappe.get_doc(
+	project = nts.get_doc(
 		dict(
 			doctype="Project",
 			project_name=args.project_name,
@@ -269,10 +269,10 @@ def make_project(args):
 
 
 def task_exists(subject):
-	result = frappe.db.get_list("Task", filters={"subject": subject}, fields=["name"])
+	result = nts.db.get_list("Task", filters={"subject": subject}, fields=["name"])
 	if not len(result):
 		return False
-	return frappe.get_doc("Task", result[0].name)
+	return nts.get_doc("Task", result[0].name)
 
 
 def calculate_end_date(project, start, duration):

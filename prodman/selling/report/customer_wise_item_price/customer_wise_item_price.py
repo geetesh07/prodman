@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _, qb
-from frappe.query_builder import Criterion
+import nts
+from nts import _, qb
+from nts.query_builder import Criterion
 
 from prodman import get_default_company
 from prodman.accounts.party import get_party_details
@@ -15,7 +15,7 @@ def execute(filters=None):
 		filters = {}
 
 	if not filters.get("customer"):
-		frappe.throw(_("Please select a Customer"))
+		nts.throw(_("Please select a Customer"))
 
 	columns = get_columns(filters)
 	data = get_data(filters)
@@ -56,7 +56,7 @@ def fetch_item_prices(
 	selling_price_list: str | None = None,
 	items: list | None = None,
 ):
-	price_list_map = frappe._dict()
+	price_list_map = nts._dict()
 	ip = qb.DocType("Item Price")
 	and_conditions = []
 	or_conditions = []
@@ -94,7 +94,7 @@ def get_data(filters=None):
 	customer_details = get_customer_details(filters)
 
 	items = get_selling_items(filters)
-	item_stock_map = frappe.get_all(
+	item_stock_map = nts.get_all(
 		"Bin", fields=["item_code", "sum(actual_qty) AS available"], group_by="item_code"
 	)
 	item_stock_map = {item.item_code: item.available for item in item_stock_map}
@@ -139,7 +139,7 @@ def get_selling_items(filters):
 	else:
 		item_filters = {"is_sales_item": 1, "disabled": 0}
 
-	items = frappe.get_all(
+	items = nts.get_all(
 		"Item", filters=item_filters, fields=["item_code", "item_name"], order_by="item_name"
 	)
 

@@ -35,7 +35,7 @@
 	<h5 class="text-center">
 		{{ _(filters.ageing_based_on) }}
 		{{ _("Until") }}
-		{{ frappe.format(filters.report_date, 'Date') }}
+		{{ nts .format(filters.report_date, 'Date') }}
 	</h5>
 
 	<div class="clearfix">
@@ -46,7 +46,7 @@
 		</div>
 		<div class="pull-right">
 		{% if(filters.credit_limit) %}
-			<strong>{{ _("Credit Limit") }}:</strong> {{ frappe.utils.fmt_money(filters.credit_limit) }}
+			<strong>{{ _("Credit Limit") }}:</strong> {{ nts .utils.fmt_money(filters.credit_limit) }}
 		{% endif %}
 		</div>
 	</div>
@@ -99,22 +99,22 @@
 						{{ format_number(balance_row["age"], null, 2) }}
 					</td>
 					<td class="text-right">
-						{{ frappe.utils.fmt_money(balance_row["range1"], data[data.length-1]["currency"]) }}
+						{{ nts .utils.fmt_money(balance_row["range1"], data[data.length-1]["currency"]) }}
 					</td>
 					<td class="text-right">
-						{{ frappe.utils.fmt_money(balance_row["range2"], data[data.length-1]["currency"]) }}
+						{{ nts .utils.fmt_money(balance_row["range2"], data[data.length-1]["currency"]) }}
 					</td>
 					<td class="text-right">
-						{{ frappe.utils.fmt_money(balance_row["range3"], data[data.length-1]["currency"]) }}
+						{{ nts .utils.fmt_money(balance_row["range3"], data[data.length-1]["currency"]) }}
 					</td>
 					<td class="text-right">
-						{{ frappe.utils.fmt_money(balance_row["range4"], data[data.length-1]["currency"]) }}
+						{{ nts .utils.fmt_money(balance_row["range4"], data[data.length-1]["currency"]) }}
 					</td>
 					<td class="text-right">
-						{{ frappe.utils.fmt_money(balance_row["range5"], data[data.length-1]["currency"]) }}
+						{{ nts .utils.fmt_money(balance_row["range5"], data[data.length-1]["currency"]) }}
 					</td>
 					<td class="text-right">
-						{{ frappe.utils.fmt_money(flt(balance_row["outstanding"]), data[data.length-1]["currency"]) }}
+						{{ nts .utils.fmt_money(flt(balance_row["outstanding"]), data[data.length-1]["currency"]) }}
 					</td>
 				</tr>
 					<td>{{ _("Future Payments") }}</td>
@@ -125,7 +125,7 @@
 					<td></td>
 					<td></td>
 					<td class="text-right">
-						{{ frappe.utils.fmt_money(flt(balance_row[("future_amount")]), data[data.length-1]["currency"]) }}
+						{{ nts .utils.fmt_money(flt(balance_row[("future_amount")]), data[data.length-1]["currency"]) }}
 					</td>
 				<tr class="cvs-footer">
 					<th class="text-left">{{ _("Cheques Required") }}</th>
@@ -136,7 +136,7 @@
 					<th></th>
 					<th></th>
 					<th class="text-right">
-						{{ frappe.utils.fmt_money(flt(balance_row["outstanding"] - balance_row[("future_amount")]), data[data.length-1]["currency"]) }}</th>
+						{{ nts .utils.fmt_money(flt(balance_row["outstanding"] - balance_row[("future_amount")]), data[data.length-1]["currency"]) }}</th>
 				</tr>
 			</tbody>
 
@@ -211,7 +211,7 @@
 				<tr>
 				{% if(report.report_name == "Accounts Receivable" or report.report_name == "Accounts Payable") %}
 					{% if(data[i]["party"]) %}
-						<td>{{ frappe.format((data[i]["posting_date"]), 'Date') }}</td>
+						<td>{{ nts .format((data[i]["posting_date"]), 'Date') }}</td>
 						<td style="text-align: right">{{ data[i]["age"] }}</td>
 						<td>
 							{% if not(filters.show_future_payments) %}
@@ -245,16 +245,16 @@
 						{% endif %}
 
 						<td style="text-align: right">
-							{{ frappe.utils.fmt_money(data[i]["invoiced"], currency=data[i]["currency"]) }}</td>
+							{{ nts .utils.fmt_money(data[i]["invoiced"], currency=data[i]["currency"]) }}</td>
 
 						{% if not(filters.show_future_payments) %}
 							<td style="text-align: right">
-								{{ frappe.utils.fmt_money(data[i]["paid"], currency=data[i]["currency"]) }}</td>
+								{{ nts .utils.fmt_money(data[i]["paid"], currency=data[i]["currency"]) }}</td>
 							<td style="text-align: right">
-								{{ frappe.utils.fmt_money(data[i]["credit_note"], currency=data[i]["currency"]) }}</td>
+								{{ nts .utils.fmt_money(data[i]["credit_note"], currency=data[i]["currency"]) }}</td>
 						{% endif %}
 						<td style="text-align: right">
-							{{ frappe.utils.fmt_money(data[i]["outstanding"], currency=data[i]["currency"]) }}</td>
+							{{ nts .utils.fmt_money(data[i]["outstanding"], currency=data[i]["currency"]) }}</td>
 
 						{% if(filters.show_future_payments) %}
 							{% if(report.report_name == "Accounts Receivable") %}
@@ -262,8 +262,8 @@
 									{{ data[i]["po_no"] }}</td>
 							{% endif %}
 							<td style="text-align: right">{{ data[i]["future_ref"] }}</td>
-							<td style="text-align: right">{{ frappe.utils.fmt_money(data[i]["future_amount"], currency=data[i]["currency"]) }}</td>
-							<td style="text-align: right">{{ frappe.utils.fmt_money(data[i]["remaining_balance"], currency=data[i]["currency"]) }}</td>
+							<td style="text-align: right">{{ nts .utils.fmt_money(data[i]["future_amount"], currency=data[i]["currency"]) }}</td>
+							<td style="text-align: right">{{ nts .utils.fmt_money(data[i]["remaining_balance"], currency=data[i]["currency"]) }}</td>
 						{% endif %}
 					{% else %}
 						<td></td>
@@ -276,15 +276,15 @@
 						<td></td>
 						<td style="text-align: right"><b>{{ _("Total") }}</b></td>
 						<td style="text-align: right">
-							{{ frappe.utils.fmt_money(data[i]["invoiced"], data[i]["currency"]) }}</td>
+							{{ nts .utils.fmt_money(data[i]["invoiced"], data[i]["currency"]) }}</td>
 
 						{% if not(filters.show_future_payments) %}
 							<td style="text-align: right">
-								{{ frappe.utils.fmt_money(data[i]["paid"], currency=data[i]["currency"]) }}</td>
-							<td style="text-align: right">{{ frappe.utils.fmt_money(data[i]["credit_note"], currency=data[i]["currency"]) }} </td>
+								{{ nts .utils.fmt_money(data[i]["paid"], currency=data[i]["currency"]) }}</td>
+							<td style="text-align: right">{{ nts .utils.fmt_money(data[i]["credit_note"], currency=data[i]["currency"]) }} </td>
 						{% endif %}
 						<td style="text-align: right">
-							{{ frappe.utils.fmt_money(data[i]["outstanding"], currency=data[i]["currency"]) }}</td>
+							{{ nts .utils.fmt_money(data[i]["outstanding"], currency=data[i]["currency"]) }}</td>
 
 						{% if(filters.show_future_payments) %}
 							{% if(report.report_name == "Accounts Receivable") %}
@@ -292,8 +292,8 @@
 									{{ data[i]["po_no"] }}</td>
 							{% endif %}
 							<td style="text-align: right">{{ data[i]["future_ref"] }}</td>
-							<td style="text-align: right">{{ frappe.utils.fmt_money(data[i]["future_amount"], currency=data[i]["currency"]) }}</td>
-							<td style="text-align: right">{{ frappe.utils.fmt_money(data[i]["remaining_balance"], currency=data[i]["currency"]) }}</td>
+							<td style="text-align: right">{{ nts .utils.fmt_money(data[i]["future_amount"], currency=data[i]["currency"]) }}</td>
+							<td style="text-align: right">{{ nts .utils.fmt_money(data[i]["remaining_balance"], currency=data[i]["currency"]) }}</td>
 						{% endif %}
 					{% endif %}
 				{% else %}
@@ -314,10 +314,10 @@
 						{% else %}
 							<td><b>{{ _("Total") }}</b></td>
 						{% endif %}
-						<td style="text-align: right">{{ frappe.utils.fmt_money(data[i]["invoiced"], currency=data[i]["currency"]) }}</td>
-						<td style="text-align: right">{{ frappe.utils.fmt_money(data[i]["paid"], currency=data[i]["currency"]) }}</td>
-						<td style="text-align: right">{{ frappe.utils.fmt_money(data[i]["credit_note"], currency=data[i]["currency"]) }}</td>
-						<td style="text-align: right">{{ frappe.utils.fmt_money(data[i]["outstanding"], currency=data[i]["currency"]) }}</td>
+						<td style="text-align: right">{{ nts .utils.fmt_money(data[i]["invoiced"], currency=data[i]["currency"]) }}</td>
+						<td style="text-align: right">{{ nts .utils.fmt_money(data[i]["paid"], currency=data[i]["currency"]) }}</td>
+						<td style="text-align: right">{{ nts .utils.fmt_money(data[i]["credit_note"], currency=data[i]["currency"]) }}</td>
+						<td style="text-align: right">{{ nts .utils.fmt_money(data[i]["outstanding"], currency=data[i]["currency"]) }}</td>
 					{% endif %}
 				{% endif %}
 				</tr>
@@ -326,16 +326,16 @@
 			<td></td>
 			<td></td>
 			<td></td>
-			<td style="text-align: right"><b>{{ frappe.utils.fmt_money(data|sum(attribute="invoiced"), currency=data[0]["currency"]) }}</b></td>
-			<td style="text-align: right"><b>{{ frappe.utils.fmt_money(data|sum(attribute="paid"), currency=data[0]["currency"]) }}</b></td>
-			<td style="text-align: right"><b>{{ frappe.utils.fmt_money(data|sum(attribute="credit_note"), currency=data[0]["currency"]) }}</b></td>
-			<td style="text-align: right"><b>{{ frappe.utils.fmt_money(data|sum(attribute="outstanding"), currency=data[0]["currency"]) }}</b></td>
+			<td style="text-align: right"><b>{{ nts .utils.fmt_money(data|sum(attribute="invoiced"), currency=data[0]["currency"]) }}</b></td>
+			<td style="text-align: right"><b>{{ nts .utils.fmt_money(data|sum(attribute="paid"), currency=data[0]["currency"]) }}</b></td>
+			<td style="text-align: right"><b>{{ nts .utils.fmt_money(data|sum(attribute="credit_note"), currency=data[0]["currency"]) }}</b></td>
+			<td style="text-align: right"><b>{{ nts .utils.fmt_money(data|sum(attribute="outstanding"), currency=data[0]["currency"]) }}</b></td>
 		</tbody>
 	</table>
 	<br>
 	{% if ageing %}
 	<h4 class="text-center">{{ _("Ageing Report based on ") }} {{ ageing.ageing_based_on }}
-		{{ _("up to " ) }}  {{ frappe.format(filters.report_date, 'Date')}}
+		{{ _("up to " ) }}  {{ nts .format(filters.report_date, 'Date')}}
 	</h4>
 	<table class="table table-bordered">
 		<thead>
@@ -349,11 +349,11 @@
 		</thead>
 		<tbody>
 			<tr>
-				<td>{{ frappe.utils.fmt_money(ageing.range1, currency=data[0]["currency"]) }}</td>
-				<td>{{ frappe.utils.fmt_money(ageing.range2, currency=data[0]["currency"]) }}</td>
-				<td>{{ frappe.utils.fmt_money(ageing.range3, currency=data[0]["currency"]) }}</td>
-				<td>{{ frappe.utils.fmt_money(ageing.range4, currency=data[0]["currency"]) }}</td>
-				<td>{{ frappe.utils.fmt_money(ageing.range5, currency=filters.presentation_currency) }}</td>
+				<td>{{ nts .utils.fmt_money(ageing.range1, currency=data[0]["currency"]) }}</td>
+				<td>{{ nts .utils.fmt_money(ageing.range2, currency=data[0]["currency"]) }}</td>
+				<td>{{ nts .utils.fmt_money(ageing.range3, currency=data[0]["currency"]) }}</td>
+				<td>{{ nts .utils.fmt_money(ageing.range4, currency=data[0]["currency"]) }}</td>
+				<td>{{ nts .utils.fmt_money(ageing.range5, currency=filters.presentation_currency) }}</td>
 			</tr>
 		</tbody>
 	</table>
@@ -363,4 +363,4 @@
 		{{ terms_and_conditions }}
 	</div>
 	{% endif %}
-	<p class="text-right text-muted">{{ _("Printed On ") }}{{ frappe.utils.now() }}</p>
+	<p class="text-right text-muted">{{ _("Printed On ") }}{{ nts .utils.now() }}</p>

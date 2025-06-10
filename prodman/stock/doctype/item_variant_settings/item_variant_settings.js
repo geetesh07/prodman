@@ -1,7 +1,7 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Item Variant Settings", {
+nts.ui.form.on("Item Variant Settings", {
 	refresh: function (frm) {
 		const allow_fields = [];
 
@@ -24,9 +24,9 @@ frappe.ui.form.on("Item Variant Settings", {
 
 		const exclude_field_types = ["HTML", "Section Break", "Column Break", "Button", "Read Only"];
 
-		frappe.model.with_doctype("Item", () => {
+		nts.model.with_doctype("Item", () => {
 			const field_label_map = {};
-			frappe.get_meta("Item").fields.forEach((d) => {
+			nts.get_meta("Item").fields.forEach((d) => {
 				field_label_map[d.fieldname] = __(d.label) + ` (${d.fieldname})`;
 
 				if (

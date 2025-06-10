@@ -1,7 +1,7 @@
-import frappe
-from frappe import qb
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, flt, getdate, today
+import nts 
+from nts  import qb
+from nts .tests.utils import nts TestCase, change_settings
+from nts .utils import add_days, flt, getdate, today
 
 from prodman.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
@@ -10,7 +10,7 @@ from prodman.accounts.test.accounts_mixin import AccountsTestMixin
 from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
 
 
-class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
+class TestAccountsReceivable(AccountsTestMixin, nts TestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_customer()
@@ -19,10 +19,10 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 		self.clear_old_entries()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def create_sales_invoice(self, no_payment_schedule=False, do_not_submit=False, **args):
-		frappe.set_user("Administrator")
+		nts .set_user("Administrator")
 		si = create_sales_invoice(
 			item=self.item,
 			company=self.company,
@@ -93,7 +93,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 		pos_inv.is_pos = 1
 		pos_inv.append(
 			"payments",
-			frappe._dict(
+			nts ._dict(
 				mode_of_payment="Cash",
 				amount=flt(pos_inv.grand_total / 2),
 			),
@@ -383,7 +383,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 		"""
 
 		# Using Exchange Gain/Loss account for unrealized as well.
-		company_doc = frappe.get_doc("Company", self.company)
+		company_doc = nts .get_doc("Company", self.company)
 		company_doc.unrealized_exchange_gain_loss_account = company_doc.exchange_gain_loss_account
 		company_doc.save()
 
@@ -394,7 +394,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 		si = si.save().submit()
 
 		# Exchange Revaluation
-		err = frappe.new_doc("Exchange Rate Revaluation")
+		err = nts .new_doc("Exchange Rate Revaluation")
 		err.company = self.company
 		err.posting_date = today()
 		accounts = err.get_accounts_data()
@@ -408,7 +408,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 
 		# Submit JV for ERR
 		err_journals = err.make_jv_entries()
-		je = frappe.get_doc("Journal Entry", err_journals.get("revaluation_jv"))
+		je = nts .get_doc("Journal Entry", err_journals.get("revaluation_jv"))
 		je = je.submit()
 
 		filters = {
@@ -447,7 +447,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 		si2 = self.create_sales_invoice()
 
 		# manually link cr_note with si2 using journal entry
-		je = frappe.new_doc("Journal Entry")
+		je = nts .new_doc("Journal Entry")
 		je.company = self.company
 		je.voucher_type = "Credit Note"
 		je.posting_date = today()
@@ -618,7 +618,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 
 	def test_sales_person(self):
 		sales_person = (
-			frappe.get_doc({"doctype": "Sales Person", "sales_person_name": "John Clark", "enabled": True})
+			nts .get_doc({"doctype": "Sales Person", "sales_person_name": "John Clark", "enabled": True})
 			.insert()
 			.submit()
 		)
@@ -657,7 +657,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 
 	def test_customer_group_filter(self):
 		self.create_sales_invoice()
-		cus_group = frappe.db.get_value("Customer", self.customer, "customer_group")
+		cus_group = nts .db.get_value("Customer", self.customer, "customer_group")
 		filters = {
 			"company": self.company,
 			"report_date": today(),
@@ -676,7 +676,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 
 	def test_multi_customer_group_filter(self):
 		self.create_sales_invoice()
-		cus_group = frappe.db.get_value("Customer", self.customer, "customer_group")
+		cus_group = nts .db.get_value("Customer", self.customer, "customer_group")
 		# Create a list of customer groups, e.g., ["Group1", "Group2"]
 		cus_groups_list = [cus_group, "_Test Customer Group 1"]
 
@@ -698,7 +698,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 	def test_party_account_filter(self):
 		si1 = self.create_sales_invoice()
 		self.customer2 = (
-			frappe.get_doc(
+			nts .get_doc(
 				{
 					"doctype": "Customer",
 					"customer_name": "Jane Doe",
@@ -835,8 +835,8 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 
 	def test_report_output_if_party_is_missing(self):
 		acc_name = "Additional Debtors"
-		if not frappe.db.get_value("Account", filters={"account_name": acc_name, "company": self.company}):
-			additional_receivable_acc = frappe.get_doc(
+		if not nts .db.get_value("Account", filters={"account_name": acc_name, "company": self.company}):
+			additional_receivable_acc = nts .get_doc(
 				{
 					"doctype": "Account",
 					"account_name": acc_name,
@@ -847,7 +847,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 			).save()
 			self.debtors2 = additional_receivable_acc.name
 
-		je = frappe.new_doc("Journal Entry")
+		je = nts .new_doc("Journal Entry")
 		je.company = self.company
 		je.posting_date = today()
 		je.append(
@@ -921,7 +921,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 
 	def test_future_payments_on_foreign_currency(self):
 		self.customer2 = (
-			frappe.get_doc(
+			nts .get_doc(
 				{
 					"doctype": "Customer",
 					"customer_name": "Jane Doe",
@@ -949,7 +949,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 		pe.source_exchange_rate = 75
 		pe.save().submit()
 
-		filters = frappe._dict(
+		filters = nts ._dict(
 			{
 				"company": self.company,
 				"report_date": today(),
@@ -1043,7 +1043,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 		si.cost_center = self.cost_center
 		si.save().submit()
 
-		new_cc = frappe.get_doc(
+		new_cc = nts .get_doc(
 			{
 				"doctype": "Cost Center",
 				"cost_center_name": "East Wing",

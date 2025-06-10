@@ -1,10 +1,10 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2019, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
+import nts
+from nts import _
+from nts.model.document import Document
 
 
 class ItemManufacturer(Document):
@@ -14,7 +14,7 @@ class ItemManufacturer(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		description: DF.SmallText | None
 		is_default: DF.Check
@@ -39,24 +39,24 @@ class ItemManufacturer(Document):
 				"manufacturer_part_no": self.manufacturer_part_no,
 			}
 
-			if frappe.db.exists("Item Manufacturer", filters):
-				frappe.throw(
+			if nts.db.exists("Item Manufacturer", filters):
+				nts.throw(
 					_("Duplicate entry against the item code {0} and manufacturer {1}").format(
 						self.item_code, self.manufacturer
 					)
 				)
 
 	def manage_default_item_manufacturer(self, delete=False):
-		from frappe.model.utils import set_default
+		from nts.model.utils import set_default
 
-		item = frappe.get_doc("Item", self.item_code)
+		item = nts.get_doc("Item", self.item_code)
 		default_manufacturer = item.default_item_manufacturer
 		default_part_no = item.default_manufacturer_part_no
 
 		if not self.is_default:
 			# if unchecked and default in Item master, clear it.
 			if default_manufacturer == self.manufacturer and default_part_no == self.manufacturer_part_no:
-				frappe.db.set_value(
+				nts.db.set_value(
 					"Item",
 					item.name,
 					{"default_item_manufacturer": None, "default_manufacturer_part_no": None},
@@ -75,7 +75,7 @@ class ItemManufacturer(Document):
 				manufacturer = self.manufacturer
 				manufacturer_part_no = self.manufacturer_part_no
 
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Item",
 				item.name,
 				{
@@ -85,9 +85,9 @@ class ItemManufacturer(Document):
 			)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_item_manufacturer_part_no(item_code, manufacturer):
-	return frappe.db.get_value(
+	return nts.db.get_value(
 		"Item Manufacturer",
 		{"item_code": item_code, "manufacturer": manufacturer},
 		"manufacturer_part_no",

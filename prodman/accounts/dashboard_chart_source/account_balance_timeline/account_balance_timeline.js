@@ -1,6 +1,6 @@
-frappe.provide("frappe.dashboards.chart_sources");
+nts .provide("nts .dashboards.chart_sources");
 
-frappe.dashboards.chart_sources["Account Balance Timeline"] = {
+nts .dashboards.chart_sources["Account Balance Timeline"] = {
 	method: "prodman.accounts.dashboard_chart_source.account_balance_timeline.account_balance_timeline.get",
 	filters: [
 		{
@@ -8,7 +8,7 @@ frappe.dashboards.chart_sources["Account Balance Timeline"] = {
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts .defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{

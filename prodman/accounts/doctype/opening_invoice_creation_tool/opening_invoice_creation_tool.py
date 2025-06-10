@@ -1,12 +1,12 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2017, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _, scrub
-from frappe.model.document import Document
-from frappe.utils import flt, nowdate
-from frappe.utils.background_jobs import enqueue, is_job_enqueued
+import nts 
+from nts  import _, scrub
+from nts .model.document import Document
+from nts .utils import flt, nowdate
+from nts .utils.background_jobs import enqueue, is_job_enqueued
 
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_accounting_dimensions,
@@ -20,7 +20,7 @@ class OpeningInvoiceCreationTool(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.opening_invoice_creation_tool_item.opening_invoice_creation_tool_item import (
 			OpeningInvoiceCreationToolItem,
@@ -73,13 +73,13 @@ class OpeningInvoiceCreationTool(Document):
 			"count(name) as total_invoices",
 			"sum(outstanding_amount) as outstanding_amount",
 		]
-		companies = frappe.get_all("Company", fields=["name as company", "default_currency as currency"])
+		companies = nts .get_all("Company", fields=["name as company", "default_currency as currency"])
 		if not companies:
 			return None, None
 
 		company_wise_currency = {row.company: row.currency for row in companies}
 		for doctype in ["Sales Invoice", "Purchase Invoice"]:
-			invoices = frappe.get_all(
+			invoices = nts .get_all(
 				doctype, filters=dict(is_opening="Yes", docstatus=1), fields=fields, group_by="company"
 			)
 			prepare_invoice_summary(doctype, invoices)
@@ -88,7 +88,7 @@ class OpeningInvoiceCreationTool(Document):
 
 	def validate_company(self):
 		if not self.company:
-			frappe.throw(_("Please select the Company"))
+			nts .throw(_("Please select the Company"))
 
 	def set_missing_values(self, row):
 		row.qty = row.qty or 1.0
@@ -101,20 +101,20 @@ class OpeningInvoiceCreationTool(Document):
 		row.due_date = row.due_date or nowdate()
 
 	def validate_mandatory_invoice_fields(self, row):
-		if not frappe.db.exists(row.party_type, row.party):
+		if not nts .db.exists(row.party_type, row.party):
 			if self.create_missing_party:
 				self.add_party(row.party_type, row.party)
 			else:
-				frappe.throw(
+				nts .throw(
 					_("Row #{}: {} {} does not exist.").format(
-						row.idx, frappe.bold(row.party_type), frappe.bold(row.party)
+						row.idx, nts .bold(row.party_type), nts .bold(row.party)
 					)
 				)
 
 		mandatory_error_msg = _("Row #{0}: {1} is required to create the Opening {2} Invoices")
 		for d in ("Party", "Outstanding Amount", "Temporary Opening Account"):
 			if not row.get(scrub(d)):
-				frappe.throw(mandatory_error_msg.format(row.idx, d, self.invoice_type))
+				nts .throw(mandatory_error_msg.format(row.idx, d, self.invoice_type))
 
 	def get_invoices(self):
 		invoices = []
@@ -125,13 +125,13 @@ class OpeningInvoiceCreationTool(Document):
 			self.validate_mandatory_invoice_fields(row)
 			invoice = self.get_invoice_dict(row)
 			company_details = (
-				frappe.get_cached_value(
+				nts .get_cached_value(
 					"Company", self.company, ["default_currency", "default_letter_head"], as_dict=1
 				)
 				or {}
 			)
 
-			default_currency = frappe.db.get_value(row.party_type, row.party, "default_currency")
+			default_currency = nts .db.get_value(row.party_type, row.party, "default_currency")
 
 			if company_details:
 				invoice.update(
@@ -145,13 +145,13 @@ class OpeningInvoiceCreationTool(Document):
 		return invoices
 
 	def add_party(self, party_type, party):
-		party_doc = frappe.new_doc(party_type)
+		party_doc = nts .new_doc(party_type)
 		if party_type == "Customer":
 			party_doc.customer_name = party
 		else:
-			supplier_group = frappe.db.get_single_value("Buying Settings", "supplier_group")
+			supplier_group = nts .db.get_single_value("Buying Settings", "supplier_group")
 			if not supplier_group:
-				frappe.throw(_("Please Set Supplier Group in Buying Settings."))
+				nts .throw(_("Please Set Supplier Group in Buying Settings."))
 
 			party_doc.supplier_name = party
 			party_doc.supplier_group = supplier_group
@@ -161,21 +161,21 @@ class OpeningInvoiceCreationTool(Document):
 
 	def get_invoice_dict(self, row=None):
 		def get_item_dict():
-			cost_center = row.get("cost_center") or frappe.get_cached_value(
+			cost_center = row.get("cost_center") or nts .get_cached_value(
 				"Company", self.company, "cost_center"
 			)
 			if not cost_center:
-				frappe.throw(
-					_("Please set the Default Cost Center in {0} company.").format(frappe.bold(self.company))
+				nts .throw(
+					_("Please set the Default Cost Center in {0} company.").format(nts .bold(self.company))
 				)
 
 			income_expense_account_field = (
 				"income_account" if row.party_type == "Customer" else "expense_account"
 			)
-			default_uom = frappe.db.get_single_value("Stock Settings", "stock_uom") or _("Nos")
+			default_uom = nts .db.get_single_value("Stock Settings", "stock_uom") or _("Nos")
 			rate = flt(row.outstanding_amount) / flt(row.qty)
 
-			item_dict = frappe._dict(
+			item_dict = nts ._dict(
 				{
 					"uom": default_uom,
 					"rate": rate or 0.0,
@@ -195,7 +195,7 @@ class OpeningInvoiceCreationTool(Document):
 
 		item = get_item_dict()
 
-		invoice = frappe._dict(
+		invoice = nts ._dict(
 			{
 				"items": [item],
 				"is_opening": "Yes",
@@ -204,10 +204,10 @@ class OpeningInvoiceCreationTool(Document):
 				"cost_center": self.cost_center,
 				"due_date": row.due_date,
 				"posting_date": row.posting_date,
-				frappe.scrub(row.party_type): row.party,
+				nts .scrub(row.party_type): row.party,
 				"is_pos": 0,
 				"doctype": "Sales Invoice" if self.invoice_type == "Sales" else "Purchase Invoice",
-				"update_stock": 0,  # important: https://github.com/frappe/prodman/pull/23559
+				"update_stock": 0,  # important: https://github.com/nts /prodman/pull/23559
 				"invoice_number": row.invoice_number,
 				"disable_rounded_total": 1,
 			}
@@ -219,17 +219,17 @@ class OpeningInvoiceCreationTool(Document):
 
 		return invoice
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def make_invoices(self):
 		self.validate_company()
 		invoices = self.get_invoices()
 		if len(invoices) < 50:
 			return start_import(invoices)
 		else:
-			from frappe.utils.scheduler import is_scheduler_inactive
+			from nts .utils.scheduler import is_scheduler_inactive
 
-			if is_scheduler_inactive() and not frappe.flags.in_test:
-				frappe.throw(_("Scheduler is inactive. Cannot import data."), title=_("Scheduler Inactive"))
+			if is_scheduler_inactive() and not nts .flags.in_test:
+				nts .throw(_("Scheduler is inactive. Cannot import data."), title=_("Scheduler Inactive"))
 
 			job_id = f"opening_invoice::{self.name}"
 
@@ -241,7 +241,7 @@ class OpeningInvoiceCreationTool(Document):
 					event="opening_invoice_creation",
 					job_id=job_id,
 					invoices=invoices,
-					now=frappe.conf.developer_mode or frappe.flags.in_test,
+					now=nts .conf.developer_mode or nts .flags.in_test,
 				)
 
 
@@ -254,18 +254,18 @@ def start_import(invoices):
 			if d.invoice_number:
 				invoice_number = d.invoice_number
 			publish(idx, len(invoices), d.doctype)
-			doc = frappe.get_doc(d)
+			doc = nts .get_doc(d)
 			doc.flags.ignore_mandatory = True
 			doc.insert(set_name=invoice_number)
 			doc.submit()
-			frappe.db.commit()
+			nts .db.commit()
 			names.append(doc.name)
 		except Exception:
 			errors += 1
-			frappe.db.rollback()
+			nts .db.rollback()
 			doc.log_error("Opening invoice creation failed")
 	if errors:
-		frappe.msgprint(
+		nts .msgprint(
 			_("You had {} errors while creating opening invoices. Check {} for more details").format(
 				errors, "<a href='/app/List/Error Log' class='variant-click'>Error Log</a>"
 			),
@@ -276,7 +276,7 @@ def start_import(invoices):
 
 
 def publish(index, total, doctype):
-	frappe.publish_realtime(
+	nts .publish_realtime(
 		"opening_invoice_creation_progress",
 		dict(
 			title=_("Opening Invoice Creation In Progress"),
@@ -284,17 +284,17 @@ def publish(index, total, doctype):
 			count=index + 1,
 			total=total,
 		),
-		user=frappe.session.user,
+		user=nts .session.user,
 	)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_temporary_opening_account(company=None):
 	if not company:
 		return
 
-	accounts = frappe.get_all("Account", filters={"company": company, "account_type": "Temporary"})
+	accounts = nts .get_all("Account", filters={"company": company, "account_type": "Temporary"})
 	if not accounts:
-		frappe.throw(_("Please add a Temporary Opening account in Chart of Accounts"))
+		nts .throw(_("Please add a Temporary Opening account in Chart of Accounts"))
 
 	return accounts[0].name

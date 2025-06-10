@@ -1,9 +1,9 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import flt
+import nts
+from nts.tests.utils import ntsTestCase
+from nts.utils import flt
 
 from prodman.controllers.subcontracting_controller import make_rm_stock_entry
 from prodman.controllers.tests.test_subcontracting_controller import (
@@ -26,7 +26,7 @@ from prodman.subcontracting.doctype.subcontracting_order.subcontracting_order im
 )
 
 
-class TestItemAlternative(FrappeTestCase):
+class TestItemAlternative(ntsTestCase):
 	def setUp(self):
 		super().setUp()
 		make_items()
@@ -78,17 +78,17 @@ class TestItemAlternative(FrappeTestCase):
 			},
 		]
 
-		reserved_qty_for_sub_contract = frappe.db.get_value(
+		reserved_qty_for_sub_contract = nts.db.get_value(
 			"Bin",
 			{"item_code": "Test FG A RW 1", "warehouse": "_Test Warehouse - _TC"},
 			"reserved_qty_for_sub_contract",
 		)
 
-		se = frappe.get_doc(make_rm_stock_entry(sco.name, rm_items))
+		se = nts.get_doc(make_rm_stock_entry(sco.name, rm_items))
 		se.to_warehouse = supplier_warehouse
 		se.insert()
 
-		doc = frappe.get_doc("Stock Entry", se.name)
+		doc = nts.get_doc("Stock Entry", se.name)
 		for item in doc.items:
 			if item.item_code == "Test FG A RW 1":
 				item.item_code = "Alternate Item For A RW 1"
@@ -98,7 +98,7 @@ class TestItemAlternative(FrappeTestCase):
 
 		doc.save()
 		doc.submit()
-		after_transfer_reserved_qty_for_sub_contract = frappe.db.get_value(
+		after_transfer_reserved_qty_for_sub_contract = nts.db.get_value(
 			"Bin",
 			{"item_code": "Test FG A RW 1", "warehouse": "_Test Warehouse - _TC"},
 			"reserved_qty_for_sub_contract",
@@ -109,7 +109,7 @@ class TestItemAlternative(FrappeTestCase):
 		scr = make_subcontracting_receipt(sco.name)
 		scr.save()
 
-		scr = frappe.get_doc("Subcontracting Receipt", scr.name)
+		scr = nts.get_doc("Subcontracting Receipt", scr.name)
 		status = False
 		for item in scr.supplied_items:
 			if item.rm_item_code == "Alternate Item For A RW 1":
@@ -132,13 +132,13 @@ class TestItemAlternative(FrappeTestCase):
 			wip_warehouse="Test Supplier Warehouse - _TC",
 		)
 
-		reserved_qty_for_production = frappe.db.get_value(
+		reserved_qty_for_production = nts.db.get_value(
 			"Bin",
 			{"item_code": "Test FG A RW 1", "warehouse": "_Test Warehouse - _TC"},
 			"reserved_qty_for_production",
 		)
 
-		ste = frappe.get_doc(make_stock_entry(pro_order.name, "Material Transfer for Manufacture", 5))
+		ste = nts.get_doc(make_stock_entry(pro_order.name, "Material Transfer for Manufacture", 5))
 		ste.insert()
 
 		for item in ste.items:
@@ -149,14 +149,14 @@ class TestItemAlternative(FrappeTestCase):
 				item.original_item = "Test FG A RW 1"
 
 		ste.submit()
-		reserved_qty_for_production_after_transfer = frappe.db.get_value(
+		reserved_qty_for_production_after_transfer = nts.db.get_value(
 			"Bin",
 			{"item_code": "Test FG A RW 1", "warehouse": "_Test Warehouse - _TC"},
 			"reserved_qty_for_production",
 		)
 
 		self.assertEqual(reserved_qty_for_production_after_transfer, flt(reserved_qty_for_production - 5))
-		ste1 = frappe.get_doc(make_stock_entry(pro_order.name, "Manufacture", 5))
+		ste1 = nts.get_doc(make_stock_entry(pro_order.name, "Manufacture", 5))
 
 		status = False
 		for d in ste1.items:
@@ -175,7 +175,7 @@ def make_items():
 		"Alternate Item For A RW 1",
 	]
 	for item_code in items:
-		if not frappe.db.exists("Item", item_code):
+		if not nts.db.exists("Item", item_code):
 			create_item(item_code)
 
 	try:
@@ -185,21 +185,21 @@ def make_items():
 	except EmptyStockReconciliationItemsError:
 		pass
 
-	if frappe.db.exists("Item", "Test FG A RW 1"):
-		doc = frappe.get_doc("Item", "Test FG A RW 1")
+	if nts.db.exists("Item", "Test FG A RW 1"):
+		doc = nts.get_doc("Item", "Test FG A RW 1")
 		doc.allow_alternative_item = 1
 		doc.save()
 
-	if frappe.db.exists("Item", "Test Finished Goods - A"):
-		doc = frappe.get_doc("Item", "Test Finished Goods - A")
+	if nts.db.exists("Item", "Test Finished Goods - A"):
+		doc = nts.get_doc("Item", "Test Finished Goods - A")
 		doc.is_sub_contracted_item = 1
 		doc.save()
 
-	if not frappe.db.get_value("BOM", {"item": "Test Finished Goods - A", "docstatus": 1}):
+	if not nts.db.get_value("BOM", {"item": "Test Finished Goods - A", "docstatus": 1}):
 		make_bom(item="Test Finished Goods - A", raw_materials=["Test FG A RW 1", "Test FG A RW 2"])
 
-	if not frappe.db.get_value("Warehouse", {"warehouse_name": "Test Supplier Warehouse"}):
-		frappe.get_doc(
+	if not nts.db.get_value("Warehouse", {"warehouse_name": "Test Supplier Warehouse"}):
+		nts.get_doc(
 			{
 				"doctype": "Warehouse",
 				"warehouse_name": "Test Supplier Warehouse",

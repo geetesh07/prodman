@@ -1,4 +1,4 @@
-frappe.provide("prodman.edi");
+nts.provide("prodman.edi");
 
 prodman.edi.import_genericode = function (listview_or_form) {
 	let doctype = "Code List";
@@ -6,7 +6,7 @@ prodman.edi.import_genericode = function (listview_or_form) {
 	if (listview_or_form.doc !== undefined) {
 		docname = listview_or_form.doc.name;
 	}
-	new frappe.ui.FileUploader({
+	new nts.ui.FileUploader({
 		method: "prodman.edi.doctype.code_list.code_list_import.import_genericode",
 		doctype: doctype,
 		docname: docname,
@@ -28,7 +28,7 @@ function show_column_selection_dialog(context) {
 			fieldname: "code_list_info",
 			options: `<div class="text-muted">${__(
 				"You are importing data for the code list:"
-			)} ${frappe.utils.get_form_link(
+			)} ${nts.utils.get_form_link(
 				"Code List",
 				context.code_list,
 				true,
@@ -105,7 +105,7 @@ function show_column_selection_dialog(context) {
 		}
 	);
 
-	let d = new frappe.ui.Dialog({
+	let d = new nts.ui.Dialog({
 		title: __("Select Columns and Filters"),
 		fields: fields,
 		primary_action_label: __("Import"),
@@ -117,7 +117,7 @@ function show_column_selection_dialog(context) {
 					filters[field.replace("filter_", "")] = values[field];
 				}
 			}
-			frappe
+			nts
 				.xcall("prodman.edi.doctype.code_list.code_list_import.process_genericode_import", {
 					code_list_name: context.code_list,
 					file_name: context.file,
@@ -127,7 +127,7 @@ function show_column_selection_dialog(context) {
 					filters: filters,
 				})
 				.then((count) => {
-					frappe.msgprint(__("Import completed. {0} common codes created.", [count]));
+					nts.msgprint(__("Import completed. {0} common codes created.", [count]));
 				});
 			d.hide();
 		},

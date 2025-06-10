@@ -1,4 +1,4 @@
-frappe.treeview_settings["Warehouse"] = {
+nts.treeview_settings["Warehouse"] = {
 	get_tree_nodes: "prodman.stock.doctype.warehouse.warehouse.get_children",
 	add_tree_node: "prodman.stock.doctype.warehouse.warehouse.add_node",
 	get_tree_root: false,

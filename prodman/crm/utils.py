@@ -1,7 +1,7 @@
-import frappe
-from frappe.desk.notifications import notify_mentions
-from frappe.model.document import Document
-from frappe.utils import cstr, now, today
+import nts
+from nts.desk.notifications import notify_mentions
+from nts.model.document import Document
+from nts.utils import cstr, now, today
 from pypika import functions
 
 
@@ -26,19 +26,19 @@ def update_lead_phone_numbers(contact, method):
 				if primary_mobile_nos:
 					mobile_no = primary_mobile_nos[0]
 
-			lead = frappe.get_doc("Lead", contact_lead)
+			lead = nts.get_doc("Lead", contact_lead)
 			lead.db_set("phone", phone)
 			lead.db_set("mobile_no", mobile_no)
 
 
 def copy_comments(doctype, docname, doc):
-	comments = frappe.db.get_values(
+	comments = nts.db.get_values(
 		"Comment",
 		filters={"reference_doctype": doctype, "reference_name": docname, "comment_type": "Comment"},
 		fieldname="*",
 	)
 	for comment in comments:
-		comment = frappe.get_doc(comment.update({"doctype": "Comment"}))
+		comment = nts.get_doc(comment.update({"doctype": "Comment"}))
 		comment.name = None
 		comment.reference_doctype = doc.doctype
 		comment.reference_name = doc.name
@@ -49,15 +49,15 @@ def link_communications(doctype, docname, doc):
 	communication_list = get_linked_communication_list(doctype, docname)
 
 	for communication in communication_list:
-		communication_doc = frappe.get_doc("Communication", communication)
+		communication_doc = nts.get_doc("Communication", communication)
 		communication_doc.add_link(doc.doctype, doc.name, autosave=True)
 
 
 def get_linked_communication_list(doctype, docname):
-	communications = frappe.get_all(
+	communications = nts.get_all(
 		"Communication", filters={"reference_doctype": doctype, "reference_name": docname}, pluck="name"
 	)
-	communication_links = frappe.get_all(
+	communication_links = nts.get_all(
 		"Communication Link",
 		{"link_doctype": doctype, "link_name": docname, "parent": ("not in", communications)},
 		pluck="parent",
@@ -86,10 +86,10 @@ def link_communications_with_prospect(communication, method):
 
 def update_modified_timestamp(communication, method):
 	if communication.reference_doctype and communication.reference_name:
-		if communication.sent_or_received == "Received" and frappe.db.get_single_value(
+		if communication.sent_or_received == "Received" and nts.db.get_single_value(
 			"CRM Settings", "update_timestamp_on_new_communication"
 		):
-			frappe.db.set_value(
+			nts.db.set_value(
 				dt=communication.reference_doctype,
 				dn=communication.reference_name,
 				field="modified",
@@ -101,14 +101,14 @@ def update_modified_timestamp(communication, method):
 def get_linked_prospect(reference_doctype, reference_name):
 	prospect = None
 	if reference_doctype == "Lead":
-		prospect = frappe.db.get_value("Prospect Lead", {"lead": reference_name}, "parent")
+		prospect = nts.db.get_value("Prospect Lead", {"lead": reference_name}, "parent")
 
 	elif reference_doctype == "Opportunity":
-		opportunity_from, party_name = frappe.db.get_value(
+		opportunity_from, party_name = nts.db.get_value(
 			"Opportunity", reference_name, ["opportunity_from", "party_name"]
 		)
 		if opportunity_from == "Lead":
-			prospect = frappe.db.get_value("Prospect Opportunity", {"opportunity": reference_name}, "parent")
+			prospect = nts.db.get_value("Prospect Opportunity", {"opportunity": reference_name}, "parent")
 		if opportunity_from == "Prospect":
 			prospect = party_name
 
@@ -129,7 +129,7 @@ def link_open_tasks(ref_doctype, ref_docname, doc):
 	todos = get_open_todos(ref_doctype, ref_docname)
 
 	for todo in todos:
-		todo_doc = frappe.get_doc("ToDo", todo.name)
+		todo_doc = nts.get_doc("ToDo", todo.name)
 		todo_doc.reference_type = doc.doctype
 		todo_doc.reference_name = doc.name
 		todo_doc.save()
@@ -138,12 +138,12 @@ def link_open_tasks(ref_doctype, ref_docname, doc):
 def link_open_events(ref_doctype, ref_docname, doc):
 	events = get_open_events(ref_doctype, ref_docname)
 	for event in events:
-		event_doc = frappe.get_doc("Event", event.name)
+		event_doc = nts.get_doc("Event", event.name)
 		event_doc.add_participant(doc.doctype, doc.name)
 		event_doc.save()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_open_activities(ref_doctype, ref_docname):
 	tasks = get_open_todos(ref_doctype, ref_docname)
 	events = get_open_events(ref_doctype, ref_docname)
@@ -152,7 +152,7 @@ def get_open_activities(ref_doctype, ref_docname):
 
 
 def get_open_todos(ref_doctype, ref_docname):
-	return frappe.get_all(
+	return nts.get_all(
 		"ToDo",
 		filters={"reference_type": ref_doctype, "reference_name": ref_docname, "status": "Open"},
 		fields=[
@@ -165,11 +165,11 @@ def get_open_todos(ref_doctype, ref_docname):
 
 
 def get_open_events(ref_doctype, ref_docname):
-	event = frappe.qb.DocType("Event")
-	event_link = frappe.qb.DocType("Event Participants")
+	event = nts.qb.DocType("Event")
+	event_link = nts.qb.DocType("Event Participants")
 
 	query = (
-		frappe.qb.from_(event)
+		nts.qb.from_(event)
 		.join(event_link)
 		.on(event_link.parent == event.name)
 		.select(
@@ -192,11 +192,11 @@ def get_open_events(ref_doctype, ref_docname):
 
 
 def open_leads_opportunities_based_on_todays_event():
-	event = frappe.qb.DocType("Event")
-	event_link = frappe.qb.DocType("Event Participants")
+	event = nts.qb.DocType("Event")
+	event_link = nts.qb.DocType("Event Participants")
 
 	query = (
-		frappe.qb.from_(event)
+		nts.qb.from_(event)
 		.join(event_link)
 		.on(event_link.parent == event.name)
 		.select(event_link.reference_doctype, event_link.reference_docname)
@@ -209,24 +209,24 @@ def open_leads_opportunities_based_on_todays_event():
 	data = query.run(as_dict=True)
 
 	for d in data:
-		frappe.db.set_value(d.reference_doctype, d.reference_docname, "status", "Open")
+		nts.db.set_value(d.reference_doctype, d.reference_docname, "status", "Open")
 
 
 class CRMNote(Document):
-	@frappe.whitelist()
+	@nts.whitelist()
 	def add_note(self, note):
-		self.append("notes", {"note": note, "added_by": frappe.session.user, "added_on": now()})
+		self.append("notes", {"note": note, "added_by": nts.session.user, "added_on": now()})
 		self.save()
 		notify_mentions(self.doctype, self.name, note)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def edit_note(self, note, row_id):
 		for d in self.notes:
 			if cstr(d.name) == row_id:
 				d.note = note
 				d.db_update()
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def delete_note(self, row_id):
 		for d in self.notes:
 			if cstr(d.name) == row_id:

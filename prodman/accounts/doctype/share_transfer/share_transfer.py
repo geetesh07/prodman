@@ -1,13 +1,13 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2017, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.exceptions import ValidationError
-from frappe.model.document import Document
-from frappe.model.naming import make_autoname
-from frappe.utils import nowdate
+import nts 
+from nts  import _
+from nts .exceptions import ValidationError
+from nts .model.document import Document
+from nts .model.naming import make_autoname
+from nts .utils import nowdate
 
 
 class ShareDontExists(ValidationError):
@@ -21,7 +21,7 @@ class ShareTransfer(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		amended_from: DF.Link | None
 		amount: DF.Currency
@@ -157,12 +157,12 @@ class ShareTransfer(Document):
 			# validate share doesn't exist in company
 			ret_val = self.share_exists(self.get_company_shareholder().name)
 			if ret_val in ("Complete", "Partial"):
-				frappe.throw(_("The shares already exist"), frappe.DuplicateEntryError)
+				nts .throw(_("The shares already exist"), nts .DuplicateEntryError)
 		else:
 			# validate share exists with from_shareholder
 			ret_val = self.share_exists(self.from_shareholder)
 			if ret_val in ("Outside", "Partial"):
-				frappe.throw(
+				nts .throw(
 					_("The shares don't exist with the {0}").format(self.from_shareholder), ShareDontExists
 				)
 
@@ -170,34 +170,34 @@ class ShareTransfer(Document):
 		if self.transfer_type == "Purchase":
 			self.to_shareholder = ""
 			if not self.from_shareholder:
-				frappe.throw(_("The field From Shareholder cannot be blank"))
+				nts .throw(_("The field From Shareholder cannot be blank"))
 			if not self.from_folio_no:
 				self.to_folio_no = self.autoname_folio(self.to_shareholder)
 			if not self.asset_account:
-				frappe.throw(_("The field Asset Account cannot be blank"))
+				nts .throw(_("The field Asset Account cannot be blank"))
 		elif self.transfer_type == "Issue":
 			self.from_shareholder = ""
 			if not self.to_shareholder:
-				frappe.throw(_("The field To Shareholder cannot be blank"))
+				nts .throw(_("The field To Shareholder cannot be blank"))
 			if not self.to_folio_no:
 				self.to_folio_no = self.autoname_folio(self.to_shareholder)
 			if not self.asset_account:
-				frappe.throw(_("The field Asset Account cannot be blank"))
+				nts .throw(_("The field Asset Account cannot be blank"))
 		else:
 			if not self.from_shareholder or not self.to_shareholder:
-				frappe.throw(_("The fields From Shareholder and To Shareholder cannot be blank"))
+				nts .throw(_("The fields From Shareholder and To Shareholder cannot be blank"))
 			if not self.to_folio_no:
 				self.to_folio_no = self.autoname_folio(self.to_shareholder)
 		if not self.equity_or_liability_account:
-			frappe.throw(_("The field Equity/Liability Account cannot be blank"))
+			nts .throw(_("The field Equity/Liability Account cannot be blank"))
 		if self.from_shareholder == self.to_shareholder:
-			frappe.throw(_("The seller and the buyer cannot be the same"))
+			nts .throw(_("The seller and the buyer cannot be the same"))
 		if self.no_of_shares != self.to_no - self.from_no + 1:
-			frappe.throw(_("The number of shares and the share numbers are inconsistent"))
+			nts .throw(_("The number of shares and the share numbers are inconsistent"))
 		if not self.amount:
 			self.amount = self.rate * self.no_of_shares
 		if self.amount != self.rate * self.no_of_shares:
-			frappe.throw(
+			nts .throw(
 				_("There are inconsistencies between the rate, no of shares and the amount calculated")
 			)
 
@@ -227,7 +227,7 @@ class ShareTransfer(Document):
 				continue
 			doc = self.get_shareholder_doc(shareholder_name)
 			if doc.company != self.company:
-				frappe.throw(_("The shareholder does not belong to this company"))
+				nts .throw(_("The shareholder does not belong to this company"))
 			if not doc.folio_no:
 				doc.folio_no = (
 					self.from_folio_no if (shareholder_field == "from_shareholder") else self.to_folio_no
@@ -237,7 +237,7 @@ class ShareTransfer(Document):
 				if doc.folio_no and doc.folio_no != (
 					self.from_folio_no if (shareholder_field == "from_shareholder") else self.to_folio_no
 				):
-					frappe.throw(_("The folio numbers are not matching"))
+					nts .throw(_("The folio numbers are not matching"))
 
 	def autoname_folio(self, shareholder, is_company=False):
 		if is_company:
@@ -252,7 +252,7 @@ class ShareTransfer(Document):
 		# query = {'from_no': share_starting_no, 'to_no': share_ending_no}
 		# Shares exist for sure
 		# Iterate over all entries and modify entry if in entry
-		doc = frappe.get_doc("Shareholder", shareholder)
+		doc = nts .get_doc("Shareholder", shareholder)
 		current_entries = doc.share_balance
 		new_entries = []
 
@@ -319,20 +319,20 @@ class ShareTransfer(Document):
 		if shareholder:
 			pass
 
-		name = frappe.db.get_value("Shareholder", {"name": shareholder}, "name")
+		name = nts .db.get_value("Shareholder", {"name": shareholder}, "name")
 
-		return frappe.get_doc("Shareholder", name)
+		return nts .get_doc("Shareholder", name)
 
 	def get_company_shareholder(self):
 		# Get company doc or create one if not present
-		company_shareholder = frappe.db.get_value(
+		company_shareholder = nts .db.get_value(
 			"Shareholder", {"company": self.company, "is_company": 1}, "name"
 		)
 
 		if company_shareholder:
-			return frappe.get_doc("Shareholder", company_shareholder)
+			return nts .get_doc("Shareholder", company_shareholder)
 		else:
-			shareholder = frappe.get_doc(
+			shareholder = nts .get_doc(
 				{"doctype": "Shareholder", "title": self.company, "company": self.company, "is_company": 1}
 			)
 			shareholder.insert()
@@ -340,7 +340,7 @@ class ShareTransfer(Document):
 			return shareholder
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def make_jv_entry(
 	company,
 	account,
@@ -351,7 +351,7 @@ def make_jv_entry(
 	debit_applicant_type,
 	debit_applicant,
 ):
-	journal_entry = frappe.new_doc("Journal Entry")
+	journal_entry = nts .new_doc("Journal Entry")
 	journal_entry.voucher_type = "Journal Entry"
 	journal_entry.company = company
 	journal_entry.posting_date = nowdate()

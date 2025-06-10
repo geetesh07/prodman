@@ -1,9 +1,9 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("crm", "doctype", "lead")
-	frappe.db.sql(
+	nts.reload_doc("crm", "doctype", "lead")
+	nts.db.sql(
 		"""
 		UPDATE
 			`tabLead`

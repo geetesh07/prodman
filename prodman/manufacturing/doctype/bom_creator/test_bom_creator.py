@@ -1,10 +1,10 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import random
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 from prodman.manufacturing.doctype.bom_creator.bom_creator import (
 	add_item,
@@ -13,7 +13,7 @@ from prodman.manufacturing.doctype.bom_creator.bom_creator import (
 from prodman.stock.doctype.item.test_item import make_item
 
 
-class TestBOMCreator(FrappeTestCase):
+class TestBOMCreator(ntsTestCase):
 	def setUp(self) -> None:
 		create_items()
 
@@ -238,11 +238,11 @@ class TestBOMCreator(FrappeTestCase):
 		doc.create_boms()
 		doc.reload()
 
-		data = frappe.get_all("BOM", filters={"bom_creator": doc.name, "docstatus": 1})
+		data = nts.get_all("BOM", filters={"bom_creator": doc.name, "docstatus": 1})
 		self.assertEqual(len(data), 2)
 
 		doc.create_boms()
-		data = frappe.get_all("BOM", filters={"bom_creator": doc.name, "docstatus": 1})
+		data = nts.get_all("BOM", filters={"bom_creator": doc.name, "docstatus": 1})
 		self.assertEqual(len(data), 2)
 
 
@@ -296,9 +296,9 @@ def create_items():
 
 def make_bom_creator(**kwargs):
 	if isinstance(kwargs, str) or isinstance(kwargs, dict):
-		kwargs = frappe.parse_json(kwargs)
+		kwargs = nts.parse_json(kwargs)
 
-	doc = frappe.new_doc("BOM Creator")
+	doc = nts.new_doc("BOM Creator")
 	doc.update(kwargs)
 	doc.save()
 

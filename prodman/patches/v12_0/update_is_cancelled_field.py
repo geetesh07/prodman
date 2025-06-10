@@ -1,4 +1,4 @@
-import frappe
+import nts
 
 
 def execute():
@@ -11,22 +11,22 @@ def execute():
 
 	for module, doctype in module_doctypes:
 		if (
-			not frappe.db.has_column(doctype, "is_cancelled")
-			or frappe.db.get_column_type(doctype, "is_cancelled").lower() == "int(1)"
+			not nts.db.has_column(doctype, "is_cancelled")
+			or nts.db.get_column_type(doctype, "is_cancelled").lower() == "int(1)"
 		):
 			continue
 
-		frappe.db.sql(
+		nts.db.sql(
 			f"""
 				UPDATE `tab{doctype}`
 				SET is_cancelled = 0
 				where is_cancelled in ('', 'No') or is_cancelled is NULL"""
 		)
-		frappe.db.sql(
+		nts.db.sql(
 			f"""
 				UPDATE `tab{doctype}`
 				SET is_cancelled = 1
 				where is_cancelled = 'Yes'"""
 		)
 
-		frappe.reload_doc(module, "doctype", frappe.scrub(doctype))
+		nts.reload_doc(module, "doctype", nts.scrub(doctype))

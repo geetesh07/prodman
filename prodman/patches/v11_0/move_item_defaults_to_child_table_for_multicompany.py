@@ -1,8 +1,8 @@
-# Copyright (c) 2018, Frappe and Contributors
+# Copyright (c) 2018, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
@@ -12,16 +12,16 @@ def execute():
 	[ default_warehouse, buying_cost_center, expense_account, selling_cost_center, income_account ]
 
 	"""
-	if not frappe.db.has_column("Item", "default_warehouse"):
+	if not nts.db.has_column("Item", "default_warehouse"):
 		return
 
-	frappe.reload_doc("stock", "doctype", "item_default")
-	frappe.reload_doc("stock", "doctype", "item")
+	nts.reload_doc("stock", "doctype", "item_default")
+	nts.reload_doc("stock", "doctype", "item")
 
-	companies = frappe.get_all("Company")
-	if len(companies) == 1 and not frappe.get_all("Item Default", limit=1):
+	companies = nts.get_all("Company")
+	if len(companies) == 1 and not nts.get_all("Item Default", limit=1):
 		try:
-			frappe.db.sql(
+			nts.db.sql(
 				"""
 					INSERT INTO `tabItem Default`
 						(name, parent, parenttype, parentfield, idx, company, default_warehouse,
@@ -37,7 +37,7 @@ def execute():
 		except Exception:
 			pass
 	else:
-		item_details = frappe.db.sql(
+		item_details = nts.db.sql(
 			""" SELECT name, default_warehouse,
 				buying_cost_center, expense_account, selling_cost_center, income_account
 			FROM tabItem
@@ -56,7 +56,7 @@ def execute():
 				["selling_cost_center", "Cost Center"],
 			]:
 				if item_data.get(d[0]):
-					company = frappe.get_value(d[1], item_data.get(d[0]), "company", cache=True)
+					company = nts.get_value(d[1], item_data.get(d[0]), "company", cache=True)
 
 					if item_data.name not in items_default_data:
 						items_default_data[item_data.name] = {}
@@ -84,7 +84,7 @@ def execute():
 			for company, item_default_data in companywise_item_data.items():
 				to_insert_data.append(
 					(
-						frappe.generate_hash("", 10),
+						nts.generate_hash("", 10),
 						item_code,
 						"Item",
 						"item_defaults",
@@ -98,7 +98,7 @@ def execute():
 				)
 
 		if to_insert_data:
-			frappe.db.sql(
+			nts.db.sql(
 				"""
 				INSERT INTO `tabItem Default`
 				(

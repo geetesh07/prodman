@@ -1,7 +1,7 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Driver", {
+nts.ui.form.on("Driver", {
 	setup: function (frm) {
 		frm.set_query("transporter", function () {
 			return {
@@ -24,10 +24,10 @@ frappe.ui.form.on("Driver", {
 
 	transporter: function (frm, cdt, cdn) {
 		// this assumes that supplier's address has same title as supplier's name
-		frappe.db
+		nts.db
 			.get_doc("Address", null, { address_title: frm.doc.transporter })
 			.then((r) => {
-				frappe.model.set_value(cdt, cdn, "address", r.name);
+				nts.model.set_value(cdt, cdn, "address", r.name);
 			})
 			.catch((err) => {
 				console.log(err);

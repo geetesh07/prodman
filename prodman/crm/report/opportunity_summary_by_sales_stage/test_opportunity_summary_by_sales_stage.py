@@ -1,6 +1,6 @@
 import unittest
 
-import frappe
+import nts
 
 from prodman.crm.report.opportunity_summary_by_sales_stage.opportunity_summary_by_sales_stage import (
 	execute,
@@ -15,7 +15,7 @@ from prodman.crm.report.sales_pipeline_analytics.test_sales_pipeline_analytics i
 class TestOpportunitySummaryBySalesStage(unittest.TestCase):
 	@classmethod
 	def setUpClass(self):
-		frappe.db.delete("Opportunity")
+		nts.db.delete("Opportunity")
 		create_company()
 		create_customer()
 		create_opportunity()

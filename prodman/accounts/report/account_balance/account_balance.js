@@ -1,20 +1,20 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Account Balance"] = {
+nts .query_reports["Account Balance"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts .defaults.get_user_default("Company"),
 		},
 		{
 			fieldname: "report_date",
 			label: __("Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.get_today(),
+			default: nts .datetime.get_today(),
 			reqd: 1,
 		},
 		{

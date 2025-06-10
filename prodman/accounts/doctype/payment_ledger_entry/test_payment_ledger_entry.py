@@ -1,10 +1,10 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe import qb
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import nowdate
+import nts 
+from nts  import qb
+from nts .tests.utils import nts TestCase, change_settings
+from nts .utils import nowdate
 
 from prodman.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from prodman.accounts.doctype.payment_entry.test_payment_entry import create_payment_entry
@@ -13,7 +13,7 @@ from prodman.selling.doctype.sales_order.test_sales_order import make_sales_orde
 from prodman.stock.doctype.item.test_item import create_item
 
 
-class TestPaymentLedgerEntry(FrappeTestCase):
+class TestPaymentLedgerEntry(nts TestCase):
 	def setUp(self):
 		self.ple = qb.DocType("Payment Ledger Entry")
 		self.create_company()
@@ -22,15 +22,15 @@ class TestPaymentLedgerEntry(FrappeTestCase):
 		self.clear_old_entries()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def create_company(self):
 		company_name = "_Test Payment Ledger"
 		company = None
-		if frappe.db.exists("Company", company_name):
-			company = frappe.get_doc("Company", company_name)
+		if nts .db.exists("Company", company_name):
+			company = nts .get_doc("Company", company_name)
 		else:
-			company = frappe.get_doc(
+			company = nts .get_doc(
 				{
 					"doctype": "Company",
 					"company_name": company_name,
@@ -51,10 +51,10 @@ class TestPaymentLedgerEntry(FrappeTestCase):
 		self.creditors = "Creditors - _PL"
 
 		# create bank account
-		if frappe.db.exists("Account", "HDFC - _PL"):
+		if nts .db.exists("Account", "HDFC - _PL"):
 			self.bank = "HDFC - _PL"
 		else:
-			bank_acc = frappe.get_doc(
+			bank_acc = nts .get_doc(
 				{
 					"doctype": "Account",
 					"account_name": "HDFC",
@@ -74,10 +74,10 @@ class TestPaymentLedgerEntry(FrappeTestCase):
 
 	def create_customer(self):
 		name = "_Test PL Customer"
-		if frappe.db.exists("Customer", name):
+		if nts .db.exists("Customer", name):
 			self.customer = name
 		else:
-			customer = frappe.new_doc("Customer")
+			customer = nts .new_doc("Customer")
 			customer.customer_name = name
 			customer.type = "Individual"
 			customer.save()
@@ -166,7 +166,7 @@ class TestPaymentLedgerEntry(FrappeTestCase):
 			qb.from_(qb.DocType(doctype)).delete().where(qb.DocType(doctype).company == self.company).run()
 
 	def create_journal_entry(self, acc1=None, acc2=None, amount=0, posting_date=None, cost_center=None):
-		je = frappe.new_doc("Journal Entry")
+		je = nts .new_doc("Journal Entry")
 		je.posting_date = posting_date or nowdate()
 		je.company = self.company
 		je.user_remark = "test"
@@ -464,7 +464,7 @@ class TestPaymentLedgerEntry(FrappeTestCase):
 		si.reload()
 		si.cancel()
 
-		entries = frappe.db.get_list(
+		entries = nts .db.get_list(
 			"Payment Ledger Entry",
 			filters={"against_voucher_type": si.doctype, "against_voucher_no": si.name, "delinked": 0},
 		)
@@ -472,7 +472,7 @@ class TestPaymentLedgerEntry(FrappeTestCase):
 
 		# with references removed, deletion should be possible
 		si.delete()
-		self.assertRaises(frappe.DoesNotExistError, frappe.get_doc, si.doctype, si.name)
+		self.assertRaises(nts .DoesNotExistError, nts .get_doc, si.doctype, si.name)
 
 	@change_settings(
 		"Accounts Settings",
@@ -497,7 +497,7 @@ class TestPaymentLedgerEntry(FrappeTestCase):
 		si.reload()
 		si.cancel()
 
-		entries = frappe.db.get_list(
+		entries = nts .db.get_list(
 			"Payment Ledger Entry",
 			filters={"against_voucher_type": si.doctype, "against_voucher_no": si.name, "delinked": 0},
 		)
@@ -505,7 +505,7 @@ class TestPaymentLedgerEntry(FrappeTestCase):
 
 		# with references removed, deletion should be possible
 		si.delete()
-		self.assertRaises(frappe.DoesNotExistError, frappe.get_doc, si.doctype, si.name)
+		self.assertRaises(nts .DoesNotExistError, nts .get_doc, si.doctype, si.name)
 
 	@change_settings(
 		"Accounts Settings",
@@ -525,7 +525,7 @@ class TestPaymentLedgerEntry(FrappeTestCase):
 		so.reload()
 		so.cancel()
 
-		entries = frappe.db.get_list(
+		entries = nts .db.get_list(
 			"Payment Ledger Entry",
 			filters={"against_voucher_type": so.doctype, "against_voucher_no": so.name, "delinked": 0},
 		)
@@ -533,4 +533,4 @@ class TestPaymentLedgerEntry(FrappeTestCase):
 
 		# with references removed, deletion should be possible
 		so.delete()
-		self.assertRaises(frappe.DoesNotExistError, frappe.get_doc, so.doctype, so.name)
+		self.assertRaises(nts .DoesNotExistError, nts .get_doc, so.doctype, so.name)

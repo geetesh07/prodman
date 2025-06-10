@@ -1,18 +1,18 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 
-class TestSubcontractingBOM(FrappeTestCase):
+class TestSubcontractingBOM(ntsTestCase):
 	pass
 
 
 def create_subcontracting_bom(**kwargs):
-	kwargs = frappe._dict(kwargs)
+	kwargs = nts._dict(kwargs)
 
-	doc = frappe.new_doc("Subcontracting BOM")
+	doc = nts.new_doc("Subcontracting BOM")
 	doc.is_active = kwargs.is_active or 1
 	doc.finished_good = kwargs.finished_good
 	doc.finished_good_uom = kwargs.finished_good_uom

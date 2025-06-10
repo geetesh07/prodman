@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import re
 import unittest
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
+import nts 
+from nts .tests.utils import nts TestCase, change_settings
 
 from prodman.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from prodman.accounts.doctype.payment_entry.test_payment_entry import create_payment_terms_template
@@ -38,18 +38,18 @@ payment_method = [
 ]
 
 
-class TestPaymentRequest(FrappeTestCase):
+class TestPaymentRequest(nts TestCase):
 	def setUp(self):
-		if not frappe.db.get_value("Payment Gateway", payment_gateway["gateway"], "name"):
-			frappe.get_doc(payment_gateway).insert(ignore_permissions=True)
+		if not nts .db.get_value("Payment Gateway", payment_gateway["gateway"], "name"):
+			nts .get_doc(payment_gateway).insert(ignore_permissions=True)
 
 		for method in payment_method:
-			if not frappe.db.get_value(
+			if not nts .db.get_value(
 				"Payment Gateway Account",
 				{"payment_gateway": method["payment_gateway"], "currency": method["currency"]},
 				"name",
 			):
-				frappe.get_doc(method).insert(ignore_permissions=True)
+				nts .get_doc(method).insert(ignore_permissions=True)
 
 	def test_payment_request_linkings(self):
 		so_inr = make_sales_order(currency="INR", do_not_save=True)
@@ -150,11 +150,11 @@ class TestPaymentRequest(FrappeTestCase):
 		self.assertEqual(purchase_invoice.status, "Paid")
 
 	def test_payment_entry(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Company", "_Test Company", "exchange_gain_loss_account", "_Test Exchange Gain/Loss - _TC"
 		)
-		frappe.db.set_value("Company", "_Test Company", "write_off_account", "_Test Write Off - _TC")
-		frappe.db.set_value("Company", "_Test Company", "cost_center", "_Test Cost Center - _TC")
+		nts .db.set_value("Company", "_Test Company", "write_off_account", "_Test Write Off - _TC")
+		nts .db.set_value("Company", "_Test Company", "cost_center", "_Test Cost Center - _TC")
 
 		so_inr = make_sales_order(currency="INR")
 		pr = make_payment_request(
@@ -168,7 +168,7 @@ class TestPaymentRequest(FrappeTestCase):
 		)
 		pe = pr.set_as_paid()
 
-		so_inr = frappe.get_doc("Sales Order", so_inr.name)
+		so_inr = nts .get_doc("Sales Order", so_inr.name)
 
 		self.assertEqual(so_inr.advance_paid, 1000)
 
@@ -199,7 +199,7 @@ class TestPaymentRequest(FrappeTestCase):
 			]
 		)
 
-		gl_entries = frappe.db.sql(
+		gl_entries = nts .db.sql(
 			"""select account, debit, credit, against_voucher
 			from `tabGL Entry` where voucher_type='Payment Entry' and voucher_no=%s
 			order by account asc""",
@@ -263,7 +263,7 @@ class TestPaymentRequest(FrappeTestCase):
 
 		# Try to make Payment Request more than SO amount, should give validation
 		pr2.grand_total = 900
-		self.assertRaises(frappe.ValidationError, pr2.save)
+		self.assertRaises(nts .ValidationError, pr2.save)
 
 	def test_conversion_on_foreign_currency_accounts(self):
 		po_doc = create_purchase_order(supplier="_Test Supplier USD", currency="USD", do_not_submit=1)
@@ -273,7 +273,7 @@ class TestPaymentRequest(FrappeTestCase):
 		po_doc.save().submit()
 
 		pr = make_payment_request(dt=po_doc.doctype, dn=po_doc.name, recipient_id="nabin@prodman.com")
-		pr = frappe.get_doc(pr).save().submit()
+		pr = nts .get_doc(pr).save().submit()
 
 		pe = pr.create_payment_entry()
 		self.assertEqual(pe.base_paid_amount, 800)
@@ -314,7 +314,7 @@ class TestPaymentRequest(FrappeTestCase):
 		self.assertEqual(pr.grand_total, 1000)
 
 		self.assertRaisesRegex(
-			frappe.exceptions.ValidationError,
+			nts .exceptions.ValidationError,
 			re.compile(r"Payment Request is already created"),
 			make_payment_request,
 			dt="Sales Order",
@@ -340,7 +340,7 @@ class TestPaymentRequest(FrappeTestCase):
 
 		# creating a more payment Request must not allowed
 		self.assertRaisesRegex(
-			frappe.exceptions.ValidationError,
+			nts .exceptions.ValidationError,
 			re.compile(r"Payment Entry is already created"),
 			make_payment_request,
 			dt="Sales Order",
@@ -372,7 +372,7 @@ class TestPaymentRequest(FrappeTestCase):
 		self.assertEqual(pr.status, "Initiated")
 
 		self.assertRaisesRegex(
-			frappe.exceptions.ValidationError,
+			nts .exceptions.ValidationError,
 			re.compile(r"Payment Request is already created"),
 			make_payment_request,
 			dt="Purchase Invoice",
@@ -409,7 +409,7 @@ class TestPaymentRequest(FrappeTestCase):
 
 		# creating a more payment Request must not allowed
 		self.assertRaisesRegex(
-			frappe.exceptions.ValidationError,
+			nts .exceptions.ValidationError,
 			re.compile(r"Payment Entry is already created"),
 			make_payment_request,
 			dt="Purchase Invoice",
@@ -552,7 +552,7 @@ class TestPaymentRequest(FrappeTestCase):
 
 		pe = get_payment_entry("Sales Invoice", si.name, bank_account="_Test Bank - _TC")
 		pe.reference_no = "PAYEE0002"
-		pe.reference_date = frappe.utils.nowdate()
+		pe.reference_date = nts .utils.nowdate()
 		pe.paid_amount = 2500
 		pe.references[0].allocated_amount = 2500
 		pe.save()
@@ -638,7 +638,7 @@ def test_partial_paid_invoice_with_submitted_payment_entry(self):
 
 	pe = get_payment_entry("Purchase Invoice", pi.name, bank_account="_Test Bank - _TC")
 	pe.reference_no = "PURINV0001"
-	pe.reference_date = frappe.utils.nowdate()
+	pe.reference_date = nts .utils.nowdate()
 	pe.paid_amount = 2500
 	pe.references[0].allocated_amount = 2500
 	pe.save()
@@ -647,7 +647,7 @@ def test_partial_paid_invoice_with_submitted_payment_entry(self):
 
 	pe = get_payment_entry("Purchase Invoice", pi.name, bank_account="_Test Bank - _TC")
 	pe.reference_no = "PURINV0002"
-	pe.reference_date = frappe.utils.nowdate()
+	pe.reference_date = nts .utils.nowdate()
 	pe.paid_amount = 2500
 	pe.references[0].allocated_amount = 2500
 	pe.save()

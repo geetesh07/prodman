@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 from collections import defaultdict
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -21,7 +21,7 @@ def get_data(report_filters):
 
 	wo_items = {}
 
-	work_orders = frappe.get_all("Work Order", filters=filters, fields=fields)
+	work_orders = nts.get_all("Work Order", filters=filters, fields=fields)
 	get_returned_materials(work_orders)
 
 	for d in work_orders:
@@ -48,7 +48,7 @@ def get_data(report_filters):
 def get_returned_materials(work_orders):
 	raw_materials_qty = defaultdict(float)
 
-	raw_materials = frappe.get_all(
+	raw_materials = nts.get_all(
 		"Stock Entry",
 		fields=[
 			"`tabStock Entry`.`work_order`",

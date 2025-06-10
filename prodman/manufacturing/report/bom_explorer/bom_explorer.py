@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -18,7 +18,7 @@ def get_data(filters, data):
 
 
 def get_exploded_items(bom, data, indent=0, qty=1):
-	exploded_items = frappe.get_all(
+	exploded_items = nts.get_all(
 		"BOM Item",
 		filters={"parent": bom},
 		fields=["qty", "bom_no", "qty", "item_code", "item_name", "description", "uom", "idx"],

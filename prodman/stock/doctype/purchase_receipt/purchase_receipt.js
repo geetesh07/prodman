@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.stock");
+nts.provide("prodman.stock");
 
 cur_frm.cscript.tax_table = "Purchase Taxes and Charges";
 
@@ -9,7 +9,7 @@ prodman.accounts.taxes.setup_tax_filters("Purchase Taxes and Charges");
 prodman.accounts.taxes.setup_tax_validations("Purchase Receipt");
 prodman.buying.setup_buying_controller();
 
-frappe.ui.form.on("Purchase Receipt", {
+nts.ui.form.on("Purchase Receipt", {
 	setup: (frm) => {
 		frm.custom_make_buttons = {
 			"Stock Entry": "Return",
@@ -60,7 +60,7 @@ frappe.ui.form.on("Purchase Receipt", {
 			frm.add_custom_button(
 				__("Debit Note"),
 				function () {
-					frappe.model.open_mapped_doc({
+					nts.model.open_mapped_doc({
 						method: "prodman.stock.doctype.purchase_receipt.purchase_receipt.make_purchase_invoice",
 						frm: cur_frm,
 					});
@@ -74,7 +74,7 @@ frappe.ui.form.on("Purchase Receipt", {
 			frm.add_custom_button(
 				__("Delivery Note"),
 				function () {
-					frappe.model.open_mapped_doc({
+					nts.model.open_mapped_doc({
 						method: "prodman.stock.doctype.purchase_receipt.purchase_receipt.make_inter_company_delivery_note",
 						frm: cur_frm,
 					});
@@ -85,7 +85,7 @@ frappe.ui.form.on("Purchase Receipt", {
 
 		if (frm.doc.docstatus === 0) {
 			if (!frm.doc.is_return) {
-				frappe.db.get_single_value("Buying Settings", "maintain_same_rate").then((value) => {
+				nts.db.get_single_value("Buying Settings", "maintain_same_rate").then((value) => {
 					if (value) {
 						frm.doc.items.forEach((item) => {
 							frm.fields_dict.items.grid.update_docfield_property(
@@ -113,7 +113,7 @@ frappe.ui.form.on("Purchase Receipt", {
 	},
 
 	make_lcv(frm) {
-		frappe.call({
+		nts.call({
 			method: "prodman.stock.doctype.purchase_receipt.purchase_receipt.make_lcv",
 			args: {
 				doctype: frm.doc.doctype,
@@ -121,8 +121,8 @@ frappe.ui.form.on("Purchase Receipt", {
 			},
 			callback: (r) => {
 				if (r.message) {
-					var doc = frappe.model.sync(r.message);
-					frappe.set_route("Form", doc[0].doctype, doc[0].name);
+					var doc = nts.model.sync(r.message);
+					nts.set_route("Form", doc[0].doctype, doc[0].name);
 				}
 			},
 		});
@@ -134,7 +134,7 @@ frappe.ui.form.on("Purchase Receipt", {
 				__("Purchase Invoice"),
 				function () {
 					if (!frm.doc.supplier) {
-						frappe.throw({
+						nts.throw({
 							title: __("Mandatory"),
 							message: __("Please Select a Supplier"),
 						});
@@ -210,10 +210,10 @@ prodman.stock.PurchaseReceiptController = class PurchaseReceiptController extend
 			this.frm.add_custom_button(
 				__("Asset"),
 				function () {
-					frappe.route_options = {
+					nts.route_options = {
 						purchase_receipt: me.frm.doc.name,
 					};
-					frappe.set_route("List", "Asset");
+					nts.set_route("List", "Asset");
 				},
 				__("View")
 			);
@@ -221,10 +221,10 @@ prodman.stock.PurchaseReceiptController = class PurchaseReceiptController extend
 			this.frm.add_custom_button(
 				__("Asset Movement"),
 				function () {
-					frappe.route_options = {
+					nts.route_options = {
 						reference_name: me.frm.doc.name,
 					};
-					frappe.set_route("List", "Asset Movement");
+					nts.set_route("List", "Asset Movement");
 				},
 				__("View")
 			);
@@ -236,7 +236,7 @@ prodman.stock.PurchaseReceiptController = class PurchaseReceiptController extend
 					__("Purchase Order"),
 					function () {
 						if (!me.frm.doc.supplier) {
-							frappe.throw({
+							nts.throw({
 								title: __("Mandatory"),
 								message: __("Please Select a Supplier"),
 							});
@@ -299,7 +299,7 @@ prodman.stock.PurchaseReceiptController = class PurchaseReceiptController extend
 	}
 
 	make_purchase_invoice() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.stock.doctype.purchase_receipt.purchase_receipt.make_purchase_invoice",
 			frm: cur_frm,
 		});
@@ -315,7 +315,7 @@ prodman.stock.PurchaseReceiptController = class PurchaseReceiptController extend
 		});
 
 		if (has_rejected_items && has_rejected_items.length > 0) {
-			frappe.prompt(
+			nts.prompt(
 				[
 					{
 						label: __("Return Qty from Rejected Warehouse"),
@@ -326,15 +326,15 @@ prodman.stock.PurchaseReceiptController = class PurchaseReceiptController extend
 				],
 				function (values) {
 					if (values.return_for_rejected_warehouse) {
-						frappe.call({
+						nts.call({
 							method: "prodman.stock.doctype.purchase_receipt.purchase_receipt.make_purchase_return_against_rejected_warehouse",
 							args: {
 								source_name: cur_frm.doc.name,
 							},
 							callback: function (r) {
 								if (r.message) {
-									frappe.model.sync(r.message);
-									frappe.set_route("Form", r.message.doctype, r.message.name);
+									nts.model.sync(r.message);
+									nts.set_route("Form", r.message.doctype, r.message.name);
 								}
 							},
 						});
@@ -359,7 +359,7 @@ prodman.stock.PurchaseReceiptController = class PurchaseReceiptController extend
 	}
 
 	make_retention_stock_entry() {
-		frappe.call({
+		nts.call({
 			method: "prodman.stock.doctype.stock_entry.stock_entry.move_sample_to_retention_warehouse",
 			args: {
 				company: cur_frm.doc.company,
@@ -367,10 +367,10 @@ prodman.stock.PurchaseReceiptController = class PurchaseReceiptController extend
 			},
 			callback: function (r) {
 				if (r.message) {
-					var doc = frappe.model.sync(r.message)[0];
-					frappe.set_route("Form", doc.doctype, doc.name);
+					var doc = nts.model.sync(r.message)[0];
+					nts.set_route("Form", doc.doctype, doc.name);
 				} else {
-					frappe.msgprint(
+					nts.msgprint(
 						__("Purchase Receipt doesn't have any Item for which Retain Sample is enabled.")
 					);
 				}
@@ -387,15 +387,15 @@ prodman.stock.PurchaseReceiptController = class PurchaseReceiptController extend
 extend_cscript(cur_frm.cscript, new prodman.stock.PurchaseReceiptController({ frm: cur_frm }));
 
 cur_frm.cscript.update_status = function (status) {
-	frappe.ui.form.is_saving = true;
-	frappe.call({
+	nts.ui.form.is_saving = true;
+	nts.call({
 		method: "prodman.stock.doctype.purchase_receipt.purchase_receipt.update_purchase_receipt_status",
 		args: { docname: cur_frm.doc.name, status: status },
 		callback: function (r) {
 			if (!r.exc) cur_frm.reload_doc();
 		},
 		always: function () {
-			frappe.ui.form.is_saving = false;
+			nts.ui.form.is_saving = false;
 		},
 	});
 };
@@ -423,9 +423,9 @@ cur_frm.fields_dict["items"].grid.get_field("bom").get_query = function (doc, cd
 	};
 };
 
-frappe.provide("prodman.buying");
+nts.provide("prodman.buying");
 
-frappe.ui.form.on("Purchase Receipt", "is_subcontracted", function (frm) {
+nts.ui.form.on("Purchase Receipt", "is_subcontracted", function (frm) {
 	if (frm.doc.is_old_subcontracting_flow) {
 		prodman.buying.get_default_bom(frm);
 	}
@@ -433,11 +433,11 @@ frappe.ui.form.on("Purchase Receipt", "is_subcontracted", function (frm) {
 	frm.toggle_reqd("supplier_warehouse", frm.doc.is_old_subcontracting_flow);
 });
 
-frappe.ui.form.on("Purchase Receipt Item", {
+nts.ui.form.on("Purchase Receipt Item", {
 	item_code: function (frm, cdt, cdn) {
 		var d = locals[cdt][cdn];
-		frappe.db.get_value("Item", { name: d.item_code }, "sample_quantity", (r) => {
-			frappe.model.set_value(cdt, cdn, "sample_quantity", r.sample_quantity);
+		nts.db.get_value("Item", { name: d.item_code }, "sample_quantity", (r) => {
+			nts.model.set_value(cdt, cdn, "sample_quantity", r.sample_quantity);
 			validate_sample_quantity(frm, cdt, cdn);
 		});
 	},
@@ -453,14 +453,14 @@ frappe.ui.form.on("Purchase Receipt Item", {
 });
 
 cur_frm.cscript._make_purchase_return = function () {
-	frappe.model.open_mapped_doc({
+	nts.model.open_mapped_doc({
 		method: "prodman.stock.doctype.purchase_receipt.purchase_receipt.make_purchase_return",
 		frm: cur_frm,
 	});
 };
 
 cur_frm.cscript["Make Stock Entry"] = function () {
-	frappe.model.open_mapped_doc({
+	nts.model.open_mapped_doc({
 		method: "prodman.stock.doctype.purchase_receipt.purchase_receipt.make_stock_entry",
 		frm: cur_frm,
 	});
@@ -469,7 +469,7 @@ cur_frm.cscript["Make Stock Entry"] = function () {
 var validate_sample_quantity = function (frm, cdt, cdn) {
 	var d = locals[cdt][cdn];
 	if (d.sample_quantity && d.qty) {
-		frappe.call({
+		nts.call({
 			method: "prodman.stock.doctype.stock_entry.stock_entry.validate_sample_quantity",
 			args: {
 				batch_no: d.batch_no,
@@ -478,7 +478,7 @@ var validate_sample_quantity = function (frm, cdt, cdn) {
 				qty: d.qty,
 			},
 			callback: (r) => {
-				frappe.model.set_value(cdt, cdn, "sample_quantity", r.message);
+				nts.model.set_value(cdt, cdn, "sample_quantity", r.message);
 			},
 		});
 	}

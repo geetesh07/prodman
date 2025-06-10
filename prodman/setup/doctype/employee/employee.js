@@ -1,12 +1,12 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.setup");
-prodman.setup.EmployeeController = class EmployeeController extends frappe.ui.form.Controller {
+nts.provide("prodman.setup");
+prodman.setup.EmployeeController = class EmployeeController extends nts.ui.form.Controller {
 	setup() {
 		this.frm.fields_dict.user_id.get_query = function (doc, cdt, cdn) {
 			return {
-				query: "frappe.core.doctype.user.user.user_query",
+				query: "nts.core.doctype.user.user.user_query",
 				filters: { ignore_user_type: 1 },
 			};
 		};
@@ -20,7 +20,7 @@ prodman.setup.EmployeeController = class EmployeeController extends frappe.ui.fo
 	}
 };
 
-frappe.ui.form.on("Employee", {
+nts.ui.form.on("Employee", {
 	onload: function (frm) {
 		frm.set_query("department", function () {
 			return {
@@ -47,7 +47,7 @@ frappe.ui.form.on("Employee", {
 	},
 
 	update_contact: function (frm) {
-		var prefered_email_fieldname = frappe.model.scrub(frm.doc.prefered_contact_email) || "user_id";
+		var prefered_email_fieldname = nts.model.scrub(frm.doc.prefered_contact_email) || "user_id";
 		frm.set_value("prefered_email", frm.fields_dict[prefered_email_fieldname].value);
 	},
 
@@ -63,9 +63,9 @@ frappe.ui.form.on("Employee", {
 
 	create_user: function (frm) {
 		if (!frm.doc.prefered_email) {
-			frappe.throw(__("Please enter Preferred Contact Email"));
+			nts.throw(__("Please enter Preferred Contact Email"));
 		}
-		frappe.call({
+		nts.call({
 			method: "prodman.setup.doctype.employee.employee.create_user",
 			args: {
 				employee: frm.doc.name,
@@ -84,7 +84,7 @@ cur_frm.cscript = new prodman.setup.EmployeeController({
 	frm: cur_frm,
 });
 
-frappe.tour["Employee"] = [
+nts.tour["Employee"] = [
 	{
 		fieldname: "first_name",
 		title: "First Name",

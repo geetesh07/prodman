@@ -1,11 +1,11 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import datetime
 import unittest
 
-import frappe
-from frappe.utils import flt
+import nts
+from nts.utils import flt
 
 from prodman.support.doctype.issue_priority.test_issue_priority import make_priorities
 from prodman.support.doctype.service_level_agreement.service_level_agreement import (
@@ -16,17 +16,17 @@ from prodman.support.doctype.service_level_agreement.service_level_agreement imp
 class TestServiceLevelAgreement(unittest.TestCase):
 	def setUp(self):
 		self.create_company()
-		frappe.db.set_single_value("Support Settings", "track_service_level_agreement", 1)
-		lead = frappe.qb.DocType("Lead")
-		frappe.qb.from_(lead).delete().where(lead.company == self.company).run()
+		nts.db.set_single_value("Support Settings", "track_service_level_agreement", 1)
+		lead = nts.qb.DocType("Lead")
+		nts.qb.from_(lead).delete().where(lead.company == self.company).run()
 
 	def create_company(self):
 		name = "_Test Support SLA"
 		company = None
-		if frappe.db.exists("Company", name):
-			company = frappe.get_doc("Company", name)
+		if nts.db.exists("Company", name):
+			company = nts.get_doc("Company", name)
 		else:
-			company = frappe.get_doc(
+			company = nts.get_doc(
 				{
 					"doctype": "Company",
 					"company_name": name,
@@ -180,7 +180,7 @@ class TestServiceLevelAgreement(unittest.TestCase):
 
 		for field in sla_fields:
 			self.assertTrue(
-				frappe.db.exists("Custom Field", {"dt": doctype, "fieldname": field.get("fieldname")})
+				nts.db.exists("Custom Field", {"dt": doctype, "fieldname": field.get("fieldname")})
 			)
 
 	def test_docfield_creation_for_sla_on_custom_dt(self):
@@ -204,7 +204,7 @@ class TestServiceLevelAgreement(unittest.TestCase):
 
 		for field in sla_fields:
 			self.assertTrue(
-				frappe.db.exists("DocField", {"fieldname": field.get("fieldname"), "parent": doctype.name})
+				nts.db.exists("DocField", {"fieldname": field.get("fieldname"), "parent": doctype.name})
 			)
 
 	def test_sla_application(self):
@@ -229,7 +229,7 @@ class TestServiceLevelAgreement(unittest.TestCase):
 		self.assertEqual(lead.response_by, datetime.datetime(2019, 3, 4, 16, 0))
 		self.assertEqual(lead.sla_resolution_by, datetime.datetime(2019, 3, 4, 18, 0))
 
-		frappe.flags.current_time = datetime.datetime(2019, 3, 4, 15, 0)
+		nts.flags.current_time = datetime.datetime(2019, 3, 4, 15, 0)
 		lead.reload()
 		lead.status = "Converted"
 		lead.save()
@@ -253,15 +253,15 @@ class TestServiceLevelAgreement(unittest.TestCase):
 		creation = datetime.datetime(2020, 3, 4, 4, 0)
 		lead = make_lead(creation, index=2, company=self.company)
 
-		frappe.flags.current_time = datetime.datetime(2020, 3, 4, 4, 15)
+		nts.flags.current_time = datetime.datetime(2020, 3, 4, 4, 15)
 		lead.reload()
 		lead.status = "Replied"
 		lead.save()
 
 		lead.reload()
-		self.assertEqual(lead.on_hold_since, frappe.flags.current_time)
+		self.assertEqual(lead.on_hold_since, nts.flags.current_time)
 
-		frappe.flags.current_time = datetime.datetime(2020, 3, 4, 5, 5)
+		nts.flags.current_time = datetime.datetime(2020, 3, 4, 5, 5)
 		lead.reload()
 		lead.status = "Converted"
 		lead.save()
@@ -289,7 +289,7 @@ class TestServiceLevelAgreement(unittest.TestCase):
 		self.assertEqual(lead.response_by, datetime.datetime(2019, 3, 4, 16, 0))
 
 		# failed with response time only
-		frappe.flags.current_time = datetime.datetime(2019, 3, 4, 16, 5)
+		nts.flags.current_time = datetime.datetime(2019, 3, 4, 16, 5)
 		lead.reload()
 		lead.status = "Replied"
 		lead.save()
@@ -317,7 +317,7 @@ class TestServiceLevelAgreement(unittest.TestCase):
 		self.assertEqual(lead.service_level_agreement, lead_sla.name)
 		self.assertEqual(lead.response_by, datetime.datetime(2019, 3, 4, 16, 0))
 
-		frappe.flags.current_time = datetime.datetime(2019, 3, 4, 15, 30)
+		nts.flags.current_time = datetime.datetime(2019, 3, 4, 15, 30)
 		lead.reload()
 		lead.status = "Replied"
 		lead.save()
@@ -340,26 +340,26 @@ class TestServiceLevelAgreement(unittest.TestCase):
 		)
 		creation = datetime.datetime(2019, 3, 4, 12, 0)
 		lead = make_lead(creation=creation, index=4, company=self.company)
-		applied_sla = frappe.db.get_value("Lead", lead.name, "service_level_agreement")
+		applied_sla = nts.db.get_value("Lead", lead.name, "service_level_agreement")
 		self.assertFalse(applied_sla)
 
-		source = frappe.get_doc(doctype="Lead Source", source_name="Test Source")
+		source = nts.get_doc(doctype="Lead Source", source_name="Test Source")
 		source.insert(ignore_if_duplicate=True)
 		lead.source = "Test Source"
 		lead.save()
-		applied_sla = frappe.db.get_value("Lead", lead.name, "service_level_agreement")
+		applied_sla = nts.db.get_value("Lead", lead.name, "service_level_agreement")
 		self.assertEqual(applied_sla, lead_sla.name)
 
 		# check if SLA is removed if condition fails
 		lead.reload()
 		lead.source = None
 		lead.save()
-		applied_sla = frappe.db.get_value("Lead", lead.name, "service_level_agreement")
+		applied_sla = nts.db.get_value("Lead", lead.name, "service_level_agreement")
 		self.assertFalse(applied_sla)
 
 	def tearDown(self):
-		for d in frappe.get_all("Service Level Agreement"):
-			frappe.delete_doc("Service Level Agreement", d.name, force=1)
+		for d in nts.get_all("Service Level Agreement"):
+			nts.delete_doc("Service Level Agreement", d.name, force=1)
 
 
 def get_service_level_agreement(
@@ -373,7 +373,7 @@ def get_service_level_agreement(
 	else:
 		filters = {"entity_type": entity_type, "entity": entity}
 
-	service_level_agreement = frappe.get_doc("Service Level Agreement", filters)
+	service_level_agreement = nts.get_doc("Service Level Agreement", filters)
 	return service_level_agreement
 
 
@@ -405,7 +405,7 @@ def create_service_level_agreement(
 
 	pause_sla_on = [{"status": "Replied"}] if doctype == "Issue" else pause_sla_on
 
-	service_level_agreement = frappe._dict(
+	service_level_agreement = nts._dict(
 		{
 			"doctype": "Service Level Agreement",
 			"enabled": 1,
@@ -418,8 +418,8 @@ def create_service_level_agreement(
 			"holiday_list": holiday_list,
 			"entity_type": entity_type,
 			"entity": entity,
-			"start_date": frappe.utils.getdate(),
-			"end_date": frappe.utils.add_to_date(frappe.utils.getdate(), days=100),
+			"start_date": nts.utils.getdate(),
+			"end_date": nts.utils.add_to_date(nts.utils.getdate(), days=100),
 			"apply_sla_for_resolution": apply_sla_for_resolution,
 			"priorities": [
 				{
@@ -479,15 +479,15 @@ def create_service_level_agreement(
 	if not default_service_level_agreement:
 		filters.update({"entity_type": entity_type, "entity": entity})
 
-	sla = frappe.db.exists("Service Level Agreement", filters)
+	sla = nts.db.exists("Service Level Agreement", filters)
 	if sla:
-		frappe.delete_doc("Service Level Agreement", sla, force=1)
+		nts.delete_doc("Service Level Agreement", sla, force=1)
 
-	return frappe.get_doc(service_level_agreement).insert(ignore_permissions=True, ignore_if_duplicate=True)
+	return nts.get_doc(service_level_agreement).insert(ignore_permissions=True, ignore_if_duplicate=True)
 
 
 def create_customer():
-	customer = frappe.get_doc(
+	customer = nts.get_doc(
 		{
 			"doctype": "Customer",
 			"customer_name": "_Test Customer",
@@ -496,38 +496,38 @@ def create_customer():
 			"territory": "Rest Of The World",
 		}
 	)
-	if not frappe.db.exists("Customer", "_Test Customer"):
+	if not nts.db.exists("Customer", "_Test Customer"):
 		customer.insert(ignore_permissions=True)
 		return customer.name
 	else:
-		return frappe.db.exists("Customer", "_Test Customer")
+		return nts.db.exists("Customer", "_Test Customer")
 
 
 def create_customer_group():
-	customer_group = frappe.get_doc(
+	customer_group = nts.get_doc(
 		{"doctype": "Customer Group", "customer_group_name": "_Test SLA Customer Group"}
 	)
 
-	if not frappe.db.exists("Customer Group", {"customer_group_name": "_Test SLA Customer Group"}):
+	if not nts.db.exists("Customer Group", {"customer_group_name": "_Test SLA Customer Group"}):
 		customer_group.insert()
 		return customer_group.name
 	else:
-		return frappe.db.exists("Customer Group", {"customer_group_name": "_Test SLA Customer Group"})
+		return nts.db.exists("Customer Group", {"customer_group_name": "_Test SLA Customer Group"})
 
 
 def create_territory():
-	territory = frappe.get_doc(
+	territory = nts.get_doc(
 		{
 			"doctype": "Territory",
 			"territory_name": "_Test SLA Territory",
 		}
 	)
 
-	if not frappe.db.exists("Territory", {"territory_name": "_Test SLA Territory"}):
+	if not nts.db.exists("Territory", {"territory_name": "_Test SLA Territory"}):
 		territory.insert()
 		return territory.name
 	else:
-		return frappe.db.exists("Territory", {"territory_name": "_Test SLA Territory"})
+		return nts.db.exists("Territory", {"territory_name": "_Test SLA Territory"})
 
 
 def create_service_level_agreements_for_issues():
@@ -585,9 +585,9 @@ def create_service_level_agreements_for_issues():
 
 
 def make_holiday_list():
-	holiday_list = frappe.db.exists("Holiday List", "__Test Holiday List")
+	holiday_list = nts.db.exists("Holiday List", "__Test Holiday List")
 	if not holiday_list:
-		holiday_list = frappe.get_doc(
+		holiday_list = nts.get_doc(
 			{
 				"doctype": "Holiday List",
 				"holiday_list_name": "__Test Holiday List",
@@ -603,8 +603,8 @@ def make_holiday_list():
 
 
 def create_custom_doctype():
-	if not frappe.db.exists("DocType", "Test SLA on Custom Dt"):
-		doc = frappe.get_doc(
+	if not nts.db.exists("DocType", "Test SLA on Custom Dt"):
+		doc = nts.get_doc(
 			{
 				"doctype": "DocType",
 				"module": "Support",
@@ -632,11 +632,11 @@ def create_custom_doctype():
 		doc.insert()
 		return doc
 	else:
-		return frappe.get_doc("DocType", "Test SLA on Custom Dt")
+		return nts.get_doc("DocType", "Test SLA on Custom Dt")
 
 
 def make_lead(creation=None, index=0, company=None):
-	return frappe.get_doc(
+	return nts.get_doc(
 		{
 			"doctype": "Lead",
 			"email_id": f"test_lead1@example{index}.com",

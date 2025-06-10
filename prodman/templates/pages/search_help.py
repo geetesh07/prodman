@@ -1,31 +1,31 @@
-import frappe
+import nts
 import requests
-from frappe import _
-from frappe.core.utils import html2text
-from frappe.utils import sanitize_html
-from frappe.utils.global_search import search
+from nts import _
+from nts.core.utils import html2text
+from nts.utils import sanitize_html
+from nts.utils.global_search import search
 from jinja2 import utils
 
 
 def get_context(context):
 	context.no_cache = 1
-	if frappe.form_dict.q:
-		query = str(utils.escape(sanitize_html(frappe.form_dict.q)))
+	if nts.form_dict.q:
+		query = str(utils.escape(sanitize_html(nts.form_dict.q)))
 		context.title = _("Help Results for")
 		context.query = query
 
 		context.route = "/search_help"
-		d = frappe._dict()
+		d = nts._dict()
 		d.results_sections = get_help_results_sections(query)
 		context.update(d)
 	else:
 		context.title = _("Docs Search")
 
 
-@frappe.whitelist(allow_guest=True)
+@nts.whitelist(allow_guest=True)
 def get_help_results_sections(text):
 	out = []
-	settings = frappe.get_doc("Support Settings", "Support Settings")
+	settings = nts.get_doc("Support Settings", "Support Settings")
 
 	for api in settings.search_apis:
 		results = []
@@ -76,7 +76,7 @@ def prepare_api_results(api, topics_data):
 			route += str(topic[key])
 
 		results.append(
-			frappe._dict(
+			nts._dict(
 				{
 					"title": topic[api.post_title_key],
 					"preview": html2text(topic[api.post_description_key]),
@@ -98,7 +98,7 @@ def prepare_doctype_results(api, raw):
 			prepared_result[pair[0]] = pair[1]
 
 		results.append(
-			frappe._dict(
+			nts._dict(
 				{
 					"title": prepared_result[api.result_title_field],
 					"preview": prepared_result[api.result_preview_field],

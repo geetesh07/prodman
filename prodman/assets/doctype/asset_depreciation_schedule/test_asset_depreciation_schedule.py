@@ -1,9 +1,9 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import cstr, flt
+import nts 
+from nts .tests.utils import nts TestCase
+from nts .utils import cstr, flt
 
 from prodman.assets.doctype.asset.depreciation import (
 	post_depreciation_entries,
@@ -15,7 +15,7 @@ from prodman.assets.doctype.asset_depreciation_schedule.asset_depreciation_sched
 )
 
 
-class TestAssetDepreciationSchedule(FrappeTestCase):
+class TestAssetDepreciationSchedule(nts TestCase):
 	def setUp(self):
 		create_asset_data()
 
@@ -25,11 +25,11 @@ class TestAssetDepreciationSchedule(FrappeTestCase):
 		first_asset_depr_schedule = get_asset_depr_schedule_doc(asset.name, "Active")
 		self.assertEqual(first_asset_depr_schedule.status, "Active")
 
-		second_asset_depr_schedule = frappe.get_doc(
+		second_asset_depr_schedule = nts .get_doc(
 			{"doctype": "Asset Depreciation Schedule", "asset": asset.name, "finance_book": None}
 		)
 
-		self.assertRaises(frappe.ValidationError, second_asset_depr_schedule.insert)
+		self.assertRaises(nts .ValidationError, second_asset_depr_schedule.insert)
 
 	def test_daily_prorata_based_depr_on_sl_method(self):
 		asset = create_asset(
@@ -76,7 +76,7 @@ class TestAssetDepreciationSchedule(FrappeTestCase):
 		self.assertEqual(schedules, expected_schedules)
 
 	def test_schedule_for_slm_for_existing_asset_daily_pro_rata_enabled(self):
-		frappe.db.set_single_value("Accounts Settings", "calculate_depr_using_total_days", 1)
+		nts .db.set_single_value("Accounts Settings", "calculate_depr_using_total_days", 1)
 		asset = create_asset(
 			calculate_depreciation=1,
 			depreciation_method="Straight Line",
@@ -114,7 +114,7 @@ class TestAssetDepreciationSchedule(FrappeTestCase):
 			for d in get_depr_schedule(asset.name, "Draft")
 		]
 		self.assertEqual(schedules, expected_schedules)
-		frappe.db.set_single_value("Accounts Settings", "calculate_depr_using_total_days", 0)
+		nts .db.set_single_value("Accounts Settings", "calculate_depr_using_total_days", 0)
 
 	def test_schedule_for_slm_for_existing_asset(self):
 		asset = create_asset(
@@ -187,7 +187,7 @@ class TestAssetDepreciationSchedule(FrappeTestCase):
 
 	# Enable Checkbox to Calculate depreciation using total days in depreciation period
 	def test_daily_prorata_based_depr_after_enabling_configuration(self):
-		frappe.db.set_single_value("Accounts Settings", "calculate_depr_using_total_days", 1)
+		nts .db.set_single_value("Accounts Settings", "calculate_depr_using_total_days", 1)
 
 		asset = create_asset(
 			calculate_depreciation=1,
@@ -245,7 +245,7 @@ class TestAssetDepreciationSchedule(FrappeTestCase):
 			for d in get_depr_schedule(asset.name, "Draft")
 		]
 		self.assertEqual(schedules, expected_schedule)
-		frappe.db.set_single_value("Accounts Settings", "calculate_depr_using_total_days", 0)
+		nts .db.set_single_value("Accounts Settings", "calculate_depr_using_total_days", 0)
 
 	# Test for Written Down Value Method
 	# Frequency of deprciation = 3
@@ -363,7 +363,7 @@ class TestAssetDepreciationSchedule(FrappeTestCase):
 		# cancel depreciation entry
 		depr_entry = get_depr_schedule(asset.name, "Active")[0].journal_entry
 
-		frappe.get_doc("Journal Entry", depr_entry).cancel()
+		nts .get_doc("Journal Entry", depr_entry).cancel()
 		asset.reload()
 
 		self.assertEqual(asset.finance_books[0].total_number_of_booked_depreciations, 14)

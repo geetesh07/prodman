@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 from prodman.accounts.doctype.monthly_distribution.monthly_distribution import (
 	get_periodwise_distribution_data,
@@ -31,7 +31,7 @@ def get_data_column(filters, partner_doctype):
 		return columns, data
 
 	for key, value in rows.items():
-		value.update({frappe.scrub(partner_doctype): key[0], "item_group": key[1]})
+		value.update({nts.scrub(partner_doctype): key[0], "item_group": key[1]})
 
 		data.append(value)
 
@@ -39,7 +39,7 @@ def get_data_column(filters, partner_doctype):
 
 
 def get_data(filters, period_list, partner_doctype):
-	sales_field = frappe.scrub(partner_doctype)
+	sales_field = nts.scrub(partner_doctype)
 	sales_users_data = get_parents_data(filters, partner_doctype)
 
 	if not sales_users_data:
@@ -78,7 +78,7 @@ def get_columns(filters, period_list, partner_doctype):
 
 	columns = [
 		{
-			"fieldname": frappe.scrub(partner_doctype),
+			"fieldname": nts.scrub(partner_doctype),
 			"label": _(partner_doctype),
 			"fieldtype": "Link",
 			"options": partner_doctype,
@@ -214,7 +214,7 @@ def get_item_group_parent_child_map():
 	Returns a dict of all item group parents and leaf children associated with them.
 	"""
 
-	item_groups = frappe.get_all(
+	item_groups = nts.get_all(
 		"Item Group", fields=["name", "parent_item_group"], order_by="lft desc, rgt desc"
 	)
 	item_group_parent_child_map = {}
@@ -231,13 +231,13 @@ def get_item_group_parent_child_map():
 def get_actual_data(filters, sales_users_or_territory_data, date_field, sales_field):
 	fiscal_year = get_fiscal_year(fiscal_year=filters.get("fiscal_year"), as_dict=1)
 
-	parent_doc = frappe.qb.DocType(filters.get("doctype"))
-	child_doc = frappe.qb.DocType(filters.get("doctype") + " Item")
+	parent_doc = nts.qb.DocType(filters.get("doctype"))
+	child_doc = nts.qb.DocType(filters.get("doctype") + " Item")
 
-	query = frappe.qb.from_(parent_doc).inner_join(child_doc).on(child_doc.parent == parent_doc.name)
+	query = nts.qb.from_(parent_doc).inner_join(child_doc).on(child_doc.parent == parent_doc.name)
 
 	if sales_field == "sales_person":
-		sales_team = frappe.qb.DocType("Sales Team")
+		sales_team = nts.qb.DocType("Sales Team")
 		stock_qty = child_doc.stock_qty * sales_team.allocated_percentage / 100
 		net_amount = child_doc.base_net_amount * sales_team.allocated_percentage / 100
 		sales_field_col = sales_team[sales_field]
@@ -271,7 +271,7 @@ def get_parents_data(filters, partner_doctype):
 	if filters.get("fiscal_year"):
 		filters_dict["fiscal_year"] = filters.get("fiscal_year")
 
-	return frappe.get_all(
+	return nts.get_all(
 		"Target Detail",
 		filters=filters_dict,
 		fields=["parent", "item_group", target_qty_amt_field, "fiscal_year", "distribution_id"],

@@ -1,8 +1,8 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-from frappe import _
+from nts  import _
 from pypika import Order
 
 from prodman.accounts.report.non_billed_report import get_ordered_to_be_billed_data

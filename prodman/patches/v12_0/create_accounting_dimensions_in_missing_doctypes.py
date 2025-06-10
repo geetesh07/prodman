@@ -1,11 +1,11 @@
-import frappe
-from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+import nts
+from nts.custom.doctype.custom_field.custom_field import create_custom_field
 
 
 def execute():
-	frappe.reload_doc("accounts", "doctype", "accounting_dimension")
+	nts.reload_doc("accounts", "doctype", "accounting_dimension")
 
-	accounting_dimensions = frappe.db.sql(
+	accounting_dimensions = nts.db.sql(
 		"""select fieldname, label, document_type, disabled from
 		`tabAccounting Dimension`""",
 		as_dict=1,
@@ -29,7 +29,7 @@ def execute():
 			"Expense Claim Detail",
 			"Expense Taxes and Charges",
 		]:
-			field = frappe.db.get_value("Custom Field", {"dt": doctype, "fieldname": d.fieldname})
+			field = nts.db.get_value("Custom Field", {"dt": doctype, "fieldname": d.fieldname})
 
 			if field:
 				continue
@@ -43,6 +43,6 @@ def execute():
 			}
 
 			create_custom_field(doctype, df)
-			frappe.clear_cache(doctype=doctype)
+			nts.clear_cache(doctype=doctype)
 
 		count += 1

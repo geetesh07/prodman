@@ -1,7 +1,7 @@
-// Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2019, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Promotional Scheme", {
+nts .ui.form.on("Promotional Scheme", {
 	setup: function (frm) {
 		frm.set_query("for_price_list", "price_discount_slabs", (doc) => {
 			return {

@@ -1,13 +1,13 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import json
 
-import frappe
-from frappe import _, qb
-from frappe.model.document import Document
-from frappe.utils import get_link_to_form
-from frappe.utils.scheduler import is_scheduler_inactive
+import nts 
+from nts  import _, qb
+from nts .model.document import Document
+from nts .utils import get_link_to_form
+from nts .utils.scheduler import is_scheduler_inactive
 
 
 class ProcessPaymentReconciliation(Document):
@@ -17,7 +17,7 @@ class ProcessPaymentReconciliation(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		amended_from: DF.Link | None
 		bank_cash_account: DF.Link | None
@@ -43,19 +43,19 @@ class ProcessPaymentReconciliation(Document):
 
 	def validate_receivable_payable_account(self):
 		if self.receivable_payable_account:
-			if self.company != frappe.db.get_value("Account", self.receivable_payable_account, "company"):
-				frappe.throw(
+			if self.company != nts .db.get_value("Account", self.receivable_payable_account, "company"):
+				nts .throw(
 					_("Receivable/Payable Account: {0} doesn't belong to company {1}").format(
-						frappe.bold(self.receivable_payable_account), frappe.bold(self.company)
+						nts .bold(self.receivable_payable_account), nts .bold(self.company)
 					)
 				)
 
 	def validate_bank_cash_account(self):
 		if self.bank_cash_account:
-			if self.company != frappe.db.get_value("Account", self.bank_cash_account, "company"):
-				frappe.throw(
+			if self.company != nts .db.get_value("Account", self.bank_cash_account, "company"):
+				nts .throw(
 					_("Bank/Cash Account {0} doesn't belong to company {1}").format(
-						frappe.bold(self.bank_cash_account), frappe.bold(self.company)
+						nts .bold(self.bank_cash_account), nts .bold(self.company)
 					)
 				)
 
@@ -69,20 +69,20 @@ class ProcessPaymentReconciliation(Document):
 
 	def on_cancel(self):
 		self.db_set("status", "Cancelled")
-		log = frappe.db.get_value("Process Payment Reconciliation Log", filters={"process_pr": self.name})
+		log = nts .db.get_value("Process Payment Reconciliation Log", filters={"process_pr": self.name})
 		if log:
-			frappe.db.set_value("Process Payment Reconciliation Log", log, "status", "Cancelled")
+			nts .db.set_value("Process Payment Reconciliation Log", log, "status", "Cancelled")
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_reconciled_count(docname: str | None = None) -> float:
 	current_status = {}
 	if docname:
-		reconcile_log = frappe.db.get_value(
+		reconcile_log = nts .db.get_value(
 			"Process Payment Reconciliation Log", filters={"process_pr": docname}, fieldname="name"
 		)
 		if reconcile_log:
-			res = frappe.get_all(
+			res = nts .get_all(
 				"Process Payment Reconciliation Log",
 				filters={"name": reconcile_log},
 				fields=["reconciled_entries", "total_allocations"],
@@ -94,9 +94,9 @@ def get_reconciled_count(docname: str | None = None) -> float:
 
 
 def get_pr_instance(doc: str):
-	process_payment_reconciliation = frappe.get_doc("Process Payment Reconciliation", doc)
+	process_payment_reconciliation = nts .get_doc("Process Payment Reconciliation", doc)
 
-	pr = frappe.get_doc("Payment Reconciliation")
+	pr = nts .get_doc("Payment Reconciliation")
 	fields = [
 		"company",
 		"party_type",
@@ -118,23 +118,23 @@ def get_pr_instance(doc: str):
 
 
 def is_job_running(job_name: str) -> bool:
-	jobs = frappe.db.get_all("RQ Job", filters={"status": ["in", ["started", "queued"]]})
+	jobs = nts .db.get_all("RQ Job", filters={"status": ["in", ["started", "queued"]]})
 	for x in jobs:
 		if x.job_name == job_name:
 			return True
 	return False
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def pause_job_for_doc(docname: str | None = None):
 	if docname:
-		frappe.db.set_value("Process Payment Reconciliation", docname, "status", "Paused")
-		log = frappe.db.get_value("Process Payment Reconciliation Log", filters={"process_pr": docname})
+		nts .db.set_value("Process Payment Reconciliation", docname, "status", "Paused")
+		log = nts .db.get_value("Process Payment Reconciliation Log", filters={"process_pr": docname})
 		if log:
-			frappe.db.set_value("Process Payment Reconciliation Log", log, "status", "Paused")
+			nts .db.set_value("Process Payment Reconciliation Log", log, "status", "Paused")
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def trigger_job_for_doc(docname: str | None = None):
 	"""
 	Trigger background job
@@ -142,8 +142,8 @@ def trigger_job_for_doc(docname: str | None = None):
 	if not docname:
 		return
 
-	if not frappe.db.get_single_value("Accounts Settings", "auto_reconcile_payments"):
-		frappe.throw(
+	if not nts .db.get_single_value("Accounts Settings", "auto_reconcile_payments"):
+		nts .throw(
 			_("Auto Reconciliation of Payments has been disabled. Enable it through {0}").format(
 				get_link_to_form("Accounts Settings", "Accounts Settings")
 			)
@@ -152,11 +152,11 @@ def trigger_job_for_doc(docname: str | None = None):
 		return
 
 	if not is_scheduler_inactive():
-		if frappe.db.get_value("Process Payment Reconciliation", docname, "status") == "Queued":
-			frappe.db.set_value("Process Payment Reconciliation", docname, "status", "Running")
+		if nts .db.get_value("Process Payment Reconciliation", docname, "status") == "Queued":
+			nts .db.set_value("Process Payment Reconciliation", docname, "status", "Running")
 			job_name = f"start_processing_{docname}"
 			if not is_job_running(job_name):
-				frappe.enqueue(
+				nts .enqueue(
 					method="prodman.accounts.doctype.process_payment_reconciliation.process_payment_reconciliation.reconcile_based_on_filters",
 					queue="long",
 					is_async=True,
@@ -165,16 +165,16 @@ def trigger_job_for_doc(docname: str | None = None):
 					doc=docname,
 				)
 
-		elif frappe.db.get_value("Process Payment Reconciliation", docname, "status") == "Paused":
-			frappe.db.set_value("Process Payment Reconciliation", docname, "status", "Running")
-			log = frappe.db.get_value("Process Payment Reconciliation Log", filters={"process_pr": docname})
+		elif nts .db.get_value("Process Payment Reconciliation", docname, "status") == "Paused":
+			nts .db.set_value("Process Payment Reconciliation", docname, "status", "Running")
+			log = nts .db.get_value("Process Payment Reconciliation Log", filters={"process_pr": docname})
 			if log:
-				frappe.db.set_value("Process Payment Reconciliation Log", log, "status", "Running")
+				nts .db.set_value("Process Payment Reconciliation Log", log, "status", "Running")
 
 			# Resume tasks for running doc
 			job_name = f"start_processing_{docname}"
 			if not is_job_running(job_name):
-				frappe.enqueue(
+				nts .enqueue(
 					method="prodman.accounts.doctype.process_payment_reconciliation.process_payment_reconciliation.reconcile_based_on_filters",
 					queue="long",
 					is_async=True,
@@ -182,7 +182,7 @@ def trigger_job_for_doc(docname: str | None = None):
 					doc=docname,
 				)
 	else:
-		frappe.msgprint(_("Scheduler is Inactive. Can't trigger job now."))
+		nts .msgprint(_("Scheduler is Inactive. Can't trigger job now."))
 
 
 def trigger_reconciliation_for_queued_docs():
@@ -190,8 +190,8 @@ def trigger_reconciliation_for_queued_docs():
 	Will be called from Cron Job
 	Fetch queued docs and start reconciliation process for each one
 	"""
-	if not frappe.db.get_single_value("Accounts Settings", "auto_reconcile_payments"):
-		frappe.msgprint(
+	if not nts .db.get_single_value("Accounts Settings", "auto_reconcile_payments"):
+		nts .msgprint(
 			_("Auto Reconciliation of Payments has been disabled. Enable it through {0}").format(
 				get_link_to_form("Accounts Settings", "Accounts Settings")
 			)
@@ -201,7 +201,7 @@ def trigger_reconciliation_for_queued_docs():
 
 	if not is_scheduler_inactive():
 		# Get all queued documents
-		all_queued = frappe.db.get_all(
+		all_queued = nts .db.get_all(
 			"Process Payment Reconciliation",
 			filters={"docstatus": 1, "status": "Queued"},
 			order_by="creation desc",
@@ -210,7 +210,7 @@ def trigger_reconciliation_for_queued_docs():
 
 		docs_to_trigger = []
 		unique_filters = set()
-		queue_size = frappe.db.get_single_value("Accounts Settings", "reconciliation_queue_size") or 5
+		queue_size = nts .db.get_single_value("Accounts Settings", "reconciliation_queue_size") or 5
 
 		fields = ["company", "party_type", "party", "receivable_payable_account", "default_advance_account"]
 
@@ -221,7 +221,7 @@ def trigger_reconciliation_for_queued_docs():
 			return filters
 
 		for x in all_queued:
-			doc = frappe.get_doc("Process Payment Reconciliation", x)
+			doc = nts .get_doc("Process Payment Reconciliation", x)
 			filters = get_filters_as_tuple(fields, doc)
 			if filters not in unique_filters:
 				unique_filters.add(filters)
@@ -234,7 +234,7 @@ def trigger_reconciliation_for_queued_docs():
 			trigger_job_for_doc(doc)
 
 	else:
-		frappe.msgprint(_("Scheduler is Inactive. Can't trigger jobs now."))
+		nts .msgprint(_("Scheduler is Inactive. Can't trigger jobs now."))
 
 
 def reconcile_based_on_filters(doc: None | str = None) -> None:
@@ -242,16 +242,16 @@ def reconcile_based_on_filters(doc: None | str = None) -> None:
 	Identify current state of document and execute next tasks in background
 	"""
 	if doc:
-		log = frappe.db.get_value("Process Payment Reconciliation Log", filters={"process_pr": doc})
+		log = nts .db.get_value("Process Payment Reconciliation Log", filters={"process_pr": doc})
 		if not log:
-			log = frappe.new_doc("Process Payment Reconciliation Log")
+			log = nts .new_doc("Process Payment Reconciliation Log")
 			log.process_pr = doc
 			log.status = "Running"
 			log = log.save()
 
 			job_name = f"process_{doc}_fetch_and_allocate"
 			if not is_job_running(job_name):
-				frappe.enqueue(
+				nts .enqueue(
 					method="prodman.accounts.doctype.process_payment_reconciliation.process_payment_reconciliation.fetch_and_allocate",
 					queue="long",
 					timeout="3600",
@@ -261,7 +261,7 @@ def reconcile_based_on_filters(doc: None | str = None) -> None:
 					doc=doc,
 				)
 		else:
-			res = frappe.get_all(
+			res = nts .get_all(
 				"Process Payment Reconciliation Log",
 				filters={"name": log},
 				fields=["allocated", "reconciled"],
@@ -272,7 +272,7 @@ def reconcile_based_on_filters(doc: None | str = None) -> None:
 			if not allocated:
 				job_name = f"process__{doc}_fetch_and_allocate"
 				if not is_job_running(job_name):
-					frappe.enqueue(
+					nts .enqueue(
 						method="prodman.accounts.doctype.process_payment_reconciliation.process_payment_reconciliation.fetch_and_allocate",
 						queue="long",
 						timeout="3600",
@@ -290,7 +290,7 @@ def reconcile_based_on_filters(doc: None | str = None) -> None:
 				else:
 					reconcile_job_name = f"process_{doc}_reconcile"
 				if not is_job_running(reconcile_job_name):
-					frappe.enqueue(
+					nts .enqueue(
 						method="prodman.accounts.doctype.process_payment_reconciliation.process_payment_reconciliation.reconcile",
 						queue="long",
 						timeout="3600",
@@ -300,13 +300,13 @@ def reconcile_based_on_filters(doc: None | str = None) -> None:
 						doc=doc,
 					)
 			elif reconciled:
-				frappe.db.set_value("Process Payment Reconciliation", doc, "status", "Completed")
+				nts .db.set_value("Process Payment Reconciliation", doc, "status", "Completed")
 
 
 def get_next_allocation(log: str) -> list:
 	if log:
 		allocations = []
-		next = frappe.db.get_all(
+		next = nts .db.get_all(
 			"Process Payment Reconciliation Log Allocations",
 			filters={"parent": log, "reconciled": 0},
 			fields=["reference_type", "reference_name"],
@@ -315,7 +315,7 @@ def get_next_allocation(log: str) -> list:
 		)
 
 		if next:
-			allocations = frappe.db.get_all(
+			allocations = nts .db.get_all(
 				"Process Payment Reconciliation Log Allocations",
 				filters={
 					"parent": log,
@@ -337,10 +337,10 @@ def fetch_and_allocate(doc: str) -> None:
 	"""
 
 	if doc:
-		log = frappe.db.get_value("Process Payment Reconciliation Log", filters={"process_pr": doc})
+		log = nts .db.get_value("Process Payment Reconciliation Log", filters={"process_pr": doc})
 		if log:
-			if not frappe.db.get_value("Process Payment Reconciliation Log", log, "allocated"):
-				reconcile_log = frappe.get_doc("Process Payment Reconciliation Log", log)
+			if not nts .db.get_value("Process Payment Reconciliation Log", log, "allocated"):
+				reconcile_log = nts .get_doc("Process Payment Reconciliation Log", log)
 
 				pr = get_pr_instance(doc)
 				pr.get_unreconciled_entries()
@@ -348,7 +348,7 @@ def fetch_and_allocate(doc: str) -> None:
 				if len(pr.invoices) > 0 and len(pr.payments) > 0:
 					invoices = [x.as_dict() for x in pr.invoices]
 					payments = [x.as_dict() for x in pr.payments]
-					pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+					pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
 					for x in pr.get("allocation"):
 						reconcile_log.append(
@@ -377,7 +377,7 @@ def fetch_and_allocate(doc: str) -> None:
 					reconcile_job_name = f"process_{doc}_reconcile"
 
 				if not is_job_running(reconcile_job_name):
-					frappe.enqueue(
+					nts .enqueue(
 						method="prodman.accounts.doctype.process_payment_reconciliation.process_payment_reconciliation.reconcile",
 						queue="long",
 						timeout="3600",
@@ -390,9 +390,9 @@ def fetch_and_allocate(doc: str) -> None:
 
 def reconcile(doc: None | str = None) -> None:
 	if doc:
-		log = frappe.db.get_value("Process Payment Reconciliation Log", filters={"process_pr": doc})
+		log = nts .db.get_value("Process Payment Reconciliation Log", filters={"process_pr": doc})
 		if log:
-			res = frappe.get_all(
+			res = nts .get_all(
 				"Process Payment Reconciliation Log",
 				filters={"name": log},
 				fields=["reconciled_entries", "total_allocations"],
@@ -419,7 +419,7 @@ def reconcile(doc: None | str = None) -> None:
 					# This is for performance
 					if allocations[0].reference_type == "Payment Entry":
 						references = [(x.invoice_type, x.invoice_number) for x in allocations]
-						pe = frappe.get_doc(allocations[0].reference_type, allocations[0].reference_name)
+						pe = nts .get_doc(allocations[0].reference_type, allocations[0].reference_name)
 						pe.flags.ignore_validate_update_after_submit = True
 						pe.set_missing_ref_details(update_ref_details_only_for=references)
 						pe.save()
@@ -430,41 +430,41 @@ def reconcile(doc: None | str = None) -> None:
 					qb.update(ppa).set(ppa.reconciled, True).where(ppa.name.isin(allocation_names)).run()
 
 					# Update reconciled count
-					reconciled_count = frappe.db.count(
+					reconciled_count = nts .db.count(
 						"Process Payment Reconciliation Log Allocations",
 						filters={"parent": log, "reconciled": True},
 					)
-					frappe.db.set_value(
+					nts .db.set_value(
 						"Process Payment Reconciliation Log", log, "reconciled_entries", reconciled_count
 					)
 
 				except Exception:
 					# Update the parent doc about the exception
-					frappe.db.rollback()
+					nts .db.rollback()
 
-					traceback = frappe.get_traceback(with_context=True)
+					traceback = nts .get_traceback(with_context=True)
 					if traceback:
 						message = "Traceback: <br>" + traceback
-						frappe.db.set_value("Process Payment Reconciliation Log", log, "error_log", message)
-						frappe.db.set_value(
+						nts .db.set_value("Process Payment Reconciliation Log", log, "error_log", message)
+						nts .db.set_value(
 							"Process Payment Reconciliation",
 							doc,
 							"error_log",
 							message,
 						)
 					if reconciled_entries and total_allocations and reconciled_entries < total_allocations:
-						frappe.db.set_value(
+						nts .db.set_value(
 							"Process Payment Reconciliation Log", log, "status", "Partially Reconciled"
 						)
-						frappe.db.set_value(
+						nts .db.set_value(
 							"Process Payment Reconciliation",
 							doc,
 							"status",
 							"Partially Reconciled",
 						)
 					else:
-						frappe.db.set_value("Process Payment Reconciliation Log", log, "status", "Failed")
-						frappe.db.set_value(
+						nts .db.set_value("Process Payment Reconciliation Log", log, "status", "Failed")
+						nts .db.set_value(
 							"Process Payment Reconciliation",
 							doc,
 							"status",
@@ -472,12 +472,12 @@ def reconcile(doc: None | str = None) -> None:
 						)
 				finally:
 					if reconciled_entries == total_allocations:
-						frappe.db.set_value("Process Payment Reconciliation Log", log, "status", "Reconciled")
-						frappe.db.set_value("Process Payment Reconciliation Log", log, "reconciled", True)
-						frappe.db.set_value("Process Payment Reconciliation", doc, "status", "Completed")
+						nts .db.set_value("Process Payment Reconciliation Log", log, "status", "Reconciled")
+						nts .db.set_value("Process Payment Reconciliation Log", log, "reconciled", True)
+						nts .db.set_value("Process Payment Reconciliation", doc, "status", "Completed")
 					else:
 						if not (
-							frappe.db.get_value("Process Payment Reconciliation", doc, "status") == "Paused"
+							nts .db.get_value("Process Payment Reconciliation", doc, "status") == "Paused"
 						):
 							# trigger next batch in job
 							# generate reconcile job name
@@ -488,7 +488,7 @@ def reconcile(doc: None | str = None) -> None:
 								reconcile_job_name = f"process_{doc}_reconcile"
 
 							if not is_job_running(reconcile_job_name):
-								frappe.enqueue(
+								nts .enqueue(
 									method="prodman.accounts.doctype.process_payment_reconciliation.process_payment_reconciliation.reconcile",
 									queue="long",
 									timeout="3600",
@@ -498,19 +498,19 @@ def reconcile(doc: None | str = None) -> None:
 									doc=doc,
 								)
 			else:
-				frappe.db.set_value("Process Payment Reconciliation Log", log, "status", "Reconciled")
-				frappe.db.set_value("Process Payment Reconciliation Log", log, "reconciled", True)
-				frappe.db.set_value("Process Payment Reconciliation", doc, "status", "Completed")
+				nts .db.set_value("Process Payment Reconciliation Log", log, "status", "Reconciled")
+				nts .db.set_value("Process Payment Reconciliation Log", log, "reconciled", True)
+				nts .db.set_value("Process Payment Reconciliation", doc, "status", "Completed")
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def is_any_doc_running(for_filter: str | dict | None = None) -> str | None:
 	running_doc = None
 	if for_filter:
 		if isinstance(for_filter, str):
 			for_filter = json.loads(for_filter)
 
-		running_doc = frappe.db.get_value(
+		running_doc = nts .db.get_value(
 			"Process Payment Reconciliation",
 			filters={
 				"docstatus": 1,
@@ -523,7 +523,7 @@ def is_any_doc_running(for_filter: str | dict | None = None) -> str | None:
 			fieldname="name",
 		)
 	else:
-		running_doc = frappe.db.get_value(
+		running_doc = nts .db.get_value(
 			"Process Payment Reconciliation", filters={"docstatus": 1, "status": "Running"}
 		)
 	return running_doc

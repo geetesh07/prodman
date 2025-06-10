@@ -1,12 +1,12 @@
-// Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2023, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Bulk Transaction Log", {
+nts.ui.form.on("Bulk Transaction Log", {
 	refresh(frm) {
 		frm.add_custom_button(
 			__("Succeeded Entries"),
 			function () {
-				frappe.set_route("List", "Bulk Transaction Log Detail", {
+				nts.set_route("List", "Bulk Transaction Log Detail", {
 					date: frm.doc.date,
 					transaction_status: "Success",
 				});
@@ -16,7 +16,7 @@ frappe.ui.form.on("Bulk Transaction Log", {
 		frm.add_custom_button(
 			__("Failed Entries"),
 			function () {
-				frappe.set_route("List", "Bulk Transaction Log Detail", {
+				nts.set_route("List", "Bulk Transaction Log Detail", {
 					date: frm.doc.date,
 					transaction_status: "Failed",
 				});
@@ -25,7 +25,7 @@ frappe.ui.form.on("Bulk Transaction Log", {
 		);
 		if (frm.doc.failed) {
 			frm.add_custom_button(__("Retry Failed Transactions"), function () {
-				frappe.call({
+				nts.call({
 					method: "prodman.utilities.bulk_transaction.retry",
 					args: { date: frm.doc.date },
 				});

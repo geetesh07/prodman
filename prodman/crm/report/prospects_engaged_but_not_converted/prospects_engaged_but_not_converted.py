@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import add_days, now
+import nts
+from nts import _
+from nts.utils import add_days, now
 
 
 def execute(filters=None):
@@ -62,8 +62,8 @@ def get_data(filters):
 	lead_details = []
 	lead_filters = get_lead_filters(filters)
 
-	for lead in frappe.get_all("Lead", fields=["name", "lead_name", "company_name"], filters=lead_filters):
-		data = frappe.db.sql(
+	for lead in nts.get_all("Lead", fields=["name", "lead_name", "company_name"], filters=lead_filters):
+		data = nts.db.sql(
 			"""
 			select
 				`tabCommunication`.reference_doctype, `tabCommunication`.reference_name,

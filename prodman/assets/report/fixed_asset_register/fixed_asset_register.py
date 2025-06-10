@@ -1,13 +1,13 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 from itertools import chain
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import IfNull, Sum
-from frappe.utils import add_months, cstr, flt, formatdate, getdate, nowdate, today
+import nts
+from nts import _
+from nts.query_builder.functions import IfNull, Sum
+from nts.utils import add_months, cstr, flt, formatdate, getdate, nowdate, today
 
 from prodman.accounts.report.financial_statements import (
 	get_fiscal_year_data,
@@ -19,7 +19,7 @@ from prodman.assets.doctype.asset.asset import get_asset_value_after_depreciatio
 
 
 def execute(filters=None):
-	filters = frappe._dict(filters or {})
+	filters = nts._dict(filters or {})
 	columns = get_columns(filters)
 	data = get_data(filters)
 	chart = (
@@ -34,7 +34,7 @@ def execute(filters=None):
 def get_conditions(filters):
 	conditions = {"docstatus": 1}
 	status = filters.status
-	date_field = frappe.scrub(filters.date_based_on or "Purchase Date")
+	date_field = nts.scrub(filters.date_based_on or "Purchase Date")
 
 	if filters.get("company"):
 		conditions["company"] = filters.company
@@ -85,7 +85,7 @@ def get_data(filters):
 
 	assets_linked_to_fb = get_assets_linked_to_fb(filters)
 
-	company_fb = frappe.get_cached_value("Company", filters.company, "default_finance_book")
+	company_fb = nts.get_cached_value("Company", filters.company, "default_finance_book")
 
 	if filters.include_default_book_assets and company_fb:
 		finance_book = company_fb
@@ -96,7 +96,7 @@ def get_data(filters):
 
 	depreciation_amount_map = get_asset_depreciation_amount_map(filters, finance_book)
 
-	group_by = frappe.scrub(filters.get("group_by"))
+	group_by = nts.scrub(filters.get("group_by"))
 
 	if group_by in ("asset_category", "location"):
 		data = get_group_by_data(group_by, conditions, assets_linked_to_fb, depreciation_amount_map)
@@ -119,7 +119,7 @@ def get_data(filters):
 		"purchase_invoice",
 		"opening_accumulated_depreciation",
 	]
-	assets_record = frappe.db.get_all("Asset", filters=conditions, fields=fields)
+	assets_record = nts.db.get_all("Asset", filters=conditions, fields=fields)
 
 	for asset in assets_record:
 		if assets_linked_to_fb and asset.calculate_depreciation and asset.asset_id not in assets_linked_to_fb:
@@ -165,7 +165,7 @@ def prepare_chart_data(data, filters):
 		filters_to_date = max(filtered_data, key=lambda a: a.get(date_field)).get(date_field)
 	else:
 		filters_filter_based_on = filters.filter_based_on
-		date_field = frappe.scrub(filters.date_based_on)
+		date_field = nts.scrub(filters.date_based_on)
 		filters_from_date = filters.from_date
 		filters_to_date = filters.to_date
 
@@ -182,7 +182,7 @@ def prepare_chart_data(data, filters):
 
 	for d in period_list:
 		labels_values_map.setdefault(
-			d.get("label"), frappe._dict({"asset_value": 0, "depreciated_amount": 0})
+			d.get("label"), nts._dict({"asset_value": 0, "depreciated_amount": 0})
 		)
 
 	for d in data:
@@ -213,17 +213,17 @@ def prepare_chart_data(data, filters):
 
 
 def get_assets_linked_to_fb(filters):
-	afb = frappe.qb.DocType("Asset Finance Book")
+	afb = nts.qb.DocType("Asset Finance Book")
 
-	query = frappe.qb.from_(afb).select(
+	query = nts.qb.from_(afb).select(
 		afb.parent,
 	)
 
 	if filters.include_default_book_assets:
-		company_fb = frappe.get_cached_value("Company", filters.company, "default_finance_book")
+		company_fb = nts.get_cached_value("Company", filters.company, "default_finance_book")
 
 		if filters.finance_book and company_fb and cstr(filters.finance_book) != cstr(company_fb):
-			frappe.throw(_("To use a different finance book, please uncheck 'Include Default FB Assets'"))
+			nts.throw(_("To use a different finance book, please uncheck 'Include Default FB Assets'"))
 
 		query = query.where(
 			(afb.finance_book.isin([cstr(filters.finance_book), cstr(company_fb), ""]))
@@ -243,13 +243,13 @@ def get_asset_depreciation_amount_map(filters, finance_book):
 	start_date = filters.from_date if filters.filter_based_on == "Date Range" else filters.year_start_date
 	end_date = filters.to_date if filters.filter_based_on == "Date Range" else filters.year_end_date
 
-	asset = frappe.qb.DocType("Asset")
-	gle = frappe.qb.DocType("GL Entry")
-	aca = frappe.qb.DocType("Asset Category Account")
-	company = frappe.qb.DocType("Company")
+	asset = nts.qb.DocType("Asset")
+	gle = nts.qb.DocType("GL Entry")
+	aca = nts.qb.DocType("Asset Category Account")
+	company = nts.qb.DocType("Company")
 
 	query = (
-		frappe.qb.from_(gle)
+		nts.qb.from_(gle)
 		.join(asset)
 		.on(gle.against_voucher == asset.name)
 		.join(aca)
@@ -298,7 +298,7 @@ def get_group_by_data(group_by, conditions, assets_linked_to_fb, depreciation_am
 		"opening_accumulated_depreciation",
 		"calculate_depreciation",
 	]
-	assets = frappe.db.get_all("Asset", filters=conditions, fields=fields)
+	assets = nts.db.get_all("Asset", filters=conditions, fields=fields)
 
 	data = []
 
@@ -330,8 +330,8 @@ def get_group_by_data(group_by, conditions, assets_linked_to_fb, depreciation_am
 
 
 def get_purchase_receipt_supplier_map():
-	return frappe._dict(
-		frappe.db.sql(
+	return nts._dict(
+		nts.db.sql(
 			""" Select
 		pr.name, pr.supplier
 		FROM `tabPurchase Receipt` pr, `tabPurchase Receipt Item` pri
@@ -345,8 +345,8 @@ def get_purchase_receipt_supplier_map():
 
 
 def get_purchase_invoice_supplier_map():
-	return frappe._dict(
-		frappe.db.sql(
+	return nts._dict(
+		nts.db.sql(
 			""" Select
 		pi.name, pi.supplier
 		FROM `tabPurchase Invoice` pi, `tabPurchase Invoice Item` pii
@@ -365,7 +365,7 @@ def get_columns(filters):
 			{
 				"label": _("{}").format(filters.get("group_by")),
 				"fieldtype": "Link",
-				"fieldname": frappe.scrub(filters.get("group_by")),
+				"fieldname": nts.scrub(filters.get("group_by")),
 				"options": filters.get("group_by"),
 				"width": 216,
 			},

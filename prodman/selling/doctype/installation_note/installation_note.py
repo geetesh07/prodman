@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import cstr, getdate
+import nts
+from nts import _
+from nts.utils import cstr, getdate
 
 from prodman.stock.utils import get_valid_serial_nos
 from prodman.utilities.transaction_base import TransactionBase
@@ -17,7 +17,7 @@ class InstallationNote(TransactionBase):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.selling.doctype.installation_note_item.installation_note_item import (
 			InstallationNoteItem,
@@ -71,25 +71,25 @@ class InstallationNote(TransactionBase):
 		set_default_income_account_for_item(self)
 
 	def is_serial_no_added(self, item_code, serial_no):
-		has_serial_no = frappe.db.get_value("Item", item_code, "has_serial_no")
+		has_serial_no = nts.db.get_value("Item", item_code, "has_serial_no")
 		if has_serial_no == 1 and not serial_no:
-			frappe.throw(_("Serial No is mandatory for Item {0}").format(item_code))
+			nts.throw(_("Serial No is mandatory for Item {0}").format(item_code))
 		elif has_serial_no != 1 and cstr(serial_no).strip():
-			frappe.throw(_("Item {0} is not a serialized Item").format(item_code))
+			nts.throw(_("Item {0} is not a serialized Item").format(item_code))
 
 	def is_serial_no_exist(self, item_code, serial_no):
 		for x in serial_no:
-			if not frappe.db.exists("Serial No", x):
-				frappe.throw(_("Serial No {0} does not exist").format(x))
+			if not nts.db.exists("Serial No", x):
+				nts.throw(_("Serial No {0} does not exist").format(x))
 
 	def get_prevdoc_serial_no(self, prevdoc_detail_docname):
-		serial_nos = frappe.db.get_value("Delivery Note Item", prevdoc_detail_docname, "serial_no")
+		serial_nos = nts.db.get_value("Delivery Note Item", prevdoc_detail_docname, "serial_no")
 		return get_valid_serial_nos(serial_nos)
 
 	def is_serial_no_match(self, cur_s_no, prevdoc_s_no, prevdoc_docname):
 		for sr in cur_s_no:
 			if sr not in prevdoc_s_no:
-				frappe.throw(
+				nts.throw(
 					_("Serial No {0} does not belong to Delivery Note {1}").format(sr, prevdoc_docname)
 				)
 
@@ -108,15 +108,15 @@ class InstallationNote(TransactionBase):
 	def validate_installation_date(self):
 		for d in self.get("items"):
 			if d.prevdoc_docname:
-				d_date = frappe.db.get_value("Delivery Note", d.prevdoc_docname, "posting_date")
+				d_date = nts.db.get_value("Delivery Note", d.prevdoc_docname, "posting_date")
 				if d_date > getdate(self.inst_date):
-					frappe.throw(
+					nts.throw(
 						_("Installation date cannot be before delivery date for Item {0}").format(d.item_code)
 					)
 
 	def check_item_table(self):
 		if not (self.get("items")):
-			frappe.throw(_("Please pull items from Delivery Note"))
+			nts.throw(_("Please pull items from Delivery Note"))
 
 	def on_update(self):
 		self.db_set("status", "Draft")

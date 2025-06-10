@@ -1,17 +1,17 @@
-// Copyright (c) 2019, Frappe Technologies and contributors
+// Copyright (c) 2019, nts  Technologies and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Bank Statement Import", {
+nts .ui.form.on("Bank Statement Import", {
 	setup(frm) {
-		frappe.realtime.on("data_import_refresh", ({ data_import }) => {
+		nts .realtime.on("data_import_refresh", ({ data_import }) => {
 			frm.import_in_progress = false;
 			if (data_import !== frm.doc.name) return;
-			frappe.model.clear_doc("Bank Statement Import", frm.doc.name);
-			frappe.model.with_doc("Bank Statement Import", frm.doc.name).then(() => {
+			nts .model.clear_doc("Bank Statement Import", frm.doc.name);
+			nts .model.with_doc("Bank Statement Import", frm.doc.name).then(() => {
 				frm.refresh();
 			});
 		});
-		frappe.realtime.on("data_import_progress", (data) => {
+		nts .realtime.on("data_import_progress", (data) => {
 			frm.import_in_progress = true;
 			if (data.data_import !== frm.doc.name) {
 				return;
@@ -53,7 +53,7 @@ frappe.ui.form.on("Bank Statement Import", {
 		frm.set_query("reference_doctype", () => {
 			return {
 				filters: {
-					name: ["in", frappe.boot.user.can_import],
+					name: ["in", nts .boot.user.can_import],
 				},
 			};
 		});
@@ -85,7 +85,7 @@ frappe.ui.form.on("Bank Statement Import", {
 
 		if (frm.doc.status.includes("Success")) {
 			frm.add_custom_button(__("Go to {0} List", [__(frm.doc.reference_doctype)]), () =>
-				frappe.set_route("List", frm.doc.reference_doctype)
+				nts .set_route("List", frm.doc.reference_doctype)
 			);
 		}
 	},
@@ -111,7 +111,7 @@ frappe.ui.form.on("Bank Statement Import", {
 	},
 
 	update_indicators(frm) {
-		const indicator = frappe.get_indicator(frm.doc);
+		const indicator = nts .get_indicator(frm.doc);
 		if (indicator) {
 			frm.page.set_indicator(indicator[0], indicator[1]);
 		} else {
@@ -122,7 +122,7 @@ frappe.ui.form.on("Bank Statement Import", {
 	show_import_status(frm) {
 		if (frm.doc.status == "Pending") return;
 
-		frappe.call({
+		nts .call({
 			method: "prodman.accounts.doctype.bank_statement_import.bank_statement_import.get_import_status",
 			args: {
 				docname: frm.doc.name,
@@ -184,7 +184,7 @@ frappe.ui.form.on("Bank Statement Import", {
 
 	show_report_error_button(frm) {
 		if (frm.doc.status === "Error") {
-			frappe.db
+			nts .db
 				.get_list("Error Log", {
 					filters: { method: frm.doc.name },
 					fields: ["method", "error"],
@@ -199,7 +199,7 @@ frappe.ui.form.on("Bank Statement Import", {
 									exc: result[0].error,
 								}),
 							};
-							frappe.request.report_error(fake_xhr, {});
+							nts .request.report_error(fake_xhr, {});
 						});
 					}
 				});
@@ -219,7 +219,7 @@ frappe.ui.form.on("Bank Statement Import", {
 	},
 
 	download_template() {
-		let method = "/api/method/frappe.core.doctype.data_import.data_import.download_template";
+		let method = "/api/method/nts .core.doctype.data_import.data_import.download_template";
 
 		open_url_post(method, {
 			doctype: "Bank Transaction",
@@ -246,8 +246,8 @@ frappe.ui.form.on("Bank Statement Import", {
 		frm.toggle_display("submit_after_import", false);
 		let doctype = frm.doc.reference_doctype;
 		if (doctype) {
-			frappe.model.with_doctype(doctype, () => {
-				let meta = frappe.get_meta(doctype);
+			nts .model.with_doctype(doctype, () => {
+				let meta = nts .get_meta(doctype);
 				frm.toggle_display("submit_after_import", meta.is_submittable);
 			});
 		}
@@ -298,7 +298,7 @@ frappe.ui.form.on("Bank Statement Import", {
 			frm.events.show_import_warnings(frm, preview_data);
 		});
 	},
-	// method: 'frappe.core.doctype.data_import.data_import.get_preview_from_template',
+	// method: 'nts .core.doctype.data_import.data_import.get_preview_from_template',
 
 	show_import_preview(frm, preview_data) {
 		let import_log = preview_data.import_log;
@@ -310,8 +310,8 @@ frappe.ui.form.on("Bank Statement Import", {
 			return;
 		}
 
-		frappe.require("data_import_tools.bundle.js", () => {
-			frm.import_preview = new frappe.data_import.ImportPreview({
+		nts .require("data_import_tools.bundle.js", () => {
+			frm.import_preview = new nts .data_import.ImportPreview({
 				wrapper: frm.get_field("import_preview").$wrapper,
 				doctype: frm.doc.reference_doctype,
 				preview_data,
@@ -425,7 +425,7 @@ frappe.ui.form.on("Bank Statement Import", {
 	},
 
 	render_import_log(frm) {
-		frappe.call({
+		nts .call({
 			method: "prodman.accounts.doctype.bank_statement_import.bank_statement_import.get_import_logs",
 			args: {
 				docname: frm.doc.name,
@@ -443,7 +443,7 @@ frappe.ui.form.on("Bank Statement Import", {
 						if (log.success) {
 							if (frm.doc.import_type === "Insert New Records") {
 								html = __("Successfully imported {0}", [
-									`<span class="underline">${frappe.utils.get_form_link(
+									`<span class="underline">${nts .utils.get_form_link(
 										frm.doc.reference_doctype,
 										log.docname,
 										true
@@ -451,7 +451,7 @@ frappe.ui.form.on("Bank Statement Import", {
 								]);
 							} else {
 								html = __("Successfully updated {0}", [
-									`<span class="underline">${frappe.utils.get_form_link(
+									`<span class="underline">${nts .utils.get_form_link(
 										frm.doc.reference_doctype,
 										log.docname,
 										true
@@ -466,7 +466,7 @@ frappe.ui.form.on("Bank Statement Import", {
 									return title + message;
 								})
 								.join("");
-							let id = frappe.dom.get_unique_id();
+							let id = nts .dom.get_unique_id();
 							html = `${messages}
 						<button class="btn btn-default btn-xs" type="button" data-toggle="collapse" data-target="#${id}" aria-expanded="false" aria-controls="${id}" style="margin-top: 15px;">
 							${__("Show Traceback")}
@@ -523,8 +523,8 @@ frappe.ui.form.on("Bank Statement Import", {
 			return;
 		}
 
-		frappe.call({
-			method: "frappe.client.get_count",
+		nts .call({
+			method: "nts .client.get_count",
 			args: {
 				doctype: "Data Import Log",
 				filters: {

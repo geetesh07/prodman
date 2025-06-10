@@ -1,8 +1,8 @@
-import frappe
+import nts
 
 
 def execute():
-	subscription = frappe.qb.DocType("Subscription")
-	frappe.qb.update(subscription).set(
+	subscription = nts.qb.DocType("Subscription")
+	nts.qb.update(subscription).set(
 		subscription.generate_invoice_at, "Beginning of the current subscription period"
 	).where(subscription.generate_invoice_at_period_start == 1).run()

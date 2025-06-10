@@ -1,14 +1,14 @@
-import frappe
+import nts
 
 from prodman.stock.utils import get_bin
 
 
 def execute():
-	wo = frappe.qb.DocType("Work Order")
-	wo_item = frappe.qb.DocType("Work Order Item")
+	wo = nts.qb.DocType("Work Order")
+	wo_item = nts.qb.DocType("Work Order Item")
 
 	incorrect_item_wh = (
-		frappe.qb.from_(wo)
+		nts.qb.from_(wo)
 		.join(wo_item)
 		.on(wo.name == wo_item.parent)
 		.select(wo_item.item_code, wo.source_warehouse)

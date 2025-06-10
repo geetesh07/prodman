@@ -1,13 +1,13 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 # prodman - web based ERP (http://prodman.com)
 # For license information, please see license.txt
 
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import flt, today
+import nts
+from nts.tests.utils import ntsTestCase
+from nts.utils import flt, today
 
 from prodman.controllers.accounts_controller import InvalidQtyError
 from prodman.stock.doctype.item.test_item import create_item
@@ -21,9 +21,9 @@ from prodman.stock.doctype.material_request.material_request import (
 from prodman.stock.doctype.warehouse.test_warehouse import create_warehouse
 
 
-class TestMaterialRequest(FrappeTestCase):
+class TestMaterialRequest(ntsTestCase):
 	def test_material_request_qty(self):
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.items[0].qty = 0
 		with self.assertRaises(InvalidQtyError):
 			mr.insert()
@@ -34,11 +34,11 @@ class TestMaterialRequest(FrappeTestCase):
 		self.assertEqual(mr.items[0].qty, 1)
 
 	def test_make_purchase_order(self):
-		mr = frappe.copy_doc(test_records[0]).insert()
+		mr = nts.copy_doc(test_records[0]).insert()
 
-		self.assertRaises(frappe.ValidationError, make_purchase_order, mr.name)
+		self.assertRaises(nts.ValidationError, make_purchase_order, mr.name)
 
-		mr = frappe.get_doc("Material Request", mr.name)
+		mr = nts.get_doc("Material Request", mr.name)
 		mr.submit()
 		po = make_purchase_order(mr.name)
 
@@ -46,11 +46,11 @@ class TestMaterialRequest(FrappeTestCase):
 		self.assertEqual(len(po.get("items")), len(mr.get("items")))
 
 	def test_make_supplier_quotation(self):
-		mr = frappe.copy_doc(test_records[0]).insert()
+		mr = nts.copy_doc(test_records[0]).insert()
 
-		self.assertRaises(frappe.ValidationError, make_supplier_quotation, mr.name)
+		self.assertRaises(nts.ValidationError, make_supplier_quotation, mr.name)
 
-		mr = frappe.get_doc("Material Request", mr.name)
+		mr = nts.get_doc("Material Request", mr.name)
 		mr.submit()
 		sq = make_supplier_quotation(mr.name)
 
@@ -58,11 +58,11 @@ class TestMaterialRequest(FrappeTestCase):
 		self.assertEqual(len(sq.get("items")), len(mr.get("items")))
 
 	def test_make_stock_entry(self):
-		mr = frappe.copy_doc(test_records[0]).insert()
+		mr = nts.copy_doc(test_records[0]).insert()
 
-		self.assertRaises(frappe.ValidationError, make_stock_entry, mr.name)
+		self.assertRaises(nts.ValidationError, make_stock_entry, mr.name)
 
-		mr = frappe.get_doc("Material Request", mr.name)
+		mr = nts.get_doc("Material Request", mr.name)
 		mr.material_request_type = "Material Transfer"
 		mr.submit()
 		se = make_stock_entry(mr.name)
@@ -75,7 +75,7 @@ class TestMaterialRequest(FrappeTestCase):
 	def test_partial_make_stock_entry(self):
 		from prodman.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry as _make_stock_entry
 
-		mr = frappe.copy_doc(test_records[0]).insert()
+		mr = nts.copy_doc(test_records[0]).insert()
 
 		source_wh = create_warehouse(
 			warehouse_name="_Test Source Warehouse",
@@ -83,7 +83,7 @@ class TestMaterialRequest(FrappeTestCase):
 			company="_Test Company",
 		)
 
-		mr = frappe.get_doc("Material Request", mr.name)
+		mr = nts.get_doc("Material Request", mr.name)
 		mr.material_request_type = "Material Transfer"
 
 		for row in mr.items:
@@ -110,11 +110,11 @@ class TestMaterialRequest(FrappeTestCase):
 		self.assertEqual(mr.status, "Partially Received")
 
 	def test_in_transit_make_stock_entry(self):
-		mr = frappe.copy_doc(test_records[0]).insert()
+		mr = nts.copy_doc(test_records[0]).insert()
 
-		self.assertRaises(frappe.ValidationError, make_stock_entry, mr.name)
+		self.assertRaises(nts.ValidationError, make_stock_entry, mr.name)
 
-		mr = frappe.get_doc("Material Request", mr.name)
+		mr = nts.get_doc("Material Request", mr.name)
 		mr.material_request_type = "Material Transfer"
 		mr.submit()
 
@@ -128,7 +128,7 @@ class TestMaterialRequest(FrappeTestCase):
 			self.assertEqual(row.t_warehouse, in_transit_warehouse)
 
 	def _insert_stock_entry(self, qty1, qty2, warehouse=None):
-		se = frappe.get_doc(
+		se = nts.get_doc(
 			{
 				"company": "_Test Company",
 				"doctype": "Stock Entry",
@@ -171,16 +171,16 @@ class TestMaterialRequest(FrappeTestCase):
 		se.submit()
 
 	def test_cannot_stop_cancelled_material_request(self):
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.insert()
 		mr.submit()
 
 		mr.load_from_db()
 		mr.cancel()
-		self.assertRaises(frappe.ValidationError, mr.update_status, "Stopped")
+		self.assertRaises(nts.ValidationError, mr.update_status, "Stopped")
 
 	def test_mr_changes_from_stopped_to_pending_after_reopen(self):
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.insert()
 		mr.submit()
 		self.assertEqual("Pending", mr.status)
@@ -192,50 +192,50 @@ class TestMaterialRequest(FrappeTestCase):
 		self.assertEqual("Pending", mr.status)
 
 	def test_cannot_submit_cancelled_mr(self):
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.insert()
 		mr.submit()
 		mr.load_from_db()
 		mr.cancel()
-		self.assertRaises(frappe.ValidationError, mr.submit)
+		self.assertRaises(nts.ValidationError, mr.submit)
 
 	def test_mr_changes_from_pending_to_cancelled_after_cancel(self):
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.insert()
 		mr.submit()
 		mr.cancel()
 		self.assertEqual("Cancelled", mr.status)
 
 	def test_cannot_change_cancelled_mr(self):
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.insert()
 		mr.submit()
 		mr.load_from_db()
 		mr.cancel()
 
-		self.assertRaises(frappe.InvalidStatusError, mr.update_status, "Draft")
-		self.assertRaises(frappe.InvalidStatusError, mr.update_status, "Stopped")
-		self.assertRaises(frappe.InvalidStatusError, mr.update_status, "Ordered")
-		self.assertRaises(frappe.InvalidStatusError, mr.update_status, "Issued")
-		self.assertRaises(frappe.InvalidStatusError, mr.update_status, "Transferred")
-		self.assertRaises(frappe.InvalidStatusError, mr.update_status, "Pending")
+		self.assertRaises(nts.InvalidStatusError, mr.update_status, "Draft")
+		self.assertRaises(nts.InvalidStatusError, mr.update_status, "Stopped")
+		self.assertRaises(nts.InvalidStatusError, mr.update_status, "Ordered")
+		self.assertRaises(nts.InvalidStatusError, mr.update_status, "Issued")
+		self.assertRaises(nts.InvalidStatusError, mr.update_status, "Transferred")
+		self.assertRaises(nts.InvalidStatusError, mr.update_status, "Pending")
 
 	def test_cannot_submit_deleted_material_request(self):
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.insert()
 		mr.delete()
 
-		self.assertRaises(frappe.ValidationError, mr.submit)
+		self.assertRaises(nts.ValidationError, mr.submit)
 
 	def test_cannot_delete_submitted_mr(self):
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.insert()
 		mr.submit()
 
-		self.assertRaises(frappe.ValidationError, mr.delete)
+		self.assertRaises(nts.ValidationError, mr.delete)
 
 	def test_stopped_mr_changes_to_pending_after_reopen(self):
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.insert()
 		mr.submit()
 		mr.load_from_db()
@@ -245,7 +245,7 @@ class TestMaterialRequest(FrappeTestCase):
 		self.assertEqual(mr.status, "Pending")
 
 	def test_pending_mr_changes_to_stopped_after_stop(self):
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.insert()
 		mr.submit()
 		mr.load_from_db()
@@ -254,9 +254,9 @@ class TestMaterialRequest(FrappeTestCase):
 		self.assertEqual(mr.status, "Stopped")
 
 	def test_cannot_stop_unsubmitted_mr(self):
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.insert()
-		self.assertRaises(frappe.InvalidStatusError, mr.update_status, "Stopped")
+		self.assertRaises(nts.InvalidStatusError, mr.update_status, "Stopped")
 
 	def test_completed_qty_for_purchase(self):
 		existing_requested_qty_item1 = self._get_requested_qty(
@@ -267,7 +267,7 @@ class TestMaterialRequest(FrappeTestCase):
 		)
 
 		# submit material request of type Purchase
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.insert()
 		mr.submit()
 
@@ -282,18 +282,18 @@ class TestMaterialRequest(FrappeTestCase):
 		po_doc.get("items")[1].schedule_date = "2013-07-09"
 
 		# check for stopped status of Material Request
-		po = frappe.copy_doc(po_doc)
+		po = nts.copy_doc(po_doc)
 		po.insert()
 		po.load_from_db()
 		mr.update_status("Stopped")
-		self.assertRaises(frappe.InvalidStatusError, po.submit)
+		self.assertRaises(nts.InvalidStatusError, po.submit)
 		po.db_set("docstatus", 1)
-		self.assertRaises(frappe.InvalidStatusError, po.cancel)
+		self.assertRaises(nts.InvalidStatusError, po.cancel)
 
 		# resubmit and check for per complete
 		mr.load_from_db()
 		mr.update_status("Submitted")
-		po = frappe.copy_doc(po_doc)
+		po = nts.copy_doc(po_doc)
 		po.insert()
 		po.submit()
 
@@ -339,7 +339,7 @@ class TestMaterialRequest(FrappeTestCase):
 		)
 
 		# submit material request of type Purchase
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.material_request_type = "Material Transfer"
 		mr.insert()
 		mr.submit()
@@ -380,20 +380,20 @@ class TestMaterialRequest(FrappeTestCase):
 		self._insert_stock_entry(27.0, 1.5)
 
 		# check for stopped status of Material Request
-		se = frappe.copy_doc(se_doc)
+		se = nts.copy_doc(se_doc)
 		se.insert()
 		mr.update_status("Stopped")
-		self.assertRaises(frappe.InvalidStatusError, se.submit)
+		self.assertRaises(nts.InvalidStatusError, se.submit)
 
 		mr.update_status("Submitted")
 
 		se.flags.ignore_validate_update_after_submit = True
 		se.submit()
 		mr.update_status("Stopped")
-		self.assertRaises(frappe.InvalidStatusError, se.cancel)
+		self.assertRaises(nts.InvalidStatusError, se.cancel)
 
 		mr.update_status("Submitted")
-		se = frappe.copy_doc(se_doc)
+		se = nts.copy_doc(se_doc)
 		se.insert()
 		se.submit()
 
@@ -431,7 +431,7 @@ class TestMaterialRequest(FrappeTestCase):
 		self.assertEqual(current_requested_qty_item2, existing_requested_qty_item2 + 3.0)
 
 	def test_over_transfer_qty_allowance(self):
-		mr = frappe.new_doc("Material Request")
+		mr = nts.new_doc("Material Request")
 		mr.company = "_Test Company"
 		mr.scheduled_date = today()
 		mr.append(
@@ -450,7 +450,7 @@ class TestMaterialRequest(FrappeTestCase):
 		mr.insert()
 		mr.submit()
 
-		frappe.db.set_single_value("Stock Settings", "mr_qty_allowance", 20)
+		nts.db.set_single_value("Stock Settings", "mr_qty_allowance", 20)
 
 		# map a stock entry
 
@@ -472,7 +472,7 @@ class TestMaterialRequest(FrappeTestCase):
 		)
 
 		# make available the qty in _Test Warehouse 1 before transfer
-		sr = frappe.new_doc("Stock Reconciliation")
+		sr = nts.new_doc("Stock Reconciliation")
 		sr.company = "_Test Company"
 		sr.purpose = "Opening Stock"
 		sr.append(
@@ -486,9 +486,9 @@ class TestMaterialRequest(FrappeTestCase):
 		)
 		sr.insert()
 		sr.submit()
-		se = frappe.copy_doc(se_doc)
+		se = nts.copy_doc(se_doc)
 		se.insert()
-		self.assertRaises(frappe.ValidationError)
+		self.assertRaises(nts.ValidationError)
 		se.items[0].qty = 12
 		se.submit()
 
@@ -501,7 +501,7 @@ class TestMaterialRequest(FrappeTestCase):
 		)
 
 		# submit material request of type Purchase
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.material_request_type = "Material Transfer"
 		mr.insert()
 		mr.submit()
@@ -527,15 +527,15 @@ class TestMaterialRequest(FrappeTestCase):
 		self._insert_stock_entry(60.0, 3.0)
 
 		# check for stopped status of Material Request
-		se = frappe.copy_doc(se_doc)
+		se = nts.copy_doc(se_doc)
 		se.set_stock_entry_type()
 		se.insert()
 		mr.update_status("Stopped")
-		self.assertRaises(frappe.InvalidStatusError, se.submit)
-		self.assertRaises(frappe.InvalidStatusError, se.cancel)
+		self.assertRaises(nts.InvalidStatusError, se.submit)
+		self.assertRaises(nts.InvalidStatusError, se.cancel)
 
 		mr.update_status("Submitted")
-		se = frappe.copy_doc(se_doc)
+		se = nts.copy_doc(se_doc)
 		se.set_stock_entry_type()
 		se.insert()
 		se.submit()
@@ -576,7 +576,7 @@ class TestMaterialRequest(FrappeTestCase):
 
 	def test_incorrect_mapping_of_stock_entry(self):
 		# submit material request of type Transfer
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.material_request_type = "Material Transfer"
 		mr.insert()
 		mr.submit()
@@ -609,11 +609,11 @@ class TestMaterialRequest(FrappeTestCase):
 		)
 
 		# check for stopped status of Material Request
-		se = frappe.copy_doc(se_doc)
-		self.assertRaises(frappe.MappingMismatchError, se.insert)
+		se = nts.copy_doc(se_doc)
+		self.assertRaises(nts.MappingMismatchError, se.insert)
 
 		# submit material request of type Transfer
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.material_request_type = "Material Issue"
 		mr.insert()
 		mr.submit()
@@ -624,21 +624,21 @@ class TestMaterialRequest(FrappeTestCase):
 	def test_warehouse_company_validation(self):
 		from prodman.stock.utils import InvalidWarehouseCompany
 
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.company = "_Test Company 1"
 		self.assertRaises(InvalidWarehouseCompany, mr.insert)
 
 	def _get_requested_qty(self, item_code, warehouse):
 		return flt(
-			frappe.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse}, "indented_qty")
+			nts.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse}, "indented_qty")
 		)
 
 	def test_make_stock_entry_for_material_issue(self):
-		mr = frappe.copy_doc(test_records[0]).insert()
+		mr = nts.copy_doc(test_records[0]).insert()
 
-		self.assertRaises(frappe.ValidationError, make_stock_entry, mr.name)
+		self.assertRaises(nts.ValidationError, make_stock_entry, mr.name)
 
-		mr = frappe.get_doc("Material Request", mr.name)
+		mr = nts.get_doc("Material Request", mr.name)
 		mr.material_request_type = "Material Issue"
 		mr.submit()
 		se = make_stock_entry(mr.name)
@@ -649,7 +649,7 @@ class TestMaterialRequest(FrappeTestCase):
 	def test_completed_qty_for_issue(self):
 		def _get_requested_qty():
 			return flt(
-				frappe.db.get_value(
+				nts.db.get_value(
 					"Bin",
 					{"item_code": "_Test Item Home Desktop 100", "warehouse": "_Test Warehouse - _TC"},
 					"indented_qty",
@@ -658,10 +658,10 @@ class TestMaterialRequest(FrappeTestCase):
 
 		existing_requested_qty = _get_requested_qty()
 
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.material_request_type = "Material Issue"
 		mr.submit()
-		frappe.db.value_cache = {}
+		nts.db.value_cache = {}
 
 		# testing bin value after material request is submitted
 		self.assertEqual(_get_requested_qty(), existing_requested_qty - 54.0)
@@ -686,25 +686,25 @@ class TestMaterialRequest(FrappeTestCase):
 		self.assertEqual(_get_requested_qty(), existing_requested_qty)
 
 	def test_material_request_type_manufacture(self):
-		mr = frappe.copy_doc(test_records[1]).insert()
-		mr = frappe.get_doc("Material Request", mr.name)
+		mr = nts.copy_doc(test_records[1]).insert()
+		mr = nts.get_doc("Material Request", mr.name)
 		mr.submit()
 		completed_qty = mr.items[0].ordered_qty
-		requested_qty = frappe.db.sql(
+		requested_qty = nts.db.sql(
 			"""select indented_qty from `tabBin` where \
 			item_code= %s and warehouse= %s """,
 			(mr.items[0].item_code, mr.items[0].warehouse),
 		)[0][0]
 
 		prod_order = raise_work_orders(mr.name)
-		po = frappe.get_doc("Work Order", prod_order[0])
+		po = nts.get_doc("Work Order", prod_order[0])
 		po.wip_warehouse = "_Test Warehouse 1 - _TC"
 		po.submit()
 
-		mr = frappe.get_doc("Material Request", mr.name)
+		mr = nts.get_doc("Material Request", mr.name)
 		self.assertEqual(completed_qty + po.qty, mr.items[0].ordered_qty)
 
-		new_requested_qty = frappe.db.sql(
+		new_requested_qty = nts.db.sql(
 			"""select indented_qty from `tabBin` where \
 			item_code= %s and warehouse= %s """,
 			(mr.items[0].item_code, mr.items[0].warehouse),
@@ -714,10 +714,10 @@ class TestMaterialRequest(FrappeTestCase):
 
 		po.cancel()
 
-		mr = frappe.get_doc("Material Request", mr.name)
+		mr = nts.get_doc("Material Request", mr.name)
 		self.assertEqual(completed_qty, mr.items[0].ordered_qty)
 
-		new_requested_qty = frappe.db.sql(
+		new_requested_qty = nts.db.sql(
 			"""select indented_qty from `tabBin` where \
 			item_code= %s and warehouse= %s """,
 			(mr.items[0].item_code, mr.items[0].warehouse),
@@ -739,7 +739,7 @@ class TestMaterialRequest(FrappeTestCase):
 		self.assertEqual(requested_qty, existing_requested_qty + 120)
 
 		work_order = raise_work_orders(mr.name)
-		wo = frappe.get_doc("Work Order", work_order[0])
+		wo = nts.get_doc("Work Order", work_order[0])
 		wo.qty = 50
 		wo.wip_warehouse = "_Test Warehouse 1 - _TC"
 		wo.submit()
@@ -758,13 +758,13 @@ class TestMaterialRequest(FrappeTestCase):
 		self.assertEqual(requested_qty, existing_requested_qty)
 
 	def test_multi_uom_for_purchase(self):
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.material_request_type = "Purchase"
 		item = mr.items[0]
 		mr.schedule_date = today()
 
-		if not frappe.db.get_value("UOM Conversion Detail", {"parent": item.item_code, "uom": "Kg"}):
-			item_doc = frappe.get_doc("Item", item.item_code)
+		if not nts.db.get_value("UOM Conversion Detail", {"parent": item.item_code, "uom": "Kg"}):
+			item_doc = nts.get_doc("Item", item.item_code)
 			item_doc.append("uoms", {"uom": "Kg", "conversion_factor": 5})
 			item_doc.save(ignore_permissions=True)
 
@@ -773,9 +773,9 @@ class TestMaterialRequest(FrappeTestCase):
 			item.schedule_date = mr.schedule_date
 
 		mr.insert()
-		self.assertRaises(frappe.ValidationError, make_purchase_order, mr.name)
+		self.assertRaises(nts.ValidationError, make_purchase_order, mr.name)
 
-		mr = frappe.get_doc("Material Request", mr.name)
+		mr = nts.get_doc("Material Request", mr.name)
 		mr.submit()
 		item = mr.items[0]
 
@@ -790,7 +790,7 @@ class TestMaterialRequest(FrappeTestCase):
 		po.supplier = "_Test Supplier"
 		po.insert()
 		po.submit()
-		mr = frappe.get_doc("Material Request", mr.name)
+		mr = nts.get_doc("Material Request", mr.name)
 		self.assertEqual(mr.per_ordered, 100)
 
 	def test_customer_provided_parts_mr(self):
@@ -803,7 +803,7 @@ class TestMaterialRequest(FrappeTestCase):
 		se.submit()
 		self.assertEqual(se.get("items")[0].amount, 0)
 		self.assertEqual(se.get("items")[0].material_request, mr.name)
-		mr = frappe.get_doc("Material Request", mr.name)
+		mr = nts.get_doc("Material Request", mr.name)
 		mr.submit()
 		current_requested_qty = self._get_requested_qty("_Test Customer", "_Test Warehouse - _TC")
 
@@ -821,8 +821,8 @@ class TestMaterialRequest(FrappeTestCase):
 		permissions = []
 
 		for company, user in comapnywise_users.items():
-			if not frappe.db.exists("User", user):
-				frappe.get_doc(
+			if not nts.db.exists("User", user):
+				nts.get_doc(
 					{
 						"doctype": "User",
 						"email": user,
@@ -834,10 +834,10 @@ class TestMaterialRequest(FrappeTestCase):
 					}
 				).insert(ignore_permissions=True)
 
-			if not frappe.db.exists(
+			if not nts.db.exists(
 				"User Permission", {"user": user, "allow": "Company", "for_value": company}
 			):
-				perm_doc = frappe.get_doc(
+				perm_doc = nts.get_doc(
 					{
 						"doctype": "User Permission",
 						"user": user,
@@ -849,7 +849,7 @@ class TestMaterialRequest(FrappeTestCase):
 
 				permissions.append(perm_doc)
 
-		comapnywise_mr_list = frappe._dict({})
+		comapnywise_mr_list = nts._dict({})
 		mr1 = make_material_request()
 		comapnywise_mr_list.setdefault(mr1.company, []).append(mr1.name)
 
@@ -868,19 +868,19 @@ class TestMaterialRequest(FrappeTestCase):
 
 
 def get_in_transit_warehouse(company):
-	if not frappe.db.exists("Warehouse Type", "Transit"):
-		frappe.get_doc(
+	if not nts.db.exists("Warehouse Type", "Transit"):
+		nts.get_doc(
 			{
 				"doctype": "Warehouse Type",
 				"name": "Transit",
 			}
 		).insert()
 
-	in_transit_warehouse = frappe.db.exists("Warehouse", {"warehouse_type": "Transit", "company": company})
+	in_transit_warehouse = nts.db.exists("Warehouse", {"warehouse_type": "Transit", "company": company})
 
 	if not in_transit_warehouse:
 		in_transit_warehouse = (
-			frappe.get_doc(
+			nts.get_doc(
 				{
 					"doctype": "Warehouse",
 					"warehouse_name": "Transit",
@@ -896,8 +896,8 @@ def get_in_transit_warehouse(company):
 
 
 def make_material_request(**args):
-	args = frappe._dict(args)
-	mr = frappe.new_doc("Material Request")
+	args = nts._dict(args)
+	mr = nts.new_doc("Material Request")
 	mr.material_request_type = args.material_request_type or "Purchase"
 	mr.company = args.company or "_Test Company"
 	mr.customer = args.customer or "_Test Customer"
@@ -920,4 +920,4 @@ def make_material_request(**args):
 
 
 test_dependencies = ["Currency Exchange", "BOM"]
-test_records = frappe.get_test_records("Material Request")
+test_records = nts.get_test_records("Material Request")

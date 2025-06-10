@@ -1,13 +1,13 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
+import nts
+from nts.custom.doctype.custom_field.custom_field import create_custom_fields
 
 
 def setup(company=None, patch=True):
 	# Company independent fixtures should be called only once at the first company setup
-	if frappe.db.count("Company", {"country": "United States"}) <= 1:
+	if nts.db.count("Company", {"country": "United States"}) <= 1:
 		setup_company_independent_fixtures(patch=patch)
 
 
@@ -63,5 +63,5 @@ def make_custom_fields(update=True):
 
 
 def add_print_formats():
-	frappe.reload_doc("regional", "print_format", "irs_1099_form")
-	frappe.db.set_value("Print Format", "IRS 1099 Form", "disabled", 0)
+	nts.reload_doc("regional", "print_format", "irs_1099_form")
+	nts.db.set_value("Print Format", "IRS 1099 Form", "disabled", 0)

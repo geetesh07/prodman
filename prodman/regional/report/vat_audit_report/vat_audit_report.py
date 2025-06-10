@@ -1,12 +1,12 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import json
 
-import frappe
-from frappe import _
-from frappe.utils import formatdate, get_link_to_form
+import nts
+from nts import _
+from nts.utils import formatdate, get_link_to_form
 
 
 def execute(filters=None):
@@ -15,7 +15,7 @@ def execute(filters=None):
 
 class VATAuditReport:
 	def __init__(self, filters=None):
-		self.filters = frappe._dict(filters or {})
+		self.filters = nts._dict(filters or {})
 		self.columns = []
 		self.data = []
 		self.doctypes = ["Purchase Invoice", "Sales Invoice"]
@@ -44,20 +44,20 @@ class VATAuditReport:
 		return self.columns, self.data
 
 	def get_sa_vat_accounts(self):
-		self.sa_vat_accounts = frappe.get_all(
+		self.sa_vat_accounts = nts.get_all(
 			"South Africa VAT Account", filters={"parent": self.filters.company}, pluck="account"
 		)
-		if not self.sa_vat_accounts and not frappe.flags.in_test and not frappe.flags.in_migrate:
+		if not self.sa_vat_accounts and not nts.flags.in_test and not nts.flags.in_migrate:
 			link_to_settings = get_link_to_form(
 				"South Africa VAT Settings", "", label="South Africa VAT Settings"
 			)
-			frappe.throw(_("Please set VAT Accounts in {0}").format(link_to_settings))
+			nts.throw(_("Please set VAT Accounts in {0}").format(link_to_settings))
 
 	def get_invoice_data(self, doctype):
 		conditions = self.get_conditions()
-		self.invoices = frappe._dict()
+		self.invoices = nts._dict()
 
-		invoice_data = frappe.db.sql(
+		invoice_data = nts.db.sql(
 			f"""
 			SELECT
 				{self.select_columns}
@@ -77,9 +77,9 @@ class VATAuditReport:
 			self.invoices.setdefault(d.voucher_no, d)
 
 	def get_invoice_items(self, doctype):
-		self.invoice_items = frappe._dict()
+		self.invoice_items = nts._dict()
 
-		items = frappe.db.sql(
+		items = nts.db.sql(
 			"""
 			SELECT
 				item_code, parent, base_net_amount, is_zero_rated
@@ -97,13 +97,13 @@ class VATAuditReport:
 			self.invoice_items[d.parent][d.item_code]["is_zero_rated"] = d.is_zero_rated
 
 	def get_items_based_on_tax_rate(self, doctype):
-		self.items_based_on_tax_rate = frappe._dict()
-		self.item_tax_rate = frappe._dict()
+		self.items_based_on_tax_rate = nts._dict()
+		self.item_tax_rate = nts._dict()
 		self.tax_doctype = (
 			"Purchase Taxes and Charges" if doctype == "Purchase Invoice" else "Sales Taxes and Charges"
 		)
 
-		self.tax_details = frappe.db.sql(
+		self.tax_details = nts.db.sql(
 			"""
 			SELECT
 				parent, account_head, item_wise_tax_detail
@@ -181,7 +181,7 @@ class VATAuditReport:
 
 		for rate, section in consolidated_data.items():
 			rate = int(rate)
-			label = frappe.bold(section_name + "- " + "Rate" + " " + str(rate) + "%")
+			label = nts.bold(section_name + "- " + "Rate" + " " + str(rate) + "%")
 			section_head = {"posting_date": label}
 			total_gross = total_tax = total_net = 0
 			self.data.append(section_head)
@@ -192,7 +192,7 @@ class VATAuditReport:
 				total_net += row["net_amount"]
 
 			total = {
-				"posting_date": frappe.bold(_("Total")),
+				"posting_date": nts.bold(_("Total")),
 				"gross_amount": total_gross,
 				"tax_amount": total_tax,
 				"net_amount": total_net,

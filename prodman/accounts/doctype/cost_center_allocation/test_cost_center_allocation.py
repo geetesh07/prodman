@@ -1,10 +1,10 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe.utils import add_days, today
+import nts 
+from nts .utils import add_days, today
 
 from prodman.accounts.doctype.cost_center.test_cost_center import create_cost_center
 from prodman.accounts.doctype.cost_center_allocation.cost_center_allocation import (
@@ -43,9 +43,9 @@ class TestCostCenterAllocation(unittest.TestCase):
 
 		expected_values = [["Sub Cost Center 1 - _TC", 0.0, 60], ["Sub Cost Center 2 - _TC", 0.0, 40]]
 
-		gle = frappe.qb.DocType("GL Entry")
+		gle = nts .qb.DocType("GL Entry")
 		gl_entries = (
-			frappe.qb.from_(gle)
+			nts .qb.from_(gle)
 			.select(gle.cost_center, gle.debit, gle.credit)
 			.where(gle.voucher_type == "Journal Entry")
 			.where(gle.voucher_no == jv.name)
@@ -169,9 +169,9 @@ class TestCostCenterAllocation(unittest.TestCase):
 
 		expected_values = {"Sub Cost Center 1 - _TC": 50, "Sub Cost Center 2 - _TC": 50}
 
-		gle = frappe.qb.DocType("GL Entry")
+		gle = nts .qb.DocType("GL Entry")
 		gl_entries = (
-			frappe.qb.from_(gle)
+			nts .qb.from_(gle)
 			.select(gle.cost_center, gle.debit, gle.credit)
 			.where(gle.voucher_type == "Journal Entry")
 			.where(gle.voucher_no == jv.name)
@@ -200,7 +200,7 @@ def create_cost_center_allocation(
 	save=True,
 	submit=True,
 ):
-	doc = frappe.new_doc("Cost Center Allocation")
+	doc = nts .new_doc("Cost Center Allocation")
 	doc.main_cost_center = main_cost_center
 	doc.company = company
 	doc.valid_from = valid_from or today()

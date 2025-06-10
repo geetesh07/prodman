@@ -1,8 +1,8 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.maintenance");
-frappe.ui.form.on("Maintenance Visit", {
+nts.provide("prodman.maintenance");
+nts.ui.form.on("Maintenance Visit", {
 	setup: function (frm) {
 		frm.set_query("contact_person", prodman.queries.contact_query);
 		frm.set_query("customer_address", prodman.queries.address_query);
@@ -15,7 +15,7 @@ frappe.ui.form.on("Maintenance Visit", {
 			if (!item_code) {
 				return;
 			}
-			frappe
+			nts
 				.call({
 					method: "prodman.maintenance.doctype.maintenance_schedule.maintenance_schedule.get_serial_nos_from_schedule",
 					args: {
@@ -55,7 +55,7 @@ frappe.ui.form.on("Maintenance Visit", {
 			frm.set_value({ status: "Draft" });
 		}
 		if (frm.doc.__islocal) {
-			frm.set_value({ mntc_date: frappe.datetime.get_today() });
+			frm.set_value({ mntc_date: nts.datetime.get_today() });
 		}
 	},
 	customer: function (frm) {
@@ -70,9 +70,9 @@ frappe.ui.form.on("Maintenance Visit", {
 });
 
 // TODO commonify this code
-prodman.maintenance.MaintenanceVisit = class MaintenanceVisit extends frappe.ui.form.Controller {
+prodman.maintenance.MaintenanceVisit = class MaintenanceVisit extends nts.ui.form.Controller {
 	refresh() {
-		frappe.dynamic_link = { doc: this.frm.doc, fieldname: "customer", doctype: "Customer" };
+		nts.dynamic_link = { doc: this.frm.doc, fieldname: "customer", doctype: "Customer" };
 
 		var me = this;
 
@@ -81,7 +81,7 @@ prodman.maintenance.MaintenanceVisit = class MaintenanceVisit extends frappe.ui.
 				__("Maintenance Schedule"),
 				function () {
 					if (!me.frm.doc.customer) {
-						frappe.msgprint(__("Please select Customer first"));
+						nts.msgprint(__("Please select Customer first"));
 						return;
 					}
 					prodman.utils.map_current_doc({
@@ -122,7 +122,7 @@ prodman.maintenance.MaintenanceVisit = class MaintenanceVisit extends frappe.ui.
 				__("Sales Order"),
 				function () {
 					if (!me.frm.doc.customer) {
-						frappe.msgprint(__("Please select Customer first"));
+						nts.msgprint(__("Please select Customer first"));
 						return;
 					}
 					prodman.utils.map_current_doc({

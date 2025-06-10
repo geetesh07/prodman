@@ -1,11 +1,11 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 prodman.payments = class payments extends prodman.stock.StockController {
 	make_payment() {
 		var me = this;
 
-		this.dialog = new frappe.ui.Dialog({
+		this.dialog = new nts.ui.Dialog({
 			title: "Payment",
 		});
 
@@ -42,7 +42,7 @@ prodman.payments = class payments extends prodman.stock.StockController {
 	make_keyboard() {
 		var me = this;
 		$(this.$body).empty();
-		$(this.$body).html(frappe.render_template("pos_payment", this.frm.doc));
+		$(this.$body).html(nts.render_template("pos_payment", this.frm.doc));
 		this.show_payment_details();
 		this.bind_keyboard_event();
 		this.clear_amount();
@@ -55,7 +55,7 @@ prodman.payments = class payments extends prodman.stock.StockController {
 			me.payment_val = me.doc.outstanding_amount;
 		}
 
-		this.payments = frappe.model.add_child(this.frm.doc, "Multi Mode Payment", "payments");
+		this.payments = nts.model.add_child(this.frm.doc, "Multi Mode Payment", "payments");
 		this.payments.mode_of_payment = this.dialog.fields_dict.mode_of_payment.get_value();
 		this.payments.amount = flt(this.payment_val);
 	}
@@ -66,7 +66,7 @@ prodman.payments = class payments extends prodman.stock.StockController {
 		if (this.frm.doc.payments.length) {
 			$.each(this.frm.doc.payments, function (index, data) {
 				$(
-					frappe.render_template("payment_details", {
+					nts.render_template("payment_details", {
 						mode_of_payment: data.mode_of_payment,
 						amount: data.amount,
 						idx: data.idx,
@@ -265,7 +265,7 @@ prodman.payments = class payments extends prodman.stock.StockController {
 			.text(
 				format_currency(
 					this.frm.doc.outstanding_amount,
-					frappe.get_doc(":Company", this.frm.doc.company).default_currency
+					nts.get_doc(":Company", this.frm.doc.company).default_currency
 				)
 			);
 		this.update_invoice();

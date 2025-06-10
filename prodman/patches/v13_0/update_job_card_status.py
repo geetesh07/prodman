@@ -1,13 +1,13 @@
-# Copyright (c) 2021, Frappe and Contributors
+# Copyright (c) 2021, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
+import nts
 
 
 def execute():
-	job_card = frappe.qb.DocType("Job Card")
+	job_card = nts.qb.DocType("Job Card")
 	(
-		frappe.qb.update(job_card)
+		nts.qb.update(job_card)
 		.set(job_card.status, "Completed")
 		.where(
 			(job_card.docstatus == 1)

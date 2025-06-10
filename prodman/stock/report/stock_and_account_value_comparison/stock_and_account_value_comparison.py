@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import get_link_to_form, parse_json
+import nts
+from nts import _
+from nts.utils import get_link_to_form, parse_json
 
 import prodman
 from prodman.accounts.utils import get_currency_precision, get_stock_accounts
@@ -13,7 +13,7 @@ from prodman.stock.doctype.warehouse.warehouse import get_warehouses_based_on_ac
 
 def execute(filters=None):
 	if not prodman.is_perpetual_inventory_enabled(filters.company):
-		frappe.throw(
+		nts.throw(
 			_("Perpetual inventory required for the company {0} to view this report.").format(filters.company)
 		)
 
@@ -53,7 +53,7 @@ def get_stock_ledger_data(report_filters, filters):
 
 		filters["warehouse"] = ("in", warehouses)
 
-	return frappe.get_all(
+	return nts.get_all(
 		"Stock Ledger Entry",
 		filters=filters,
 		fields=[
@@ -80,7 +80,7 @@ def get_gl_data(report_filters, filters):
 	if filters.get("warehouse"):
 		del filters["warehouse"]
 
-	gl_entries = frappe.get_all(
+	gl_entries = nts.get_all(
 		"GL Entry",
 		filters=filters,
 		fields=[
@@ -135,17 +135,17 @@ def get_columns(filters):
 	]
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def create_reposting_entries(rows, company):
 	if isinstance(rows, str):
 		rows = parse_json(rows)
 
 	entries = []
 	for row in rows:
-		row = frappe._dict(row)
+		row = nts._dict(row)
 
 		try:
-			doc = frappe.get_doc(
+			doc = nts.get_doc(
 				{
 					"doctype": "Repost Item Valuation",
 					"based_on": "Transaction",
@@ -159,9 +159,9 @@ def create_reposting_entries(rows, company):
 			).submit()
 
 			entries.append(get_link_to_form("Repost Item Valuation", doc.name))
-		except frappe.DuplicateEntryError:
+		except nts.DuplicateEntryError:
 			pass
 
 	if entries:
 		entries = ", ".join(entries)
-		frappe.msgprint(_("Reposting entries created: {0}").format(entries))
+		nts.msgprint(_("Reposting entries created: {0}").format(entries))

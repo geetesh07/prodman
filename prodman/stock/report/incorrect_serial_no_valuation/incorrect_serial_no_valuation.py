@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import copy
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 from prodman.stock.doctype.serial_no.serial_no import get_serial_nos
 
@@ -43,10 +43,10 @@ def prepare_serial_nos(data):
 def get_incorrect_serial_nos(serial_nos_data):
 	result = []
 
-	total_value = frappe._dict({"qty": 0, "valuation_rate": 0, "serial_no": frappe.bold(_("Balance"))})
+	total_value = nts._dict({"qty": 0, "valuation_rate": 0, "serial_no": nts.bold(_("Balance"))})
 
 	for _serial_no, data in serial_nos_data.items():
-		total_dict = frappe._dict({"qty": 0, "valuation_rate": 0, "serial_no": frappe.bold(_("Total"))})
+		total_dict = nts._dict({"qty": 0, "valuation_rate": 0, "serial_no": nts.bold(_("Total"))})
 
 		if check_incorrect_serial_data(data, total_dict):
 			result.extend(data)
@@ -100,7 +100,7 @@ def get_stock_ledger_entries(report_filters):
 			[report_filters.get("from_date"), report_filters.get("to_date")],
 		)
 
-	return frappe.get_all(
+	return nts.get_all(
 		"Stock Ledger Entry",
 		fields=fields,
 		filters=filters,

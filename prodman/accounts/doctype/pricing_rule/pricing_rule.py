@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 
 # For license information, please see license.txt
 
@@ -7,10 +7,10 @@ import copy
 import json
 import re
 
-import frappe
-from frappe import _, throw
-from frappe.model.document import Document
-from frappe.utils import cint, flt
+import nts 
+from nts  import _, throw
+from nts .model.document import Document
+from nts .utils import cint, flt
 
 apply_on_dict = {"Item Code": "items", "Item Group": "item_groups", "Brand": "brands"}
 
@@ -24,7 +24,7 @@ class PricingRule(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.pricing_rule_brand.pricing_rule_brand import PricingRuleBrand
 		from prodman.accounts.doctype.pricing_rule_item_code.pricing_rule_item_code import PricingRuleItemCode
@@ -151,44 +151,44 @@ class PricingRule(Document):
 			if not apply_on_table:
 				return
 
-			apply_on_field = frappe.scrub(self.apply_on)
+			apply_on_field = nts .scrub(self.apply_on)
 			values = [d.get(apply_on_field) for d in self.get(apply_on_table) if d.get(apply_on_field)]
 			if len(values) != len(set(values)):
-				frappe.throw(_("Duplicate {0} found in the table").format(self.apply_on))
+				nts .throw(_("Duplicate {0} found in the table").format(self.apply_on))
 
 	def validate_mandatory(self):
 		if self.has_priority and not self.priority:
-			throw(_("Priority is mandatory"), frappe.MandatoryError, _("Please Set Priority"))
+			throw(_("Priority is mandatory"), nts .MandatoryError, _("Please Set Priority"))
 
 		if self.priority and not self.has_priority:
 			self.has_priority = 1
 
 		for apply_on, field in apply_on_dict.items():
 			if self.apply_on == apply_on and len(self.get(field) or []) < 1:
-				throw(_("{0} is not added in the table").format(apply_on), frappe.MandatoryError)
+				throw(_("{0} is not added in the table").format(apply_on), nts .MandatoryError)
 
-		tocheck = frappe.scrub(self.get("applicable_for", ""))
+		tocheck = nts .scrub(self.get("applicable_for", ""))
 		if tocheck and not self.get(tocheck):
-			throw(_("{0} is required").format(self.meta.get_label(tocheck)), frappe.MandatoryError)
+			throw(_("{0} is required").format(self.meta.get_label(tocheck)), nts .MandatoryError)
 
 		if self.apply_rule_on_other:
-			o_field = "other_" + frappe.scrub(self.apply_rule_on_other)
+			o_field = "other_" + nts .scrub(self.apply_rule_on_other)
 			if not self.get(o_field) and o_field in other_fields:
-				frappe.throw(
+				nts .throw(
 					_("For the 'Apply Rule On Other' condition the field {0} is mandatory").format(
-						frappe.bold(self.apply_rule_on_other)
+						nts .bold(self.apply_rule_on_other)
 					)
 				)
 
 		if self.price_or_product_discount == "Price" and not self.rate_or_discount:
-			throw(_("Rate or Discount is required for the price discount."), frappe.MandatoryError)
+			throw(_("Rate or Discount is required for the price discount."), nts .MandatoryError)
 
 		if self.apply_discount_on_rate:
 			if not self.priority:
 				throw(
 					_("As the field {0} is enabled, the field {1} is mandatory.").format(
-						frappe.bold(_("Apply Discount on Discounted Rate")),
-						frappe.bold(_("Priority")),
+						nts .bold(_("Apply Discount on Discounted Rate")),
+						nts .bold(_("Priority")),
 					)
 				)
 
@@ -196,7 +196,7 @@ class PricingRule(Document):
 				throw(
 					_(
 						"As the field {0} is enabled, the value of the field {1} should be more than 1."
-					).format(frappe.bold(_("Apply Discount on Discounted Rate")), frappe.bold(_("Priority")))
+					).format(nts .bold(_("Apply Discount on Discounted Rate")), nts .bold(_("Priority")))
 				)
 
 	def validate_applicable_for_selling_or_buying(self):
@@ -241,7 +241,7 @@ class PricingRule(Document):
 
 	def cleanup_fields_value(self):
 		for logic_field in ["apply_on", "applicable_for", "rate_or_discount"]:
-			fieldname = frappe.scrub(self.get(logic_field) or "")
+			fieldname = nts .scrub(self.get(logic_field) or "")
 
 			# reset all values except for the logic field
 			options = (self.meta.get_options(logic_field) or "").split("\n")
@@ -249,7 +249,7 @@ class PricingRule(Document):
 				if not f:
 					continue
 
-				scrubbed_f = frappe.scrub(f)
+				scrubbed_f = nts .scrub(f)
 
 				if logic_field == "apply_on":
 					apply_on_f = apply_on_dict.get(f, f)
@@ -262,7 +262,7 @@ class PricingRule(Document):
 		if self.mixed_conditions and self.get("same_item"):
 			self.same_item = 0
 
-		apply_rule_on_other = frappe.scrub(self.apply_rule_on_other or "")
+		apply_rule_on_other = nts .scrub(self.apply_rule_on_other or "")
 
 		cleanup_other_fields = (
 			other_fields
@@ -275,31 +275,31 @@ class PricingRule(Document):
 
 	def validate_rate_or_discount(self):
 		for field in ["Rate"]:
-			if flt(self.get(frappe.scrub(field))) < 0:
+			if flt(self.get(nts .scrub(field))) < 0:
 				throw(_("{0} can not be negative").format(field))
 
 		if self.price_or_product_discount == "Product" and not self.free_item:
 			if self.mixed_conditions:
-				frappe.throw(_("Free item code is not selected"))
+				nts .throw(_("Free item code is not selected"))
 			else:
 				self.same_item = 1
 
 	def validate_max_discount(self):
 		if self.rate_or_discount == "Discount Percentage" and self.get("items"):
 			for d in self.items:
-				max_discount = frappe.get_cached_value("Item", d.item_code, "max_discount")
+				max_discount = nts .get_cached_value("Item", d.item_code, "max_discount")
 				if max_discount and flt(self.discount_percentage) > flt(max_discount):
 					throw(_("Max discount allowed for item: {0} is {1}%").format(d.item_code, max_discount))
 
 	def validate_price_list_with_currency(self):
 		if self.currency and self.for_price_list:
-			price_list_currency = frappe.db.get_value("Price List", self.for_price_list, "currency", True)
+			price_list_currency = nts .db.get_value("Price List", self.for_price_list, "currency", True)
 			if not self.currency == price_list_currency:
 				throw(_("Currency should be same as Price List Currency: {0}").format(price_list_currency))
 
 	def validate_dates(self):
 		if self.is_cumulative and not (self.valid_from and self.valid_upto):
-			frappe.throw(_("Valid from and valid upto fields are mandatory for the cumulative"))
+			nts .throw(_("Valid from and valid upto fields are mandatory for the cumulative"))
 
 		self.validate_from_to_dates("valid_from", "valid_upto")
 
@@ -309,17 +309,17 @@ class PricingRule(Document):
 			and ("=" in self.condition)
 			and re.match(r'[\w\.:_]+\s*={1}\s*[\w\.@\'"]+', self.condition)
 		):
-			frappe.throw(_("Invalid condition expression"))
+			nts .throw(_("Invalid condition expression"))
 
 	def validate_mixed_with_recursion(self):
 		if self.mixed_conditions and self.is_recursive:
-			frappe.throw(_("Recursive Discounts with Mixed condition is not supported by the system"))
+			nts .throw(_("Recursive Discounts with Mixed condition is not supported by the system"))
 
 
 # --------------------------------------------------------------------------------
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def apply_pricing_rule(args, doc=None):
 	"""
 	args = {
@@ -344,7 +344,7 @@ def apply_pricing_rule(args, doc=None):
 	if isinstance(args, str):
 		args = json.loads(args)
 
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 
 	if not args.transaction_type:
 		set_transaction_type(args)
@@ -359,7 +359,7 @@ def apply_pricing_rule(args, doc=None):
 	args.pop("items")
 
 	item_code_list = tuple(item.get("item_code") for item in item_list)
-	query_items = frappe.get_all(
+	query_items = nts .get_all(
 		"Item",
 		fields=["item_code", "has_serial_no"],
 		filters=[["item_code", "in", item_code_list]],
@@ -383,7 +383,7 @@ def update_pricing_rule_uom(pricing_rule, args):
 		pricing_rule.apply_on
 	)
 
-	apply_on_field = frappe.scrub(pricing_rule.apply_on)
+	apply_on_field = nts .scrub(pricing_rule.apply_on)
 
 	for row in pricing_rule.get(child_doc):
 		if row.get(apply_on_field) == args.get(apply_on_field):
@@ -402,12 +402,12 @@ def get_pricing_rule_for_item(args, doc=None, for_validate=False):
 		doc = json.loads(doc)
 
 	if doc:
-		doc = frappe.get_doc(doc)
+		doc = nts .get_doc(doc)
 
 	if args.get("is_free_item") or args.get("parenttype") == "Material Request":
 		return {}
 
-	item_details = frappe._dict(
+	item_details = nts ._dict(
 		{
 			"doctype": args.doctype,
 			"has_margin": False,
@@ -420,7 +420,7 @@ def get_pricing_rule_for_item(args, doc=None, for_validate=False):
 	)
 
 	if args.ignore_pricing_rule or not args.item_code:
-		if frappe.db.exists(args.doctype, args.name) and args.get("pricing_rules"):
+		if nts .db.exists(args.doctype, args.name) and args.get("pricing_rules"):
 			item_details = remove_pricing_rule_for_item(
 				args.get("pricing_rules"),
 				item_details,
@@ -445,7 +445,7 @@ def get_pricing_rule_for_item(args, doc=None, for_validate=False):
 				continue
 
 			if isinstance(pricing_rule, str):
-				pricing_rule = frappe.get_cached_doc("Pricing Rule", pricing_rule)
+				pricing_rule = nts .get_cached_doc("Pricing Rule", pricing_rule)
 				update_pricing_rule_uom(pricing_rule, args)
 				fetch_other_item = True if pricing_rule.apply_rule_on_other else False
 				pricing_rule.apply_rule_on_other_items = (
@@ -455,7 +455,7 @@ def get_pricing_rule_for_item(args, doc=None, for_validate=False):
 			if pricing_rule.coupon_code_based == 1:
 				if not args.coupon_code:
 					continue
-				coupon_code = frappe.db.get_value(
+				coupon_code = nts .db.get_value(
 					doctype="Coupon Code", filters={"pricing_rule": pricing_rule.name}, fieldname="name"
 				)
 				if args.coupon_code != coupon_code:
@@ -474,9 +474,9 @@ def get_pricing_rule_for_item(args, doc=None, for_validate=False):
 					{
 						"price_or_product_discount": pricing_rule.price_or_product_discount,
 						"apply_rule_on": (
-							frappe.scrub(pricing_rule.apply_rule_on_other)
+							nts .scrub(pricing_rule.apply_rule_on_other)
 							if pricing_rule.apply_rule_on_other
-							else frappe.scrub(pricing_rule.get("apply_on"))
+							else nts .scrub(pricing_rule.get("apply_on"))
 						),
 					}
 				)
@@ -498,7 +498,7 @@ def get_pricing_rule_for_item(args, doc=None, for_validate=False):
 
 		item_details.has_pricing_rule = 1
 
-		item_details.pricing_rules = frappe.as_json([d.pricing_rule for d in rules])
+		item_details.pricing_rules = nts .as_json([d.pricing_rule for d in rules])
 
 		if not doc:
 			return item_details
@@ -516,21 +516,21 @@ def get_pricing_rule_for_item(args, doc=None, for_validate=False):
 
 def update_args_for_pricing_rule(args):
 	if not (args.item_group and args.brand):
-		item = frappe.get_cached_value("Item", args.item_code, ("item_group", "brand"))
+		item = nts .get_cached_value("Item", args.item_code, ("item_group", "brand"))
 		if not item:
 			return
 
 		args.item_group, args.brand = item
 
 		if not args.item_group:
-			frappe.throw(_("Item Group not mentioned in item master for item {0}").format(args.item_code))
+			nts .throw(_("Item Group not mentioned in item master for item {0}").format(args.item_code))
 
 	if args.transaction_type == "selling":
 		if args.customer and not (args.customer_group and args.territory):
 			if args.quotation_to and args.quotation_to != "Customer":
-				customer = frappe._dict()
+				customer = nts ._dict()
 			else:
-				customer = frappe.get_cached_value("Customer", args.customer, ["customer_group", "territory"])
+				customer = nts .get_cached_value("Customer", args.customer, ["customer_group", "territory"])
 
 			if customer:
 				args.customer_group, args.territory = customer
@@ -538,12 +538,12 @@ def update_args_for_pricing_rule(args):
 		args.supplier = args.supplier_group = None
 
 	elif args.supplier and not args.supplier_group:
-		args.supplier_group = frappe.get_cached_value("Supplier", args.supplier, "supplier_group")
+		args.supplier_group = nts .get_cached_value("Supplier", args.supplier, "supplier_group")
 		args.customer = args.customer_group = args.territory = None
 
 
 def get_pricing_rule_details(args, pricing_rule):
-	return frappe._dict(
+	return nts ._dict(
 		{
 			"pricing_rule": pricing_rule.name,
 			"rate_or_discount": pricing_rule.rate_or_discount,
@@ -573,7 +573,7 @@ def apply_price_discount_rule(pricing_rule, item_details, args):
 		if pricing_rule.currency == args.currency:
 			pricing_rule_rate = pricing_rule.rate
 
-		# TODO https://github.com/frappe/prodman/pull/23636 solve this in some other way.
+		# TODO https://github.com/nts /prodman/pull/23636 solve this in some other way.
 		if pricing_rule_rate:
 			is_blank_uom = pricing_rule.get("uom") != args.get("uom")
 			# Override already set price list rate (from item price)
@@ -590,7 +590,7 @@ def apply_price_discount_rule(pricing_rule, item_details, args):
 		if pricing_rule.rate_or_discount != apply_on:
 			continue
 
-		field = frappe.scrub(apply_on)
+		field = nts .scrub(apply_on)
 		if pricing_rule.apply_discount_on_rate and item_details.get("discount_percentage"):
 			# Apply discount on discounted rate
 			item_details[field] += (100 - item_details[field]) * (pricing_rule.get(field, 0) / 100)
@@ -617,7 +617,7 @@ def apply_price_discount_rule(pricing_rule, item_details, args):
 			item_details[field] += pricing_rule.get(field, 0) if pricing_rule else args.get(field, 0)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def remove_pricing_rule_for_item(pricing_rules, item_details, item_code=None, rate=None):
 	from prodman.accounts.doctype.pricing_rule.utils import (
 		get_applied_pricing_rules,
@@ -626,12 +626,12 @@ def remove_pricing_rule_for_item(pricing_rules, item_details, item_code=None, ra
 
 	if isinstance(item_details, str):
 		item_details = json.loads(item_details)
-		item_details = frappe._dict(item_details)
+		item_details = nts ._dict(item_details)
 
 	for d in get_applied_pricing_rules(pricing_rules):
-		if not d or not frappe.db.exists("Pricing Rule", d):
+		if not d or not nts .db.exists("Pricing Rule", d):
 			continue
-		pricing_rule = frappe.get_cached_doc("Pricing Rule", d)
+		pricing_rule = nts .get_cached_doc("Pricing Rule", d)
 
 		if pricing_rule.price_or_product_discount == "Price":
 			if pricing_rule.rate_or_discount == "Discount Percentage":
@@ -653,9 +653,9 @@ def remove_pricing_rule_for_item(pricing_rules, item_details, item_code=None, ra
 		if pricing_rule.get("mixed_conditions") or pricing_rule.get("apply_rule_on_other"):
 			items = get_pricing_rule_items(pricing_rule, other_items=True)
 			item_details.apply_on = (
-				frappe.scrub(pricing_rule.apply_rule_on_other)
+				nts .scrub(pricing_rule.apply_rule_on_other)
 				if pricing_rule.apply_rule_on_other
-				else frappe.scrub(pricing_rule.get("apply_on"))
+				else nts .scrub(pricing_rule.get("apply_on"))
 			)
 			item_details.applied_on_items = ",".join(items)
 
@@ -665,14 +665,14 @@ def remove_pricing_rule_for_item(pricing_rules, item_details, item_code=None, ra
 	return item_details
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def remove_pricing_rules(item_list):
 	if isinstance(item_list, str):
 		item_list = json.loads(item_list)
 
 	out = []
 	for item in item_list:
-		item = frappe._dict(item)
+		item = nts ._dict(item)
 		if item.get("pricing_rules"):
 			out.append(
 				remove_pricing_rule_for_item(
@@ -702,26 +702,26 @@ def set_transaction_type(args):
 		args.transaction_type = "buying"
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def make_pricing_rule(doctype, docname):
-	doc = frappe.new_doc("Pricing Rule")
+	doc = nts .new_doc("Pricing Rule")
 	doc.applicable_for = doctype
-	doc.set(frappe.scrub(doctype), docname)
+	doc.set(nts .scrub(doctype), docname)
 	doc.selling = 1 if doctype == "Customer" else 0
 	doc.buying = 1 if doctype == "Supplier" else 0
 
 	return doc
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts .whitelist()
+@nts .validate_and_sanitize_search_inputs
 def get_item_uoms(doctype, txt, searchfield, start, page_len, filters):
 	items = [filters.get("value")]
 	if filters.get("apply_on") != "Item Code":
-		field = frappe.scrub(filters.get("apply_on"))
-		items = [d.name for d in frappe.db.get_all("Item", filters={field: filters.get("value")})]
+		field = nts .scrub(filters.get("apply_on"))
+		items = [d.name for d in nts .db.get_all("Item", filters={field: filters.get("value")})]
 
-	return frappe.get_all(
+	return nts .get_all(
 		"UOM Conversion Detail",
 		filters={"parent": ("in", items), "uom": ("like", f"{txt}%")},
 		fields=["distinct uom"],

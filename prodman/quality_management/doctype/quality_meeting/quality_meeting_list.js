@@ -1,4 +1,4 @@
-frappe.listview_settings["Quality Meeting"] = {
+nts.listview_settings["Quality Meeting"] = {
 	add_fields: ["status"],
 	get_indicator: function (doc) {
 		if (doc.status == "Open") {

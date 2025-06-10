@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import add_months, flt, fmt_money, get_last_day, getdate
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .utils import add_months, flt, fmt_money, get_last_day, getdate
 
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_accounting_dimensions,
@@ -13,11 +13,11 @@ from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
 from prodman.accounts.utils import get_fiscal_year
 
 
-class BudgetError(frappe.ValidationError):
+class BudgetError(nts .ValidationError):
 	pass
 
 
-class DuplicateBudgetError(frappe.ValidationError):
+class DuplicateBudgetError(nts .ValidationError):
 	pass
 
 
@@ -28,7 +28,7 @@ class Budget(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.budget_account.budget_account import BudgetAccount
 
@@ -53,19 +53,19 @@ class Budget(Document):
 	# end: auto-generated types
 
 	def validate(self):
-		if not self.get(frappe.scrub(self.budget_against)):
-			frappe.throw(_("{0} is mandatory").format(self.budget_against))
+		if not self.get(nts .scrub(self.budget_against)):
+			nts .throw(_("{0} is mandatory").format(self.budget_against))
 		self.validate_duplicate()
 		self.validate_accounts()
 		self.set_null_value()
 		self.validate_applicable_for()
 
 	def validate_duplicate(self):
-		budget_against_field = frappe.scrub(self.budget_against)
+		budget_against_field = nts .scrub(self.budget_against)
 		budget_against = self.get(budget_against_field)
 
 		accounts = [d.account for d in self.accounts] or []
-		existing_budget = frappe.db.sql(
+		existing_budget = nts .db.sql(
 			"""
 			select
 				b.name, ba.account from `tabBudget` b, `tabBudget Account` ba
@@ -79,7 +79,7 @@ class Budget(Document):
 		)
 
 		for d in existing_budget:
-			frappe.throw(
+			nts .throw(
 				_(
 					"Another Budget record '{0}' already exists against {1} '{2}' and account '{3}' for fiscal year {4}"
 				).format(d.name, self.budget_against, budget_against, d.account, self.fiscal_year),
@@ -90,25 +90,25 @@ class Budget(Document):
 		account_list = []
 		for d in self.get("accounts"):
 			if d.account:
-				account_details = frappe.get_cached_value(
+				account_details = nts .get_cached_value(
 					"Account", d.account, ["is_group", "company", "report_type"], as_dict=1
 				)
 
 				if account_details.is_group:
-					frappe.throw(_("Budget cannot be assigned against Group Account {0}").format(d.account))
+					nts .throw(_("Budget cannot be assigned against Group Account {0}").format(d.account))
 				elif account_details.company != self.company:
-					frappe.throw(
+					nts .throw(
 						_("Account {0} does not belongs to company {1}").format(d.account, self.company)
 					)
 				elif account_details.report_type != "Profit and Loss":
-					frappe.throw(
+					nts .throw(
 						_(
 							"Budget cannot be assigned against {0}, as it's not an Income or Expense account"
 						).format(d.account)
 					)
 
 				if d.account in account_list:
-					frappe.throw(_("Account {0} has been entered multiple times").format(d.account))
+					nts .throw(_("Account {0} has been entered multiple times").format(d.account))
 				else:
 					account_list.append(d.account)
 
@@ -122,12 +122,12 @@ class Budget(Document):
 		if self.applicable_on_material_request and not (
 			self.applicable_on_purchase_order and self.applicable_on_booking_actual_expenses
 		):
-			frappe.throw(
+			nts .throw(
 				_("Please enable Applicable on Purchase Order and Applicable on Booking Actual Expenses")
 			)
 
 		elif self.applicable_on_purchase_order and not (self.applicable_on_booking_actual_expenses):
-			frappe.throw(_("Please enable Applicable on Booking Actual Expenses"))
+			nts .throw(_("Please enable Applicable on Booking Actual Expenses"))
 
 		elif not (
 			self.applicable_on_material_request
@@ -137,21 +137,21 @@ class Budget(Document):
 			self.applicable_on_booking_actual_expenses = 1
 
 	def before_naming(self):
-		self.naming_series = f"{{{frappe.scrub(self.budget_against)}}}./.{self.fiscal_year}/.###"
+		self.naming_series = f"{{{nts .scrub(self.budget_against)}}}./.{self.fiscal_year}/.###"
 
 
 def validate_expense_against_budget(args, expense_amount=0):
-	args = frappe._dict(args)
-	if not frappe.get_all("Budget", limit=1):
+	args = nts ._dict(args)
+	if not nts .get_all("Budget", limit=1):
 		return
 
 	if args.get("company") and not args.fiscal_year:
 		args.fiscal_year = get_fiscal_year(args.get("posting_date"), company=args.get("company"))[0]
-		frappe.flags.exception_approver_role = frappe.get_cached_value(
+		nts .flags.exception_approver_role = nts .get_cached_value(
 			"Company", args.get("company"), "exception_budget_approver_role"
 		)
 
-	if not frappe.get_cached_value("Budget", {"fiscal_year": args.fiscal_year, "company": args.company}):  # nosec
+	if not nts .get_cached_value("Budget", {"fiscal_year": args.fiscal_year, "company": args.company}):  # nosec
 		return
 
 	if not args.account:
@@ -180,23 +180,23 @@ def validate_expense_against_budget(args, expense_amount=0):
 		if (
 			args.get(budget_against)
 			and args.account
-			and (frappe.get_cached_value("Account", args.account, "root_type") == "Expense")
+			and (nts .get_cached_value("Account", args.account, "root_type") == "Expense")
 		):
 			doctype = dimension.get("document_type")
 
-			if frappe.get_cached_value("DocType", doctype, "is_tree"):
-				lft, rgt = frappe.get_cached_value(doctype, args.get(budget_against), ["lft", "rgt"])
+			if nts .get_cached_value("DocType", doctype, "is_tree"):
+				lft, rgt = nts .get_cached_value(doctype, args.get(budget_against), ["lft", "rgt"])
 				condition = f"""and exists(select name from `tab{doctype}`
 					where lft<={lft} and rgt>={rgt} and name=b.{budget_against})"""  # nosec
 				args.is_tree = True
 			else:
-				condition = f"and b.{budget_against}={frappe.db.escape(args.get(budget_against))}"
+				condition = f"and b.{budget_against}={nts .db.escape(args.get(budget_against))}"
 				args.is_tree = False
 
 			args.budget_against_field = budget_against
 			args.budget_against_doctype = doctype
 
-			budget_records = frappe.db.sql(
+			budget_records = nts .db.sql(
 				f"""
 				select
 					b.{budget_against} as budget_against, ba.budget_amount, b.monthly_distribution,
@@ -276,35 +276,35 @@ def compare_expense_with_budget(args, budget_amount, action_for, action, budget_
 			error_tense = _("will be")
 			diff = total_expense - budget_amount
 
-		currency = frappe.get_cached_value("Company", args.company, "default_currency")
+		currency = nts .get_cached_value("Company", args.company, "default_currency")
 
 		msg = _("{0} Budget for Account {1} against {2} {3} is {4}. It {5} exceed by {6}").format(
 			_(action_for),
-			frappe.bold(args.account),
-			frappe.unscrub(args.budget_against_field),
-			frappe.bold(budget_against),
-			frappe.bold(fmt_money(budget_amount, currency=currency)),
+			nts .bold(args.account),
+			nts .unscrub(args.budget_against_field),
+			nts .bold(budget_against),
+			nts .bold(fmt_money(budget_amount, currency=currency)),
 			error_tense,
-			frappe.bold(fmt_money(diff, currency=currency)),
+			nts .bold(fmt_money(diff, currency=currency)),
 		)
 
 		msg += get_expense_breakup(args, currency, budget_against)
 
-		if frappe.flags.exception_approver_role and frappe.flags.exception_approver_role in frappe.get_roles(
-			frappe.session.user
+		if nts .flags.exception_approver_role and nts .flags.exception_approver_role in nts .get_roles(
+			nts .session.user
 		):
 			action = "Warn"
 
 		if action == "Stop":
-			frappe.throw(msg, BudgetError, title=_("Budget Exceeded"))
+			nts .throw(msg, BudgetError, title=_("Budget Exceeded"))
 		else:
-			frappe.msgprint(msg, indicator="orange", title=_("Budget Exceeded"))
+			nts .msgprint(msg, indicator="orange", title=_("Budget Exceeded"))
 
 
 def get_expense_breakup(args, currency, budget_against):
 	msg = "<hr>Total Expenses booked through - <ul>"
 
-	common_filters = frappe._dict(
+	common_filters = nts ._dict(
 		{
 			args.budget_against_field: budget_against,
 			"account": args.account,
@@ -314,25 +314,25 @@ def get_expense_breakup(args, currency, budget_against):
 
 	msg += (
 		"<li>"
-		+ frappe.utils.get_link_to_report(
+		+ nts .utils.get_link_to_report(
 			"General Ledger",
 			label="Actual Expenses",
 			filters=common_filters.copy().update(
 				{
-					"from_date": frappe.get_cached_value("Fiscal Year", args.fiscal_year, "year_start_date"),
-					"to_date": frappe.get_cached_value("Fiscal Year", args.fiscal_year, "year_end_date"),
+					"from_date": nts .get_cached_value("Fiscal Year", args.fiscal_year, "year_start_date"),
+					"to_date": nts .get_cached_value("Fiscal Year", args.fiscal_year, "year_end_date"),
 					"is_cancelled": 0,
 				}
 			),
 		)
 		+ " - "
-		+ frappe.bold(fmt_money(args.actual_expense, currency=currency))
+		+ nts .bold(fmt_money(args.actual_expense, currency=currency))
 		+ "</li>"
 	)
 
 	msg += (
 		"<li>"
-		+ frappe.utils.get_link_to_report(
+		+ nts .utils.get_link_to_report(
 			"Material Request",
 			label="Material Requests",
 			report_type="Report Builder",
@@ -349,13 +349,13 @@ def get_expense_breakup(args, currency, budget_against):
 			),
 		)
 		+ " - "
-		+ frappe.bold(fmt_money(args.requested_amount, currency=currency))
+		+ nts .bold(fmt_money(args.requested_amount, currency=currency))
 		+ "</li>"
 	)
 
 	msg += (
 		"<li>"
-		+ frappe.utils.get_link_to_report(
+		+ nts .utils.get_link_to_report(
 			"Purchase Order",
 			label="Unbilled Orders",
 			report_type="Report Builder",
@@ -371,7 +371,7 @@ def get_expense_breakup(args, currency, budget_against):
 			),
 		)
 		+ " - "
-		+ frappe.bold(fmt_money(args.ordered_amount, currency=currency))
+		+ nts .bold(fmt_money(args.ordered_amount, currency=currency))
 		+ "</li></ul>"
 	)
 
@@ -397,7 +397,7 @@ def get_requested_amount(args):
 	item_code = args.get("item_code")
 	condition = get_other_condition(args, "Material Request")
 
-	data = frappe.db.sql(
+	data = nts .db.sql(
 		""" select ifnull((sum(child.stock_qty - child.ordered_qty) * rate), 0) as amount
 		from `tabMaterial Request Item` child, `tabMaterial Request` parent where parent.name = child.parent and
 		child.item_code = %s and parent.docstatus = 1 and child.stock_qty > child.ordered_qty and {} and
@@ -413,7 +413,7 @@ def get_ordered_amount(args):
 	item_code = args.get("item_code")
 	condition = get_other_condition(args, "Purchase Order")
 
-	data = frappe.db.sql(
+	data = nts .db.sql(
 		f""" select ifnull(sum(child.amount - child.billed_amt), 0) as amount
 		from `tabPurchase Order Item` child, `tabPurchase Order` parent where
 		parent.name = child.parent and child.item_code = %s and parent.docstatus = 1 and child.amount > child.billed_amt
@@ -434,7 +434,7 @@ def get_other_condition(args, for_doc):
 
 	if args.get("fiscal_year"):
 		date_field = "schedule_date" if for_doc == "Material Request" else "transaction_date"
-		start_date, end_date = frappe.get_cached_value(
+		start_date, end_date = nts .get_cached_value(
 			"Fiscal Year", args.get("fiscal_year"), ["year_start_date", "year_end_date"]
 		)
 
@@ -446,13 +446,13 @@ def get_other_condition(args, for_doc):
 
 def get_actual_expense(args):
 	if not args.budget_against_doctype:
-		args.budget_against_doctype = frappe.unscrub(args.budget_against_field)
+		args.budget_against_doctype = nts .unscrub(args.budget_against_field)
 
 	budget_against_field = args.get("budget_against_field")
 	condition1 = " and gle.posting_date <= %(month_end_date)s" if args.get("month_end_date") else ""
 
 	if args.is_tree:
-		lft_rgt = frappe.db.get_value(
+		lft_rgt = nts .db.get_value(
 			args.budget_against_doctype, args.get(budget_against_field), ["lft", "rgt"], as_dict=1
 		)
 
@@ -467,7 +467,7 @@ def get_actual_expense(args):
 		gle.{budget_against_field} = %({budget_against_field})s)"""
 
 	amount = flt(
-		frappe.db.sql(
+		nts .db.sql(
 			f"""
 		select sum(gle.debit) - sum(gle.credit)
 		from `tabGL Entry` gle
@@ -490,11 +490,11 @@ def get_actual_expense(args):
 def get_accumulated_monthly_budget(monthly_distribution, posting_date, fiscal_year, annual_budget):
 	distribution = {}
 	if monthly_distribution:
-		mdp = frappe.qb.DocType("Monthly Distribution Percentage")
-		md = frappe.qb.DocType("Monthly Distribution")
+		mdp = nts .qb.DocType("Monthly Distribution Percentage")
+		md = nts .qb.DocType("Monthly Distribution")
 
 		res = (
-			frappe.qb.from_(mdp)
+			nts .qb.from_(mdp)
 			.join(md)
 			.on(mdp.parent == md.name)
 			.select(mdp.month, mdp.percentage_allocation)
@@ -506,7 +506,7 @@ def get_accumulated_monthly_budget(monthly_distribution, posting_date, fiscal_ye
 		for d in res:
 			distribution.setdefault(d.month, d.percentage_allocation)
 
-	dt = frappe.get_cached_value("Fiscal Year", fiscal_year, "year_start_date")
+	dt = nts .get_cached_value("Fiscal Year", fiscal_year, "year_start_date")
 	accumulated_percentage = 0.0
 
 	while dt <= getdate(posting_date):
@@ -527,7 +527,7 @@ def get_item_details(args):
 		return cost_center, expense_account
 
 	if args.item_code:
-		item_defaults = frappe.db.get_value(
+		item_defaults = nts .db.get_value(
 			"Item Default",
 			{"parent": args.item_code, "company": args.get("company")},
 			["buying_cost_center", "expense_account"],
@@ -553,12 +553,12 @@ def get_item_details(args):
 
 def get_expense_cost_center(doctype, args):
 	if doctype == "Item Group":
-		return frappe.db.get_value(
+		return nts .db.get_value(
 			"Item Default",
-			{"parent": args.get(frappe.scrub(doctype)), "company": args.get("company")},
+			{"parent": args.get(nts .scrub(doctype)), "company": args.get("company")},
 			["buying_cost_center", "expense_account"],
 		)
 	else:
-		return frappe.db.get_value(
-			doctype, args.get(frappe.scrub(doctype)), ["cost_center", "default_expense_account"]
+		return nts .db.get_value(
+			doctype, args.get(nts .scrub(doctype)), ["cost_center", "default_expense_account"]
 		)

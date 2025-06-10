@@ -1,18 +1,18 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 from json import loads
 from typing import TYPE_CHECKING, Optional
 
-import frappe
-import frappe.defaults
-from frappe import _, qb, throw
-from frappe.model.meta import get_field_precision
-from frappe.query_builder import AliasedQuery, Case, Criterion, Table
-from frappe.query_builder.functions import Count, Max, Sum
-from frappe.query_builder.utils import DocType
-from frappe.utils import (
+import nts
+import nts.defaults
+from nts import _, qb, throw
+from nts.model.meta import get_field_precision
+from nts.query_builder import AliasedQuery, Case, Criterion, Table
+from nts.query_builder.functions import Count, Max, Sum
+from nts.query_builder.utils import DocType
+from nts.utils import (
 	add_days,
 	cint,
 	create_batch,
@@ -40,18 +40,18 @@ if TYPE_CHECKING:
 	from prodman.stock.doctype.repost_item_valuation.repost_item_valuation import RepostItemValuation
 
 
-class FiscalYearError(frappe.ValidationError):
+class FiscalYearError(nts.ValidationError):
 	pass
 
 
-class PaymentEntryUnlinkError(frappe.ValidationError):
+class PaymentEntryUnlinkError(nts.ValidationError):
 	pass
 
 
 GL_REPOSTING_CHUNK = 100
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_fiscal_year(
 	date=None, fiscal_year=None, label="Date", verbose=1, company=None, as_dict=False, boolean=False
 ):
@@ -76,14 +76,14 @@ def get_fiscal_years(
 	as_dict=False,
 	boolean=False,
 ):
-	fiscal_years = frappe.cache().hget("fiscal_years", company) or []
+	fiscal_years = nts.cache().hget("fiscal_years", company) or []
 
 	if not fiscal_years:
 		# if year start date is 2012-04-01, year end date should be 2013-03-31 (hence subdate)
 		FY = DocType("Fiscal Year")
 
 		query = (
-			frappe.qb.from_(FY).select(FY.name, FY.year_start_date, FY.year_end_date).where(FY.disabled == 0)
+			nts.qb.from_(FY).select(FY.name, FY.year_start_date, FY.year_end_date).where(FY.disabled == 0)
 		)
 
 		if fiscal_year:
@@ -92,9 +92,9 @@ def get_fiscal_years(
 		if company:
 			FYC = DocType("Fiscal Year Company")
 			query = query.where(
-				ExistsCriterion(frappe.qb.from_(FYC).select(FYC.name).where(FYC.parent == FY.name)).negate()
+				ExistsCriterion(nts.qb.from_(FYC).select(FYC.name).where(FYC.parent == FY.name)).negate()
 				| ExistsCriterion(
-					frappe.qb.from_(FYC)
+					nts.qb.from_(FYC)
 					.select(FYC.company)
 					.where(FYC.parent == FY.name)
 					.where(FYC.company == company)
@@ -104,7 +104,7 @@ def get_fiscal_years(
 		query = query.orderby(FY.year_start_date, order=Order.desc)
 		fiscal_years = query.run(as_dict=True)
 
-		frappe.cache().hset("fiscal_years", company, fiscal_years)
+		nts.cache().hset("fiscal_years", company, fiscal_years)
 
 	if not transaction_date and not fiscal_year:
 		return fiscal_years
@@ -134,18 +134,18 @@ def get_fiscal_years(
 		_(label), formatdate(transaction_date)
 	)
 	if company:
-		error_msg = _("""{0} for {1}""").format(error_msg, frappe.bold(company))
+		error_msg = _("""{0} for {1}""").format(error_msg, nts.bold(company))
 
 	if boolean:
 		return False
 
 	if verbose == 1:
-		frappe.msgprint(error_msg)
+		nts.msgprint(error_msg)
 
 	raise FiscalYearError(error_msg)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_fiscal_year_filter_field(company=None):
 	field = {"fieldtype": "Select", "options": [], "operator": "Between", "query_value": True}
 	fiscal_years = get_fiscal_years(company=company)
@@ -172,7 +172,7 @@ def validate_fiscal_year(date, fiscal_year, company, label="Date", doc=None):
 			throw(_("{0} '{1}' not in Fiscal Year {2}").format(label, formatdate(date), fiscal_year))
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_balance_on(
 	account=None,
 	date=None,
@@ -185,28 +185,28 @@ def get_balance_on(
 	account_type=None,
 	start_date=None,
 ):
-	if not account and frappe.form_dict.get("account"):
-		account = frappe.form_dict.get("account")
-	if not date and frappe.form_dict.get("date"):
-		date = frappe.form_dict.get("date")
-	if not party_type and frappe.form_dict.get("party_type"):
-		party_type = frappe.form_dict.get("party_type")
-	if not party and frappe.form_dict.get("party"):
-		party = frappe.form_dict.get("party")
-	if not cost_center and frappe.form_dict.get("cost_center"):
-		cost_center = frappe.form_dict.get("cost_center")
+	if not account and nts.form_dict.get("account"):
+		account = nts.form_dict.get("account")
+	if not date and nts.form_dict.get("date"):
+		date = nts.form_dict.get("date")
+	if not party_type and nts.form_dict.get("party_type"):
+		party_type = nts.form_dict.get("party_type")
+	if not party and nts.form_dict.get("party"):
+		party = nts.form_dict.get("party")
+	if not cost_center and nts.form_dict.get("cost_center"):
+		cost_center = nts.form_dict.get("cost_center")
 
 	cond = ["is_cancelled=0"]
 	if start_date:
-		cond.append("posting_date >= %s" % frappe.db.escape(cstr(start_date)))
+		cond.append("posting_date >= %s" % nts.db.escape(cstr(start_date)))
 	if date:
-		cond.append("posting_date <= %s" % frappe.db.escape(cstr(date)))
+		cond.append("posting_date <= %s" % nts.db.escape(cstr(date)))
 	else:
 		# get balance of all entries that exist
 		date = nowdate()
 
 	if account:
-		acc = frappe.get_doc("Account", account)
+		acc = nts.get_doc("Account", account)
 
 	try:
 		get_fiscal_year(date, company=company, verbose=0)[1]
@@ -226,7 +226,7 @@ def get_balance_on(
 		report_type = ""
 
 	if cost_center and report_type == "Profit and Loss":
-		cc = frappe.get_doc("Cost Center", cost_center)
+		cc = nts.get_doc("Cost Center", cost_center)
 		if cc.is_group:
 			cond.append(
 				f""" exists (
@@ -236,10 +236,10 @@ def get_balance_on(
 			)
 
 		else:
-			cond.append(f"""gle.cost_center = {frappe.db.escape(cost_center)} """)
+			cond.append(f"""gle.cost_center = {nts.db.escape(cost_center)} """)
 
 	if account:
-		if not (frappe.flags.ignore_account_permission or ignore_account_permission):
+		if not (nts.flags.ignore_account_permission or ignore_account_permission):
 			acc.check_permission("read")
 
 		# different filter for group and ledger - improved performance
@@ -253,13 +253,13 @@ def get_balance_on(
 
 			# If group and currency same as company,
 			# always return balance based on debit and credit in company currency
-			if acc.account_currency == frappe.get_cached_value("Company", acc.company, "default_currency"):
+			if acc.account_currency == nts.get_cached_value("Company", acc.company, "default_currency"):
 				in_account_currency = False
 		else:
-			cond.append(f"""gle.account = {frappe.db.escape(account)} """)
+			cond.append(f"""gle.account = {nts.db.escape(account)} """)
 
 	if account_type:
-		accounts = frappe.db.get_all(
+		accounts = nts.db.get_all(
 			"Account",
 			filters={"company": company, "account_type": account_type, "is_group": 0},
 			pluck="name",
@@ -270,16 +270,16 @@ def get_balance_on(
 			"""
 			gle.account in (%s)
 		"""
-			% (", ".join([frappe.db.escape(account) for account in accounts]))
+			% (", ".join([nts.db.escape(account) for account in accounts]))
 		)
 
 	if party_type and party:
 		cond.append(
-			f"""gle.party_type = {frappe.db.escape(party_type)} and gle.party = {frappe.db.escape(party)} """
+			f"""gle.party_type = {nts.db.escape(party_type)} and gle.party = {nts.db.escape(party)} """
 		)
 
 	if company:
-		cond.append("""gle.company = %s """ % (frappe.db.escape(company)))
+		cond.append("""gle.company = %s """ % (nts.db.escape(company)))
 
 	if account or (party_type and party) or account_type:
 		precision = get_currency_precision()
@@ -290,7 +290,7 @@ def get_balance_on(
 		else:
 			select_field = "sum(round(debit, %s)) - sum(round(credit, %s))"
 
-		bal = frappe.db.sql(
+		bal = nts.db.sql(
 			"""
 			SELECT {}
 			FROM `tabGL Entry` gle
@@ -304,7 +304,7 @@ def get_balance_on(
 def get_count_on(account, fieldname, date):
 	cond = ["is_cancelled=0"]
 	if date:
-		cond.append("posting_date <= %s" % frappe.db.escape(cstr(date)))
+		cond.append("posting_date <= %s" % nts.db.escape(cstr(date)))
 	else:
 		# get balance of all entries that exist
 		date = nowdate()
@@ -322,9 +322,9 @@ def get_count_on(account, fieldname, date):
 			return 0.0
 
 	if account:
-		acc = frappe.get_doc("Account", account)
+		acc = nts.get_doc("Account", account)
 
-		if not frappe.flags.ignore_account_permission:
+		if not nts.flags.ignore_account_permission:
 			acc.check_permission("read")
 
 		# for pl accounts, get balance within a fiscal year
@@ -340,9 +340,9 @@ def get_count_on(account, fieldname, date):
 			)"""
 			)
 		else:
-			cond.append(f"""gle.account = {frappe.db.escape(account)} """)
+			cond.append(f"""gle.account = {nts.db.escape(account)} """)
 
-		entries = frappe.db.sql(
+		entries = nts.db.sql(
 			"""
 			SELECT name, posting_date, account, party_type, party,debit,credit,
 				voucher_type, voucher_no, against_voucher_type, against_voucher
@@ -369,7 +369,7 @@ def get_count_on(account, fieldname, date):
 					or (gle.against_voucher_type in ["Sales Order", "Purchase Order"])
 					or (gle.against_voucher == gle.voucher_no and gle.get(dr_or_cr) > 0)
 				):
-					payment_amount = frappe.db.sql(
+					payment_amount = nts.db.sql(
 						f"""
 						SELECT {select_fields}
 						FROM `tabGL Entry` gle
@@ -386,17 +386,17 @@ def get_count_on(account, fieldname, date):
 		return count
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def add_ac(args=None):
-	from frappe.desk.treeview import make_tree_args
+	from nts.desk.treeview import make_tree_args
 
 	if not args:
-		args = frappe.local.form_dict
+		args = nts.local.form_dict
 
 	args.doctype = "Account"
 	args = make_tree_args(**args)
 
-	ac = frappe.new_doc("Account")
+	ac = nts.new_doc("Account")
 
 	if args.get("ignore_permissions"):
 		ac.flags.ignore_permissions = True
@@ -418,22 +418,22 @@ def add_ac(args=None):
 	return ac.name
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def add_cc(args=None):
-	from frappe.desk.treeview import make_tree_args
+	from nts.desk.treeview import make_tree_args
 
 	if not args:
-		args = frappe.local.form_dict
+		args = nts.local.form_dict
 
 	args.doctype = "Cost Center"
 	args = make_tree_args(**args)
 
 	if args.parent_cost_center == args.company:
 		args.parent_cost_center = "{} - {}".format(
-			args.parent_cost_center, frappe.get_cached_value("Company", args.company, "abbr")
+			args.parent_cost_center, nts.get_cached_value("Company", args.company, "abbr")
 		)
 
-	cc = frappe.new_doc("Cost Center")
+	cc = nts.new_doc("Cost Center")
 	cc.update(args)
 
 	if not cc.parent_cost_center:
@@ -447,7 +447,7 @@ def add_cc(args=None):
 def _build_dimensions_dict_for_exc_gain_loss(
 	entry: dict | object = None, active_dimensions: list | None = None
 ):
-	dimensions_dict = frappe._dict()
+	dimensions_dict = nts._dict()
 	if entry and active_dimensions:
 		for dim in active_dimensions:
 			dimensions_dict[dim.fieldname] = entry.get(dim.fieldname)
@@ -473,8 +473,8 @@ def reconcile_against_document(
 		voucher_no = key[1]
 
 		# cancel advance entry
-		doc = frappe.get_doc(voucher_type, voucher_no)
-		frappe.flags.ignore_party_validation = True
+		doc = nts.get_doc(voucher_type, voucher_no)
+		nts.flags.ignore_party_validation = True
 
 		# When Advance is allocated from an Order to an Invoice
 		# whole ledger must be reposted
@@ -514,7 +514,7 @@ def reconcile_against_document(
 
 		doc.save(ignore_permissions=True)
 		# re-submit advance entry
-		doc = frappe.get_doc(entry.voucher_type, entry.voucher_no)
+		doc = nts.get_doc(entry.voucher_type, entry.voucher_no)
 
 		if voucher_type == "Payment Entry" and doc.book_advance_payments_in_separate_party_account:
 			# When Advance is allocated from an Order to an Invoice
@@ -545,9 +545,9 @@ def reconcile_against_document(
 		# update advance paid in Advance Receivable/Payable doctypes
 		if update_advance_paid:
 			for t, n in update_advance_paid:
-				frappe.get_doc(t, n).set_total_advance_paid()
+				nts.get_doc(t, n).set_total_advance_paid()
 
-		frappe.flags.ignore_party_validation = False
+		nts.flags.ignore_party_validation = False
 
 
 def check_if_advance_entry_modified(args):
@@ -561,11 +561,11 @@ def check_if_advance_entry_modified(args):
 
 	ret = None
 	if args.voucher_type == "Journal Entry":
-		journal_entry = frappe.qb.DocType("Journal Entry")
-		journal_acc = frappe.qb.DocType("Journal Entry Account")
+		journal_entry = nts.qb.DocType("Journal Entry")
+		journal_acc = nts.qb.DocType("Journal Entry Account")
 
 		q = (
-			frappe.qb.from_(journal_entry)
+			nts.qb.from_(journal_entry)
 			.inner_join(journal_acc)
 			.on(journal_entry.name == journal_acc.parent)
 			.select(journal_acc[args.get("dr_or_cr")])
@@ -584,11 +584,11 @@ def check_if_advance_entry_modified(args):
 		)
 
 	else:
-		payment_entry = frappe.qb.DocType("Payment Entry")
-		payment_ref = frappe.qb.DocType("Payment Entry Reference")
+		payment_entry = nts.qb.DocType("Payment Entry")
+		payment_ref = nts.qb.DocType("Payment Entry Reference")
 
 		q = (
-			frappe.qb.from_(payment_entry)
+			nts.qb.from_(payment_entry)
 			.select(payment_entry.name)
 			.where(payment_entry.name == args.get("voucher_no"))
 			.where(payment_entry.docstatus == 1)
@@ -614,7 +614,7 @@ def check_if_advance_entry_modified(args):
 
 
 def validate_allocated_amount(args):
-	precision = args.get("precision") or frappe.db.get_single_value("System Settings", "currency_precision")
+	precision = args.get("precision") or nts.db.get_single_value("System Settings", "currency_precision")
 	if args.get("allocated_amount") < 0:
 		throw(_("Allocated amount cannot be negative"))
 	elif flt(args.get("allocated_amount"), precision) > flt(args.get("unadjusted_amount"), precision):
@@ -660,7 +660,7 @@ def update_reference_in_journal_entry(d, journal_entry, do_not_save=False):
 	# Copy field values into new row
 	[
 		new_row.set(field, jv_detail.get(field))
-		for field in frappe.get_meta("Journal Entry Account").get_fieldnames_with_value()
+		for field in nts.get_meta("Journal Entry Account").get_fieldnames_with_value()
 	]
 
 	new_row.set(d["dr_or_cr"], d["allocated_amount"])
@@ -713,7 +713,7 @@ def update_reference_in_payment_entry(
 	update_advance_paid = []
 
 	# Update Reconciliation effect date in reference
-	reconciliation_takes_effect_on = frappe.get_cached_value(
+	reconciliation_takes_effect_on = nts.get_cached_value(
 		"Company", payment_entry.company, "reconciliation_takes_effect_on"
 	)
 	if payment_entry.book_advance_payments_in_separate_party_account:
@@ -723,7 +723,7 @@ def update_reference_in_payment_entry(
 			date_field = "posting_date"
 			if d.against_voucher_type in ["Sales Order", "Purchase Order"]:
 				date_field = "transaction_date"
-			reconcile_on = frappe.db.get_value(d.against_voucher_type, d.against_voucher, date_field)
+			reconcile_on = nts.db.get_value(d.against_voucher_type, d.against_voucher, date_field)
 
 			if getdate(reconcile_on) < getdate(payment_entry.posting_date):
 				reconcile_on = payment_entry.posting_date
@@ -758,7 +758,7 @@ def update_reference_in_payment_entry(
 	payment_entry.setup_party_account_field()
 	payment_entry.set_missing_values()
 	if not skip_ref_details_update_for_pe:
-		reference_exchange_details = frappe._dict()
+		reference_exchange_details = nts._dict()
 		if d.against_voucher_type == "Journal Entry" and d.exchange_rate:
 			reference_exchange_details.update(
 				{
@@ -773,7 +773,7 @@ def update_reference_in_payment_entry(
 		)
 	payment_entry.set_amounts()
 	payment_entry.make_exchange_gain_loss_journal(
-		frappe._dict({"difference_posting_date": d.difference_posting_date}), dimensions_dict
+		nts._dict({"difference_posting_date": d.difference_posting_date}), dimensions_dict
 	)
 
 	# Ledgers will be reposted by Reconciliation tool
@@ -794,7 +794,7 @@ def cancel_exchange_gain_loss_journal(
 			referenced_dt=parent_doc.doctype, referenced_dn=parent_doc.name, je_docstatus=1
 		)
 		for doc in gain_loss_journals:
-			gain_loss_je = frappe.get_doc("Journal Entry", doc)
+			gain_loss_je = nts.get_doc("Journal Entry", doc)
 			if referenced_dt and referenced_dn:
 				references = [(x.reference_type, x.reference_name) for x in gain_loss_je.accounts]
 				if (
@@ -819,7 +819,7 @@ def delete_exchange_gain_loss_journal(
 			referenced_dt=parent_doc.doctype, referenced_dn=parent_doc.name, je_docstatus=2
 		)
 		for doc in gain_loss_journals:
-			gain_loss_je = frappe.get_doc("Journal Entry", doc)
+			gain_loss_je = nts.get_doc("Journal Entry", doc)
 			if referenced_dt and referenced_dn:
 				references = [(x.reference_type, x.reference_name) for x in gain_loss_je.accounts]
 				if (
@@ -838,7 +838,7 @@ def get_linked_exchange_gain_loss_journal(referenced_dt: str, referenced_dn: str
 	Get all the linked exchange gain/loss journal entries for a given document.
 	"""
 	gain_loss_journals = []
-	if journals := frappe.db.get_all(
+	if journals := nts.db.get_all(
 		"Journal Entry Account",
 		{
 			"reference_type": referenced_dt,
@@ -847,7 +847,7 @@ def get_linked_exchange_gain_loss_journal(referenced_dt: str, referenced_dn: str
 		},
 		pluck="parent",
 	):
-		gain_loss_journals = frappe.db.get_all(
+		gain_loss_journals = nts.db.get_all(
 			"Journal Entry",
 			{
 				"name": ["in", journals],
@@ -864,14 +864,14 @@ def cancel_common_party_journal(self):
 	if self.doctype not in ["Sales Invoice", "Purchase Invoice"]:
 		return
 
-	if not frappe.db.get_single_value("Accounts Settings", "enable_common_party_accounting"):
+	if not nts.db.get_single_value("Accounts Settings", "enable_common_party_accounting"):
 		return
 
 	party_link = self.get_common_party_link()
 	if not party_link:
 		return
 
-	journal_entry = frappe.db.get_value(
+	journal_entry = nts.db.get_value(
 		"Journal Entry Account",
 		filters={
 			"reference_type": self.doctype,
@@ -884,7 +884,7 @@ def cancel_common_party_journal(self):
 	if not journal_entry:
 		return
 
-	common_party_journal = frappe.db.get_value(
+	common_party_journal = nts.db.get_value(
 		"Journal Entry",
 		filters={
 			"name": journal_entry,
@@ -896,7 +896,7 @@ def cancel_common_party_journal(self):
 	if not common_party_journal:
 		return
 
-	common_party_je = frappe.get_doc("Journal Entry", common_party_journal)
+	common_party_je = nts .get_doc("Journal Entry", common_party_journal)
 	common_party_je.cancel()
 
 
@@ -910,7 +910,7 @@ def update_accounting_ledgers_after_reference_removal(
 		.set(gle.against_voucher_type, None)
 		.set(gle.against_voucher, None)
 		.set(gle.modified, now())
-		.set(gle.modified_by, frappe.session.user)
+		.set(gle.modified_by, nts .session.user)
 		.where((gle.against_voucher_type == ref_type) & (gle.against_voucher == ref_no))
 	)
 
@@ -925,7 +925,7 @@ def update_accounting_ledgers_after_reference_removal(
 		.set(ple.against_voucher_type, ple.voucher_type)
 		.set(ple.against_voucher_no, ple.voucher_no)
 		.set(ple.modified, now())
-		.set(ple.modified_by, frappe.session.user)
+		.set(ple.modified_by, nts .session.user)
 		.where(
 			(ple.against_voucher_type == ref_type) & (ple.against_voucher_no == ref_no) & (ple.delinked == 0)
 		)
@@ -972,7 +972,7 @@ def remove_ref_doc_link_from_jv(
 			.set(jea.reference_type, None)
 			.set(jea.reference_name, None)
 			.set(jea.modified, now())
-			.set(jea.modified_by, frappe.session.user)
+			.set(jea.modified_by, nts .session.user)
 			.where((jea.reference_type == ref_type) & (jea.reference_name == ref_no))
 		)
 
@@ -981,7 +981,7 @@ def remove_ref_doc_link_from_jv(
 
 		update_query.run()
 
-		frappe.msgprint(_("Journal Entries {0} are un-linked").format("\n".join(linked_jv)))
+		nts .msgprint(_("Journal Entries {0} are un-linked").format("\n".join(linked_jv)))
 
 
 def convert_to_list(result):
@@ -1012,7 +1012,7 @@ def remove_ref_doc_link_from_pe(
 			qb.update(per)
 			.set(per.allocated_amount, 0)
 			.set(per.modified, now())
-			.set(per.modified_by, frappe.session.user)
+			.set(per.modified_by, nts .session.user)
 			.where(per.docstatus.lt(2) & (per.reference_doctype == ref_type) & (per.reference_name == ref_no))
 		)
 
@@ -1023,7 +1023,7 @@ def remove_ref_doc_link_from_pe(
 
 		for pe in linked_pe:
 			try:
-				pe_doc = frappe.get_doc("Payment Entry", pe)
+				pe_doc = nts .get_doc("Payment Entry", pe)
 				pe_doc.set_amounts()
 
 				# Call cancel on only removed reference
@@ -1040,25 +1040,25 @@ def remove_ref_doc_link_from_pe(
 				msg = _("There were issues unlinking payment entry {0}.").format(pe_doc.name)
 				msg += "<br>"
 				msg += _("Please cancel payment entry manually first")
-				frappe.throw(msg, exc=PaymentEntryUnlinkError, title=_("Payment Unlink Error"))
+				nts .throw(msg, exc=PaymentEntryUnlinkError, title=_("Payment Unlink Error"))
 
 			qb.update(pay).set(pay.total_allocated_amount, pe_doc.total_allocated_amount).set(
 				pay.base_total_allocated_amount, pe_doc.base_total_allocated_amount
 			).set(pay.unallocated_amount, pe_doc.unallocated_amount).set(pay.modified, now()).set(
-				pay.modified_by, frappe.session.user
+				pay.modified_by, nts .session.user
 			).where(pay.name == pe).run()
 
-		frappe.msgprint(_("Payment Entries {0} are un-linked").format("\n".join(linked_pe)))
+		nts .msgprint(_("Payment Entries {0} are un-linked").format("\n".join(linked_pe)))
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_company_default(company, fieldname, ignore_validation=False):
-	value = frappe.get_cached_value("Company", company, fieldname)
+	value = nts .get_cached_value("Company", company, fieldname)
 
 	if not ignore_validation and not value:
 		throw(
 			_("Please set default {0} in Company {1}").format(
-				frappe.get_meta("Company").get_label(fieldname), company
+				nts .get_meta("Company").get_label(fieldname), company
 			)
 		)
 
@@ -1066,7 +1066,7 @@ def get_company_default(company, fieldname, ignore_validation=False):
 
 
 def fix_total_debit_credit():
-	vouchers = frappe.db.sql(
+	vouchers = nts .db.sql(
 		"""select voucher_type, voucher_no,
 		sum(debit) - sum(credit) as diff
 		from `tabGL Entry`
@@ -1079,7 +1079,7 @@ def fix_total_debit_credit():
 		if abs(d.diff) > 0:
 			dr_or_cr = d.voucher_type == "Sales Invoice" and "credit" or "debit"
 
-			frappe.db.sql(
+			nts .db.sql(
 				"""update `tabGL Entry` set {} = {} + {}
 				where voucher_type = {} and voucher_no = {} and {} > 0 limit 1""".format(
 					dr_or_cr, dr_or_cr, "%s", "%s", "%s", dr_or_cr
@@ -1089,9 +1089,9 @@ def fix_total_debit_credit():
 
 
 def get_currency_precision():
-	precision = cint(frappe.db.get_default("currency_precision"))
+	precision = cint(nts .db.get_default("currency_precision"))
 	if not precision:
-		number_format = frappe.db.get_default("number_format") or "#,###.##"
+		number_format = nts .db.get_default("number_format") or "#,###.##"
 		precision = get_number_format_info(number_format)[2]
 
 	return precision
@@ -1104,7 +1104,7 @@ def get_held_invoices(party_type, party):
 	held_invoices = None
 
 	if party_type == "Supplier":
-		held_invoices = frappe.db.sql(
+		held_invoices = nts .db.sql(
 			"select name from `tabPurchase Invoice` where on_hold = 1 and release_date IS NOT NULL and release_date > CURDATE()",
 			as_dict=1,
 		)
@@ -1128,10 +1128,10 @@ def get_outstanding_invoices(
 ):
 	ple = qb.DocType("Payment Ledger Entry")
 	outstanding_invoices = []
-	precision = frappe.get_precision("Sales Invoice", "outstanding_amount") or 2
+	precision = nts .get_precision("Sales Invoice", "outstanding_amount") or 2
 
 	if account:
-		root_type, account_type = frappe.get_cached_value(
+		root_type, account_type = nts .get_cached_value(
 			"Account", account[0], ["root_type", "account_type"]
 		)
 		party_account_type = "Receivable" if root_type == "Asset" else "Payable"
@@ -1173,7 +1173,7 @@ def get_outstanding_invoices(
 
 			if not d.voucher_type == "Purchase Invoice" or d.voucher_no not in held_invoices:
 				outstanding_invoices.append(
-					frappe._dict(
+					nts ._dict(
 						{
 							"voucher_no": d.voucher_no,
 							"voucher_type": d.voucher_type,
@@ -1194,30 +1194,30 @@ def get_outstanding_invoices(
 
 def get_account_name(account_type=None, root_type=None, is_group=None, account_currency=None, company=None):
 	"""return account based on matching conditions"""
-	return frappe.db.get_value(
+	return nts .db.get_value(
 		"Account",
 		{
 			"account_type": account_type or "",
 			"root_type": root_type or "",
 			"is_group": is_group or 0,
-			"account_currency": account_currency or frappe.defaults.get_defaults().currency,
-			"company": company or frappe.defaults.get_defaults().company,
+			"account_currency": account_currency or nts .defaults.get_defaults().currency,
+			"company": company or nts .defaults.get_defaults().company,
 		},
 		"name",
 	)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_companies():
 	"""get a list of companies based on permission"""
-	return [d.name for d in frappe.get_list("Company", fields=["name"], order_by="name")]
+	return [d.name for d in nts .get_list("Company", fields=["name"], order_by="name")]
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_children(doctype, parent, company, is_root=False):
 	from prodman.accounts.report.financial_statements import sort_accounts
 
-	parent_fieldname = "parent_" + frappe.scrub(doctype)
+	parent_fieldname = "parent_" + nts .scrub(doctype)
 	fields = ["name as value", "is_group as expandable"]
 	filters = [["docstatus", "<", 2]]
 
@@ -1231,7 +1231,7 @@ def get_children(doctype, parent, company, is_root=False):
 		fields += ["root_type", "account_currency"] if doctype == "Account" else []
 		fields += [parent_fieldname + " as parent"]
 
-	acc = frappe.get_list(doctype, fields=fields, filters=filters)
+	acc = nts .get_list(doctype, fields=fields, filters=filters)
 
 	if doctype == "Account":
 		sort_accounts(acc, is_root, key="value")
@@ -1239,7 +1239,7 @@ def get_children(doctype, parent, company, is_root=False):
 	return acc
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_account_balances(accounts, company):
 	if isinstance(accounts, str):
 		accounts = loads(accounts)
@@ -1247,7 +1247,7 @@ def get_account_balances(accounts, company):
 	if not accounts:
 		return []
 
-	company_currency = frappe.get_cached_value("Company", company, "default_currency")
+	company_currency = nts .get_cached_value("Company", company, "default_currency")
 
 	for account in accounts:
 		account["company_currency"] = company_currency
@@ -1261,12 +1261,12 @@ def get_account_balances(accounts, company):
 def create_payment_gateway_account(gateway, payment_channel="Email"):
 	from prodman.setup.setup_wizard.operations.install_fixtures import create_bank_account
 
-	company = frappe.get_cached_value("Global Defaults", "Global Defaults", "default_company")
+	company = nts .get_cached_value("Global Defaults", "Global Defaults", "default_company")
 	if not company:
 		return
 
 	# NOTE: we translate Payment Gateway account name because that is going to be used by the end user
-	bank_account = frappe.db.get_value(
+	bank_account = nts .db.get_value(
 		"Account",
 		{"account_name": _(gateway), "company": company},
 		["name", "account_currency"],
@@ -1275,7 +1275,7 @@ def create_payment_gateway_account(gateway, payment_channel="Email"):
 
 	if not bank_account:
 		# check for untranslated one
-		bank_account = frappe.db.get_value(
+		bank_account = nts .db.get_value(
 			"Account",
 			{"account_name": gateway, "company": company},
 			["name", "account_currency"],
@@ -1287,18 +1287,18 @@ def create_payment_gateway_account(gateway, payment_channel="Email"):
 		bank_account = create_bank_account({"company_name": company, "bank_account": _(gateway)})
 
 	if not bank_account:
-		frappe.msgprint(_("Payment Gateway Account not created, please create one manually."))
+		nts .msgprint(_("Payment Gateway Account not created, please create one manually."))
 		return
 
 	# if payment gateway account exists, return
-	if frappe.db.exists(
+	if nts .db.exists(
 		"Payment Gateway Account",
 		{"payment_gateway": gateway, "currency": bank_account.account_currency},
 	):
 		return
 
 	try:
-		frappe.get_doc(
+		nts .get_doc(
 			{
 				"doctype": "Payment Gateway Account",
 				"is_default": 1,
@@ -1309,12 +1309,12 @@ def create_payment_gateway_account(gateway, payment_channel="Email"):
 			}
 		).insert(ignore_permissions=True, ignore_if_duplicate=True)
 
-	except frappe.DuplicateEntryError:
+	except nts .DuplicateEntryError:
 		# already exists, due to a reinstall?
 		pass
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def update_cost_center(docname, cost_center_name, cost_center_number, company, merge):
 	"""
 	Renames the document by adding the number as a prefix to the current name and updates
@@ -1323,15 +1323,15 @@ def update_cost_center(docname, cost_center_name, cost_center_number, company, m
 	validate_field_number("Cost Center", docname, cost_center_number, company, "cost_center_number")
 
 	if cost_center_number:
-		frappe.db.set_value("Cost Center", docname, "cost_center_number", cost_center_number.strip())
+		nts .db.set_value("Cost Center", docname, "cost_center_number", cost_center_number.strip())
 	else:
-		frappe.db.set_value("Cost Center", docname, "cost_center_number", "")
+		nts .db.set_value("Cost Center", docname, "cost_center_number", "")
 
-	frappe.db.set_value("Cost Center", docname, "cost_center_name", cost_center_name.strip())
+	nts .db.set_value("Cost Center", docname, "cost_center_name", cost_center_name.strip())
 
 	new_name = get_autoname_with_number(cost_center_number, cost_center_name, company)
 	if docname != new_name:
-		frappe.rename_doc("Cost Center", docname, new_name, force=1, merge=merge)
+		nts .rename_doc("Cost Center", docname, new_name, force=1, merge=merge)
 		return new_name
 
 
@@ -1342,10 +1342,10 @@ def validate_field_number(doctype_name, docname, number_value, company, field_na
 		if company:
 			filters["company"] = company
 
-		doctype_with_same_number = frappe.db.get_value(doctype_name, filters)
+		doctype_with_same_number = nts .db.get_value(doctype_name, filters)
 
 		if doctype_with_same_number:
-			frappe.throw(
+			nts .throw(
 				_("{0} Number {1} is already used in {2} {3}").format(
 					doctype_name, number_value, doctype_name.lower(), doctype_with_same_number
 				)
@@ -1354,7 +1354,7 @@ def validate_field_number(doctype_name, docname, number_value, company, field_na
 
 def get_autoname_with_number(number_value, doc_title, company):
 	"""append title with prefix as number and suffix as company's abbreviation separated by '-'"""
-	company_abbr = frappe.get_cached_value("Company", company, "abbr")
+	company_abbr = nts .get_cached_value("Company", company, "abbr")
 	parts = [doc_title.strip(), company_abbr]
 
 	if cstr(number_value).strip():
@@ -1374,15 +1374,15 @@ def parse_naming_series_variable(doc, variable):
 		return get_fiscal_year(date=date, company=company)[0]
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_coa(doctype, parent, is_root=None, chart=None):
 	from prodman.accounts.doctype.account.chart_of_accounts.chart_of_accounts import (
 		build_tree_from_json,
 	)
 
 	# add chart to flags to retrieve when called from expand all function
-	chart = chart if chart else frappe.flags.chart
-	frappe.flags.chart = chart
+	chart = chart if chart else nts .flags.chart
+	nts .flags.chart = chart
 
 	parent = None if parent == _("All Accounts") else parent
 	accounts = build_tree_from_json(chart)  # returns alist of dict in a tree render-able form
@@ -1425,14 +1425,14 @@ def repost_gle_for_stock_vouchers(
 		# Restore progress
 		stock_vouchers = stock_vouchers[cint(repost_doc.gl_reposting_index) :]
 
-	precision = get_field_precision(frappe.get_meta("GL Entry").get_field("debit")) or 2
+	precision = get_field_precision(nts .get_meta("GL Entry").get_field("debit")) or 2
 
 	for stock_vouchers_chunk in create_batch(stock_vouchers, GL_REPOSTING_CHUNK):
 		gle = get_voucherwise_gl_entries(stock_vouchers_chunk, posting_date)
 
 		for voucher_type, voucher_no in stock_vouchers_chunk:
 			existing_gle = gle.get((voucher_type, voucher_no), [])
-			voucher_obj = frappe.get_doc(voucher_type, voucher_no)
+			voucher_obj = nts .get_doc(voucher_type, voucher_no)
 			# Some transactions post credit as negative debit, this is handled while posting GLE
 			# but while comparing we need to make sure it's flipped so comparisons are accurate
 			expected_gle = toggle_debit_credit_if_negative(voucher_obj.get_gl_entries(warehouse_account))
@@ -1445,8 +1445,8 @@ def repost_gle_for_stock_vouchers(
 			else:
 				_delete_accounting_ledger_entries(voucher_type, voucher_no)
 
-		if not frappe.flags.in_test:
-			frappe.db.commit()
+		if not nts .flags.in_test:
+			nts .db.commit()
 
 		if repost_doc:
 			repost_doc.db_set(
@@ -1476,11 +1476,11 @@ def _delete_accounting_ledger_entries(voucher_type, voucher_no):
 def sort_stock_vouchers_by_posting_date(
 	stock_vouchers: list[tuple[str, str]], company=None
 ) -> list[tuple[str, str]]:
-	sle = frappe.qb.DocType("Stock Ledger Entry")
+	sle = nts .qb.DocType("Stock Ledger Entry")
 	voucher_nos = [v[1] for v in stock_vouchers]
 
 	sles = (
-		frappe.qb.from_(sle)
+		nts .qb.from_(sle)
 		.select(sle.voucher_type, sle.voucher_no, sle.posting_date, sle.posting_time, sle.creation)
 		.where((sle.is_cancelled == 0) & (sle.voucher_no.isin(voucher_nos)))
 		.groupby(sle.voucher_type, sle.voucher_no)
@@ -1516,7 +1516,7 @@ def get_future_stock_vouchers(posting_date, posting_time, for_warehouses=None, f
 		condition += " and company = %s"
 		values.append(company)
 
-	future_stock_vouchers = frappe.db.sql(
+	future_stock_vouchers = nts .db.sql(
 		f"""select distinct sle.voucher_type, sle.voucher_no
 		from `tabStock Ledger Entry` sle
 		where
@@ -1546,7 +1546,7 @@ def get_voucherwise_gl_entries(future_stock_vouchers, posting_date):
 
 	voucher_nos = [d[1] for d in future_stock_vouchers]
 
-	gles = frappe.db.sql(
+	gles = nts .db.sql(
 		"""
 		select name, account, credit, debit, cost_center, project, voucher_type, voucher_no
 			from `tabGL Entry`
@@ -1591,7 +1591,7 @@ def compare_existing_and_expected_gle(existing_gle, expected_gle, precision):
 def get_stock_accounts(company, voucher_type=None, voucher_no=None, accounts=None):
 	stock_accounts = [
 		d.name
-		for d in frappe.db.get_all("Account", {"account_type": "Stock", "company": company, "is_group": 0})
+		for d in nts .db.get_all("Account", {"account_type": "Stock", "company": company, "is_group": 0})
 	]
 
 	if accounts:
@@ -1601,7 +1601,7 @@ def get_stock_accounts(company, voucher_type=None, voucher_no=None, accounts=Non
 		if voucher_type == "Journal Entry":
 			stock_accounts = [
 				d.account
-				for d in frappe.db.get_all(
+				for d in nts .db.get_all(
 					"Journal Entry Account",
 					{"parent": voucher_no, "account": ["in", stock_accounts]},
 					"account",
@@ -1611,7 +1611,7 @@ def get_stock_accounts(company, voucher_type=None, voucher_no=None, accounts=Non
 		else:
 			stock_accounts = [
 				d.account
-				for d in frappe.db.get_all(
+				for d in nts .db.get_all(
 					"GL Entry",
 					{
 						"voucher_type": voucher_type,
@@ -1633,9 +1633,9 @@ def get_stock_and_account_balance(account=None, posting_date=None, company=None)
 		account, posting_date, in_account_currency=False, ignore_account_permission=True
 	)
 
-	account_table = frappe.qb.DocType("Account")
+	account_table = nts .qb.DocType("Account")
 	query = (
-		frappe.qb.from_(account_table)
+		nts .qb.from_(account_table)
 		.select(Count(account_table.name))
 		.where(
 			(account_table.account_type == "Stock")
@@ -1658,7 +1658,7 @@ def get_stock_and_account_balance(account=None, posting_date=None, company=None)
 
 	total_stock_value = get_stock_value_on(related_warehouses, posting_date, company=company)
 
-	precision = frappe.get_precision("Journal Entry Account", "debit_in_account_currency")
+	precision = nts .get_precision("Journal Entry Account", "debit_in_account_currency")
 	return flt(account_balance, precision), flt(total_stock_value, precision), related_warehouses
 
 
@@ -1678,16 +1678,16 @@ def get_journal_entry(account, stock_adjustment_account, amount):
 
 def check_and_delete_linked_reports(report):
 	"""Check if reports are referenced in Desktop Icon"""
-	icons = frappe.get_all("Desktop Icon", fields=["name"], filters={"_report": report})
+	icons = nts .get_all("Desktop Icon", fields=["name"], filters={"_report": report})
 	if icons:
 		for icon in icons:
-			frappe.delete_doc("Desktop Icon", icon)
+			nts .delete_doc("Desktop Icon", icon)
 
 
 def create_err_and_its_journals(companies: list | None = None) -> None:
 	if companies:
 		for company in companies:
-			err = frappe.new_doc("Exchange Rate Revaluation")
+			err = nts .new_doc("Exchange Rate Revaluation")
 			err.company = company.name
 			err.posting_date = nowdate()
 			err.rounding_loss_allowance = 0.0
@@ -1699,16 +1699,16 @@ def create_err_and_its_journals(companies: list | None = None) -> None:
 
 				if company.submit_err_jv:
 					jv = response.get("revaluation_jv", None)
-					jv and frappe.get_doc("Journal Entry", jv).submit()
+					jv and nts .get_doc("Journal Entry", jv).submit()
 					jv = response.get("zero_balance_jv", None)
-					jv and frappe.get_doc("Journal Entry", jv).submit()
+					jv and nts .get_doc("Journal Entry", jv).submit()
 
 
 def auto_create_exchange_rate_revaluation_daily() -> None:
 	"""
 	Executed by background job
 	"""
-	companies = frappe.db.get_all(
+	companies = nts .db.get_all(
 		"Company",
 		filters={"auto_exchange_rate_revaluation": 1, "auto_err_frequency": "Daily"},
 		fields=["name", "submit_err_jv"],
@@ -1720,7 +1720,7 @@ def auto_create_exchange_rate_revaluation_weekly() -> None:
 	"""
 	Executed by background job
 	"""
-	companies = frappe.db.get_all(
+	companies = nts .db.get_all(
 		"Company",
 		filters={"auto_exchange_rate_revaluation": 1, "auto_err_frequency": "Weekly"},
 		fields=["name", "submit_err_jv"],
@@ -1732,7 +1732,7 @@ def auto_create_exchange_rate_revaluation_monthly() -> None:
 	"""
 	Executed by background job
 	"""
-	companies = frappe.db.get_all(
+	companies = nts .db.get_all(
 		"Company",
 		filters={"auto_exchange_rate_revaluation": 1, "auto_err_frequency": "Montly"},
 		fields=["name", "submit_err_jv"],
@@ -1779,7 +1779,7 @@ def get_payment_ledger_entries(gl_entries, cancel=0):
 					dr_or_cr *= -1
 					dr_or_cr_account_currency *= -1
 
-				ple = frappe._dict(
+				ple = nts ._dict(
 					doctype="Payment Ledger Entry",
 					posting_date=gle.posting_date,
 					company=gle.company,
@@ -1820,7 +1820,7 @@ def create_payment_ledger_entry(
 		ple_map = get_payment_ledger_entries(gl_entries, cancel=cancel)
 
 		for entry in ple_map:
-			ple = frappe.get_doc(entry)
+			ple = nts .get_doc(entry)
 
 			if cancel:
 				delink_original_entry(ple, partial_cancel=partial_cancel)
@@ -1833,8 +1833,8 @@ def create_payment_ledger_entry(
 
 
 def update_voucher_outstanding(voucher_type, voucher_no, account, party_type, party):
-	ple = frappe.qb.DocType("Payment Ledger Entry")
-	vouchers = [frappe._dict({"voucher_type": voucher_type, "voucher_no": voucher_no})]
+	ple = nts .qb.DocType("Payment Ledger Entry")
+	vouchers = [nts ._dict({"voucher_type": voucher_type, "voucher_no": voucher_no})]
 	common_filter = []
 	if account:
 		common_filter.append(ple.account == account)
@@ -1856,14 +1856,14 @@ def update_voucher_outstanding(voucher_type, voucher_no, account, party_type, pa
 		and voucher_outstanding
 	):
 		outstanding = voucher_outstanding[0]
-		ref_doc = frappe.get_doc(voucher_type, voucher_no)
+		ref_doc = nts .get_doc(voucher_type, voucher_no)
 		outstanding_amount = flt(
 			outstanding["outstanding_in_account_currency"], ref_doc.precision("outstanding_amount")
 		)
 
 		# Didn't use db_set for optimisation purpose
 		ref_doc.outstanding_amount = outstanding_amount
-		frappe.db.set_value(
+		nts .db.set_value(
 			voucher_type,
 			voucher_no,
 			"outstanding_amount",
@@ -1881,7 +1881,7 @@ def delink_original_entry(pl_entry, partial_cancel=False):
 			qb.update(ple)
 			.set(ple.delinked, True)
 			.set(ple.modified, now())
-			.set(ple.modified_by, frappe.session.user)
+			.set(ple.modified_by, nts .session.user)
 			.where(
 				(ple.company == pl_entry.company)
 				& (ple.account_type == pl_entry.account_type)
@@ -2173,24 +2173,24 @@ def create_gain_loss_journal(
 	cost_center,
 	dimensions,
 ) -> str:
-	journal_entry = frappe.new_doc("Journal Entry")
+	journal_entry = nts .new_doc("Journal Entry")
 	journal_entry.voucher_type = "Exchange Gain Or Loss"
 	journal_entry.company = company
 	journal_entry.posting_date = posting_date or nowdate()
 	journal_entry.multi_currency = 1
 	journal_entry.is_system_generated = True
 
-	party_account_currency = frappe.get_cached_value("Account", party_account, "account_currency")
+	party_account_currency = nts .get_cached_value("Account", party_account, "account_currency")
 
 	if not gain_loss_account:
-		frappe.throw(_("Please set default Exchange Gain/Loss Account in Company {}").format(company))
+		nts .throw(_("Please set default Exchange Gain/Loss Account in Company {}").format(company))
 	gain_loss_account_currency = get_account_currency(gain_loss_account)
-	company_currency = frappe.get_cached_value("Company", company, "default_currency")
+	company_currency = nts .get_cached_value("Company", company, "default_currency")
 
 	if gain_loss_account_currency != company_currency:
-		frappe.throw(_("Currency for {0} must be {1}").format(gain_loss_account, company_currency))
+		nts .throw(_("Currency for {0} must be {1}").format(gain_loss_account, company_currency))
 
-	journal_account = frappe._dict(
+	journal_account = nts ._dict(
 		{
 			"account": party_account,
 			"party_type": party_type,
@@ -2209,7 +2209,7 @@ def create_gain_loss_journal(
 		journal_account.update(dimensions)
 	journal_entry.append("accounts", journal_account)
 
-	journal_account = frappe._dict(
+	journal_account = nts ._dict(
 		{
 			"account": gain_loss_account,
 			"account_currency": gain_loss_account_currency,
@@ -2232,11 +2232,11 @@ def create_gain_loss_journal(
 
 
 def get_party_types_from_account_type(account_type):
-	return frappe.db.get_all("Party Type", {"account_type": account_type}, pluck="name")
+	return nts .db.get_all("Party Type", {"account_type": account_type}, pluck="name")
 
 
 def run_ledger_health_checks():
-	health_monitor_settings = frappe.get_doc("Ledger Health Monitor")
+	health_monitor_settings = nts .get_doc("Ledger Health Monitor")
 	if health_monitor_settings.enable_health_monitor:
 		period_end = getdate()
 		period_start = add_days(period_end, -abs(health_monitor_settings.monitor_for_last_x_days))
@@ -2247,10 +2247,10 @@ def run_ledger_health_checks():
 		if health_monitor_settings.debit_credit_mismatch:
 			for x in health_monitor_settings.companies:
 				filters = {"company": x.company, "from_date": period_start, "to_date": period_end}
-				voucher_wise = frappe.get_doc("Report", "Voucher-wise Balance")
+				voucher_wise = nts .get_doc("Report", "Voucher-wise Balance")
 				res = voucher_wise.execute_script_report(filters=filters)
 				for x in res[1]:
-					doc = frappe.new_doc("Ledger Health")
+					doc = nts .new_doc("Ledger Health")
 					doc.voucher_type = x.voucher_type
 					doc.voucher_no = x.voucher_no
 					doc.debit_credit_mismatch = True
@@ -2265,10 +2265,10 @@ def run_ledger_health_checks():
 					"period_start_date": period_start,
 					"period_end_date": period_end,
 				}
-				gl_pl_comparison = frappe.get_doc("Report", "General and Payment Ledger Comparison")
+				gl_pl_comparison = nts .get_doc("Report", "General and Payment Ledger Comparison")
 				res = gl_pl_comparison.execute_script_report(filters=filters)
 				for x in res[1]:
-					doc = frappe.new_doc("Ledger Health")
+					doc = nts .new_doc("Ledger Health")
 					doc.voucher_type = x.voucher_type
 					doc.voucher_no = x.voucher_no
 					doc.general_and_payment_ledger_mismatch = True
@@ -2277,16 +2277,16 @@ def run_ledger_health_checks():
 
 
 def sync_auto_reconcile_config(auto_reconciliation_job_trigger: int = 15):
-	auto_reconciliation_job_trigger = auto_reconciliation_job_trigger or frappe.db.get_single_value(
+	auto_reconciliation_job_trigger = auto_reconciliation_job_trigger or nts .db.get_single_value(
 		"Accounts Settings", "auto_reconciliation_job_trigger"
 	)
 	method = "prodman.accounts.doctype.process_payment_reconciliation.process_payment_reconciliation.trigger_reconciliation_for_queued_docs"
 
-	sch_event = frappe.get_doc(
+	sch_event = nts .get_doc(
 		"Scheduler Event", {"scheduled_against": "Process Payment Reconciliation", "method": method}
 	)
-	if frappe.db.get_value("Scheduled Job Type", {"method": method}):
-		frappe.get_doc(
+	if nts .db.get_value("Scheduled Job Type", {"method": method}):
+		nts .get_doc(
 			"Scheduled Job Type",
 			{
 				"method": method,
@@ -2298,7 +2298,7 @@ def sync_auto_reconcile_config(auto_reconciliation_job_trigger: int = 15):
 			}
 		).save()
 	else:
-		frappe.get_doc(
+		nts .get_doc(
 			{
 				"doctype": "Scheduled Job Type",
 				"method": method,

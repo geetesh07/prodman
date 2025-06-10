@@ -1,10 +1,10 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2017, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days, flt, now_datetime, nowdate
+import nts
+from nts.tests.utils import ntsTestCase
+from nts.utils import add_days, flt, now_datetime, nowdate
 
 import prodman
 from prodman.stock.doctype.delivery_trip.delivery_trip import (
@@ -14,7 +14,7 @@ from prodman.stock.doctype.delivery_trip.delivery_trip import (
 from prodman.tests.utils import create_test_contact_and_address
 
 
-class TestDeliveryTrip(FrappeTestCase):
+class TestDeliveryTrip(ntsTestCase):
 	def setUp(self):
 		super().setUp()
 		driver = create_driver()
@@ -26,10 +26,10 @@ class TestDeliveryTrip(FrappeTestCase):
 		self.delivery_trip = create_delivery_trip(driver, address)
 
 	def tearDown(self):
-		frappe.db.sql("delete from `tabDriver`")
-		frappe.db.sql("delete from `tabVehicle`")
-		frappe.db.sql("delete from `tabEmail Template`")
-		frappe.db.sql("delete from `tabDelivery Trip`")
+		nts.db.sql("delete from `tabDriver`")
+		nts.db.sql("delete from `tabVehicle`")
+		nts.db.sql("delete from `tabEmail Template`")
+		nts.db.sql("delete from `tabDelivery Trip`")
 		return super().tearDown()
 
 	def test_delivery_trip_notify_customers(self):
@@ -102,8 +102,8 @@ class TestDeliveryTrip(FrappeTestCase):
 
 
 def create_address(driver):
-	if not frappe.db.exists("Address", {"address_title": "_Test Address for Driver"}):
-		address = frappe.get_doc(
+	if not nts.db.exists("Address", {"address_title": "_Test Address for Driver"}):
+		address = nts.get_doc(
 			{
 				"doctype": "Address",
 				"address_title": "_Test Address for Driver",
@@ -116,16 +116,16 @@ def create_address(driver):
 			}
 		).insert(ignore_permissions=True)
 
-		frappe.db.set_value("Driver", driver.name, "address", address.name)
+		nts.db.set_value("Driver", driver.name, "address", address.name)
 
 		return address
 
-	return frappe.get_doc("Address", {"address_title": "_Test Address for Driver"})
+	return nts.get_doc("Address", {"address_title": "_Test Address for Driver"})
 
 
 def create_driver():
-	if not frappe.db.exists("Driver", {"full_name": "Newton Scmander"}):
-		driver = frappe.get_doc(
+	if not nts.db.exists("Driver", {"full_name": "Newton Scmander"}):
+		driver = nts.get_doc(
 			{
 				"doctype": "Driver",
 				"full_name": "Newton Scmander",
@@ -136,30 +136,30 @@ def create_driver():
 
 		return driver
 
-	return frappe.get_doc("Driver", {"full_name": "Newton Scmander"})
+	return nts.get_doc("Driver", {"full_name": "Newton Scmander"})
 
 
 def create_delivery_notification():
-	if not frappe.db.exists("Email Template", "Delivery Notification"):
-		dispatch_template = frappe.get_doc(
+	if not nts.db.exists("Email Template", "Delivery Notification"):
+		dispatch_template = nts.get_doc(
 			{
 				"doctype": "Email Template",
 				"name": "Delivery Notification",
 				"response": "Test Delivery Trip",
 				"subject": "Test Subject",
-				"owner": frappe.session.user,
+				"owner": nts.session.user,
 			}
 		)
 		dispatch_template.insert()
 
-	delivery_settings = frappe.get_single("Delivery Settings")
+	delivery_settings = nts.get_single("Delivery Settings")
 	delivery_settings.dispatch_template = "Delivery Notification"
 	delivery_settings.save()
 
 
 def create_vehicle():
-	if not frappe.db.exists("Vehicle", "JB 007"):
-		vehicle = frappe.get_doc(
+	if not nts.db.exists("Vehicle", "JB 007"):
+		vehicle = nts.get_doc(
 			{
 				"doctype": "Vehicle",
 				"license_plate": "JB 007",
@@ -180,7 +180,7 @@ def create_delivery_trip(driver, address, contact=None):
 	if not contact:
 		contact = get_contact_and_address("_Test Customer")
 
-	delivery_trip = frappe.get_doc(
+	delivery_trip = nts.get_doc(
 		{
 			"doctype": "Delivery Trip",
 			"company": prodman.get_default_company(),

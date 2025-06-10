@@ -1,9 +1,9 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
+import nts 
+from nts  import _
+from nts .model.document import Document
 
 
 class AssetShiftFactor(Document):
@@ -13,7 +13,7 @@ class AssetShiftFactor(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		default: DF.Check
 		shift_factor: DF.Float
@@ -25,11 +25,11 @@ class AssetShiftFactor(Document):
 
 	def validate_default(self):
 		if self.default:
-			existing_default_shift_factor = frappe.db.get_value("Asset Shift Factor", {"default": 1}, "name")
+			existing_default_shift_factor = nts .db.get_value("Asset Shift Factor", {"default": 1}, "name")
 
 			if existing_default_shift_factor:
-				frappe.throw(
+				nts .throw(
 					_("Asset Shift Factor {0} is set as default currently. Please change it first.").format(
-						frappe.bold(existing_default_shift_factor)
+						nts .bold(existing_default_shift_factor)
 					)
 				)

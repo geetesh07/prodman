@@ -1,11 +1,11 @@
-import frappe
-from frappe.model.db_query import DatabaseQuery
-from frappe.utils import flt, nowdate
+import nts
+from nts.model.db_query import DatabaseQuery
+from nts.utils import flt, nowdate
 
 from prodman.stock.utils import get_stock_balance
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_data(
 	item_code=None,
 	warehouse=None,
@@ -39,8 +39,8 @@ def get_filters(item_code=None, warehouse=None, parent_warehouse=None, company=N
 	if company:
 		filters.append(["company", "=", company])
 	if parent_warehouse:
-		lft, rgt = frappe.db.get_value("Warehouse", parent_warehouse, ["lft", "rgt"])
-		warehouses = frappe.db.sql_list(
+		lft, rgt = nts.db.get_value("Warehouse", parent_warehouse, ["lft", "rgt"])
+		warehouses = nts.db.sql_list(
 			"""
 			select name from `tabWarehouse`
 			where lft >=%s and rgt<=%s
@@ -54,16 +54,16 @@ def get_filters(item_code=None, warehouse=None, parent_warehouse=None, company=N
 def get_warehouse_filter_based_on_permissions(filters):
 	try:
 		# check if user has any restrictions based on user permissions on warehouse
-		if DatabaseQuery("Warehouse", user=frappe.session.user).build_match_conditions():
-			filters.append(["warehouse", "in", [w.name for w in frappe.get_list("Warehouse")]])
+		if DatabaseQuery("Warehouse", user=nts.session.user).build_match_conditions():
+			filters.append(["warehouse", "in", [w.name for w in nts.get_list("Warehouse")]])
 		return False, filters
-	except frappe.PermissionError:
+	except nts.PermissionError:
 		# user does not have access on warehouse
 		return True, []
 
 
 def get_warehouse_capacity_data(filters, start):
-	capacity_data = frappe.db.get_all(
+	capacity_data = nts.db.get_all(
 		"Putaway Rule",
 		fields=["item_code", "warehouse", "stock_capacity", "company"],
 		filters=filters,

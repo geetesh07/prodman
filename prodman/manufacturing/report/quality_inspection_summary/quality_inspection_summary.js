@@ -1,20 +1,20 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Quality Inspection Summary"] = {
+nts.query_reports["Quality Inspection Summary"] = {
 	filters: [
 		{
 			label: __("From Date"),
 			fieldname: "from_date",
 			fieldtype: "Date",
-			default: frappe.datetime.add_months(frappe.datetime.get_today(), -12),
+			default: nts.datetime.add_months(nts.datetime.get_today(), -12),
 			reqd: 1,
 		},
 		{
 			label: __("To Date"),
 			fieldname: "to_date",
 			fieldtype: "Date",
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 			reqd: 1,
 		},
 		{

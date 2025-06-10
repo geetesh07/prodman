@@ -1,4 +1,4 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 """
 # Accounting
@@ -13,10 +13,10 @@
 """
 import json
 
-import frappe
-from frappe import _
-from frappe.contacts.doctype.address.address import get_address_display
-from frappe.utils import getdate
+import nts 
+from nts  import _
+from nts .contacts.doctype.address.address import get_address_display
+from nts .utils import getdate
 
 from prodman.controllers.accounts_controller import AccountsController
 
@@ -28,7 +28,7 @@ class Dunning(AccountsController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.overdue_payment.overdue_payment import OverduePayment
 
@@ -80,9 +80,9 @@ class Dunning(AccountsController):
 		Throw an error if invoice currency differs from dunning currency.
 		"""
 		for row in self.overdue_payments:
-			invoice_currency = frappe.get_value("Sales Invoice", row.sales_invoice, "currency")
+			invoice_currency = nts .get_value("Sales Invoice", row.sales_invoice, "currency")
 			if invoice_currency != self.currency:
-				frappe.throw(
+				nts .throw(
 					_(
 						"The currency of invoice {} ({}) is different from the currency of this dunning ({})."
 					).format(row.sales_invoice, invoice_currency, self.currency)
@@ -129,7 +129,7 @@ class Dunning(AccountsController):
 
 	def set_dunning_level(self):
 		for row in self.overdue_payments:
-			past_dunnings = frappe.get_all(
+			past_dunnings = nts .get_all(
 				"Overdue Payment",
 				filters={
 					"payment_schedule": row.payment_schedule,
@@ -178,12 +178,12 @@ def resolve_dunning(doc, state):
 
 			for dunning in dunnings:
 				resolve = True
-				dunning = frappe.get_doc("Dunning", dunning.get("name"))
+				dunning = nts .get_doc("Dunning", dunning.get("name"))
 				for overdue_payment in dunning.overdue_payments:
-					outstanding_inv = frappe.get_value(
+					outstanding_inv = nts .get_value(
 						"Sales Invoice", overdue_payment.sales_invoice, "outstanding_amount"
 					)
-					outstanding_ps = frappe.get_value(
+					outstanding_ps = nts .get_value(
 						"Payment Schedule", overdue_payment.payment_schedule, "outstanding"
 					)
 					resolve = False if (outstanding_ps > 0 and outstanding_inv > 0) else True
@@ -193,11 +193,11 @@ def resolve_dunning(doc, state):
 
 
 def get_linked_dunnings_as_per_state(sales_invoice, state):
-	dunning = frappe.qb.DocType("Dunning")
-	overdue_payment = frappe.qb.DocType("Overdue Payment")
+	dunning = nts .qb.DocType("Dunning")
+	overdue_payment = nts .qb.DocType("Overdue Payment")
 
 	return (
-		frappe.qb.from_(dunning)
+		nts .qb.from_(dunning)
 		.join(overdue_payment)
 		.on(overdue_payment.parent == dunning.name)
 		.select(dunning.name)
@@ -209,7 +209,7 @@ def get_linked_dunnings_as_per_state(sales_invoice, state):
 	).run(as_dict=True)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_dunning_letter_text(dunning_type: str, doc: str | dict, language: str | None = None) -> dict:
 	DOCTYPE = "Dunning Letter Text"
 	FIELDS = ["body_text", "closing_text", "language"]
@@ -222,12 +222,12 @@ def get_dunning_letter_text(dunning_type: str, doc: str | dict, language: str | 
 
 	letter_text = None
 	if language:
-		letter_text = frappe.db.get_value(
+		letter_text = nts .db.get_value(
 			DOCTYPE, {"parent": dunning_type, "language": language}, FIELDS, as_dict=1
 		)
 
 	if not letter_text:
-		letter_text = frappe.db.get_value(
+		letter_text = nts .db.get_value(
 			DOCTYPE, {"parent": dunning_type, "is_default_language": 1}, FIELDS, as_dict=1
 		)
 
@@ -235,7 +235,7 @@ def get_dunning_letter_text(dunning_type: str, doc: str | dict, language: str | 
 		return {}
 
 	return {
-		"body_text": frappe.render_template(letter_text.body_text, doc),
-		"closing_text": frappe.render_template(letter_text.closing_text, doc),
+		"body_text": nts .render_template(letter_text.body_text, doc),
+		"closing_text": nts .render_template(letter_text.closing_text, doc),
 		"language": letter_text.language,
 	}

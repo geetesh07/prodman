@@ -1,4 +1,4 @@
-frappe.listview_settings["Repost Payment Ledger"] = {
+nts .listview_settings["Repost Payment Ledger"] = {
 	add_fields: ["repost_status"],
 	get_indicator: function (doc) {
 		var colors = {

@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _, msgprint
-from frappe.model.document import Document
-from frappe.query_builder.custom import ConstantColumn
-from frappe.utils import flt, fmt_money, get_link_to_form, getdate
+import nts 
+from nts  import _, msgprint
+from nts .model.document import Document
+from nts .query_builder.custom import ConstantColumn
+from nts .utils import flt, fmt_money, get_link_to_form, getdate
 from pypika import Order
 
 import prodman
@@ -21,7 +21,7 @@ class BankClearance(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.bank_clearance_detail.bank_clearance_detail import (
 			BankClearanceDetail,
@@ -37,20 +37,20 @@ class BankClearance(Document):
 		to_date: DF.Date
 	# end: auto-generated types
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def get_payment_entries(self):
 		if not (self.from_date and self.to_date):
-			frappe.throw(_("From Date and To Date are Mandatory"))
+			nts .throw(_("From Date and To Date are Mandatory"))
 
 		if not self.account:
-			frappe.throw(_("Account is mandatory to get payment entries"))
+			nts .throw(_("Account is mandatory to get payment entries"))
 
 		entries = []
 
 		# get entries from all the apps
-		for method_name in frappe.get_hooks("get_payment_entries_for_bank_clearance"):
+		for method_name in nts .get_hooks("get_payment_entries_for_bank_clearance"):
 			entries += (
-				frappe.get_attr(method_name)(
+				nts .get_attr(method_name)(
 					self.from_date,
 					self.to_date,
 					self.account,
@@ -86,16 +86,16 @@ class BankClearance(Document):
 			d.pop("account_currency")
 			row.update(d)
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def update_clearance_date(self):
 		clearance_date_updated = False
 		for d in self.get("payment_entries"):
 			if d.clearance_date:
 				if not d.payment_document:
-					frappe.throw(_("Row #{0}: Payment document is required to complete the transaction"))
+					nts .throw(_("Row #{0}: Payment document is required to complete the transaction"))
 
 				if d.cheque_date and getdate(d.clearance_date) < getdate(d.cheque_date):
-					frappe.throw(
+					nts .throw(
 						_("Row #{0}: For {1} Clearance date {2} cannot be before Cheque Date {3}").format(
 							d.idx,
 							get_link_to_form(d.payment_document, d.payment_entry),
@@ -109,7 +109,7 @@ class BankClearance(Document):
 					d.clearance_date = None
 
 				if d.payment_document == "Sales Invoice":
-					frappe.db.set_value(
+					nts .db.set_value(
 						"Sales Invoice Payment",
 						{"parent": d.payment_entry, "account": self.get("account"), "amount": [">", 0]},
 						"clearance_date",
@@ -118,7 +118,7 @@ class BankClearance(Document):
 
 				else:
 					# using db_set to trigger notification
-					payment_entry = frappe.get_doc(d.payment_document, d.payment_entry)
+					payment_entry = nts .get_doc(d.payment_document, d.payment_entry)
 					payment_entry.db_set("clearance_date", d.clearance_date)
 
 				clearance_date_updated = True
@@ -139,7 +139,7 @@ def get_payment_entries_for_bank_clearance(
 	if not include_reconciled_entries:
 		condition = "and (clearance_date IS NULL or clearance_date='0000-00-00')"
 
-	journal_entries = frappe.db.sql(
+	journal_entries = nts .db.sql(
 		f"""
 			select
 				"Journal Entry" as payment_document, t1.name as payment_entry,
@@ -159,7 +159,7 @@ def get_payment_entries_for_bank_clearance(
 		as_dict=1,
 	)
 
-	payment_entries = frappe.db.sql(
+	payment_entries = nts .db.sql(
 		f"""
 			select
 				"Payment Entry" as payment_document, name as payment_entry,
@@ -186,12 +186,12 @@ def get_payment_entries_for_bank_clearance(
 
 	pos_sales_invoices, pos_purchase_invoices = [], []
 	if include_pos_transactions:
-		si_payment = frappe.qb.DocType("Sales Invoice Payment")
-		si = frappe.qb.DocType("Sales Invoice")
-		acc = frappe.qb.DocType("Account")
+		si_payment = nts .qb.DocType("Sales Invoice Payment")
+		si = nts .qb.DocType("Sales Invoice")
+		acc = nts .qb.DocType("Account")
 
 		pos_sales_invoices = (
-			frappe.qb.from_(si_payment)
+			nts .qb.from_(si_payment)
 			.inner_join(si)
 			.on(si_payment.parent == si.name)
 			.inner_join(acc)
@@ -217,10 +217,10 @@ def get_payment_entries_for_bank_clearance(
 			.orderby(si.name, order=Order.desc)
 		).run(as_dict=True)
 
-		pi = frappe.qb.DocType("Purchase Invoice")
+		pi = nts .qb.DocType("Purchase Invoice")
 
 		pos_purchase_invoices = (
-			frappe.qb.from_(pi)
+			nts .qb.from_(pi)
 			.inner_join(acc)
 			.on(pi.cash_bank_account == acc.name)
 			.select(

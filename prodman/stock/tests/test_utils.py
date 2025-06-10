@@ -1,7 +1,7 @@
 import json
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 from prodman.stock.utils import scan_barcode
 
@@ -20,7 +20,7 @@ class StockTestMixin:
 		filters = {"voucher_no": doc.name, "voucher_type": doc.doctype, "is_cancelled": 0}
 		if sle_filters:
 			filters.update(sle_filters)
-		sles = frappe.get_all(
+		sles = nts.get_all(
 			"Stock Ledger Entry",
 			fields=["*"],
 			filters=filters,
@@ -44,7 +44,7 @@ class StockTestMixin:
 
 		if gle_filters:
 			filters.update(gle_filters)
-		actual_gles = frappe.get_all(
+		actual_gles = nts.get_all(
 			"GL Entry",
 			fields=["*"],
 			filters=filters,
@@ -57,13 +57,13 @@ class StockTestMixin:
 				self.assertEqual(exp_value, act_value, msg=f"{k} doesn't match \n{exp_gle}\n{act_gle}")
 
 
-class TestStockUtilities(FrappeTestCase, StockTestMixin):
+class TestStockUtilities(ntsTestCase, StockTestMixin):
 	def test_barcode_scanning(self):
 		simple_item = self.make_item(properties={"barcodes": [{"barcode": "12399"}]})
 		self.assertEqual(scan_barcode("12399")["item_code"], simple_item.name)
 
 		batch_item = self.make_item(properties={"has_batch_no": 1, "create_new_batch": 1})
-		batch = frappe.get_doc(doctype="Batch", item=batch_item.name).insert()
+		batch = nts.get_doc(doctype="Batch", item=batch_item.name).insert()
 
 		batch_scan = scan_barcode(batch.name)
 		self.assertEqual(batch_scan["item_code"], batch_item.name)
@@ -72,8 +72,8 @@ class TestStockUtilities(FrappeTestCase, StockTestMixin):
 		self.assertEqual(batch_scan["has_serial_no"], 0)
 
 		serial_item = self.make_item(properties={"has_serial_no": 1})
-		serial = frappe.get_doc(
-			doctype="Serial No", item_code=serial_item.name, serial_no=frappe.generate_hash()
+		serial = nts.get_doc(
+			doctype="Serial No", item_code=serial_item.name, serial_no=nts.generate_hash()
 		).insert()
 
 		serial_scan = scan_barcode(serial.name)

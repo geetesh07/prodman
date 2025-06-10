@@ -1,13 +1,13 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 import datetime
 
-import frappe
-from frappe import _, scrub
-from frappe.query_builder.functions import CombineDatetime
-from frappe.utils import get_datetime, get_first_day_of_week, get_quarter_start, getdate
-from frappe.utils import get_first_day as get_first_day_of_month
-from frappe.utils.nestedset import get_descendants_of
+import nts
+from nts import _, scrub
+from nts.query_builder.functions import CombineDatetime
+from nts.utils import get_datetime, get_first_day_of_week, get_quarter_start, getdate
+from nts.utils import get_first_day as get_first_day_of_month
+from nts.utils.nestedset import get_descendants_of
 
 from prodman.accounts.utils import get_fiscal_year
 from prodman.stock.doctype.warehouse.warehouse import apply_warehouse_filter
@@ -16,7 +16,7 @@ from prodman.stock.utils import is_reposting_item_valuation_in_progress
 
 def execute(filters=None):
 	is_reposting_item_valuation_in_progress()
-	filters = frappe._dict(filters or {})
+	filters = nts._dict(filters or {})
 	columns = get_columns(filters)
 	data = get_data(filters)
 	chart = get_chart_data(columns)
@@ -270,14 +270,14 @@ def get_items(filters):
 		if brand := filters.get("brand"):
 			item_filters["brand"] = brand
 
-		return frappe.get_all("Item", filters=item_filters, pluck="name", order_by=None)
+		return nts.get_all("Item", filters=item_filters, pluck="name", order_by=None)
 
 
 def get_stock_ledger_entries(filters, items):
-	sle = frappe.qb.DocType("Stock Ledger Entry")
+	sle = nts.qb.DocType("Stock Ledger Entry")
 
 	query = (
-		frappe.qb.from_(sle)
+		nts.qb.from_(sle)
 		.select(
 			sle.item_code,
 			sle.warehouse,
@@ -306,17 +306,17 @@ def get_stock_ledger_entries(filters, items):
 
 
 def apply_conditions(query, filters):
-	sle = frappe.qb.DocType("Stock Ledger Entry")
-	warehouse_table = frappe.qb.DocType("Warehouse")
+	sle = nts.qb.DocType("Stock Ledger Entry")
+	warehouse_table = nts.qb.DocType("Warehouse")
 
 	if not filters.get("from_date"):
-		frappe.throw(_("'From Date' is required"))
+		nts.throw(_("'From Date' is required"))
 
 	if to_date := filters.get("to_date"):
 		to_date = get_datetime(str(to_date) + " 23:59:59")
 		query = query.where(sle.posting_datetime <= to_date)
 	else:
-		frappe.throw(_("'To Date' is required"))
+		nts.throw(_("'To Date' is required"))
 
 	if company := filters.get("company"):
 		query = query.where(sle.company == company)
@@ -341,10 +341,10 @@ def get_item_details(items, sle):
 	if not items:
 		return item_details
 
-	item_table = frappe.qb.DocType("Item")
+	item_table = nts.qb.DocType("Item")
 
 	query = (
-		frappe.qb.from_(item_table)
+		nts.qb.from_(item_table)
 		.select(
 			item_table.name,
 			item_table.item_name,

@@ -1,12 +1,12 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import json
 
-import frappe
-from frappe import _, scrub
-from frappe.utils import add_days, add_to_date, flt, getdate
+import nts
+from nts import _, scrub
+from nts.utils import add_days, add_to_date, flt, getdate
 
 from prodman.accounts.utils import get_fiscal_year
 
@@ -18,7 +18,7 @@ def execute(filters=None):
 class IssueAnalytics:
 	def __init__(self, filters=None):
 		"""Issue Analytics Report"""
-		self.filters = frappe._dict(filters or {})
+		self.filters = nts._dict(filters or {})
 		self.get_period_date_ranges()
 
 	def run(self):
@@ -147,7 +147,7 @@ class IssueAnalytics:
 			"Assigned To": "_assign",
 		}
 
-		self.entries = frappe.db.get_all(
+		self.entries = nts.db.get_all(
 			"Issue",
 			fields=[self.field_map.get(self.filters.based_on), "name", "opening_date"],
 			filters=filters,
@@ -192,7 +192,7 @@ class IssueAnalytics:
 			self.data.append(row)
 
 	def get_periodic_data(self):
-		self.issue_periodic_data = frappe._dict()
+		self.issue_periodic_data = nts._dict()
 
 		for d in self.entries:
 			period = self.get_period(d.get("opening_date"))
@@ -200,7 +200,7 @@ class IssueAnalytics:
 			if self.filters.based_on == "Assigned To":
 				if d._assign:
 					for entry in json.loads(d._assign):
-						self.issue_periodic_data.setdefault(entry, frappe._dict()).setdefault(period, 0.0)
+						self.issue_periodic_data.setdefault(entry, nts._dict()).setdefault(period, 0.0)
 						self.issue_periodic_data[entry][period] += 1
 
 			else:
@@ -209,7 +209,7 @@ class IssueAnalytics:
 				if not value:
 					value = _("Not Specified")
 
-				self.issue_periodic_data.setdefault(value, frappe._dict()).setdefault(period, 0.0)
+				self.issue_periodic_data.setdefault(value, nts._dict()).setdefault(period, 0.0)
 				self.issue_periodic_data[value][period] += 1
 
 	def get_chart_data(self):

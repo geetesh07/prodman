@@ -1,10 +1,10 @@
-// Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2019, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Accounting Dimension", {
+nts .ui.form.on("Accounting Dimension", {
 	refresh: function (frm) {
 		frm.set_query("document_type", () => {
-			let invalid_doctypes = frappe.model.core_doctypes_list;
+			let invalid_doctypes = nts .model.core_doctypes_list;
 			invalid_doctypes.push(
 				"Accounting Dimension",
 				"Project",
@@ -33,7 +33,7 @@ frappe.ui.form.on("Accounting Dimension", {
 
 		if (!frm.is_new()) {
 			frm.add_custom_button(__("Show {0}", [frm.doc.document_type]), function () {
-				frappe.set_route("List", frm.doc.document_type);
+				nts .set_route("List", frm.doc.document_type);
 			});
 
 			let button = frm.doc.disabled ? "Enable" : "Disable";
@@ -41,7 +41,7 @@ frappe.ui.form.on("Accounting Dimension", {
 			frm.add_custom_button(__(button), function () {
 				frm.set_value("disabled", 1 - frm.doc.disabled);
 
-				frappe.call({
+				nts .call({
 					method: "prodman.accounts.doctype.accounting_dimension.accounting_dimension.disable_dimension",
 					args: {
 						doc: frm.doc,
@@ -50,7 +50,7 @@ frappe.ui.form.on("Accounting Dimension", {
 					callback: function (r) {
 						let message = frm.doc.disabled ? "Dimension Disabled" : "Dimension Enabled";
 						frm.save();
-						frappe.show_alert({ message: __(message), indicator: "green" });
+						nts .show_alert({ message: __(message), indicator: "green" });
 					},
 				});
 			});
@@ -64,7 +64,7 @@ frappe.ui.form.on("Accounting Dimension", {
 	document_type: function (frm) {
 		frm.set_value("label", frm.doc.document_type);
 
-		frappe.db.get_value(
+		nts .db.get_value(
 			"Accounting Dimension",
 			{ document_type: frm.doc.document_type },
 			"document_type",
@@ -81,7 +81,7 @@ frappe.ui.form.on("Accounting Dimension", {
 	},
 });
 
-frappe.ui.form.on("Accounting Dimension Detail", {
+nts .ui.form.on("Accounting Dimension Detail", {
 	dimension_defaults_add: function (frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
 		row.reference_document = frm.doc.document_type;

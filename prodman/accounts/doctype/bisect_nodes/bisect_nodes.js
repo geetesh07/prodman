@@ -1,7 +1,7 @@
-// Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-// frappe.ui.form.on("Bisect Nodes", {
+// nts .ui.form.on("Bisect Nodes", {
 // 	refresh(frm) {
 
 // 	},

@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.ui.form.on("Brand", {
+nts.ui.form.on("Brand", {
 	setup: (frm) => {
 		frm.set_query("default_warehouse", "brand_defaults", function (doc, cdt, cdn) {
 			const row = locals[cdt][cdn];

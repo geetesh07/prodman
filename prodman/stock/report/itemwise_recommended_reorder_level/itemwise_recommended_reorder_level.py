@@ -1,21 +1,21 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import Abs, Sum
-from frappe.utils import flt, getdate
+import nts
+from nts import _
+from nts.query_builder.functions import Abs, Sum
+from nts.utils import flt, getdate
 
 
 def execute(filters=None):
 	if not filters:
 		filters = {}
-	float_precision = frappe.db.get_default("float_precision")
+	float_precision = nts.db.get_default("float_precision")
 
 	avg_daily_outgoing = 0
 	diff = ((getdate(filters.get("to_date")) - getdate(filters.get("from_date"))).days) + 1
 	if diff <= 0:
-		frappe.throw(_("'From Date' must be after 'To Date'"))
+		nts.throw(_("'From Date' must be after 'To Date'"))
 
 	columns = get_columns()
 	items = get_item_info(filters)
@@ -68,9 +68,9 @@ def get_columns():
 def get_item_info(filters):
 	from prodman.stock.report.stock_ledger.stock_ledger import get_item_group_condition
 
-	item = frappe.qb.DocType("Item")
+	item = nts.qb.DocType("Item")
 	query = (
-		frappe.qb.from_(item)
+		nts.qb.from_(item)
 		.select(
 			item.name,
 			item.item_name,
@@ -99,10 +99,10 @@ def get_consumed_items(filters):
 		"Send to Subcontractor",
 	]
 
-	se = frappe.qb.DocType("Stock Entry")
-	sle = frappe.qb.DocType("Stock Ledger Entry")
+	se = nts.qb.DocType("Stock Entry")
+	sle = nts.qb.DocType("Stock Ledger Entry")
 	query = (
-		frappe.qb.from_(sle)
+		nts.qb.from_(sle)
 		.left_join(se)
 		.on(sle.voucher_no == se.name)
 		.select(sle.item_code, Abs(Sum(sle.actual_qty)).as_("consumed_qty"))
@@ -123,10 +123,10 @@ def get_consumed_items(filters):
 
 
 def get_delivered_items(filters):
-	parent = frappe.qb.DocType("Delivery Note")
-	child = frappe.qb.DocType("Delivery Note Item")
+	parent = nts.qb.DocType("Delivery Note")
+	child = nts.qb.DocType("Delivery Note Item")
 	query = (
-		frappe.qb.from_(parent)
+		nts.qb.from_(parent)
 		.from_(child)
 		.select(child.item_code, Sum(child.stock_qty).as_("dn_qty"))
 		.where((parent.name == child.parent) & (parent.docstatus == 1))
@@ -136,10 +136,10 @@ def get_delivered_items(filters):
 
 	dn_items = query.run(as_dict=True)
 
-	parent = frappe.qb.DocType("Sales Invoice")
-	child = frappe.qb.DocType("Sales Invoice Item")
+	parent = nts.qb.DocType("Sales Invoice")
+	child = nts.qb.DocType("Sales Invoice Item")
 	query = (
-		frappe.qb.from_(parent)
+		nts.qb.from_(parent)
 		.from_(child)
 		.select(child.item_code, Sum(child.stock_qty).as_("si_qty"))
 		.where((parent.name == child.parent) & (parent.docstatus == 1) & (parent.update_stock == 1))
@@ -163,6 +163,6 @@ def get_filtered_query(filters, table, query):
 	if filters.get("from_date") and filters.get("to_date"):
 		query = query.where(table.posting_date.between(filters["from_date"], filters["to_date"]))
 	else:
-		frappe.throw(_("From and To dates are required"))
+		nts.throw(_("From and To dates are required"))
 
 	return query

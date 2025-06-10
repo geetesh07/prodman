@@ -1,14 +1,14 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.query_reports["Stock Projected Qty"] = {
+nts.query_reports["Stock Projected Qty"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 		},
 		{
 			fieldname: "warehouse",
@@ -18,7 +18,7 @@ frappe.query_reports["Stock Projected Qty"] = {
 			get_query: () => {
 				return {
 					filters: {
-						company: frappe.query_report.get_filter_value("company"),
+						company: nts.query_report.get_filter_value("company"),
 					},
 				};
 			},

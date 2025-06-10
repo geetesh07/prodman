@@ -1,23 +1,23 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import today
+import nts 
+from nts .tests.utils import nts TestCase
+from nts .utils import today
 
 from prodman.accounts.report.balance_sheet.balance_sheet import execute
 
 
-class TestBalanceSheet(FrappeTestCase):
+class TestBalanceSheet(nts TestCase):
 	def test_balance_sheet(self):
 		from prodman.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
 		from prodman.accounts.doctype.sales_invoice.test_sales_invoice import (
 			create_sales_invoice,
 		)
 
-		frappe.db.sql("delete from `tabPurchase Invoice` where company='_Test Company 6'")
-		frappe.db.sql("delete from `tabSales Invoice` where company='_Test Company 6'")
-		frappe.db.sql("delete from `tabGL Entry` where company='_Test Company 6'")
+		nts .db.sql("delete from `tabPurchase Invoice` where company='_Test Company 6'")
+		nts .db.sql("delete from `tabSales Invoice` where company='_Test Company 6'")
+		nts .db.sql("delete from `tabGL Entry` where company='_Test Company 6'")
 
 		make_purchase_invoice(
 			company="_Test Company 6",
@@ -35,7 +35,7 @@ class TestBalanceSheet(FrappeTestCase):
 			qty=5,
 			rate=110,
 		)
-		filters = frappe._dict(
+		filters = nts ._dict(
 			company="_Test Company 6",
 			period_start_date=today(),
 			period_end_date=today(),

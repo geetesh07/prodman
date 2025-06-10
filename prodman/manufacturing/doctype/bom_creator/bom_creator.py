@@ -1,12 +1,12 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 from collections import OrderedDict
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import cint, flt
+import nts
+from nts import _
+from nts.model.document import Document
+from nts.utils import cint, flt
 
 from prodman.manufacturing.doctype.bom.bom import get_bom_item_rate
 
@@ -40,7 +40,7 @@ class BOMCreator(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.manufacturing.doctype.bom_creator_item.bom_creator_item import BOMCreatorItem
 
@@ -80,16 +80,16 @@ class BOMCreator(Document):
 	def validate_items(self):
 		for row in self.items:
 			if row.is_expandable and row.item_code == self.item_code:
-				frappe.throw(_("Item {0} cannot be added as a sub-assembly of itself").format(row.item_code))
+				nts.throw(_("Item {0} cannot be added as a sub-assembly of itself").format(row.item_code))
 
 			if not row.parent_row_no and row.fg_item and row.fg_item != self.item_code:
-				frappe.throw(
+				nts.throw(
 					_("At row {0}: set Parent Row No for item {1}").format(row.idx, row.item_code),
 					title=_("Set Parent Row No in Items Table"),
 				)
 
 			elif row.parent_row_no and row.fg_item == self.item_code:
-				frappe.throw(
+				nts.throw(
 					_("At row {0}: Parent Row No cannot be set for item {1}").format(row.idx, row.item_code),
 					title=_("Remove Parent Row No in Items Table"),
 				)
@@ -115,7 +115,7 @@ class BOMCreator(Document):
 				has_completed = False
 				break
 
-		if not frappe.get_cached_value("BOM", {"bom_creator": self.name, "item": self.item_code}, "name"):
+		if not nts.get_cached_value("BOM", {"bom_creator": self.name, "item": self.item_code}, "name"):
 			has_completed = False
 
 		if has_completed:
@@ -150,7 +150,7 @@ class BOMCreator(Document):
 			elif row.fg_item == self.item_code:
 				row.fg_reference_id = self.name
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def add_boms(self):
 		self.submit()
 
@@ -206,21 +206,21 @@ class BOMCreator(Document):
 
 		for field, label in fields.items():
 			if not self.get(field):
-				frappe.throw(_("Please set {0} in BOM Creator {1}").format(_(label), self.name))
+				nts.throw(_("Please set {0} in BOM Creator {1}").format(_(label), self.name))
 
 	def on_submit(self):
 		self.enqueue_create_boms()
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def enqueue_create_boms(self):
-		frappe.enqueue(
+		nts.enqueue(
 			self.create_boms,
 			queue="short",
 			timeout=600,
 			is_async=True,
 		)
 
-		frappe.msgprint(
+		nts.msgprint(
 			_("BOMs creation has been enqueued, kindly check the status after some time"), alert=True
 		)
 
@@ -239,7 +239,7 @@ class BOMCreator(Document):
 		self.db_set("status", "In Progress")
 		production_item_wise_rm = OrderedDict({})
 		production_item_wise_rm.setdefault(
-			(self.item_code, self.name), frappe._dict({"items": [], "bom_no": "", "fg_item_data": self})
+			(self.item_code, self.name), nts._dict({"items": [], "bom_no": "", "fg_item_data": self})
 		)
 
 		for row in self.items:
@@ -247,11 +247,11 @@ class BOMCreator(Document):
 				if (row.item_code, row.name) not in production_item_wise_rm:
 					production_item_wise_rm.setdefault(
 						(row.item_code, row.name),
-						frappe._dict({"items": [], "bom_no": "", "fg_item_data": row}),
+						nts._dict({"items": [], "bom_no": "", "fg_item_data": row}),
 					)
 
 			if not row.fg_reference_id and production_item_wise_rm.get((row.fg_item, row.fg_reference_id)):
-				frappe.throw(_("Please set Parent Row No for item {0}").format(row.fg_item))
+				nts.throw(_("Please set Parent Row No for item {0}").format(row.fg_item))
 
 			production_item_wise_rm[(row.fg_item, row.fg_reference_id)]["items"].append(row)
 
@@ -262,9 +262,9 @@ class BOMCreator(Document):
 				fg_item_data = production_item_wise_rm.get(d).fg_item_data
 				self.create_bom(fg_item_data, production_item_wise_rm)
 
-			frappe.msgprint(_("BOMs created successfully"))
+			nts.msgprint(_("BOMs created successfully"))
 		except Exception:
-			traceback = frappe.get_traceback(with_context=True)
+			traceback = nts.get_traceback(with_context=True)
 			self.db_set(
 				{
 					"status": "Failed",
@@ -272,11 +272,11 @@ class BOMCreator(Document):
 				}
 			)
 
-			frappe.msgprint(_("BOMs creation failed"))
+			nts.msgprint(_("BOMs creation failed"))
 
 	def create_bom(self, row, production_item_wise_rm):
 		bom_creator_item = row.name if row.name != self.name else ""
-		if frappe.db.exists(
+		if nts.db.exists(
 			"BOM",
 			{
 				"bom_creator": self.name,
@@ -287,7 +287,7 @@ class BOMCreator(Document):
 		):
 			return
 
-		bom = frappe.new_doc("BOM")
+		bom = nts.new_doc("BOM")
 		bom.update(
 			{
 				"item": row.item_code,
@@ -328,18 +328,18 @@ class BOMCreator(Document):
 
 		production_item_wise_rm[(row.item_code, row.name)].bom_no = bom.name
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_default_bom(self, item_code) -> str:
-		return frappe.get_cached_value("Item", item_code, "default_bom")
+		return nts.get_cached_value("Item", item_code, "default_bom")
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_children(doctype=None, parent=None, **kwargs):
 	if isinstance(kwargs, str):
-		kwargs = frappe.parse_json(kwargs)
+		kwargs = nts.parse_json(kwargs)
 
 	if isinstance(kwargs, dict):
-		kwargs = frappe._dict(kwargs)
+		kwargs = nts._dict(kwargs)
 
 	fields = [
 		"item_code as value",
@@ -363,18 +363,18 @@ def get_children(doctype=None, parent=None, **kwargs):
 	if kwargs.name:
 		query_filters["name"] = kwargs.name
 
-	return frappe.get_all("BOM Creator Item", fields=fields, filters=query_filters, order_by="idx")
+	return nts.get_all("BOM Creator Item", fields=fields, filters=query_filters, order_by="idx")
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def add_item(**kwargs):
 	if isinstance(kwargs, str):
-		kwargs = frappe.parse_json(kwargs)
+		kwargs = nts.parse_json(kwargs)
 
 	if isinstance(kwargs, dict):
-		kwargs = frappe._dict(kwargs)
+		kwargs = nts._dict(kwargs)
 
-	doc = frappe.get_doc("BOM Creator", kwargs.parent)
+	doc = nts.get_doc("BOM Creator", kwargs.parent)
 	item_info = get_item_details(kwargs.item_code)
 
 	parent_row_no = ""
@@ -398,16 +398,16 @@ def add_item(**kwargs):
 	return doc
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def add_sub_assembly(**kwargs):
 	if isinstance(kwargs, str):
-		kwargs = frappe.parse_json(kwargs)
+		kwargs = nts.parse_json(kwargs)
 
 	if isinstance(kwargs, dict):
-		kwargs = frappe._dict(kwargs)
+		kwargs = nts._dict(kwargs)
 
-	doc = frappe.get_doc("BOM Creator", kwargs.parent)
-	bom_item = frappe.parse_json(kwargs.bom_item)
+	doc = nts.get_doc("BOM Creator", kwargs.parent)
+	bom_item = nts.parse_json(kwargs.bom_item)
 
 	name = kwargs.fg_reference_id
 	parent_row_no = ""
@@ -439,7 +439,7 @@ def add_sub_assembly(**kwargs):
 		parent_row_no = get_parent_row_no(doc, kwargs.fg_reference_id)
 
 	for row in bom_item.get("items"):
-		row = frappe._dict(row)
+		row = nts._dict(row)
 		item_info = get_item_details(row.item_code)
 		doc.append(
 			"items",
@@ -463,7 +463,7 @@ def add_sub_assembly(**kwargs):
 
 
 def get_item_details(item_code):
-	return frappe.get_cached_value(
+	return nts.get_cached_value(
 		"Item", item_code, ["item_name", "description", "image", "stock_uom", "default_bom"], as_dict=1
 	)
 
@@ -473,37 +473,37 @@ def get_parent_row_no(doc, name):
 		if row.name == name:
 			return row.idx
 
-	frappe.msgprint(_("Parent Row No not found for {0}").format(name))
+	nts.msgprint(_("Parent Row No not found for {0}").format(name))
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def delete_node(**kwargs):
 	if isinstance(kwargs, str):
-		kwargs = frappe.parse_json(kwargs)
+		kwargs = nts.parse_json(kwargs)
 
 	if isinstance(kwargs, dict):
-		kwargs = frappe._dict(kwargs)
+		kwargs = nts._dict(kwargs)
 
 	items = get_children(parent=kwargs.fg_item, parent_id=kwargs.parent)
 	if kwargs.docname:
-		frappe.delete_doc("BOM Creator Item", kwargs.docname)
+		nts.delete_doc("BOM Creator Item", kwargs.docname)
 
 	for item in items:
-		frappe.delete_doc("BOM Creator Item", item.name)
+		nts.delete_doc("BOM Creator Item", item.name)
 		if item.expandable:
 			delete_node(fg_item=item.value, parent=item.parent_id)
 
-	doc = frappe.get_doc("BOM Creator", kwargs.parent)
+	doc = nts.get_doc("BOM Creator", kwargs.parent)
 	doc.set_rate_for_items()
 	doc.save()
 
 	return doc
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def edit_qty(doctype, docname, qty, parent):
-	frappe.db.set_value(doctype, docname, "qty", qty)
-	doc = frappe.get_doc("BOM Creator", parent)
+	nts.db.set_value(doctype, docname, "qty", qty)
+	doc = nts.get_doc("BOM Creator", parent)
 	doc.set_rate_for_items()
 	doc.save()
 

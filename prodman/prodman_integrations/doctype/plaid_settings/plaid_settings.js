@@ -1,9 +1,9 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.provide("prodman.integrations");
+nts.provide("prodman.integrations");
 
-frappe.ui.form.on("Plaid Settings", {
+nts.ui.form.on("Plaid Settings", {
 	enabled: function (frm) {
 		frm.toggle_reqd("plaid_client_id", frm.doc.enabled);
 		frm.toggle_reqd("plaid_secret", frm.doc.enabled);
@@ -21,18 +21,18 @@ frappe.ui.form.on("Plaid Settings", {
 			});
 
 			frm.add_custom_button(__("Sync Now"), () => {
-				frappe.call({
+				nts.call({
 					method: "prodman.prodman_integrations.doctype.plaid_settings.plaid_settings.enqueue_synchronization",
 					freeze: true,
 					callback: () => {
-						let bank_transaction_link = frappe.utils.get_form_link(
+						let bank_transaction_link = nts.utils.get_form_link(
 							"Bank Transaction",
 							"",
 							true,
 							__("Bank Transaction")
 						);
 
-						frappe.msgprint({
+						nts.msgprint({
 							title: __("Sync Started"),
 							message: __(
 								"The sync has started in the background, please check the {0} list for new records.",
@@ -57,7 +57,7 @@ prodman.integrations.plaidLink = class plaidLink {
 	async init_config() {
 		this.product = ["transactions"];
 		this.plaid_env = this.frm.doc.plaid_env;
-		this.client_name = frappe.boot.sitename;
+		this.client_name = nts.boot.sitename;
 		this.token = await this.get_link_token();
 		this.init_plaid();
 	}
@@ -65,7 +65,7 @@ prodman.integrations.plaidLink = class plaidLink {
 	async get_link_token() {
 		const token = await this.frm.call("get_link_token").then((resp) => resp.message);
 		if (!token) {
-			frappe.throw(__("Cannot retrieve link token. Check Error Log for more information"));
+			nts.throw(__("Cannot retrieve link token. Check Error Log for more information"));
 		}
 		return token;
 	}
@@ -115,7 +115,7 @@ prodman.integrations.plaidLink = class plaidLink {
 	}
 
 	onScriptError(error) {
-		frappe.msgprint(
+		nts.msgprint(
 			__(
 				"There was an issue connecting to Plaid's authentication server. Check browser console for more information"
 			)
@@ -126,7 +126,7 @@ prodman.integrations.plaidLink = class plaidLink {
 	plaid_success(token, response) {
 		const me = this;
 
-		frappe.prompt(
+		nts.prompt(
 			{
 				fieldtype: "Link",
 				options: "Company",
@@ -136,7 +136,7 @@ prodman.integrations.plaidLink = class plaidLink {
 			},
 			(data) => {
 				me.company = data.company;
-				frappe
+				nts
 					.xcall(
 						"prodman.prodman_integrations.doctype.plaid_settings.plaid_settings.add_institution",
 						{
@@ -145,7 +145,7 @@ prodman.integrations.plaidLink = class plaidLink {
 						}
 					)
 					.then((result) => {
-						frappe.xcall(
+						nts.xcall(
 							"prodman.prodman_integrations.doctype.plaid_settings.plaid_settings.add_bank_accounts",
 							{
 								response: response,
@@ -155,7 +155,7 @@ prodman.integrations.plaidLink = class plaidLink {
 						);
 					})
 					.then(() => {
-						frappe.show_alert({ message: __("Bank accounts added"), indicator: "green" });
+						nts.show_alert({ message: __("Bank accounts added"), indicator: "green" });
 					});
 			},
 			__("Select a company"),

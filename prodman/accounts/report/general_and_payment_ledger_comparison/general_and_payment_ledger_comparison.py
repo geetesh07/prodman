@@ -1,10 +1,10 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _, qb
-from frappe.query_builder import Criterion
-from frappe.query_builder.functions import Sum
+import nts 
+from nts  import _, qb
+from nts .query_builder import Criterion
+from nts .query_builder.functions import Sum
 
 
 class General_Payment_Ledger_Comparison:
@@ -20,7 +20,7 @@ class General_Payment_Ledger_Comparison:
 	def get_accounts(self):
 		receivable_accounts = [
 			x[0]
-			for x in frappe.db.get_all(
+			for x in nts .db.get_all(
 				"Account",
 				filters={"company": self.filters.company, "account_type": "Receivable"},
 				as_list=True,
@@ -28,15 +28,15 @@ class General_Payment_Ledger_Comparison:
 		]
 		payable_accounts = [
 			x[0]
-			for x in frappe.db.get_all(
+			for x in nts .db.get_all(
 				"Account", filters={"company": self.filters.company, "account_type": "Payable"}, as_list=True
 			)
 		]
 
-		self.account_types = frappe._dict(
+		self.account_types = nts ._dict(
 			{
-				"receivable": frappe._dict({"accounts": receivable_accounts, "gle": [], "ple": []}),
-				"payable": frappe._dict({"accounts": payable_accounts, "gle": [], "ple": []}),
+				"receivable": nts ._dict({"accounts": receivable_accounts, "gle": [], "ple": []}),
+				"payable": nts ._dict({"accounts": payable_accounts, "gle": [], "ple": []}),
 			}
 		)
 
@@ -45,7 +45,7 @@ class General_Payment_Ledger_Comparison:
 			self.account_types.receivable.accounts = []
 			self.account_types.payable.accounts = []
 
-			for acc in frappe.db.get_all(
+			for acc in nts .db.get_all(
 				"Account", filters={"name": ["in", self.filters.account]}, fields=["name", "account_type"]
 			):
 				if acc.account_type == "Receivable":
@@ -145,21 +145,21 @@ class General_Payment_Ledger_Comparison:
 
 		self.variation_in_payment_ledger = self.gle_balances.difference(self.ple_balances)
 		self.variation_in_general_ledger = self.ple_balances.difference(self.gle_balances)
-		self.diff = frappe._dict({})
+		self.diff = nts ._dict({})
 
 		for x in self.variation_in_payment_ledger:
-			self.diff[(x[0], x[1], x[2], x[3], x[4], x[5])] = frappe._dict({"gl_balance": x[6]})
+			self.diff[(x[0], x[1], x[2], x[3], x[4], x[5])] = nts ._dict({"gl_balance": x[6]})
 
 		for x in self.variation_in_general_ledger:
 			self.diff.setdefault(
-				(x[0], x[1], x[2], x[3], x[4], x[5]), frappe._dict({"gl_balance": 0.0})
-			).update(frappe._dict({"pl_balance": x[6]}))
+				(x[0], x[1], x[2], x[3], x[4], x[5]), nts ._dict({"gl_balance": 0.0})
+			).update(nts ._dict({"pl_balance": x[6]}))
 
 	def generate_data(self):
 		self.data = []
 		for key, val in self.diff.items():
 			self.data.append(
-				frappe._dict(
+				nts ._dict(
 					{
 						"company": key[0],
 						"account": key[1],

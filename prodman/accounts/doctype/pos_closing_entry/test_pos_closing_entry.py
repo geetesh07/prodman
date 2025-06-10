@@ -1,9 +1,9 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts 
 
 from prodman.accounts.doctype.accounting_dimension.test_accounting_dimension import (
 	create_dimension,
@@ -30,8 +30,8 @@ class TestPOSClosingEntry(unittest.TestCase):
 		make_stock_entry(target="_Test Warehouse - _TC", qty=2, basic_rate=100)
 
 	def tearDown(self):
-		frappe.set_user("Administrator")
-		frappe.db.sql("delete from `tabPOS Profile`")
+		nts .set_user("Administrator")
+		nts .db.sql("delete from `tabPOS Profile`")
 
 	def test_pos_closing_entry(self):
 		test_user, pos_profile = init_user_and_profile()
@@ -136,18 +136,18 @@ class TestPOSClosingEntry(unittest.TestCase):
 		pcv_doc.submit()
 
 		pos_inv1.load_from_db()
-		self.assertRaises(frappe.ValidationError, pos_inv1.cancel)
+		self.assertRaises(nts .ValidationError, pos_inv1.cancel)
 
-		si_doc = frappe.get_doc("Sales Invoice", pos_inv1.consolidated_invoice)
-		self.assertRaises(frappe.ValidationError, si_doc.cancel)
+		si_doc = nts .get_doc("Sales Invoice", pos_inv1.consolidated_invoice)
+		self.assertRaises(nts .ValidationError, si_doc.cancel)
 
 		pcv_doc.load_from_db()
 		pcv_doc.cancel()
 
-		cancelled_invoice = frappe.db.get_value(
+		cancelled_invoice = nts .db.get_value(
 			"POS Invoice Merge Log", {"pos_closing_entry": pcv_doc.name}, "consolidated_invoice"
 		)
-		docstatus = frappe.db.get_value("Sales Invoice", cancelled_invoice, "docstatus")
+		docstatus = nts .db.get_value("Sales Invoice", cancelled_invoice, "docstatus")
 		self.assertEqual(docstatus, 2)
 
 		pos_inv1.load_from_db()
@@ -161,11 +161,11 @@ class TestPOSClosingEntry(unittest.TestCase):
 		create_dimension()
 		pos_profile = make_pos_profile(do_not_insert=1, do_not_set_accounting_dimension=1)
 
-		self.assertRaises(frappe.ValidationError, pos_profile.insert)
+		self.assertRaises(nts .ValidationError, pos_profile.insert)
 
 		pos_profile.location = "Block 1"
 		pos_profile.insert()
-		self.assertTrue(frappe.db.exists("POS Profile", pos_profile.name))
+		self.assertTrue(nts .db.exists("POS Profile", pos_profile.name))
 
 		test_user = init_user_and_profile(do_not_create_pos_profile=1)
 
@@ -176,15 +176,15 @@ class TestPOSClosingEntry(unittest.TestCase):
 		pos_inv1.submit()
 
 		# if in between a mandatory accounting dimension is added to the POS Profile then
-		accounting_dimension_department = frappe.get_doc("Accounting Dimension", {"name": "Department"})
+		accounting_dimension_department = nts .get_doc("Accounting Dimension", {"name": "Department"})
 		accounting_dimension_department.dimension_defaults[0].mandatory_for_bs = 1
 		accounting_dimension_department.save()
 
 		pcv_doc = make_closing_entry_from_opening(opening_entry)
 		# will assert coz the new mandatory accounting dimension bank is not set in POS Profile
-		self.assertRaises(frappe.ValidationError, pcv_doc.submit)
+		self.assertRaises(nts .ValidationError, pcv_doc.submit)
 
-		accounting_dimension_department = frappe.get_doc(
+		accounting_dimension_department = nts .get_doc(
 			"Accounting Dimension Detail", {"parent": "Department"}
 		)
 		accounting_dimension_department.mandatory_for_bs = 0
@@ -192,7 +192,7 @@ class TestPOSClosingEntry(unittest.TestCase):
 		disable_dimension()
 
 	def test_merging_into_sales_invoice_for_batched_item(self):
-		frappe.flags.print_message = False
+		nts .flags.print_message = False
 		from prodman.accounts.doctype.pos_closing_entry.test_pos_closing_entry import (
 			init_user_and_profile,
 		)
@@ -201,7 +201,7 @@ class TestPOSClosingEntry(unittest.TestCase):
 		)
 		from prodman.stock.doctype.batch.batch import get_batch_qty
 
-		frappe.db.sql("delete from `tabPOS Invoice`")
+		nts .db.sql("delete from `tabPOS Invoice`")
 		item_doc = make_item(
 			"_Test Item With Batch FOR POS Merge Test",
 			properties={
@@ -254,10 +254,10 @@ class TestPOSClosingEntry(unittest.TestCase):
 		pcv_doc = make_closing_entry_from_opening(opening_entry)
 		pcv_doc.submit()
 
-		piv_merge = frappe.db.get_value("POS Invoice Merge Log", {"pos_closing_entry": pcv_doc.name}, "name")
+		piv_merge = nts .db.get_value("POS Invoice Merge Log", {"pos_closing_entry": pcv_doc.name}, "name")
 
 		self.assertTrue(piv_merge)
-		piv_merge_doc = frappe.get_doc("POS Invoice Merge Log", piv_merge)
+		piv_merge_doc = nts .get_doc("POS Invoice Merge Log", piv_merge)
 		self.assertTrue(piv_merge_doc.pos_invoices[0].pos_invoice)
 		self.assertTrue(piv_merge_doc.pos_invoices[1].pos_invoice)
 
@@ -266,13 +266,13 @@ class TestPOSClosingEntry(unittest.TestCase):
 		pos_inv2.load_from_db()
 		self.assertTrue(pos_inv2.consolidated_invoice)
 
-		batch_qty = frappe.db.get_value("Batch", batch_no, "batch_qty")
+		batch_qty = nts .db.get_value("Batch", batch_no, "batch_qty")
 		self.assertEqual(batch_qty, 0.0)
 
 		batch_qty_with_pos = get_batch_qty(batch_no, "_Test Warehouse - _TC", item_code)
 		self.assertEqual(batch_qty_with_pos, 0.0)
 
-		frappe.flags.print_message = True
+		nts .flags.print_message = True
 
 		pcv_doc.reload()
 		pcv_doc.cancel()
@@ -292,11 +292,11 @@ class TestPOSClosingEntry(unittest.TestCase):
 
 def init_user_and_profile(**args):
 	user = "test@example.com"
-	test_user = frappe.get_doc("User", user)
+	test_user = nts .get_doc("User", user)
 
 	roles = ("Accounts Manager", "Accounts User", "Sales Manager")
 	test_user.add_roles(*roles)
-	frappe.set_user(user)
+	nts .set_user(user)
 
 	if args.get("do_not_create_pos_profile"):
 		return test_user

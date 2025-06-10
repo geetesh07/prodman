@@ -1,3 +1,3 @@
-frappe.provide("frappe.ui.form");
+nts.provide("nts.ui.form");
 
-frappe.ui.form.CustomerQuickEntryForm = frappe.ui.form.ContactAddressQuickEntryForm;
+nts.ui.form.CustomerQuickEntryForm = nts.ui.form.ContactAddressQuickEntryForm;

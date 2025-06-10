@@ -1,25 +1,25 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
-import frappe
-from frappe import _, scrub, throw
-from frappe.model.naming import set_name_by_naming_series
-from frappe.permissions import (
+import nts
+from nts import _, scrub, throw
+from nts.model.naming import set_name_by_naming_series
+from nts.permissions import (
 	add_user_permission,
 	get_doc_permissions,
 	has_permission,
 	remove_user_permission,
 )
-from frappe.utils import cstr, getdate, today, validate_email_address
-from frappe.utils.nestedset import NestedSet
+from nts.utils import cstr, getdate, today, validate_email_address
+from nts.utils.nestedset import NestedSet
 
 from prodman.utilities.transaction_base import delete_events
 
 
-class EmployeeUserDisabledError(frappe.ValidationError):
+class EmployeeUserDisabledError(nts.ValidationError):
 	pass
 
 
-class InactiveEmployeeStatusError(frappe.ValidationError):
+class InactiveEmployeeStatusError(nts.ValidationError):
 	pass
 
 
@@ -47,9 +47,9 @@ class Employee(NestedSet):
 		if self.user_id:
 			self.validate_user_details()
 		else:
-			existing_user_id = frappe.db.get_value("Employee", self.name, "user_id")
+			existing_user_id = nts.db.get_value("Employee", self.name, "user_id")
 			if existing_user_id:
-				user = frappe.get_doc("User", existing_user_id)
+				user = nts.get_doc("User", existing_user_id)
 				validate_employee_role(user, ignore_emp_check=True)
 				user.save(ignore_permissions=True)
 				remove_user_permission("Employee", self.name, existing_user_id)
@@ -64,7 +64,7 @@ class Employee(NestedSet):
 
 	def validate_user_details(self):
 		if self.user_id:
-			data = frappe.db.get_value("User", self.user_id, ["enabled"], as_dict=1)
+			data = nts.db.get_value("User", self.user_id, ["enabled"], as_dict=1)
 
 			if not data:
 				self.user_id = None
@@ -74,11 +74,11 @@ class Employee(NestedSet):
 			self.validate_duplicate_user_id()
 
 	def update_nsm_model(self):
-		frappe.utils.nestedset.update_nsm(self)
+		nts.utils.nestedset.update_nsm(self)
 
 	def on_update(self):
 		self.update_nsm_model()
-		frappe.clear_cache()
+		nts.clear_cache()
 		if self.user_id:
 			self.update_user()
 			self.update_user_permissions()
@@ -91,7 +91,7 @@ class Employee(NestedSet):
 		if not has_permission("User Permission", ptype="write", raise_exception=False):
 			return
 
-		employee_user_permission_exists = frappe.db.exists(
+		employee_user_permission_exists = nts.db.exists(
 			"User Permission", {"allow": "Employee", "for_value": self.name, "user": self.user_id}
 		)
 
@@ -104,7 +104,7 @@ class Employee(NestedSet):
 
 	def update_user(self):
 		# add employee role if missing
-		user = frappe.get_doc("User", self.user_id)
+		user = nts.get_doc("User", self.user_id)
 		user.flags.ignore_permissions = True
 
 		if "Employee" not in user.get("roles"):
@@ -131,7 +131,7 @@ class Employee(NestedSet):
 			if not user.user_image:
 				user.user_image = self.image
 				try:
-					frappe.get_doc(
+					nts.get_doc(
 						{
 							"doctype": "File",
 							"file_url": self.image,
@@ -139,7 +139,7 @@ class Employee(NestedSet):
 							"attached_to_name": self.user_id,
 						}
 					).insert(ignore_if_duplicate=True)
-				except frappe.DuplicateEntryError:
+				except nts.DuplicateEntryError:
 					# already exists
 					pass
 
@@ -161,23 +161,23 @@ class Employee(NestedSet):
 			validate_email_address(self.personal_email, True)
 
 	def set_preferred_email(self):
-		preferred_email_field = frappe.scrub(self.prefered_contact_email)
+		preferred_email_field = nts.scrub(self.prefered_contact_email)
 		self.prefered_email = self.get(preferred_email_field) if preferred_email_field else None
 
 	def validate_status(self):
 		if self.status == "Left":
-			reports_to = frappe.db.get_all(
+			reports_to = nts.db.get_all(
 				"Employee",
 				filters={"reports_to": self.name, "status": "Active"},
 				fields=["name", "employee_name"],
 			)
 			if reports_to:
 				link_to_employees = [
-					frappe.utils.get_link_to_form("Employee", employee.name, label=employee.employee_name)
+					nts.utils.get_link_to_form("Employee", employee.name, label=employee.employee_name)
 					for employee in reports_to
 				]
 				message = _("The following employees are currently still reporting to {0}:").format(
-					frappe.bold(self.employee_name)
+					nts.bold(self.employee_name)
 				)
 				message += "<br><br><ul><li>" + "</li><li>".join(link_to_employees)
 				message += "</li></ul><br>"
@@ -191,14 +191,14 @@ class Employee(NestedSet):
 			return
 
 		if enabled is None:
-			frappe.throw(_("User {0} does not exist").format(self.user_id))
+			nts.throw(_("User {0} does not exist").format(self.user_id))
 		if enabled == 0:
-			frappe.throw(_("User {0} is disabled").format(self.user_id), EmployeeUserDisabledError)
+			nts.throw(_("User {0} is disabled").format(self.user_id), EmployeeUserDisabledError)
 
 	def validate_duplicate_user_id(self):
-		Employee = frappe.qb.DocType("Employee")
+		Employee = nts.qb.DocType("Employee")
 		employee = (
-			frappe.qb.from_(Employee)
+			nts.qb.from_(Employee)
 			.select(Employee.name)
 			.where(
 				(Employee.user_id == self.user_id)
@@ -209,7 +209,7 @@ class Employee(NestedSet):
 		if employee:
 			throw(
 				_("User {0} is already assigned to Employee {1}").format(self.user_id, employee[0][0]),
-				frappe.DuplicateEntryError,
+				nts.DuplicateEntryError,
 			)
 
 	def validate_reports_to(self):
@@ -222,30 +222,30 @@ class Employee(NestedSet):
 
 	def validate_preferred_email(self):
 		if self.prefered_contact_email and not self.get(scrub(self.prefered_contact_email)):
-			frappe.msgprint(_("Please enter {0}").format(self.prefered_contact_email))
+			nts.msgprint(_("Please enter {0}").format(self.prefered_contact_email))
 
 	def reset_employee_emails_cache(self):
 		prev_doc = self.get_doc_before_save() or {}
 		cell_number = cstr(self.get("cell_number"))
 		prev_number = cstr(prev_doc.get("cell_number"))
 		if cell_number != prev_number or self.get("user_id") != prev_doc.get("user_id"):
-			frappe.cache().hdel("employees_with_number", cell_number)
-			frappe.cache().hdel("employees_with_number", prev_number)
+			nts.cache().hdel("employees_with_number", cell_number)
+			nts.cache().hdel("employees_with_number", prev_number)
 
 
 def validate_employee_role(doc, method=None, ignore_emp_check=False):
 	# called via User hook
 	if not ignore_emp_check:
-		if frappe.db.get_value("Employee", {"user_id": doc.name}):
+		if nts.db.get_value("Employee", {"user_id": doc.name}):
 			return
 
 	user_roles = [d.role for d in doc.get("roles")]
 	if "Employee" in user_roles:
-		frappe.msgprint(_("User {0}: Removed Employee role as there is no mapped employee.").format(doc.name))
+		nts.msgprint(_("User {0}: Removed Employee role as there is no mapped employee.").format(doc.name))
 		doc.get("roles").remove(doc.get("roles", {"role": "Employee"})[0])
 
 	if "Employee Self Service" in user_roles:
-		frappe.msgprint(
+		nts.msgprint(
 			_("User {0}: Removed Employee Self Service role as there is no mapped employee.").format(doc.name)
 		)
 		doc.get("roles").remove(doc.get("roles", {"role": "Employee Self Service"})[0])
@@ -256,7 +256,7 @@ def update_user_permissions(doc, method):
 	if "Employee" in [d.role for d in doc.get("roles")]:
 		if not has_permission("User Permission", ptype="write", raise_exception=False):
 			return
-		employee = frappe.get_doc("Employee", {"user_id": doc.name})
+		employee = nts.get_doc("Employee", {"user_id": doc.name})
 		employee.update_user_permissions()
 
 
@@ -268,16 +268,16 @@ def get_employee_email(employee_doc):
 
 def get_holiday_list_for_employee(employee, raise_exception=True):
 	if employee:
-		holiday_list, company = frappe.get_cached_value("Employee", employee, ["holiday_list", "company"])
+		holiday_list, company = nts.get_cached_value("Employee", employee, ["holiday_list", "company"])
 	else:
 		holiday_list = ""
-		company = frappe.db.get_single_value("Global Defaults", "default_company")
+		company = nts.db.get_single_value("Global Defaults", "default_company")
 
 	if not holiday_list:
-		holiday_list = frappe.get_cached_value("Company", company, "default_holiday_list")
+		holiday_list = nts.get_cached_value("Company", company, "default_holiday_list")
 
 	if not holiday_list and raise_exception:
-		frappe.throw(
+		nts.throw(
 			_("Please set a default Holiday List for Employee {0} or Company {1}").format(employee, company)
 		)
 
@@ -304,7 +304,7 @@ def is_holiday(employee, date=None, raise_exception=True, only_non_weekly=False,
 	if only_non_weekly:
 		filters["weekly_off"] = False
 
-	holidays = frappe.get_all("Holiday", fields=["description"], filters=filters, pluck="description")
+	holidays = nts.get_all("Holiday", fields=["description"], filters=filters, pluck="description")
 
 	if with_description:
 		return len(holidays) > 0, holidays
@@ -312,17 +312,17 @@ def is_holiday(employee, date=None, raise_exception=True, only_non_weekly=False,
 	return len(holidays) > 0
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def deactivate_sales_person(status=None, employee=None):
 	if status == "Left":
-		sales_person = frappe.db.get_value("Sales Person", {"Employee": employee})
+		sales_person = nts.db.get_value("Sales Person", {"Employee": employee})
 		if sales_person:
-			frappe.db.set_value("Sales Person", sales_person, "enabled", 0)
+			nts.db.set_value("Sales Person", sales_person, "enabled", 0)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def create_user(employee, user=None, email=None):
-	emp = frappe.get_doc("Employee", employee)
+	emp = nts.get_doc("Employee", employee)
 
 	employee_name = emp.employee_name.split(" ")
 	middle_name = last_name = ""
@@ -338,7 +338,7 @@ def create_user(employee, user=None, email=None):
 	if email:
 		emp.prefered_email = email
 
-	user = frappe.new_doc("User")
+	user = nts.new_doc("User")
 	user.update(
 		{
 			"name": emp.employee_name,
@@ -361,14 +361,14 @@ def create_user(employee, user=None, email=None):
 
 def get_all_employee_emails(company):
 	"""Returns list of employee emails either based on user_id or company_email"""
-	employee_list = frappe.get_all(
+	employee_list = nts.get_all(
 		"Employee", fields=["name", "employee_name"], filters={"status": "Active", "company": company}
 	)
 	employee_emails = []
 	for employee in employee_list:
 		if not employee:
 			continue
-		user, company_email, personal_email = frappe.db.get_value(
+		user, company_email, personal_email = nts.db.get_value(
 			"Employee", employee, ["user_id", "company_email", "personal_email"]
 		)
 		email = user or company_email or personal_email
@@ -383,7 +383,7 @@ def get_employee_emails(employee_list):
 	for employee in employee_list:
 		if not employee:
 			continue
-		user, company_email, personal_email = frappe.db.get_value(
+		user, company_email, personal_email = nts.db.get_value(
 			"Employee", employee, ["user_id", "company_email", "personal_email"]
 		)
 		email = user or company_email or personal_email
@@ -392,7 +392,7 @@ def get_employee_emails(employee_list):
 	return employee_emails
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_children(doctype, parent=None, company=None, is_root=False, is_tree=False):
 	filters = [["status", "=", "Active"]]
 	if company and company != "All Companies":
@@ -407,21 +407,21 @@ def get_children(doctype, parent=None, company=None, is_root=False, is_tree=Fals
 	else:
 		filters.append(["reports_to", "=", ""])
 
-	employees = frappe.get_list(doctype, fields=fields, filters=filters, order_by="name")
+	employees = nts.get_list(doctype, fields=fields, filters=filters, order_by="name")
 
 	for employee in employees:
-		is_expandable = frappe.get_all(doctype, filters=[["reports_to", "=", employee.get("value")]])
+		is_expandable = nts.get_all(doctype, filters=[["reports_to", "=", employee.get("value")]])
 		employee.expandable = 1 if is_expandable else 0
 
 	return employees
 
 
 def on_doctype_update():
-	frappe.db.add_index("Employee", ["lft", "rgt"])
+	nts.db.add_index("Employee", ["lft", "rgt"])
 
 
 def has_user_permission_for_employee(user_name, employee_name):
-	return frappe.db.exists(
+	return nts.db.exists(
 		{
 			"doctype": "User Permission",
 			"user": user_name,
@@ -433,7 +433,7 @@ def has_user_permission_for_employee(user_name, employee_name):
 
 def has_upload_permission(doc, ptype="read", user=None):
 	if not user:
-		user = frappe.session.user
+		user = nts.session.user
 	if get_doc_permissions(doc, user=user, ptype=ptype).get(ptype):
 		return True
 	return doc.user_id == user

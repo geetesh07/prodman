@@ -1,10 +1,10 @@
-// Copyright (c) 2018, Frappe and contributors
+// Copyright (c) 2018, nts and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Quality Review", {
+nts.ui.form.on("Quality Review", {
 	goal: function (frm) {
-		frappe.call({
-			method: "frappe.client.get",
+		nts.call({
+			method: "nts.client.get",
 			args: {
 				doctype: "Quality Goal",
 				name: frm.doc.goal,

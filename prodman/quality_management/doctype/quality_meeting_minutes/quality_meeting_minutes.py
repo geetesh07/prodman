@@ -1,9 +1,9 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2019, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-# import frappe
-from frappe.model.document import Document
+# import nts
+from nts.model.document import Document
 
 
 class QualityMeetingMinutes(Document):
@@ -13,7 +13,7 @@ class QualityMeetingMinutes(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		document_name: DF.DynamicLink | None
 		document_type: DF.Literal["Quality Review", "Quality Action", "Quality Feedback"]

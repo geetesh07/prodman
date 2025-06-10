@@ -1,4 +1,4 @@
-from frappe import _
+from nts import _
 
 doctype_rule_map = {
 	"Item": {"points": 5, "for_doc_event": "New"},

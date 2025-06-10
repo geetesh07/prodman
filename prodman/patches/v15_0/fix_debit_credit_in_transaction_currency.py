@@ -1,4 +1,4 @@
-import frappe
+import nts
 
 
 def execute():
@@ -8,7 +8,7 @@ def execute():
 	# else debit and credit divided by exchange rate
 
 	# nosemgrep
-	frappe.db.sql(
+	nts.db.sql(
 		"""
         UPDATE `tabGL Entry`
         SET

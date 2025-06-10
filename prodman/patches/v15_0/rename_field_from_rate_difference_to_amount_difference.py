@@ -1,9 +1,9 @@
-import frappe
-from frappe.model.utils.rename_field import rename_field
+import nts
+from nts.model.utils.rename_field import rename_field
 
 
 def execute():
-	frappe.db.set_value(
+	nts.db.set_value(
 		"DocField",
 		{"parent": "Purchase Receipt Item", "fieldname": "rate_difference_with_purchase_invoice"},
 		"label",
@@ -14,4 +14,4 @@ def execute():
 		"rate_difference_with_purchase_invoice",
 		"amount_difference_with_purchase_invoice",
 	)
-	frappe.clear_cache(doctype="Purchase Receipt Item")
+	nts.clear_cache(doctype="Purchase Receipt Item")

@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["BOM Variance Report"] = {
+nts.query_reports["BOM Variance Report"] = {
 	filters: [
 		{
 			fieldname: "bom_no",
@@ -15,7 +15,7 @@ frappe.query_reports["BOM Variance Report"] = {
 			fieldtype: "Link",
 			options: "Work Order",
 			get_query: function () {
-				var bom_no = frappe.query_report.get_filter_value("bom_no");
+				var bom_no = nts.query_report.get_filter_value("bom_no");
 				return {
 					query: "prodman.manufacturing.report.bom_variance_report.bom_variance_report.get_work_orders",
 					filters: {

@@ -1,8 +1,8 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -11,20 +11,20 @@ def execute(filters=None):
 
 def get_data(report_filters):
 	data = []
-	operations = frappe.get_all("Operation", filters={"is_corrective_operation": 1})
+	operations = nts.get_all("Operation", filters={"is_corrective_operation": 1})
 	if operations:
 		if report_filters.get("operation"):
 			operations = [report_filters.get("operation")]
 		else:
 			operations = [d.name for d in operations]
 
-		job_card = frappe.qb.DocType("Job Card")
+		job_card = nts.qb.DocType("Job Card")
 
 		operating_cost = ((job_card.hour_rate) * (job_card.total_time_in_mins) / 60.0).as_("operating_cost")
 		item_code = (job_card.production_item).as_("item_code")
 
 		query = (
-			frappe.qb.from_(job_card)
+			nts.qb.from_(job_card)
 			.select(
 				job_card.name,
 				job_card.work_order,
@@ -69,7 +69,7 @@ def append_filters(query, report_filters, operations, job_card):
 				query = query.where(job_card[field] == report_filters.get(field))
 
 	if report_filters.get("from_date") or report_filters.get("to_date"):
-		job_card_time_log = frappe.qb.DocType("Job Card Time Log")
+		job_card_time_log = nts.qb.DocType("Job Card Time Log")
 
 		query = query.join(job_card_time_log).on(job_card.name == job_card_time_log.parent)
 		if report_filters.get("from_date"):

@@ -1,7 +1,7 @@
 import unittest
 
-import frappe
-from frappe.test_runner import make_test_objects
+import nts 
+from nts .test_runner import make_test_objects
 
 from prodman.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from prodman.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
@@ -24,7 +24,7 @@ class TestUtils(unittest.TestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def test_get_party_shipping_address(self):
 		address = get_party_shipping_address("Customer", "_Test Customer 1")
@@ -105,7 +105,7 @@ class TestUtils(unittest.TestCase):
 		self.assertEqual(payment_entry.difference_amount, 0.0)
 		payment_entry.submit()
 
-		payment_reconciliation = frappe.new_doc("Payment Reconciliation")
+		payment_reconciliation = nts .new_doc("Payment Reconciliation")
 		payment_reconciliation.company = payment_entry.company
 		payment_reconciliation.party_type = "Supplier"
 		payment_reconciliation.party = purchase_invoice.supplier
@@ -132,14 +132,14 @@ class TestUtils(unittest.TestCase):
 		"""
 		Tests parsing utility used by Naming Series Variable hook for FY
 		"""
-		from frappe.custom.doctype.property_setter.property_setter import make_property_setter
-		from frappe.utils import nowdate
+		from nts .custom.doctype.property_setter.property_setter import make_property_setter
+		from nts .utils import nowdate
 
 		from prodman.accounts.utils import get_fiscal_year
 		from prodman.buying.doctype.supplier.test_supplier import create_supplier
 
 		# Configure Supplier Naming in Buying Settings
-		frappe.db.set_default("supp_master_name", "Auto Name")
+		nts .db.set_default("supp_master_name", "Auto Name")
 
 		# Configure Autoname in Supplier DocType
 		make_property_setter("Supplier", None, "naming_rule", "Expression", "Data", for_doctype="Doctype")
@@ -154,7 +154,7 @@ class TestUtils(unittest.TestCase):
 		doc_name = supplier.name.split("-")
 		self.assertEqual(len(doc_name), 3)
 		self.assertSequenceEqual(doc_name[0:2], ("SUP", fiscal_year))
-		frappe.db.set_default("supp_master_name", "Supplier Name")
+		nts .db.set_default("supp_master_name", "Supplier Name")
 
 
 ADDRESS_RECORDS = [

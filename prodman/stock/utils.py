@@ -1,13 +1,13 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import CombineDatetime, IfNull, Sum
-from frappe.utils import cstr, flt, get_link_to_form, get_time, getdate, nowdate, nowtime
+import nts
+from nts import _
+from nts.query_builder.functions import CombineDatetime, IfNull, Sum
+from nts.utils import cstr, flt, get_link_to_form, get_time, getdate, nowdate, nowtime
 
 import prodman
 from prodman.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle import (
@@ -20,11 +20,11 @@ from prodman.stock.valuation import FIFOValuation, LIFOValuation
 BarcodeScanResult = dict[str, str | None]
 
 
-class InvalidWarehouseCompany(frappe.ValidationError):
+class InvalidWarehouseCompany(nts.ValidationError):
 	pass
 
 
-class PendingRepostingError(frappe.ValidationError):
+class PendingRepostingError(nts.ValidationError):
 	pass
 
 
@@ -52,7 +52,7 @@ def get_stock_value_from_bin(warehouse=None, item_code=None):
 		% conditions
 	)
 
-	stock_value = frappe.db.sql(query, values)
+	stock_value = nts.db.sql(query, values)
 
 	return stock_value
 
@@ -66,9 +66,9 @@ def get_stock_value_on(
 	if not posting_date:
 		posting_date = nowdate()
 
-	sle = frappe.qb.DocType("Stock Ledger Entry")
+	sle = nts.qb.DocType("Stock Ledger Entry")
 	query = (
-		frappe.qb.from_(sle)
+		nts.qb.from_(sle)
 		.select(IfNull(Sum(sle.stock_value_difference), 0))
 		.where((sle.posting_date <= posting_date) & (sle.is_cancelled == 0))
 	)
@@ -79,7 +79,7 @@ def get_stock_value_on(
 
 		warehouses = set(warehouses)
 		for wh in list(warehouses):
-			if frappe.db.get_value("Warehouse", wh, "is_group"):
+			if nts.db.get_value("Warehouse", wh, "is_group"):
 				warehouses.update(get_child_warehouses(wh))
 
 		query = query.where(sle.warehouse.isin(warehouses))
@@ -93,7 +93,7 @@ def get_stock_value_on(
 	return query.run(as_list=True)[0][0]
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_stock_balance(
 	item_code,
 	warehouse,
@@ -132,7 +132,7 @@ def get_stock_balance(
 	if with_valuation_rate:
 		if with_serial_no:
 			serial_no_details = get_available_serial_nos(
-				frappe._dict(
+				nts._dict(
 					{
 						"item_code": item_code,
 						"warehouse": warehouse,
@@ -164,11 +164,11 @@ def get_serial_nos_data(serial_nos):
 	return get_serial_nos(serial_nos)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_latest_stock_qty(item_code, warehouse=None):
 	values, condition = [item_code], ""
 	if warehouse:
-		lft, rgt, is_group = frappe.db.get_value("Warehouse", warehouse, ["lft", "rgt", "is_group"])
+		lft, rgt, is_group = nts.db.get_value("Warehouse", warehouse, ["lft", "rgt", "is_group"])
 
 		if is_group:
 			values.extend([lft, rgt])
@@ -180,7 +180,7 @@ def get_latest_stock_qty(item_code, warehouse=None):
 			values.append(warehouse)
 			condition += " AND warehouse = %s"
 
-	actual_qty = frappe.db.sql(
+	actual_qty = nts.db.sql(
 		f"""select sum(actual_qty) from tabBin
 		where item_code=%s {condition}""",
 		values,
@@ -191,7 +191,7 @@ def get_latest_stock_qty(item_code, warehouse=None):
 
 def get_latest_stock_balance():
 	bin_map = {}
-	for d in frappe.db.sql(
+	for d in nts.db.sql(
 		"""SELECT item_code, warehouse, stock_value as stock_value
 		FROM tabBin""",
 		as_dict=1,
@@ -202,17 +202,17 @@ def get_latest_stock_balance():
 
 
 def get_bin(item_code, warehouse):
-	bin = frappe.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse})
+	bin = nts.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse})
 	if not bin:
 		bin_obj = _create_bin(item_code, warehouse)
 	else:
-		bin_obj = frappe.get_doc("Bin", bin)
+		bin_obj = nts.get_doc("Bin", bin)
 	bin_obj.flags.ignore_permissions = True
 	return bin_obj
 
 
 def get_or_make_bin(item_code: str, warehouse: str) -> str:
-	bin_record = frappe.get_cached_value("Bin", {"item_code": item_code, "warehouse": warehouse})
+	bin_record = nts.get_cached_value("Bin", {"item_code": item_code, "warehouse": warehouse})
 
 	if not bin_record:
 		bin_obj = _create_bin(item_code, warehouse)
@@ -225,18 +225,18 @@ def _create_bin(item_code, warehouse):
 
 	bin_creation_savepoint = "create_bin"
 	try:
-		frappe.db.savepoint(bin_creation_savepoint)
-		bin_obj = frappe.get_doc(doctype="Bin", item_code=item_code, warehouse=warehouse)
+		nts.db.savepoint(bin_creation_savepoint)
+		bin_obj = nts.get_doc(doctype="Bin", item_code=item_code, warehouse=warehouse)
 		bin_obj.flags.ignore_permissions = 1
 		bin_obj.insert()
-	except frappe.UniqueValidationError:
-		frappe.db.rollback(save_point=bin_creation_savepoint)  # preserve transaction in postgres
-		bin_obj = frappe.get_last_doc("Bin", {"item_code": item_code, "warehouse": warehouse})
+	except nts.UniqueValidationError:
+		nts.db.rollback(save_point=bin_creation_savepoint)  # preserve transaction in postgres
+		bin_obj = nts.get_last_doc("Bin", {"item_code": item_code, "warehouse": warehouse})
 
 	return bin_obj
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_incoming_rate(args, raise_error_if_no_rate=True):
 	"""Get Incoming Rate based on valuation method"""
 	from prodman.stock.stock_ledger import get_previous_sle, get_valuation_rate
@@ -246,14 +246,14 @@ def get_incoming_rate(args, raise_error_if_no_rate=True):
 
 	in_rate = None
 
-	item_details = frappe.get_cached_value(
+	item_details = nts.get_cached_value(
 		"Item", args.get("item_code"), ["has_serial_no", "has_batch_no"], as_dict=1
 	)
 
-	use_moving_avg_for_batch = frappe.db.get_single_value("Stock Settings", "do_not_use_batchwise_valuation")
+	use_moving_avg_for_batch = nts.db.get_single_value("Stock Settings", "do_not_use_batchwise_valuation")
 
 	if isinstance(args, dict):
-		args = frappe._dict(args)
+		args = nts._dict(args)
 
 	if item_details and item_details.has_serial_no and args.get("serial_and_batch_bundle"):
 		args.actual_qty = args.qty
@@ -289,7 +289,7 @@ def get_incoming_rate(args, raise_error_if_no_rate=True):
 		return sn_obj.get_incoming_rate()
 	elif args.get("batch_no") and not args.get("serial_and_batch_bundle") and not use_moving_avg_for_batch:
 		args.actual_qty = args.qty
-		args.batch_nos = frappe._dict({args.batch_no: args})
+		args.batch_nos = nts._dict({args.batch_no: args})
 
 		batch_obj = BatchNoValuation(
 			sle=args,
@@ -329,7 +329,7 @@ def get_incoming_rate(args, raise_error_if_no_rate=True):
 
 
 def get_batch_incoming_rate(item_code, warehouse, batch_no, posting_date, posting_time, creation=None):
-	sle = frappe.qb.DocType("Stock Ledger Entry")
+	sle = nts.qb.DocType("Stock Ledger Entry")
 
 	timestamp_condition = CombineDatetime(sle.posting_date, sle.posting_time) < CombineDatetime(
 		posting_date, posting_time
@@ -340,7 +340,7 @@ def get_batch_incoming_rate(item_code, warehouse, batch_no, posting_date, postin
 		) & (sle.creation < creation)
 
 	batch_details = (
-		frappe.qb.from_(sle)
+		nts.qb.from_(sle)
 		.select(Sum(sle.stock_value_difference).as_("batch_value"), Sum(sle.actual_qty).as_("batch_qty"))
 		.where(
 			(sle.item_code == item_code)
@@ -361,7 +361,7 @@ def get_avg_purchase_rate(serial_nos):
 
 	serial_nos = get_valid_serial_nos(serial_nos)
 	return flt(
-		frappe.db.sql(
+		nts.db.sql(
 			"""select avg(purchase_rate) from `tabSerial No`
 		where name in (%s)"""
 			% ", ".join(["%s"] * len(serial_nos)),
@@ -372,9 +372,9 @@ def get_avg_purchase_rate(serial_nos):
 
 def get_valuation_method(item_code):
 	"""get valuation method from item or default"""
-	val_method = frappe.db.get_value("Item", item_code, "valuation_method", cache=True)
+	val_method = nts.db.get_value("Item", item_code, "valuation_method", cache=True)
 	if not val_method:
-		val_method = frappe.db.get_value("Stock Settings", None, "valuation_method", cache=True) or "FIFO"
+		val_method = nts.db.get_value("Stock Settings", None, "valuation_method", cache=True) or "FIFO"
 	return val_method
 
 
@@ -412,33 +412,33 @@ def get_valid_serial_nos(sr_nos, qty=0, item_code=""):
 		if val:
 			val = val.strip()
 			if val in valid_serial_nos:
-				frappe.throw(_("Serial number {0} entered more than once").format(val))
+				nts.throw(_("Serial number {0} entered more than once").format(val))
 			else:
 				valid_serial_nos.append(val)
 
 	if qty and len(valid_serial_nos) != abs(qty):
-		frappe.throw(_("{0} valid serial nos for Item {1}").format(abs(qty), item_code))
+		nts.throw(_("{0} valid serial nos for Item {1}").format(abs(qty), item_code))
 
 	return valid_serial_nos
 
 
 def validate_warehouse_company(warehouse, company):
-	warehouse_company = frappe.db.get_value("Warehouse", warehouse, "company", cache=True)
+	warehouse_company = nts.db.get_value("Warehouse", warehouse, "company", cache=True)
 	if warehouse_company and warehouse_company != company:
-		frappe.throw(
+		nts.throw(
 			_("Warehouse {0} does not belong to company {1}").format(warehouse, company),
 			InvalidWarehouseCompany,
 		)
 
 
 def is_group_warehouse(warehouse):
-	if frappe.db.get_value("Warehouse", warehouse, "is_group", cache=True):
-		frappe.throw(_("Group node warehouse is not allowed to select for transactions"))
+	if nts.db.get_value("Warehouse", warehouse, "is_group", cache=True):
+		nts.throw(_("Group node warehouse is not allowed to select for transactions"))
 
 
 def validate_disabled_warehouse(warehouse):
-	if frappe.db.get_value("Warehouse", warehouse, "disabled", cache=True):
-		frappe.throw(
+	if nts.db.get_value("Warehouse", warehouse, "disabled", cache=True):
+		nts.throw(
 			_("Disabled Warehouse {0} cannot be used for this transaction.").format(
 				get_link_to_form("Warehouse", warehouse)
 			)
@@ -464,7 +464,7 @@ def update_included_uom_in_report(columns, result, include_uom, conversion_facto
 				idx + 1,
 				{
 					"label": "{} (per {})".format(d.get("label"), include_uom),
-					"fieldname": "{}_{}".format(d.get("fieldname"), frappe.scrub(include_uom)),
+					"fieldname": "{}_{}".format(d.get("fieldname"), nts.scrub(include_uom)),
 					"fieldtype": "Currency" if d.get("convertible") == "rate" else "Float",
 				},
 			)
@@ -487,7 +487,7 @@ def update_included_uom_in_report(columns, result, include_uom, conversion_facto
 			if not is_dict_obj:
 				row.insert(key + 1, new_value)
 			else:
-				new_key = f"{key}_{frappe.scrub(include_uom)}"
+				new_key = f"{key}_{nts.scrub(include_uom)}"
 				update_dict_values.append([row, new_key, new_value])
 
 	for data in update_dict_values:
@@ -506,7 +506,7 @@ def add_additional_uom_columns(columns, result, include_uom, conversion_factors)
 			next_col = col_idx + 1
 			columns.insert(next_col, col.copy())
 			columns[next_col]["fieldname"] += "_alt"
-			convertible_column_map[col.get("fieldname")] = frappe._dict(
+			convertible_column_map[col.get("fieldname")] = nts._dict(
 				{"converted_col": columns[next_col]["fieldname"], "for_type": col.get("convertible")}
 			)
 			if col.get("convertible") == "rate":
@@ -528,7 +528,7 @@ def add_additional_uom_columns(columns, result, include_uom, conversion_factors)
 
 
 def get_incoming_outgoing_rate_for_cancel(item_code, voucher_type, voucher_no, voucher_detail_no):
-	outgoing_rate = frappe.db.sql(
+	outgoing_rate = nts.db.sql(
 		"""SELECT CASE WHEN actual_qty = 0 THEN 0 ELSE abs(stock_value_difference / actual_qty) END
 		FROM `tabStock Ledger Entry`
 		WHERE voucher_type = %s and voucher_no = %s
@@ -543,11 +543,11 @@ def get_incoming_outgoing_rate_for_cancel(item_code, voucher_type, voucher_no, v
 
 
 def is_reposting_item_valuation_in_progress():
-	reposting_in_progress = frappe.db.exists(
+	reposting_in_progress = nts.db.exists(
 		"Repost Item Valuation", {"docstatus": 1, "status": ["in", ["Queued", "In Progress"]]}
 	)
 	if reposting_in_progress:
-		frappe.msgprint(
+		nts.msgprint(
 			_("Item valuation reposting in progress. Report might show incorrect item valuation."), alert=1
 		)
 
@@ -561,12 +561,12 @@ def check_pending_reposting(posting_date: str, throw_error: bool = True) -> bool
 		"posting_date": ["<=", posting_date],
 	}
 
-	reposting_pending = frappe.db.exists("Repost Item Valuation", filters)
+	reposting_pending = nts.db.exists("Repost Item Valuation", filters)
 	if reposting_pending and throw_error:
 		msg = _(
 			"Stock/Accounts can not be frozen as processing of backdated entries is going on. Please try again later."
 		)
-		frappe.msgprint(
+		nts.msgprint(
 			msg,
 			raise_exception=PendingRepostingError,
 			title="Stock Reposting Ongoing",
@@ -581,20 +581,20 @@ def check_pending_reposting(posting_date: str, throw_error: bool = True) -> bool
 	return bool(reposting_pending)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def scan_barcode(search_value: str) -> BarcodeScanResult:
 	def set_cache(data: BarcodeScanResult):
-		frappe.cache().set_value(f"prodman:barcode_scan:{search_value}", data, expires_in_sec=120)
+		nts.cache().set_value(f"prodman:barcode_scan:{search_value}", data, expires_in_sec=120)
 
 	def get_cache() -> BarcodeScanResult | None:
-		if data := frappe.cache().get_value(f"prodman:barcode_scan:{search_value}"):
+		if data := nts.cache().get_value(f"prodman:barcode_scan:{search_value}"):
 			return data
 
 	if scan_data := get_cache():
 		return scan_data
 
 	# search barcode no
-	barcode_data = frappe.db.get_value(
+	barcode_data = nts.db.get_value(
 		"Item Barcode",
 		{"barcode": search_value},
 		["barcode", "parent as item_code", "uom"],
@@ -606,7 +606,7 @@ def scan_barcode(search_value: str) -> BarcodeScanResult:
 		return barcode_data
 
 	# search serial no
-	serial_no_data = frappe.db.get_value(
+	serial_no_data = nts.db.get_value(
 		"Serial No",
 		search_value,
 		["name as serial_no", "item_code", "batch_no"],
@@ -618,15 +618,15 @@ def scan_barcode(search_value: str) -> BarcodeScanResult:
 		return serial_no_data
 
 	# search batch no
-	batch_no_data = frappe.db.get_value(
+	batch_no_data = nts.db.get_value(
 		"Batch",
 		search_value,
 		["name as batch_no", "item as item_code"],
 		as_dict=True,
 	)
 	if batch_no_data:
-		if frappe.get_cached_value("Item", batch_no_data.item_code, "has_serial_no"):
-			frappe.throw(
+		if nts.get_cached_value("Item", batch_no_data.item_code, "has_serial_no"):
+			nts.throw(
 				_(
 					"Batch No {0} is linked with Item {1} which has serial no. Please scan serial no instead."
 				).format(search_value, batch_no_data.item_code)
@@ -641,7 +641,7 @@ def scan_barcode(search_value: str) -> BarcodeScanResult:
 
 def _update_item_info(scan_result: dict[str, str | None]) -> dict[str, str | None]:
 	if item_code := scan_result.get("item_code"):
-		if item_info := frappe.get_cached_value(
+		if item_info := nts.get_cached_value(
 			"Item",
 			item_code,
 			["has_batch_no", "has_serial_no"],

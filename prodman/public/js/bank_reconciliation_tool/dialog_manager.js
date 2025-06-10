@@ -1,4 +1,4 @@
-frappe.provide("prodman.accounts.bank_reconciliation");
+nts.provide("prodman.accounts.bank_reconciliation");
 
 prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 	constructor(
@@ -22,8 +22,8 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 	show_dialog(bank_transaction_name, update_dt_cards) {
 		this.bank_transaction_name = bank_transaction_name;
 		this.update_dt_cards = update_dt_cards;
-		frappe.call({
-			method: "frappe.client.get_value",
+		nts.call({
+			method: "nts.client.get_value",
 			args: {
 				doctype: "Bank Transaction",
 				filters: { name: this.bank_transaction_name },
@@ -68,7 +68,7 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 	}
 
 	get_linked_vouchers(document_types) {
-		frappe.call({
+		nts.call({
 			method: "prodman.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool.get_linked_payments",
 			args: {
 				bank_transaction_name: this.bank_transaction_name,
@@ -112,14 +112,14 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 				editable: false,
 				width: 1,
 				format: (value, row) => {
-					return frappe.form.formatters.Link(value, { options: row[2].content });
+					return nts.form.formatters.Link(value, { options: row[2].content });
 				},
 			},
 			{
 				name: __("Reference Date"),
 				editable: false,
 				width: 120,
-				format: frappe.form.formatters.Date,
+				format: nts.form.formatters.Date,
 			},
 			{
 				name: __("Remaining"),
@@ -159,7 +159,7 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 				checkboxColumn: true,
 				inlineFilters: true,
 			};
-			this.datatable = new frappe.DataTable(proposals_wrapper.get(0), datatable_options);
+			this.datatable = new nts.DataTable(proposals_wrapper.get(0), datatable_options);
 		} else {
 			this.datatable.refresh(this.data, this.columns);
 			this.datatable.rowmanager.checkMap = [];
@@ -198,7 +198,7 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 			},
 		];
 
-		frappe.call({
+		nts.call({
 			method: "prodman.accounts.doctype.bank_transaction.bank_transaction.get_doctypes_for_bank_reconciliation",
 			callback: (r) => {
 				$.each(r.message, (_i, entry) => {
@@ -210,14 +210,14 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 					fields.push({
 						fieldtype: "Check",
 						label: entry,
-						fieldname: frappe.scrub(entry),
+						fieldname: nts.scrub(entry),
 						onchange: () => this.update_options(),
 					});
 				});
 
 				fields.push(...this.get_voucher_fields());
 
-				me.dialog = new frappe.ui.Dialog({
+				me.dialog = new nts.ui.Dialog({
 					title: __("Reconcile the Bank Transaction"),
 					fields: fields,
 					size: "large",
@@ -348,7 +348,7 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 				get_query: function () {
 					return {
 						filters: {
-							name: ["in", Object.keys(frappe.boot.party_account_types)],
+							name: ["in", Object.keys(nts.boot.party_account_types)],
 						},
 					};
 				},
@@ -483,7 +483,7 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 				amount: x[5].content,
 			});
 		});
-		frappe.call({
+		nts.call({
 			method: "prodman.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool.reconcile_vouchers",
 			args: {
 				bank_transaction_name: this.bank_transaction.name,
@@ -491,7 +491,7 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 			},
 			callback: (response) => {
 				const alert_string = __("Bank Transaction {0} Matched", [this.bank_transaction.name]);
-				frappe.show_alert(alert_string);
+				nts.show_alert(alert_string);
 				this.update_dt_cards(response.message);
 				this.dialog.hide();
 			},
@@ -499,7 +499,7 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 	}
 
 	add_payment_entry(values) {
-		frappe.call({
+		nts.call({
 			method: "prodman.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool.create_payment_entry_bts",
 			args: {
 				bank_transaction_name: this.bank_transaction.name,
@@ -516,7 +516,7 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 				const alert_string = __("Bank Transaction {0} added as Payment Entry", [
 					this.bank_transaction.name,
 				]);
-				frappe.show_alert(alert_string);
+				nts.show_alert(alert_string);
 				this.update_dt_cards(response.message);
 				this.dialog.hide();
 			},
@@ -524,7 +524,7 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 	}
 
 	add_journal_entry(values) {
-		frappe.call({
+		nts.call({
 			method: "prodman.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool.create_journal_entry_bts",
 			args: {
 				bank_transaction_name: this.bank_transaction.name,
@@ -541,7 +541,7 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 				const alert_string = __("Bank Transaction {0} added as Journal Entry", [
 					this.bank_transaction.name,
 				]);
-				frappe.show_alert(alert_string);
+				nts.show_alert(alert_string);
 				this.update_dt_cards(response.message);
 				this.dialog.hide();
 			},
@@ -549,7 +549,7 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 	}
 
 	update_transaction(values) {
-		frappe.call({
+		nts.call({
 			method: "prodman.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool.update_bank_transaction",
 			args: {
 				bank_transaction_name: this.bank_transaction.name,
@@ -559,7 +559,7 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 			},
 			callback: (response) => {
 				const alert_string = __("Bank Transaction {0} updated", [this.bank_transaction.name]);
-				frappe.show_alert(alert_string);
+				nts.show_alert(alert_string);
 				this.update_dt_cards(response.message);
 				this.dialog.hide();
 			},
@@ -569,7 +569,7 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 	edit_in_full_page() {
 		const values = this.dialog.get_values(true);
 		if (values.document_type == "Payment Entry") {
-			frappe.call({
+			nts.call({
 				method: "prodman.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool.create_payment_entry_bts",
 				args: {
 					bank_transaction_name: this.bank_transaction.name,
@@ -584,12 +584,12 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 					allow_edit: true,
 				},
 				callback: (r) => {
-					const doc = frappe.model.sync(r.message);
-					frappe.set_route("Form", doc[0].doctype, doc[0].name);
+					const doc = nts.model.sync(r.message);
+					nts.set_route("Form", doc[0].doctype, doc[0].name);
 				},
 			});
 		} else {
-			frappe.call({
+			nts.call({
 				method: "prodman.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool.create_journal_entry_bts",
 				args: {
 					bank_transaction_name: this.bank_transaction.name,
@@ -604,8 +604,8 @@ prodman.accounts.bank_reconciliation.DialogManager = class DialogManager {
 					allow_edit: true,
 				},
 				callback: (r) => {
-					var doc = frappe.model.sync(r.message);
-					frappe.set_route("Form", doc[0].doctype, doc[0].name);
+					var doc = nts.model.sync(r.message);
+					nts.set_route("Form", doc[0].doctype, doc[0].name);
 				},
 			});
 		}

@@ -1,22 +1,22 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
+import nts
+from nts.custom.doctype.custom_field.custom_field import create_custom_fields
 
 
 def execute():
 	create_stock_entry_types()
 
-	company = frappe.db.get_value("Company", {"country": "India"}, "name")
+	company = nts.db.get_value("Company", {"country": "India"}, "name")
 	if company:
 		add_gst_hsn_code_field()
 
 
 def create_stock_entry_types():
-	frappe.reload_doc("stock", "doctype", "stock_entry_type")
-	frappe.reload_doc("stock", "doctype", "stock_entry")
+	nts.reload_doc("stock", "doctype", "stock_entry_type")
+	nts.reload_doc("stock", "doctype", "stock_entry")
 
 	for purpose in [
 		"Material Issue",
@@ -28,17 +28,17 @@ def create_stock_entry_types():
 		"Repack",
 		"Send to Subcontractor",
 	]:
-		ste_type = frappe.get_doc({"doctype": "Stock Entry Type", "name": purpose, "purpose": purpose})
+		ste_type = nts.get_doc({"doctype": "Stock Entry Type", "name": purpose, "purpose": purpose})
 
 		try:
 			ste_type.insert()
-		except frappe.DuplicateEntryError:
+		except nts.DuplicateEntryError:
 			pass
 
-	frappe.db.sql(
+	nts.db.sql(
 		" UPDATE `tabStock Entry` set purpose = 'Send to Subcontractor' where purpose = 'Subcontract'"
 	)
-	frappe.db.sql(" UPDATE `tabStock Entry` set stock_entry_type = purpose ")
+	nts.db.sql(" UPDATE `tabStock Entry` set stock_entry_type = purpose ")
 
 
 def add_gst_hsn_code_field():
@@ -56,9 +56,9 @@ def add_gst_hsn_code_field():
 		]
 	}
 
-	create_custom_fields(custom_fields, ignore_validate=frappe.flags.in_patch, update=True)
+	create_custom_fields(custom_fields, ignore_validate=nts.flags.in_patch, update=True)
 
-	frappe.db.sql(
+	nts.db.sql(
 		""" update `tabStock Entry Detail`, `tabItem`
 		SET
 			`tabStock Entry Detail`.gst_hsn_code = `tabItem`.gst_hsn_code

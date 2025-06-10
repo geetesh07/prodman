@@ -1,10 +1,10 @@
-// Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2020, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Shipment", {
+nts.ui.form.on("Shipment", {
 	address_query: function (frm, link_doctype, link_name, is_your_company_address) {
 		return {
-			query: "frappe.contacts.doctype.address.address.address_query",
+			query: "nts.contacts.doctype.address.address.address_query",
 			filters: {
 				link_doctype: link_doctype,
 				link_name: link_name,
@@ -14,7 +14,7 @@ frappe.ui.form.on("Shipment", {
 	},
 	contact_query: function (frm, link_doctype, link_name) {
 		return {
-			query: "frappe.contacts.doctype.contact.contact.contact_query",
+			query: "nts.contacts.doctype.contact.contact.contact_query",
 			filters: {
 				link_doctype: link_doctype,
 				link_name: link_name,
@@ -23,7 +23,7 @@ frappe.ui.form.on("Shipment", {
 	},
 	onload: function (frm) {
 		frm.set_query("delivery_address_name", () => {
-			let delivery_to = `delivery_${frappe.model.scrub(frm.doc.delivery_to_type)}`;
+			let delivery_to = `delivery_${nts.model.scrub(frm.doc.delivery_to_type)}`;
 			return frm.events.address_query(
 				frm,
 				frm.doc.delivery_to_type,
@@ -32,7 +32,7 @@ frappe.ui.form.on("Shipment", {
 			);
 		});
 		frm.set_query("pickup_address_name", () => {
-			let pickup_from = `pickup_${frappe.model.scrub(frm.doc.pickup_from_type)}`;
+			let pickup_from = `pickup_${nts.model.scrub(frm.doc.pickup_from_type)}`;
 			return frm.events.address_query(
 				frm,
 				frm.doc.pickup_from_type,
@@ -41,11 +41,11 @@ frappe.ui.form.on("Shipment", {
 			);
 		});
 		frm.set_query("delivery_contact_name", () => {
-			let delivery_to = `delivery_${frappe.model.scrub(frm.doc.delivery_to_type)}`;
+			let delivery_to = `delivery_${nts.model.scrub(frm.doc.delivery_to_type)}`;
 			return frm.events.contact_query(frm, frm.doc.delivery_to_type, frm.doc[delivery_to]);
 		});
 		frm.set_query("pickup_contact_name", () => {
-			let pickup_from = `pickup_${frappe.model.scrub(frm.doc.pickup_from_type)}`;
+			let pickup_from = `pickup_${nts.model.scrub(frm.doc.pickup_from_type)}`;
 			return frm.events.contact_query(frm, frm.doc.pickup_from_type, frm.doc[pickup_from]);
 		});
 		frm.set_query("delivery_note", "shipment_delivery_note", function () {
@@ -74,13 +74,13 @@ frappe.ui.form.on("Shipment", {
 		$("div[data-fieldname=delivery_contact] > div > .clearfix").hide();
 	},
 	before_save: function (frm) {
-		let delivery_to = `delivery_${frappe.model.scrub(frm.doc.delivery_to_type)}`;
+		let delivery_to = `delivery_${nts.model.scrub(frm.doc.delivery_to_type)}`;
 		frm.set_value("delivery_to", frm.doc[delivery_to]);
-		let pickup_from = `pickup_${frappe.model.scrub(frm.doc.pickup_from_type)}`;
+		let pickup_from = `pickup_${nts.model.scrub(frm.doc.pickup_from_type)}`;
 		frm.set_value("pickup", frm.doc[pickup_from]);
 	},
 	set_pickup_company_address: function (frm) {
-		frappe.db.get_value(
+		nts.db.get_value(
 			"Address",
 			{
 				address_title: frm.doc.pickup_company,
@@ -93,7 +93,7 @@ frappe.ui.form.on("Shipment", {
 		);
 	},
 	set_delivery_company_address: function (frm) {
-		frappe.db.get_value(
+		nts.db.get_value(
 			"Address",
 			{
 				address_title: frm.doc.delivery_company,
@@ -107,7 +107,7 @@ frappe.ui.form.on("Shipment", {
 	},
 	pickup_from_type: function (frm) {
 		if (frm.doc.pickup_from_type == "Company") {
-			frm.set_value("pickup_company", frappe.defaults.get_default("company"));
+			frm.set_value("pickup_company", nts.defaults.get_default("company"));
 			frm.set_value("pickup_customer", "");
 			frm.set_value("pickup_supplier", "");
 		} else {
@@ -124,7 +124,7 @@ frappe.ui.form.on("Shipment", {
 	},
 	delivery_to_type: function (frm) {
 		if (frm.doc.delivery_to_type == "Company") {
-			frm.set_value("delivery_company", frappe.defaults.get_default("company"));
+			frm.set_value("delivery_company", nts.defaults.get_default("company"));
 			frm.set_value("delivery_customer", "");
 			frm.set_value("delivery_supplier", "");
 		} else {
@@ -157,8 +157,8 @@ frappe.ui.form.on("Shipment", {
 		}
 	},
 	get_contact_display: function (frm, contact_name, contact_type) {
-		frappe.call({
-			method: "frappe.contacts.doctype.contact.contact.get_contact_details",
+		nts.call({
+			method: "nts.contacts.doctype.contact.contact.get_contact_details",
 			args: { contact: contact_name },
 			callback: function (r) {
 				if (r.message) {
@@ -170,7 +170,7 @@ frappe.ui.form.on("Shipment", {
 							frm.set_value("pickup_contact_name", "");
 							frm.set_value("pickup_contact", "");
 						}
-						frappe.throw(
+						nts.throw(
 							__("Email or Phone/Mobile of the Contact are mandatory to continue.") +
 								"</br>" +
 								__("Please set Email/Phone for the contact") +
@@ -214,7 +214,7 @@ frappe.ui.form.on("Shipment", {
 	},
 	pickup_contact_person: function (frm) {
 		if (frm.doc.pickup_contact_person) {
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.doctype.shipment.shipment.get_company_contact",
 				args: { user: frm.doc.pickup_contact_person },
 				callback: function ({ message }) {
@@ -235,9 +235,9 @@ frappe.ui.form.on("Shipment", {
 			});
 		} else {
 			if (frm.doc.pickup_from_type === "Company") {
-				frappe.call({
+				nts.call({
 					method: "prodman.stock.doctype.shipment.shipment.get_company_contact",
-					args: { user: frappe.session.user },
+					args: { user: nts.session.user },
 					callback: function ({ message }) {
 						const r = message;
 						let contact_display = `${r.first_name} ${r.last_name}`;
@@ -258,9 +258,9 @@ frappe.ui.form.on("Shipment", {
 		}
 	},
 	set_company_contact: function (frm, delivery_type) {
-		frappe.db.get_value(
+		nts.db.get_value(
 			"User",
-			{ name: frappe.session.user },
+			{ name: nts.session.user },
 			["full_name", "last_name", "email", "phone", "mobile_no"],
 			(r) => {
 				if (!(r.last_name && r.email && (r.phone || r.mobile_no))) {
@@ -271,11 +271,11 @@ frappe.ui.form.on("Shipment", {
 						frm.set_value("pickup_company", "");
 						frm.set_value("pickup_contact", "");
 					}
-					frappe.throw(
+					nts.throw(
 						__("Last Name, Email or Phone/Mobile of the user are mandatory to continue.") +
 							"</br>" +
 							__("Please first set Last Name, Email and Phone for the user") +
-							` <a href="/app/user/${frappe.session.user}">${frappe.session.user}</a>`
+							` <a href="/app/user/${nts.session.user}">${nts.session.user}</a>`
 					);
 				}
 				let contact_display = r.full_name;
@@ -301,7 +301,7 @@ frappe.ui.form.on("Shipment", {
 				}
 			}
 		);
-		frm.set_value("pickup_contact_person", frappe.session.user);
+		frm.set_value("pickup_contact_person", nts.session.user);
 	},
 	pickup_company: function (frm) {
 		if (frm.doc.pickup_from_type == "Company" && frm.doc.pickup_company) {
@@ -342,7 +342,7 @@ frappe.ui.form.on("Shipment", {
 		}
 	},
 	set_address_name: function (frm, ref_doctype, ref_docname, delivery_type) {
-		frappe.call({
+		nts.call({
 			method: "prodman.stock.doctype.shipment.shipment.get_address_name",
 			args: {
 				ref_doctype: ref_doctype,
@@ -360,7 +360,7 @@ frappe.ui.form.on("Shipment", {
 		});
 	},
 	set_contact_name: function (frm, ref_doctype, ref_docname, delivery_type) {
-		frappe.call({
+		nts.call({
 			method: "prodman.stock.doctype.shipment.shipment.get_contact_name",
 			args: {
 				ref_doctype: ref_doctype,
@@ -379,12 +379,12 @@ frappe.ui.form.on("Shipment", {
 	},
 	add_template: function (frm) {
 		if (frm.doc.parcel_template) {
-			frappe.model.with_doc("Shipment Parcel Template", frm.doc.parcel_template, () => {
-				let parcel_template = frappe.model.get_doc(
+			nts.model.with_doc("Shipment Parcel Template", frm.doc.parcel_template, () => {
+				let parcel_template = nts.model.get_doc(
 					"Shipment Parcel Template",
 					frm.doc.parcel_template
 				);
-				let row = frappe.model.add_child(frm.doc, "Shipment Parcel", "shipment_parcel");
+				let row = nts.model.add_child(frm.doc, "Shipment Parcel", "shipment_parcel");
 				row.length = parcel_template.length;
 				row.width = parcel_template.width;
 				row.height = parcel_template.height;
@@ -394,8 +394,8 @@ frappe.ui.form.on("Shipment", {
 		}
 	},
 	pickup_date: function (frm) {
-		if (frm.doc.pickup_date < frappe.datetime.get_today()) {
-			frappe.throw(__("Pickup Date cannot be before this day"));
+		if (frm.doc.pickup_date < nts.datetime.get_today()) {
+			nts.throw(__("Pickup Date cannot be before this day"));
 		}
 	},
 	clear_pickup_fields: function (frm) {
@@ -432,13 +432,13 @@ frappe.ui.form.on("Shipment", {
 	},
 });
 
-frappe.ui.form.on("Shipment Delivery Note", {
+nts.ui.form.on("Shipment Delivery Note", {
 	delivery_note: function (frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
 		if (row.delivery_note) {
 			let row_index = row.idx - 1;
 			if (validate_duplicate(frm, "shipment_delivery_note", row.delivery_note, row_index)) {
-				frappe.throw(
+				nts.throw(
 					__("You have entered a duplicate Delivery Note on Row") +
 						` ${row.idx}. ` +
 						__("Please rectify and try again.")

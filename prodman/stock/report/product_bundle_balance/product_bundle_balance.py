@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import IfNull, Max
-from frappe.utils import flt
+import nts
+from nts import _
+from nts.query_builder.functions import IfNull, Max
+from nts.utils import flt
 from pypika.terms import ExistsCriterion
 
 from prodman.stock.report.stock_ledger.stock_ledger import get_item_group_condition
@@ -13,7 +13,7 @@ from prodman.stock.report.stock_ledger.stock_ledger import get_item_group_condit
 
 def execute(filters=None):
 	if not filters:
-		filters = frappe._dict()
+		filters = nts._dict()
 
 	columns = get_columns()
 	item_details, pb_details, parent_items, child_items = get_items(filters)
@@ -26,7 +26,7 @@ def execute(filters=None):
 		required_items = pb_details[parent_item]
 		warehouse_company_map = {}
 		for child_item in required_items:
-			child_item_balance = stock_balance.get(child_item.item_code, frappe._dict())
+			child_item_balance = stock_balance.get(child_item.item_code, nts._dict())
 			for warehouse, sle in child_item_balance.items():
 				if flt(sle.qty_after_transaction) > 0:
 					warehouse_company_map[warehouse] = sle.company
@@ -46,8 +46,8 @@ def execute(filters=None):
 
 			child_rows = []
 			for child_item_detail in required_items:
-				child_item_balance = stock_balance.get(child_item_detail.item_code, frappe._dict()).get(
-					warehouse, frappe._dict()
+				child_item_balance = stock_balance.get(child_item_detail.item_code, nts._dict()).get(
+					warehouse, nts._dict()
 				)
 				child_row = {
 					"indent": 1,
@@ -122,14 +122,14 @@ def get_columns():
 
 
 def get_items(filters):
-	pb_details = frappe._dict()
-	item_details = frappe._dict()
+	pb_details = nts._dict()
+	item_details = nts._dict()
 
-	item = frappe.qb.DocType("Item")
-	pb = frappe.qb.DocType("Product Bundle")
+	item = nts.qb.DocType("Item")
+	pb = nts.qb.DocType("Product Bundle")
 
 	query = (
-		frappe.qb.from_(item)
+		nts.qb.from_(item)
 		.inner_join(pb)
 		.on(pb.new_item_code == item.name)
 		.select(
@@ -161,12 +161,12 @@ def get_items(filters):
 
 	child_item_details = []
 	if parent_items:
-		item = frappe.qb.DocType("Item")
-		pb = frappe.qb.DocType("Product Bundle")
-		pbi = frappe.qb.DocType("Product Bundle Item")
+		item = nts.qb.DocType("Item")
+		pb = nts.qb.DocType("Product Bundle")
+		pbi = nts.qb.DocType("Product Bundle Item")
 
 		child_item_details = (
-			frappe.qb.from_(pbi)
+			nts.qb.from_(pbi)
 			.inner_join(pb)
 			.on(pb.name == pbi.parent)
 			.inner_join(item)
@@ -198,9 +198,9 @@ def get_items(filters):
 
 def get_stock_balance(filters, items):
 	sle = get_stock_ledger_entries(filters, items)
-	stock_balance = frappe._dict()
+	stock_balance = nts._dict()
 	for d in sle:
-		stock_balance.setdefault(d.item_code, frappe._dict())[d.warehouse] = d
+		stock_balance.setdefault(d.item_code, nts._dict())[d.warehouse] = d
 	return stock_balance
 
 
@@ -210,9 +210,9 @@ def get_stock_ledger_entries(filters, items):
 
 	max_posting_datetime_query = get_item_wise_max_posting_datetime(filters, items)
 
-	sle = frappe.qb.DocType("Stock Ledger Entry")
+	sle = nts.qb.DocType("Stock Ledger Entry")
 	query = (
-		frappe.qb.from_(sle)
+		nts.qb.from_(sle)
 		.join(max_posting_datetime_query)
 		.on(
 			(sle.item_code == max_posting_datetime_query.item_code)
@@ -224,15 +224,15 @@ def get_stock_ledger_entries(filters, items):
 	)
 
 	if filters.get("warehouse"):
-		warehouse_details = frappe.db.get_value(
+		warehouse_details = nts.db.get_value(
 			"Warehouse", filters.get("warehouse"), ["lft", "rgt"], as_dict=1
 		)
 
 		if warehouse_details:
-			wh = frappe.qb.DocType("Warehouse")
+			wh = nts.qb.DocType("Warehouse")
 			query = query.where(
 				sle.warehouse.isin(
-					frappe.qb.from_(wh)
+					nts.qb.from_(wh)
 					.select(wh.name)
 					.where((wh.lft >= warehouse_details.lft) & (wh.rgt <= warehouse_details.rgt))
 				)
@@ -249,24 +249,24 @@ def get_stock_ledger_entries(filters, items):
 
 def get_item_wise_max_posting_datetime(filters, items):
 	"""Get the maximum Stock Ledger Entry name for the given filters and items."""
-	sle = frappe.qb.DocType("Stock Ledger Entry")
+	sle = nts.qb.DocType("Stock Ledger Entry")
 	query = (
-		frappe.qb.from_(sle)
+		nts.qb.from_(sle)
 		.select(sle.item_code, sle.warehouse, sle.name, Max(sle.posting_datetime).as_("posting_datetime"))
 		.where(sle.item_code.isin(items) & (sle.is_cancelled == 0))
 		.groupby(sle.item_code, sle.warehouse)
 	)
 
 	if filters.get("warehouse"):
-		warehouse_details = frappe.db.get_value(
+		warehouse_details = nts.db.get_value(
 			"Warehouse", filters.get("warehouse"), ["lft", "rgt"], as_dict=1
 		)
 
 		if warehouse_details:
-			wh = frappe.qb.DocType("Warehouse")
+			wh = nts.qb.DocType("Warehouse")
 			query = query.where(
 				sle.warehouse.isin(
-					frappe.qb.from_(wh)
+					nts.qb.from_(wh)
 					.select(wh.name)
 					.where((wh.lft >= warehouse_details.lft) & (wh.rgt <= warehouse_details.rgt))
 				)

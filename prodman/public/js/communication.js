@@ -1,4 +1,4 @@
-frappe.ui.form.on("Communication", {
+nts.ui.form.on("Communication", {
 	refresh: (frm) => {
 		// setup custom Make button only if Communication is Email
 		if (frm.doc.communication_medium == "Email" && frm.doc.sent_or_received == "Received") {
@@ -12,7 +12,7 @@ frappe.ui.form.on("Communication", {
 			frm.add_custom_button(
 				__("Issue"),
 				() => {
-					frappe.confirm(__(confirm_msg, [__("Issue")]), () => {
+					nts.confirm(__(confirm_msg, [__("Issue")]), () => {
 						frm.trigger("make_issue_from_communication");
 					});
 				},
@@ -24,7 +24,7 @@ frappe.ui.form.on("Communication", {
 			frm.add_custom_button(
 				__("Lead"),
 				() => {
-					frappe.confirm(__(confirm_msg, [__("Lead")]), () => {
+					nts.confirm(__(confirm_msg, [__("Lead")]), () => {
 						frm.trigger("make_lead_from_communication");
 					});
 				},
@@ -34,7 +34,7 @@ frappe.ui.form.on("Communication", {
 			frm.add_custom_button(
 				__("Opportunity"),
 				() => {
-					frappe.confirm(__(confirm_msg, [__("Opportunity")]), () => {
+					nts.confirm(__(confirm_msg, [__("Opportunity")]), () => {
 						frm.trigger("make_opportunity_from_communication");
 					});
 				},
@@ -44,7 +44,7 @@ frappe.ui.form.on("Communication", {
 	},
 
 	make_lead_from_communication: (frm) => {
-		return frappe.call({
+		return nts.call({
 			method: "prodman.crm.doctype.lead.lead.make_lead_from_communication",
 			args: {
 				communication: frm.doc.name,
@@ -59,7 +59,7 @@ frappe.ui.form.on("Communication", {
 	},
 
 	make_issue_from_communication: (frm) => {
-		return frappe.call({
+		return nts.call({
 			method: "prodman.support.doctype.issue.issue.make_issue_from_communication",
 			args: {
 				communication: frm.doc.name,
@@ -81,14 +81,14 @@ frappe.ui.form.on("Communication", {
 				fieldname: "company",
 				options: "Company",
 				reqd: 1,
-				default: frappe.defaults.get_user_default("Company"),
+				default: nts.defaults.get_user_default("Company"),
 			},
 		];
 
-		frappe.prompt(
+		nts.prompt(
 			fields,
 			(data) => {
-				frappe.call({
+				nts.call({
 					method: "prodman.crm.doctype.opportunity.opportunity.make_opportunity_from_communication",
 					args: {
 						communication: frm.doc.name,
@@ -98,7 +98,7 @@ frappe.ui.form.on("Communication", {
 					callback: (r) => {
 						if (r.message) {
 							frm.reload_doc();
-							frappe.show_alert({
+							nts.show_alert({
 								message: __("Opportunity {0} created", [
 									'<a href="/app/opportunity/' + r.message + '">' + r.message + "</a>",
 								]),

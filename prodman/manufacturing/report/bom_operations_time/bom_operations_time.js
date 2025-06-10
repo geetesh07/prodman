@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["BOM Operations Time"] = {
+nts.query_reports["BOM Operations Time"] = {
 	filters: [
 		{
 			fieldname: "item_code",
@@ -22,7 +22,7 @@ frappe.query_reports["BOM Operations Time"] = {
 			width: "100",
 			options: "BOM",
 			get_data: function (txt) {
-				return frappe.db.get_link_options("BOM", txt);
+				return nts.db.get_link_options("BOM", txt);
 			},
 			get_query: () => {
 				return {

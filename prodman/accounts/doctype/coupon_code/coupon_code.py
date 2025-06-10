@@ -1,11 +1,11 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import strip
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .utils import strip
 
 
 class CouponCode(Document):
@@ -15,7 +15,7 @@ class CouponCode(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		amended_from: DF.Link | None
 		coupon_code: DF.Data | None
@@ -38,10 +38,10 @@ class CouponCode(Document):
 			if self.coupon_type == "Promotional":
 				self.coupon_code = "".join(i for i in self.coupon_name if not i.isdigit())[0:8].upper()
 			elif self.coupon_type == "Gift Card":
-				self.coupon_code = frappe.generate_hash()[:10].upper()
+				self.coupon_code = nts .generate_hash()[:10].upper()
 
 	def validate(self):
 		if self.coupon_type == "Gift Card":
 			self.maximum_use = 1
 			if not self.customer:
-				frappe.throw(_("Please select the customer."))
+				nts .throw(_("Please select the customer."))

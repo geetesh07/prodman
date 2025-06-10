@@ -1,9 +1,9 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2017, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts 
+from nts  import _
 
 
 def execute(filters=None):
@@ -11,7 +11,7 @@ def execute(filters=None):
 		filters = {}
 
 	if not filters.get("date"):
-		frappe.throw(_("Please select date"))
+		nts .throw(_("Please select date"))
 
 	columns = get_columns(filters)
 
@@ -65,7 +65,7 @@ def get_all_transfers(date, shareholder):
 	condition = " "
 	# if company:
 	# 	condition = 'AND company = %(company)s '
-	return frappe.db.sql(
+	return nts .db.sql(
 		f"""SELECT * FROM `tabShare Transfer`
 		WHERE ((DATE(date) <= %(date)s AND from_shareholder = %(shareholder)s {condition})
 		OR (DATE(date) <= %(date)s AND to_shareholder = %(shareholder)s {condition}))

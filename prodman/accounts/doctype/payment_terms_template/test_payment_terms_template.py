@@ -1,17 +1,17 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2017, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts 
 
 
 class TestPaymentTermsTemplate(unittest.TestCase):
 	def tearDown(self):
-		frappe.delete_doc("Payment Terms Template", "_Test Payment Terms Template For Test", force=1)
+		nts .delete_doc("Payment Terms Template", "_Test Payment Terms Template For Test", force=1)
 
 	def test_create_template(self):
-		template = frappe.get_doc(
+		template = nts .get_doc(
 			{
 				"doctype": "Payment Terms Template",
 				"template_name": "_Test Payment Terms Template For Test",
@@ -26,7 +26,7 @@ class TestPaymentTermsTemplate(unittest.TestCase):
 			}
 		)
 
-		self.assertRaises(frappe.ValidationError, template.insert)
+		self.assertRaises(nts .ValidationError, template.insert)
 
 		template.append(
 			"terms",
@@ -41,7 +41,7 @@ class TestPaymentTermsTemplate(unittest.TestCase):
 		template.insert()
 
 	def test_credit_days(self):
-		template = frappe.get_doc(
+		template = nts .get_doc(
 			{
 				"doctype": "Payment Terms Template",
 				"template_name": "_Test Payment Terms Template For Test",
@@ -56,10 +56,10 @@ class TestPaymentTermsTemplate(unittest.TestCase):
 			}
 		)
 
-		self.assertRaises(frappe.ValidationError, template.insert)
+		self.assertRaises(nts .ValidationError, template.insert)
 
 	def test_duplicate_terms(self):
-		template = frappe.get_doc(
+		template = nts .get_doc(
 			{
 				"doctype": "Payment Terms Template",
 				"template_name": "_Test Payment Terms Template For Test",
@@ -80,4 +80,4 @@ class TestPaymentTermsTemplate(unittest.TestCase):
 			}
 		)
 
-		self.assertRaises(frappe.ValidationError, template.insert)
+		self.assertRaises(nts .ValidationError, template.insert)

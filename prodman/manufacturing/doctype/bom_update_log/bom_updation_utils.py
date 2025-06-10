@@ -1,4 +1,4 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import copy
@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
 	from prodman.manufacturing.doctype.bom_update_log.bom_update_log import BOMUpdateLog
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def replace_bom(boms: dict, log_name: str) -> None:
@@ -22,11 +22,11 @@ def replace_bom(boms: dict, log_name: str) -> None:
 	unit_cost = get_bom_unit_cost(new_bom)
 	update_new_bom_in_bom_items(unit_cost, current_bom, new_bom)
 
-	frappe.cache().delete_key("bom_children")
+	nts.cache().delete_key("bom_children")
 	parent_boms = get_ancestor_boms(new_bom)
 
 	for bom in parent_boms:
-		bom_obj = frappe.get_doc("BOM", bom)
+		bom_obj = nts.get_doc("BOM", bom)
 		# this is only used for versioning and we do not want
 		# to make separate db calls by using load_doc_before_save
 		# which proves to be expensive while doing bulk replace
@@ -47,15 +47,15 @@ def update_cost_in_level(doc: "BOMUpdateLog", bom_list: list[str], batch_name: i
 	"Updates Cost for BOMs within a given level. Runs via background jobs."
 
 	try:
-		status = frappe.db.get_value("BOM Update Log", doc.name, "status")
+		status = nts.db.get_value("BOM Update Log", doc.name, "status")
 		if status == "Failed":
 			return
 
 		update_cost_in_boms(bom_list=bom_list)  # main updation logic
 
-		bom_batch = frappe.qb.DocType("BOM Update Batch")
+		bom_batch = nts.qb.DocType("BOM Update Batch")
 		(
-			frappe.qb.update(bom_batch)
+			nts.qb.update(bom_batch)
 			.set(bom_batch.boms_updated, json.dumps(bom_list))
 			.set(bom_batch.status, "Completed")
 			.where(bom_batch.name == batch_name)
@@ -63,18 +63,18 @@ def update_cost_in_level(doc: "BOMUpdateLog", bom_list: list[str], batch_name: i
 	except Exception:
 		handle_exception(doc)
 	finally:
-		if not frappe.flags.in_test:
-			frappe.db.commit()  # nosemgrep
+		if not nts.flags.in_test:
+			nts.db.commit()  # nosemgrep
 
 
 def get_ancestor_boms(new_bom: str, bom_list: list | None = None) -> list:
 	"Recursively get all ancestors of BOM."
 
 	bom_list = bom_list or []
-	bom_item = frappe.qb.DocType("BOM Item")
+	bom_item = nts.qb.DocType("BOM Item")
 
 	parents = (
-		frappe.qb.from_(bom_item)
+		nts.qb.from_(bom_item)
 		.select(bom_item.parent)
 		.where((bom_item.bom_no == new_bom) & (bom_item.docstatus < 2) & (bom_item.parenttype == "BOM"))
 		.run(as_dict=True)
@@ -82,7 +82,7 @@ def get_ancestor_boms(new_bom: str, bom_list: list | None = None) -> list:
 
 	for d in parents:
 		if new_bom == d.parent:
-			frappe.throw(_("BOM recursion: {0} cannot be child of {1}").format(new_bom, d.parent))
+			nts.throw(_("BOM recursion: {0} cannot be child of {1}").format(new_bom, d.parent))
 
 		if d.parent not in tuple(bom_list):
 			bom_list.append(d.parent)
@@ -93,9 +93,9 @@ def get_ancestor_boms(new_bom: str, bom_list: list | None = None) -> list:
 
 
 def update_new_bom_in_bom_items(unit_cost: float, current_bom: str, new_bom: str) -> None:
-	bom_item = frappe.qb.DocType("BOM Item")
+	bom_item = nts.qb.DocType("BOM Item")
 	(
-		frappe.qb.update(bom_item)
+		nts.qb.update(bom_item)
 		.set(bom_item.bom_no, new_bom)
 		.set(bom_item.rate, unit_cost)
 		.set(bom_item.amount, (bom_item.stock_qty * unit_cost))
@@ -104,24 +104,24 @@ def update_new_bom_in_bom_items(unit_cost: float, current_bom: str, new_bom: str
 
 
 def get_bom_unit_cost(bom_name: str) -> float:
-	bom = frappe.qb.DocType("BOM")
+	bom = nts.qb.DocType("BOM")
 	new_bom_unitcost = (
-		frappe.qb.from_(bom).select(bom.total_cost / bom.quantity).where(bom.name == bom_name).run()
+		nts.qb.from_(bom).select(bom.total_cost / bom.quantity).where(bom.name == bom_name).run()
 	)
 
-	return frappe.utils.flt(new_bom_unitcost[0][0])
+	return nts.utils.flt(new_bom_unitcost[0][0])
 
 
 def update_cost_in_boms(bom_list: list[str]) -> None:
 	"Updates cost in given BOMs. Returns current and total updated BOMs."
 
 	for index, bom in enumerate(bom_list):
-		bom_doc = frappe.get_doc("BOM", bom, for_update=True)
+		bom_doc = nts.get_doc("BOM", bom, for_update=True)
 		bom_doc.calculate_cost(save_updates=True, update_hour_rate=True)
 		bom_doc.db_update()
 
-		if (index % 50 == 0) and not frappe.flags.in_test:
-			frappe.db.commit()  # nosemgrep
+		if (index % 50 == 0) and not nts.flags.in_test:
+			nts.db.commit()  # nosemgrep
 
 
 def get_next_higher_level_boms(child_boms: list[str], processed_boms: dict[str, bool]) -> list[str]:
@@ -153,11 +153,11 @@ def get_next_higher_level_boms(child_boms: list[str], processed_boms: dict[str, 
 def get_leaf_boms() -> list[str]:
 	"Get BOMs that have no dependencies."
 
-	bom = frappe.qb.DocType("BOM")
-	bom_item = frappe.qb.DocType("BOM Item")
+	bom = nts.qb.DocType("BOM")
+	bom_item = nts.qb.DocType("BOM Item")
 
 	boms = (
-		frappe.qb.from_(bom)
+		nts.qb.from_(bom)
 		.left_join(bom_item)
 		.on((bom.name == bom_item.parent) & (bom_item.bom_no != ""))
 		.select(bom.name)
@@ -177,11 +177,11 @@ def _generate_dependence_map() -> defaultdict:
 	Generate and return the reverse as well.
 	"""
 
-	bom = frappe.qb.DocType("BOM")
-	bom_item = frappe.qb.DocType("BOM Item")
+	bom = nts.qb.DocType("BOM")
+	bom_item = nts.qb.DocType("BOM Item")
 
 	bom_items = (
-		frappe.qb.from_(bom_item)
+		nts.qb.from_(bom_item)
 		.join(bom)
 		.on(bom_item.parent == bom.name)
 		.select(bom_item.bom_no, bom_item.parent)
@@ -209,20 +209,20 @@ def set_values_in_log(log_name: str, values: dict[str, Any], commit: bool = Fals
 	if not values:
 		return
 
-	bom_update_log = frappe.qb.DocType("BOM Update Log")
-	query = frappe.qb.update(bom_update_log).where(bom_update_log.name == log_name)
+	bom_update_log = nts.qb.DocType("BOM Update Log")
+	query = nts.qb.update(bom_update_log).where(bom_update_log.name == log_name)
 
 	for key, value in values.items():
 		query = query.set(key, value)
 	query.run()
 
-	if commit and not frappe.flags.in_test:
-		frappe.db.commit()  # nosemgrep
+	if commit and not nts.flags.in_test:
+		nts.db.commit()  # nosemgrep
 
 
 def handle_exception(doc: "BOMUpdateLog") -> None:
 	"Rolls back and fails BOM Update Log."
 
-	frappe.db.rollback()
+	nts.db.rollback()
 	error_log = doc.log_error("BOM Update Tool Error")
 	set_values_in_log(doc.name, {"status": "Failed", "error_log": error_log.name})

@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.ui.form.on("Supplier", {
+nts.ui.form.on("Supplier", {
 	setup: function (frm) {
 		frm.set_query("default_price_list", { buying: 1 });
 		if (frm.doc.__islocal == 1) {
@@ -67,7 +67,7 @@ frappe.ui.form.on("Supplier", {
 	},
 
 	refresh: function (frm) {
-		if (frappe.defaults.get_default("supp_master_name") != "Naming Series") {
+		if (nts.defaults.get_default("supp_master_name") != "Naming Series") {
 			frm.toggle_display("naming_series", false);
 		} else {
 			prodman.toggle_naming_series();
@@ -75,16 +75,16 @@ frappe.ui.form.on("Supplier", {
 
 		if (frm.doc.__islocal) {
 			hide_field(["address_html", "contact_html"]);
-			frappe.contacts.clear_address_and_contact(frm);
+			nts.contacts.clear_address_and_contact(frm);
 		} else {
 			unhide_field(["address_html", "contact_html"]);
-			frappe.contacts.render_address_and_contact(frm);
+			nts.contacts.render_address_and_contact(frm);
 
 			// custom buttons
 			frm.add_custom_button(
 				__("Accounting Ledger"),
 				function () {
-					frappe.set_route("query-report", "General Ledger", {
+					nts.set_route("query-report", "General Ledger", {
 						party_type: "Supplier",
 						party: frm.doc.name,
 						party_name: frm.doc.supplier_name,
@@ -96,7 +96,7 @@ frappe.ui.form.on("Supplier", {
 			frm.add_custom_button(
 				__("Accounts Payable"),
 				function () {
-					frappe.set_route("query-report", "Accounts Payable", {
+					nts.set_route("query-report", "Accounts Payable", {
 						party_type: "Supplier",
 						party: frm.doc.name,
 					});
@@ -128,7 +128,7 @@ frappe.ui.form.on("Supplier", {
 				__("Actions")
 			);
 
-			if (cint(frappe.defaults.get_default("enable_common_party_accounting"))) {
+			if (cint(nts.defaults.get_default("enable_common_party_accounting"))) {
 				frm.add_custom_button(
 					__("Link with Customer"),
 					function () {
@@ -143,7 +143,7 @@ frappe.ui.form.on("Supplier", {
 		}
 	},
 	get_supplier_group_details: function (frm) {
-		frappe.call({
+		nts.call({
 			method: "get_supplier_group_details",
 			doc: frm.doc,
 			callback: function () {
@@ -154,8 +154,8 @@ frappe.ui.form.on("Supplier", {
 
 	supplier_primary_address: function (frm) {
 		if (frm.doc.supplier_primary_address) {
-			frappe.call({
-				method: "frappe.contacts.doctype.address.address.get_address_display",
+			nts.call({
+				method: "nts.contacts.doctype.address.address.get_address_display",
 				args: {
 					address_dict: frm.doc.supplier_primary_address,
 				},
@@ -184,7 +184,7 @@ frappe.ui.form.on("Supplier", {
 		}
 	},
 	show_party_link_dialog: function (frm) {
-		const dialog = new frappe.ui.Dialog({
+		const dialog = new nts.ui.Dialog({
 			title: __("Select a Customer"),
 			fields: [
 				{
@@ -196,7 +196,7 @@ frappe.ui.form.on("Supplier", {
 				},
 			],
 			primary_action: function ({ customer }) {
-				frappe.call({
+				nts.call({
 					method: "prodman.accounts.doctype.party_link.party_link.create_party_link",
 					args: {
 						primary_role: "Supplier",
@@ -206,14 +206,14 @@ frappe.ui.form.on("Supplier", {
 					freeze: true,
 					callback: function () {
 						dialog.hide();
-						frappe.msgprint({
+						nts.msgprint({
 							message: __("Successfully linked to Customer"),
 							alert: true,
 						});
 					},
 					error: function () {
 						dialog.hide();
-						frappe.msgprint({
+						nts.msgprint({
 							message: __("Linking to Customer Failed. Please try again."),
 							title: __("Linking Failed"),
 							indicator: "red",

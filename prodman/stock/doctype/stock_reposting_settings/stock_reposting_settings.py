@@ -1,10 +1,10 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import add_to_date, get_datetime, get_time_str, time_diff_in_hours
+import nts
+from nts import _
+from nts.model.document import Document
+from nts.utils import add_to_date, get_datetime, get_time_str, time_diff_in_hours
 
 
 class StockRepostingSettings(Document):
@@ -14,7 +14,7 @@ class StockRepostingSettings(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		do_reposting_for_each_stock_transaction: DF.Check
 		end_time: DF.Time | None
@@ -50,7 +50,7 @@ class StockRepostingSettings(Document):
 		if diff < 10:
 			self.end_time = get_time_str(add_to_date(self.start_time, hours=10, as_datetime=True))
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def convert_to_item_wh_reposting(self):
 		"""Convert Transaction reposting to Item Warehouse based reposting if Item Based Reposting has enabled."""
 
@@ -64,7 +64,7 @@ class StockRepostingSettings(Document):
 			key = (ledger.item_code, ledger.warehouse)
 			if key not in item_warehouses:
 				item_warehouses[key] = ledger.posting_date
-			elif frappe.utils.getdate(item_warehouses.get(key)) > frappe.utils.getdate(ledger.posting_date):
+			elif nts.utils.getdate(item_warehouses.get(key)) > nts.utils.getdate(ledger.posting_date):
 				item_warehouses[key] = ledger.posting_date
 
 		for key, posting_date in item_warehouses.items():
@@ -72,14 +72,14 @@ class StockRepostingSettings(Document):
 			create_repost_item_valuation(item_code, warehouse, posting_date)
 
 		for row in reposting_data:
-			frappe.db.set_value("Repost Item Valuation", row.name, "status", "Skipped")
+			nts.db.set_value("Repost Item Valuation", row.name, "status", "Skipped")
 
 		self.db_set("item_based_reposting", 1)
-		frappe.msgprint(_("Item Warehouse based reposting has been enabled."))
+		nts.msgprint(_("Item Warehouse based reposting has been enabled."))
 
 
 def get_reposting_entries():
-	return frappe.get_all(
+	return nts.get_all(
 		"Repost Item Valuation",
 		fields=["voucher_no", "name"],
 		filters={"status": ("in", ["Queued", "In Progress"]), "docstatus": 1, "based_on": "Transaction"},
@@ -87,7 +87,7 @@ def get_reposting_entries():
 
 
 def get_stock_ledgers(vouchers):
-	return frappe.get_all(
+	return nts.get_all(
 		"Stock Ledger Entry",
 		fields=["item_code", "warehouse", "posting_date"],
 		filters={"voucher_no": ("in", vouchers)},
@@ -95,10 +95,10 @@ def get_stock_ledgers(vouchers):
 
 
 def create_repost_item_valuation(item_code, warehouse, posting_date):
-	frappe.get_doc(
+	nts.get_doc(
 		{
 			"doctype": "Repost Item Valuation",
-			"company": frappe.get_cached_value("Warehouse", warehouse, "company"),
+			"company": nts.get_cached_value("Warehouse", warehouse, "company"),
 			"posting_date": posting_date,
 			"based_on": "Item and Warehouse",
 			"posting_time": "00:00:01",

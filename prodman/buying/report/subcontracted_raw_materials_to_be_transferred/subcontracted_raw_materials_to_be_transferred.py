@@ -1,14 +1,14 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
 	if filters.from_date >= filters.to_date:
-		frappe.msgprint(_("To Date must be greater than From Date"))
+		nts.msgprint(_("To Date must be greater than From Date"))
 
 	columns = get_columns(filters)
 	data = get_data(filters)
@@ -52,7 +52,7 @@ def get_data(filters):
 	for row in order_rm_item_details:
 		transferred_qty = row.get("transferred_qty") or 0
 		if transferred_qty < row.get("reqd_qty", 0):
-			pending_qty = frappe.utils.flt(row.get("reqd_qty", 0) - transferred_qty)
+			pending_qty = nts.utils.flt(row.get("reqd_qty", 0) - transferred_qty)
 			row.p_qty = pending_qty if pending_qty > 0 else 0
 			data.append(row)
 
@@ -77,7 +77,7 @@ def get_order_items_to_supply(filters):
 	if filters.order_type == "Purchase Order":
 		record_filters.append([filters.order_type, "is_old_subcontracting_flow", "=", 1])
 
-	return frappe.db.get_all(
+	return nts.db.get_all(
 		filters.order_type,
 		fields=[
 			"name as subcontract_order",

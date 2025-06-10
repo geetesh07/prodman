@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["VAT Audit Report"] = {
+nts.query_reports["VAT Audit Report"] = {
 	filters: [
 		{
 			fieldname: "company",
@@ -9,14 +9,14 @@ frappe.query_reports["VAT Audit Report"] = {
 			fieldtype: "Link",
 			options: "Company",
 			reqd: 1,
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 		},
 		{
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
 			reqd: 1,
-			default: frappe.datetime.add_months(frappe.datetime.get_today(), -2),
+			default: nts.datetime.add_months(nts.datetime.get_today(), -2),
 			width: "80",
 		},
 		{
@@ -24,7 +24,7 @@ frappe.query_reports["VAT Audit Report"] = {
 			label: __("To Date"),
 			fieldtype: "Date",
 			reqd: 1,
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 		},
 	],
 };

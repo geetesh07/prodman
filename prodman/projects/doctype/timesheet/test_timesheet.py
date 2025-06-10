@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import datetime
 import unittest
 
-import frappe
-from frappe.tests.utils import change_settings
-from frappe.utils import add_to_date, now_datetime, nowdate
+import nts
+from nts.tests.utils import change_settings
+from nts.utils import add_to_date, now_datetime, nowdate
 
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
 from prodman.projects.doctype.timesheet.timesheet import OverlapError, make_sales_invoice
@@ -15,7 +15,7 @@ from prodman.setup.doctype.employee.test_employee import make_employee
 
 class TestTimesheet(unittest.TestCase):
 	def setUp(self):
-		frappe.db.delete("Timesheet")
+		nts.db.delete("Timesheet")
 
 	def test_timesheet_billing_amount(self):
 		emp = make_employee("test_employee_6@salary.com")
@@ -44,7 +44,7 @@ class TestTimesheet(unittest.TestCase):
 		sales_invoice = make_sales_invoice(timesheet.name, "_Test Item", "_Test Customer", currency="INR")
 		sales_invoice.due_date = nowdate()
 		sales_invoice.submit()
-		timesheet = frappe.get_doc("Timesheet", timesheet.name)
+		timesheet = nts.get_doc("Timesheet", timesheet.name)
 		self.assertEqual(sales_invoice.total_billing_amount, 100)
 		self.assertEqual(timesheet.status, "Billed")
 		self.assertEqual(sales_invoice.customer, "_Test Customer")
@@ -57,7 +57,7 @@ class TestTimesheet(unittest.TestCase):
 	@change_settings("Projects Settings", {"fetch_timesheet_in_sales_invoice": 1})
 	def test_timesheet_billing_based_on_project(self):
 		emp = make_employee("test_employee_6@salary.com")
-		project = frappe.get_value("Project", {"project_name": "_Test Project"})
+		project = nts.get_value("Project", {"project_name": "_Test Project"})
 
 		timesheet = make_timesheet(
 			emp, simulate=True, is_billable=1, project=project, company="_Test Company"
@@ -67,20 +67,20 @@ class TestTimesheet(unittest.TestCase):
 		sales_invoice.add_timesheet_data()
 		sales_invoice.submit()
 
-		ts = frappe.get_doc("Timesheet", timesheet.name)
+		ts = nts.get_doc("Timesheet", timesheet.name)
 		self.assertEqual(ts.per_billed, 100)
 		self.assertEqual(ts.time_logs[0].sales_invoice, sales_invoice.name)
 
 	def test_timesheet_time_overlap(self):
 		emp = make_employee("test_employee_6@salary.com")
 
-		settings = frappe.get_single("Projects Settings")
+		settings = nts.get_single("Projects Settings")
 		initial_setting = settings.ignore_employee_time_overlap
 		settings.ignore_employee_time_overlap = 0
 		settings.save()
 
 		update_activity_type("_Test Activity Type")
-		timesheet = frappe.new_doc("Timesheet")
+		timesheet = nts.new_doc("Timesheet")
 		timesheet.employee = emp
 		timesheet.append(
 			"time_logs",
@@ -103,7 +103,7 @@ class TestTimesheet(unittest.TestCase):
 			},
 		)
 
-		self.assertRaises(frappe.ValidationError, timesheet.save)
+		self.assertRaises(nts.ValidationError, timesheet.save)
 
 		settings.ignore_employee_time_overlap = 1
 		settings.save()
@@ -116,7 +116,7 @@ class TestTimesheet(unittest.TestCase):
 		emp = make_employee("test_employee_6@salary.com")
 
 		update_activity_type("_Test Activity Type")
-		timesheet = frappe.new_doc("Timesheet")
+		timesheet = nts.new_doc("Timesheet")
 		timesheet.employee = emp
 		timesheet.append(
 			"time_logs",
@@ -145,7 +145,7 @@ class TestTimesheet(unittest.TestCase):
 		emp = make_employee("test_employee_6@salary.com")
 		from_time = now_datetime()
 
-		timesheet = frappe.new_doc("Timesheet")
+		timesheet = nts.new_doc("Timesheet")
 		timesheet.employee = emp
 		timesheet.append(
 			"time_logs",
@@ -164,7 +164,7 @@ class TestTimesheet(unittest.TestCase):
 
 	def test_per_billed_hours(self):
 		"""If amounts are 0, per_billed should be calculated based on hours."""
-		ts = frappe.new_doc("Timesheet")
+		ts = nts.new_doc("Timesheet")
 		ts.total_billable_amount = 0
 		ts.total_billed_amount = 0
 		ts.total_billable_hours = 2
@@ -179,7 +179,7 @@ class TestTimesheet(unittest.TestCase):
 
 	def test_per_billed_amount(self):
 		"""If amounts are > 0, per_billed should be calculated based on amounts, regardless of hours."""
-		ts = frappe.new_doc("Timesheet")
+		ts = nts.new_doc("Timesheet")
 		ts.total_billable_hours = 2
 		ts.total_billed_hours = 1
 		ts.total_billable_amount = 200
@@ -204,7 +204,7 @@ def make_timesheet(
 	company=None,
 ):
 	update_activity_type(activity_type)
-	timesheet = frappe.new_doc("Timesheet")
+	timesheet = nts.new_doc("Timesheet")
 	timesheet.employee = employee
 	timesheet.company = company or "_Test Company"
 	timesheet_detail = timesheet.append("time_logs", {})
@@ -234,6 +234,6 @@ def make_timesheet(
 
 
 def update_activity_type(activity_type):
-	activity_type = frappe.get_doc("Activity Type", activity_type)
+	activity_type = nts.get_doc("Activity Type", activity_type)
 	activity_type.billing_rate = 50.0
 	activity_type.save(ignore_permissions=True)

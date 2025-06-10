@@ -1,4 +1,4 @@
-frappe.provide("prodman.bulk_transaction_processing");
+nts.provide("prodman.bulk_transaction_processing");
 
 $.extend(prodman.bulk_transaction_processing, {
 	create: function (listview, from_doctype, to_doctype) {
@@ -11,22 +11,22 @@ $.extend(prodman.bulk_transaction_processing, {
 		});
 
 		let count_of_rows = checked_items.length;
-		frappe.confirm(__("Create {0} {1} ?", [count_of_rows, __(to_doctype)]), () => {
+		nts.confirm(__("Create {0} {1} ?", [count_of_rows, __(to_doctype)]), () => {
 			if (doc_name.length == 0) {
-				frappe
+				nts
 					.call({
 						method: "prodman.utilities.bulk_transaction.transaction_processing",
 						args: { data: checked_items, from_doctype: from_doctype, to_doctype: to_doctype },
 					})
 					.then(() => {});
 				if (count_of_rows > 10) {
-					frappe.show_alert("Starting a background job to create {0} {1}", [
+					nts.show_alert("Starting a background job to create {0} {1}", [
 						count_of_rows,
 						__(to_doctype),
 					]);
 				}
 			} else {
-				frappe.msgprint(__("Selected document must be in submitted state"));
+				nts.msgprint(__("Selected document must be in submitted state"));
 			}
 		});
 	},

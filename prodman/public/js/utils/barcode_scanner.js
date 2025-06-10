@@ -1,7 +1,7 @@
 prodman.utils.BarcodeScanner = class BarcodeScanner {
 	constructor(opts) {
 		this.frm = opts.frm;
-		// frappe.flags.trigger_from_barcode_scanner is used for custom scripts
+		// nts.flags.trigger_from_barcode_scanner is used for custom scripts
 
 		// field from which to capture input of scanned data
 		this.scan_field_name = opts.scan_field_name || "scan_barcode";
@@ -23,7 +23,7 @@ prodman.utils.BarcodeScanner = class BarcodeScanner {
 		this.items_table = this.frm.doc[this.items_table_name];
 
 		// optional sound name to play when scan either fails or passes.
-		// see https://frappeframework.com/docs/v14/user/en/python-api/hooks#sounds
+		// see https://ntsframework.com/docs/v14/user/en/python-api/hooks#sounds
 		this.success_sound = opts.play_success_sound;
 		this.fail_sound = opts.play_fail_sound;
 
@@ -72,7 +72,7 @@ prodman.utils.BarcodeScanner = class BarcodeScanner {
 	}
 
 	scan_api_call(input, callback) {
-		frappe
+		nts
 			.call({
 				method: this.scan_api,
 				args: {
@@ -87,7 +87,7 @@ prodman.utils.BarcodeScanner = class BarcodeScanner {
 	update_table(data) {
 		return new Promise((resolve, reject) => {
 			let cur_grid = this.frm.fields_dict[this.items_table_name].grid;
-			frappe.flags.trigger_from_barcode_scanner = true;
+			nts.flags.trigger_from_barcode_scanner = true;
 
 			const { item_code, barcode, batch_no, serial_no, uom } = data;
 
@@ -104,7 +104,7 @@ prodman.utils.BarcodeScanner = class BarcodeScanner {
 				this.is_new_row = true;
 
 				// add new row if new item/batch is scanned
-				row = frappe.model.add_child(this.frm.doc, cur_grid.doctype, this.items_table_name);
+				row = nts.model.add_child(this.frm.doc, cur_grid.doctype, this.items_table_name);
 				// trigger any row add triggers defined on child table.
 				this.frm.script_manager.trigger(`${this.items_table_name}_add`, row.doctype, row.name);
 				this.frm.has_items = false;
@@ -116,7 +116,7 @@ prodman.utils.BarcodeScanner = class BarcodeScanner {
 				return;
 			}
 
-			frappe.run_serially([
+			nts.run_serially([
 				() => this.set_selector_trigger_flag(data),
 				() =>
 					this.set_item(row, item_code, barcode, batch_no, serial_no).then((qty) => {
@@ -142,27 +142,27 @@ prodman.utils.BarcodeScanner = class BarcodeScanner {
 		const require_selecting_serial = has_serial_no && !serial_no;
 
 		if (!(require_selecting_batch || require_selecting_serial)) {
-			frappe.flags.hide_serial_batch_dialog = true;
+			nts.flags.hide_serial_batch_dialog = true;
 		}
 	}
 
 	revert_selector_flag() {
-		frappe.flags.hide_serial_batch_dialog = false;
-		frappe.flags.trigger_from_barcode_scanner = false;
+		nts.flags.hide_serial_batch_dialog = false;
+		nts.flags.trigger_from_barcode_scanner = false;
 	}
 
 	set_item(row, item_code, barcode, batch_no, serial_no) {
 		return new Promise((resolve) => {
 			const increment = async (value = 1) => {
 				const item_data = { item_code: item_code, use_serial_batch_fields: 1.0 };
-				frappe.flags.trigger_from_barcode_scanner = true;
+				nts.flags.trigger_from_barcode_scanner = true;
 				item_data[this.qty_field] = Number(row[this.qty_field] || 0) + Number(value);
-				await frappe.model.set_value(row.doctype, row.name, item_data);
+				await nts.model.set_value(row.doctype, row.name, item_data);
 				return value;
 			};
 
 			if (this.prompt_qty) {
-				frappe.prompt(__("Please enter quantity for item {0}", [item_code]), ({ value }) => {
+				nts.prompt(__("Please enter quantity for item {0}", [item_code]), ({ value }) => {
 					increment(value).then((value) => resolve(value));
 				});
 			} else if (this.frm.has_items) {
@@ -175,7 +175,7 @@ prodman.utils.BarcodeScanner = class BarcodeScanner {
 
 	prepare_item_for_scan(row, item_code, barcode, batch_no, serial_no) {
 		var me = this;
-		this.dialog = new frappe.ui.Dialog({
+		this.dialog = new nts.ui.Dialog({
 			title: __("Scan barcode for item {0}", [item_code]),
 			fields: me.get_fields_for_dialog(row, item_code, barcode, batch_no, serial_no),
 		});
@@ -187,9 +187,9 @@ prodman.utils.BarcodeScanner = class BarcodeScanner {
 
 			this.remaining_qty =
 				flt(this.dialog.get_value("qty")) - flt(this.dialog.get_value("scanned_qty"));
-			frappe.model.set_value(row.doctype, row.name, item_data);
+			nts.model.set_value(row.doctype, row.name, item_data);
 
-			frappe.run_serially([
+			nts.run_serially([
 				() => this.set_batch_no(row, this.dialog.get_value("batch_no")),
 				() => this.set_barcode(row, this.dialog.get_value("barcode")),
 				() => this.set_serial_no(row, this.dialog.get_value("serial_no")),
@@ -318,14 +318,14 @@ prodman.utils.BarcodeScanner = class BarcodeScanner {
 			: [];
 
 		if (in_list(serial_nos, serial_no)) {
-			frappe.throw(__("Serial No {0} already scanned", [serial_no]));
+			nts.throw(__("Serial No {0} already scanned", [serial_no]));
 		}
 	}
 
 	add_child_for_remaining_qty(prev_row) {
 		if (this.remaining_qty && this.remaining_qty > 0) {
 			let cur_grid = this.frm.fields_dict[this.items_table_name].grid;
-			let row = frappe.model.add_child(this.frm.doc, cur_grid.doctype, this.items_table_name);
+			let row = nts.model.add_child(this.frm.doc, cur_grid.doctype, this.items_table_name);
 
 			let ignore_fields = [
 				"name",
@@ -346,7 +346,7 @@ prodman.utils.BarcodeScanner = class BarcodeScanner {
 			}
 
 			row[this.qty_field] = this.remaining_qty;
-			if (this.qty_field == "qty" && frappe.meta.has_field(row.doctype, "stock_qty")) {
+			if (this.qty_field == "qty" && nts.meta.has_field(row.doctype, "stock_qty")) {
 				row["stock_qty"] = this.remaining_qty * row.conversion_factor;
 			}
 
@@ -355,7 +355,7 @@ prodman.utils.BarcodeScanner = class BarcodeScanner {
 	}
 
 	async set_serial_no(row, serial_no) {
-		if (serial_no && frappe.meta.has_field(row.doctype, this.serial_no_field)) {
+		if (serial_no && nts.meta.has_field(row.doctype, this.serial_no_field)) {
 			const existing_serial_nos = row[this.serial_no_field];
 			let new_serial_nos = "";
 
@@ -364,25 +364,25 @@ prodman.utils.BarcodeScanner = class BarcodeScanner {
 			} else {
 				new_serial_nos = serial_no;
 			}
-			await frappe.model.set_value(row.doctype, row.name, this.serial_no_field, new_serial_nos);
+			await nts.model.set_value(row.doctype, row.name, this.serial_no_field, new_serial_nos);
 		}
 	}
 
 	async set_barcode_uom(row, uom) {
-		if (uom && frappe.meta.has_field(row.doctype, this.uom_field)) {
-			await frappe.model.set_value(row.doctype, row.name, this.uom_field, uom);
+		if (uom && nts.meta.has_field(row.doctype, this.uom_field)) {
+			await nts.model.set_value(row.doctype, row.name, this.uom_field, uom);
 		}
 	}
 
 	async set_batch_no(row, batch_no) {
-		if (batch_no && frappe.meta.has_field(row.doctype, this.batch_no_field)) {
-			await frappe.model.set_value(row.doctype, row.name, this.batch_no_field, batch_no);
+		if (batch_no && nts.meta.has_field(row.doctype, this.batch_no_field)) {
+			await nts.model.set_value(row.doctype, row.name, this.batch_no_field, batch_no);
 		}
 	}
 
 	async set_barcode(row, barcode) {
-		if (barcode && frappe.meta.has_field(row.doctype, this.barcode_field)) {
-			await frappe.model.set_value(row.doctype, row.name, this.barcode_field, barcode);
+		if (barcode && nts.meta.has_field(row.doctype, this.barcode_field)) {
+			await nts.model.set_value(row.doctype, row.name, this.barcode_field, barcode);
 		}
 	}
 
@@ -408,8 +408,8 @@ prodman.utils.BarcodeScanner = class BarcodeScanner {
 		let cur_grid = this.frm.fields_dict[this.items_table_name].grid;
 
 		// Check if batch is scanned and table has batch no field
-		let is_batch_no_scan = batch_no && frappe.meta.has_field(cur_grid.doctype, this.batch_no_field);
-		let check_max_qty = this.max_qty_field && frappe.meta.has_field(cur_grid.doctype, this.max_qty_field);
+		let is_batch_no_scan = batch_no && nts.meta.has_field(cur_grid.doctype, this.batch_no_field);
+		let check_max_qty = this.max_qty_field && nts.meta.has_field(cur_grid.doctype, this.max_qty_field);
 
 		const matching_row = (row) => {
 			const item_match = row.item_code == item_code;
@@ -435,11 +435,11 @@ prodman.utils.BarcodeScanner = class BarcodeScanner {
 	}
 
 	play_success_sound() {
-		this.success_sound && frappe.utils.play_sound(this.success_sound);
+		this.success_sound && nts.utils.play_sound(this.success_sound);
 	}
 
 	play_fail_sound() {
-		this.fail_sound && frappe.utils.play_sound(this.fail_sound);
+		this.fail_sound && nts.utils.play_sound(this.fail_sound);
 	}
 
 	clean_up() {
@@ -447,6 +447,6 @@ prodman.utils.BarcodeScanner = class BarcodeScanner {
 		refresh_field(this.items_table_name);
 	}
 	show_alert(msg, indicator, duration = 3) {
-		frappe.show_alert({ message: msg, indicator: indicator }, duration);
+		nts.show_alert({ message: msg, indicator: indicator }, duration);
 	}
 };

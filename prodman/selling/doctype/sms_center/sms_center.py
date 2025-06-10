@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _, msgprint
-from frappe.core.doctype.sms_settings.sms_settings import send_sms
-from frappe.model.document import Document
-from frappe.utils import cstr
+import nts
+from nts import _, msgprint
+from nts.core.doctype.sms_settings.sms_settings import send_sms
+from nts.model.document import Document
+from nts.utils import cstr
 
 
 class SMSCenter(Document):
@@ -16,7 +16,7 @@ class SMSCenter(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		branch: DF.Link | None
 		customer: DF.Link | None
@@ -39,7 +39,7 @@ class SMSCenter(Document):
 		total_messages: DF.Int
 	# end: auto-generated types
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def create_receiver_list(self):
 		rec, where_clause = "", ""
 		if self.send_to == "All Customer Contact":
@@ -69,7 +69,7 @@ class SMSCenter(Document):
 			"All Supplier Contact",
 			"All Sales Partner Contact",
 		]:
-			rec = frappe.db.sql(
+			rec = nts.db.sql(
 				"""select CONCAT(ifnull(c.first_name,''), ' ', ifnull(c.last_name,'')),
 				c.mobile_no from `tabContact` c, `tabDynamic Link` dl  where ifnull(c.mobile_no,'')!='' and
 				c.docstatus != 2 and dl.parent = c.name%s"""
@@ -77,7 +77,7 @@ class SMSCenter(Document):
 			)
 
 		elif self.send_to == "All Lead (Open)":
-			rec = frappe.db.sql(
+			rec = nts.db.sql(
 				"""select lead_name, mobile_no from `tabLead` where
 				ifnull(mobile_no,'')!='' and docstatus != 2 and status='Open'"""
 			)
@@ -88,7 +88,7 @@ class SMSCenter(Document):
 			)
 			where_clause += self.branch and " and branch = '%s'" % self.branch.replace("'", "'") or ""
 
-			rec = frappe.db.sql(
+			rec = nts.db.sql(
 				"""select employee_name, cell_number from
 				`tabEmployee` where status = 'Active' and docstatus < 2 and
 				ifnull(cell_number,'')!='' %s"""
@@ -96,7 +96,7 @@ class SMSCenter(Document):
 			)
 
 		elif self.send_to == "All Sales Person":
-			rec = frappe.db.sql(
+			rec = nts.db.sql(
 				"""select sales_person_name,
 				tabEmployee.cell_number from `tabSales Person` left join tabEmployee
 				on `tabSales Person`.employee = tabEmployee.name
@@ -122,7 +122,7 @@ class SMSCenter(Document):
 
 		return receiver_nos
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def send_sms(self):
 		receiver_list = []
 		if not self.message:

@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import flt, getdate
+import nts 
+from nts  import _
+from nts .utils import flt, getdate
 
 from prodman.accounts.utils import get_balance_on
 
@@ -18,7 +18,7 @@ def execute(filters=None):
 	if not filters.get("account"):
 		return columns, []
 
-	account_currency = frappe.get_cached_value("Account", filters.account, "account_currency")
+	account_currency = nts .get_cached_value("Account", filters.account, "account_currency")
 
 	data = get_entries(filters)
 
@@ -109,8 +109,8 @@ def get_columns():
 def get_entries(filters):
 	entries = []
 
-	for method_name in frappe.get_hooks("get_entries_for_bank_reconciliation_statement"):
-		entries += frappe.get_attr(method_name)(filters) or []
+	for method_name in nts .get_hooks("get_entries_for_bank_reconciliation_statement"):
+		entries += nts .get_attr(method_name)(filters) or []
 
 	return sorted(
 		entries,
@@ -131,7 +131,7 @@ def get_entries_for_bank_reconciliation_statement(filters):
 
 
 def get_journal_entries(filters):
-	return frappe.db.sql(
+	return nts .db.sql(
 		"""
 		select "Journal Entry" as payment_document, jv.posting_date,
 			jv.name as payment_entry, jvd.debit_in_account_currency as debit,
@@ -150,7 +150,7 @@ def get_journal_entries(filters):
 
 
 def get_payment_entries(filters):
-	return frappe.db.sql(
+	return nts .db.sql(
 		"""
 		select
 			"Payment Entry" as payment_document, name as payment_entry,
@@ -172,7 +172,7 @@ def get_payment_entries(filters):
 
 
 def get_pos_entries(filters):
-	return frappe.db.sql(
+	return nts .db.sql(
 		"""
 			select
 				"Sales Invoice Payment" as payment_document, sip.name as payment_entry, sip.amount as debit,
@@ -196,16 +196,16 @@ def get_amounts_not_reflected_in_system(filters):
 	amount = 0.0
 
 	# get amounts from all the apps
-	for method_name in frappe.get_hooks(
+	for method_name in nts .get_hooks(
 		"get_amounts_not_reflected_in_system_for_bank_reconciliation_statement"
 	):
-		amount += frappe.get_attr(method_name)(filters) or 0.0
+		amount += nts .get_attr(method_name)(filters) or 0.0
 
 	return amount
 
 
 def get_amounts_not_reflected_in_system_for_bank_reconciliation_statement(filters):
-	je_amount = frappe.db.sql(
+	je_amount = nts .db.sql(
 		"""
 		select sum(jvd.debit_in_account_currency - jvd.credit_in_account_currency)
 		from `tabJournal Entry Account` jvd, `tabJournal Entry` jv
@@ -217,7 +217,7 @@ def get_amounts_not_reflected_in_system_for_bank_reconciliation_statement(filter
 
 	je_amount = flt(je_amount[0][0]) if je_amount else 0.0
 
-	pe_amount = frappe.db.sql(
+	pe_amount = nts .db.sql(
 		"""
 		select sum(if(paid_from=%(account)s, paid_amount, received_amount))
 		from `tabPayment Entry`

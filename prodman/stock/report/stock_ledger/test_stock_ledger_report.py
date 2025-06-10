@@ -1,19 +1,19 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days, today
+import nts
+from nts.tests.utils import ntsTestCase
+from nts.utils import add_days, today
 
 from prodman.maintenance.doctype.maintenance_schedule.test_maintenance_schedule import (
 	make_serial_item_with_serial,
 )
 
 
-class TestStockLedgerReeport(FrappeTestCase):
+class TestStockLedgerReeport(ntsTestCase):
 	def setUp(self) -> None:
 		make_serial_item_with_serial("_Test Stock Report Serial Item")
-		self.filters = frappe._dict(
+		self.filters = nts._dict(
 			company="_Test Company",
 			from_date=today(),
 			to_date=add_days(today(), 30),
@@ -21,4 +21,4 @@ class TestStockLedgerReeport(FrappeTestCase):
 		)
 
 	def tearDown(self) -> None:
-		frappe.db.rollback()
+		nts.db.rollback()

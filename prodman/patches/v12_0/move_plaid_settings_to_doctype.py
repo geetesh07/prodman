@@ -1,22 +1,22 @@
-# Copyright (c) 2017, Frappe and Contributors
+# Copyright (c) 2017, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("prodman_integrations", "doctype", "plaid_settings")
-	plaid_settings = frappe.get_single("Plaid Settings")
+	nts.reload_doc("prodman_integrations", "doctype", "plaid_settings")
+	plaid_settings = nts.get_single("Plaid Settings")
 	if plaid_settings.enabled:
-		if not (frappe.conf.plaid_client_id and frappe.conf.plaid_env and frappe.conf.plaid_secret):
+		if not (nts.conf.plaid_client_id and nts.conf.plaid_env and nts.conf.plaid_secret):
 			plaid_settings.enabled = 0
 		else:
 			plaid_settings.update(
 				{
-					"plaid_client_id": frappe.conf.plaid_client_id,
-					"plaid_env": frappe.conf.plaid_env,
-					"plaid_secret": frappe.conf.plaid_secret,
+					"plaid_client_id": nts.conf.plaid_client_id,
+					"plaid_env": nts.conf.plaid_env,
+					"plaid_secret": nts.conf.plaid_secret,
 				}
 			)
 		plaid_settings.flags.ignore_mandatory = True

@@ -1,9 +1,9 @@
-# Copyright (c) 2018, Frappe Technologies and contributors
+# Copyright (c) 2018, nts Technologies and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 from prodman import get_region
 
@@ -11,7 +11,7 @@ from prodman import get_region
 def check_deletion_permission(doc, method):
 	region = get_region(doc.company)
 	if region in ["Nepal"] and doc.docstatus != 0:
-		frappe.throw(_("Deletion is not permitted for country {0}").format(region))
+		nts.throw(_("Deletion is not permitted for country {0}").format(region))
 
 
 def create_transaction_log(doc, method):
@@ -25,7 +25,7 @@ def create_transaction_log(doc, method):
 
 	data = str(doc.as_dict())
 
-	frappe.get_doc(
+	nts.get_doc(
 		{
 			"doctype": "Transaction Log",
 			"reference_doctype": doc.doctype,

@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import flt
-from frappe.utils.nestedset import NestedSet, get_root_of
+import nts
+from nts import _
+from nts.utils import flt
+from nts.utils.nestedset import NestedSet, get_root_of
 
 
 class Territory(NestedSet):
@@ -15,7 +15,7 @@ class Territory(NestedSet):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.setup.doctype.target_detail.target_detail import TargetDetail
 
@@ -37,7 +37,7 @@ class Territory(NestedSet):
 
 		for d in self.get("targets") or []:
 			if not flt(d.target_qty) and not flt(d.target_amount):
-				frappe.throw(_("Either target qty or target amount is mandatory"))
+				nts.throw(_("Either target qty or target amount is mandatory"))
 
 	def on_update(self):
 		super().on_update()
@@ -45,4 +45,4 @@ class Territory(NestedSet):
 
 
 def on_doctype_update():
-	frappe.db.add_index("Territory", ["lft", "rgt"])
+	nts.db.add_index("Territory", ["lft", "rgt"])

@@ -1,4 +1,4 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 cur_frm.add_fetch("customer", "customer_name", "customer_name");
@@ -15,24 +15,24 @@ cur_frm.cscript.onload = function () {
 	});
 };
 
-frappe.ui.form.on("Serial No", "refresh", function (frm) {
+nts.ui.form.on("Serial No", "refresh", function (frm) {
 	frm.toggle_enable("item_code", frm.doc.__islocal);
 });
 
-frappe.ui.form.on("Serial No", {
+nts.ui.form.on("Serial No", {
 	refresh(frm) {
 		frm.trigger("view_ledgers");
 	},
 
 	view_ledgers(frm) {
 		frm.add_custom_button(__("View Ledgers"), () => {
-			frappe.route_options = {
+			nts.route_options = {
 				item_code: frm.doc.item_code,
 				serial_no: frm.doc.name,
-				posting_date: frappe.datetime.now_date(),
-				posting_time: frappe.datetime.now_time(),
+				posting_date: nts.datetime.now_date(),
+				posting_time: nts.datetime.now_time(),
 			};
-			frappe.set_route("query-report", "Serial No Ledger");
+			nts.set_route("query-report", "Serial No Ledger");
 		}).addClass("btn-primary");
 	},
 });

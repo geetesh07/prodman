@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import flt
+import nts
+from nts import _
+from nts.utils import flt
 
 
 def execute(filters=None):
@@ -35,7 +35,7 @@ def get_data(filters):
 	if filters.get("workstation"):
 		query_filters["workstation"] = filters.get("workstation")
 
-	data = frappe.get_all("Downtime Entry", fields=fields, filters=query_filters) or []
+	data = nts.get_all("Downtime Entry", fields=fields, filters=query_filters) or []
 	for d in data:
 		if d.downtime:
 			d.downtime = d.downtime / 60

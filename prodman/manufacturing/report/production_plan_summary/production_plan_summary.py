@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import flt
+import nts
+from nts import _
+from nts.utils import flt
 
 
 def execute(filters=None):
@@ -27,9 +27,9 @@ def get_data(filters):
 
 
 def get_production_plan_item_details(filters, data, order_details):
-	production_plan_doc = frappe.get_cached_doc("Production Plan", filters.get("production_plan"))
+	production_plan_doc = nts.get_cached_doc("Production Plan", filters.get("production_plan"))
 	for row in production_plan_doc.po_items:
-		work_orders = frappe.get_all(
+		work_orders = nts.get_all(
 			"Work Order",
 			filters={
 				"production_plan_item": row.name,
@@ -53,7 +53,7 @@ def get_production_plan_item_details(filters, data, order_details):
 					"indent": 0,
 					"item_code": row.item_code,
 					"sales_order": row.get("sales_order"),
-					"item_name": frappe.get_cached_value("Item", row.item_code, "item_name"),
+					"item_name": nts.get_cached_value("Item", row.item_code, "item_name"),
 					"qty": order_qty,
 					"document_type": "Work Order",
 					"document_name": work_order or "",
@@ -84,13 +84,13 @@ def get_production_plan_sub_assembly_item_details(filters, row, production_plan_
 			subcontracted_item = item.type_of_manufacturing == "Subcontract"
 
 			if subcontracted_item:
-				docname = frappe.get_value(
+				docname = nts.get_value(
 					"Purchase Order Item",
 					{"production_plan_sub_assembly_item": item.name, "docstatus": ("<", 2)},
 					"parent",
 				)
 			else:
-				docname = frappe.get_value(
+				docname = nts.get_value(
 					"Work Order",
 					{"production_plan_sub_assembly_item": item.name, "docstatus": ("<", 2)},
 					"name",
@@ -115,7 +115,7 @@ def get_production_plan_sub_assembly_item_details(filters, row, production_plan_
 
 
 def get_work_order_details(filters, order_details):
-	for row in frappe.get_all(
+	for row in nts.get_all(
 		"Work Order",
 		filters={"production_plan": filters.get("production_plan")},
 		fields=["name", "produced_qty", "production_plan", "production_item", "sales_order"],
@@ -124,7 +124,7 @@ def get_work_order_details(filters, order_details):
 
 
 def get_purchase_order_details(filters, order_details):
-	for row in frappe.get_all(
+	for row in nts.get_all(
 		"Purchase Order Item",
 		filters={"production_plan": filters.get("production_plan")},
 		fields=["parent", "received_qty as produced_qty", "item_code"],

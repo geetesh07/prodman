@@ -1,11 +1,11 @@
-frappe.listview_settings["Batch"] = {
+nts.listview_settings["Batch"] = {
 	add_fields: ["item", "expiry_date", "batch_qty", "disabled"],
 	get_indicator: (doc) => {
 		if (doc.disabled) {
 			return [__("Disabled"), "gray", "disabled,=,1"];
 		} else if (
 			doc.expiry_date &&
-			frappe.datetime.get_diff(doc.expiry_date, frappe.datetime.nowdate()) <= 0
+			nts.datetime.get_diff(doc.expiry_date, nts.datetime.nowdate()) <= 0
 		) {
 			return [
 				__("Expired"),

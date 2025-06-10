@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.meta import get_field_precision
-from frappe.utils import cstr, flt
-from frappe.utils.xlsxutils import handle_html
+import nts 
+from nts  import _
+from nts .model.meta import get_field_precision
+from nts .utils import cstr, flt
+from nts .utils.xlsxutils import handle_html
 from pypika import Order
 
 from prodman.accounts.report.sales_register.sales_register import get_mode_of_payments
@@ -25,7 +25,7 @@ def _execute(filters=None, additional_table_columns=None, additional_conditions=
 		filters = {}
 	columns = get_columns(additional_table_columns, filters)
 
-	company_currency = frappe.get_cached_value("Company", filters.get("company"), "default_currency")
+	company_currency = nts .get_cached_value("Company", filters.get("company"), "default_currency")
 
 	item_list = get_items(filters, additional_table_columns, additional_conditions)
 	if item_list:
@@ -36,8 +36,8 @@ def _execute(filters=None, additional_table_columns=None, additional_conditions=
 		for tax in tax_columns:
 			scrubbed_tax_fields.update(
 				{
-					tax + " Rate": frappe.scrub(tax + " Rate"),
-					tax + " Amount": frappe.scrub(tax + " Amount"),
+					tax + " Rate": nts .scrub(tax + " Rate"),
+					tax + " Amount": nts .scrub(tax + " Amount"),
 				}
 			)
 
@@ -353,17 +353,17 @@ def apply_conditions(query, si, sii, filters, additional_conditions=None):
 		query = query.where(si.posting_date <= filters.get("to_date"))
 
 	if filters.get("mode_of_payment"):
-		sales_invoice = frappe.db.get_all(
+		sales_invoice = nts .db.get_all(
 			"Sales Invoice Payment", {"mode_of_payment": filters.get("mode_of_payment")}, pluck="parent"
 		)
 		query = query.where(si.name.isin(sales_invoice))
 
 	if filters.get("warehouse"):
-		if frappe.db.get_value("Warehouse", filters.get("warehouse"), "is_group"):
-			lft, rgt = frappe.db.get_all(
+		if nts .db.get_value("Warehouse", filters.get("warehouse"), "is_group"):
+			lft, rgt = nts .db.get_all(
 				"Warehouse", filters={"name": filters.get("warehouse")}, fields=["lft", "rgt"], as_list=True
 			)[0]
-			warehouses = frappe.db.get_all("Warehouse", {"lft": (">", lft), "rgt": ("<", rgt)}, pluck="name")
+			warehouses = nts .db.get_all("Warehouse", {"lft": (">", lft), "rgt": ("<", rgt)}, pluck="name")
 			query = query.where(sii.warehouse.isin(warehouses))
 		else:
 			query = query.where(sii.warehouse == filters.get("warehouse"))
@@ -400,7 +400,7 @@ def apply_order_by_conditions(query, si, ii, filters):
 	elif filters.get("group_by") == "Item Group":
 		query += f" order by {ii.item_group}"
 	elif filters.get("group_by") in ("Customer", "Customer Group", "Territory", "Supplier"):
-		filter_field = frappe.scrub(filters.get("group_by"))
+		filter_field = nts .scrub(filters.get("group_by"))
 		query += f" order by {filter_field} desc"
 
 	return query
@@ -408,12 +408,12 @@ def apply_order_by_conditions(query, si, ii, filters):
 
 def get_items(filters, additional_query_columns, additional_conditions=None):
 	doctype = "Sales Invoice"
-	si = frappe.qb.DocType(doctype)
-	sii = frappe.qb.DocType(f"{doctype} Item")
-	item = frappe.qb.DocType("Item")
+	si = nts .qb.DocType(doctype)
+	sii = nts .qb.DocType(f"{doctype} Item")
+	item = nts .qb.DocType("Item")
 
 	query = (
-		frappe.qb.from_(si)
+		nts .qb.from_(si)
 		.join(sii)
 		.on(si.name == sii.parent)
 		.left_join(item)
@@ -463,7 +463,7 @@ def get_items(filters, additional_query_columns, additional_conditions=None):
 	if additional_query_columns:
 		for column in additional_query_columns:
 			if column.get("_doctype"):
-				table = frappe.qb.DocType(column.get("_doctype"))
+				table = nts .qb.DocType(column.get("_doctype"))
 				query = query.select(table[column.get("fieldname")])
 			else:
 				query = query.select(si[column.get("fieldname")])
@@ -476,7 +476,7 @@ def get_items(filters, additional_query_columns, additional_conditions=None):
 
 	query = apply_conditions(query, si, sii, filters, additional_conditions)
 
-	from frappe.desk.reportview import build_match_conditions
+	from nts .desk.reportview import build_match_conditions
 
 	query, params = query.walk()
 	match_conditions = build_match_conditions("Sales Invoice")
@@ -486,17 +486,17 @@ def get_items(filters, additional_query_columns, additional_conditions=None):
 
 	query = apply_order_by_conditions(query, si, sii, filters)
 
-	return frappe.db.sql(query, params, as_dict=True)
+	return nts .db.sql(query, params, as_dict=True)
 
 
 def get_delivery_notes_against_sales_order(item_list):
-	so_dn_map = frappe._dict()
+	so_dn_map = nts ._dict()
 	so_item_rows = list(set([d.so_detail for d in item_list]))
 
 	if so_item_rows:
-		dn_item = frappe.qb.DocType("Delivery Note Item")
+		dn_item = nts .qb.DocType("Delivery Note Item")
 		delivery_notes = (
-			frappe.qb.from_(dn_item)
+			nts .qb.from_(dn_item)
 			.select(dn_item.parent, dn_item.so_detail)
 			.where(dn_item.docstatus == 1)
 			.where(dn_item.so_detail.isin(so_item_rows))
@@ -512,7 +512,7 @@ def get_delivery_notes_against_sales_order(item_list):
 
 def get_grand_total(filters, doctype):
 	return flt(
-		frappe.db.get_value(
+		nts .db.get_value(
 			doctype,
 			{
 				"docstatus": 1,
@@ -539,7 +539,7 @@ def get_tax_accounts(
 	add_deduct_tax = "charge_type"
 
 	tax_amount_precision = (
-		get_field_precision(frappe.get_meta(tax_doctype).get_field("tax_amount"), currency=company_currency)
+		get_field_precision(nts .get_meta(tax_doctype).get_field("tax_amount"), currency=company_currency)
 		or 2
 	)
 
@@ -554,7 +554,7 @@ def get_tax_accounts(
 		)
 		add_deduct_tax = "add_deduct_tax"
 
-	tax_details = frappe.db.sql(
+	tax_details = nts .db.sql(
 		f"""
 		select
 			name, parent, description, item_wise_tax_detail, account_head,
@@ -571,10 +571,10 @@ def get_tax_accounts(
 		tuple([doctype, *list(invoice_item_row)]),
 	)
 
-	account_doctype = frappe.qb.DocType("Account")
+	account_doctype = nts .qb.DocType("Account")
 
 	query = (
-		frappe.qb.from_(account_doctype)
+		nts .qb.from_(account_doctype)
 		.select(account_doctype.name)
 		.where(account_doctype.account_type == "Tax")
 	)
@@ -601,7 +601,7 @@ def get_tax_accounts(
 				item_wise_tax_detail = json.loads(item_wise_tax_detail)
 
 				for item_code, tax_data in item_wise_tax_detail.items():
-					itemised_tax.setdefault(item_code, frappe._dict())
+					itemised_tax.setdefault(item_code, nts ._dict())
 
 					if isinstance(tax_data, list):
 						tax_rate, tax_amount = tax_data
@@ -628,7 +628,7 @@ def get_tax_accounts(
 								else tax_value
 							)
 
-							itemised_tax.setdefault(d.name, {})[description] = frappe._dict(
+							itemised_tax.setdefault(d.name, {})[description] = nts ._dict(
 								{
 									"tax_rate": tax_rate,
 									"tax_amount": tax_value,
@@ -640,7 +640,7 @@ def get_tax_accounts(
 				continue
 		elif charge_type == "Actual" and tax_amount:
 			for d in invoice_item_row.get(parent, []):
-				itemised_tax.setdefault(d.name, {})[description] = frappe._dict(
+				itemised_tax.setdefault(d.name, {})[description] = nts ._dict(
 					{
 						"tax_rate": "NA",
 						"tax_amount": flt(
@@ -654,7 +654,7 @@ def get_tax_accounts(
 		columns.append(
 			{
 				"label": _(desc + " Rate"),
-				"fieldname": frappe.scrub(desc + " Rate"),
+				"fieldname": nts .scrub(desc + " Rate"),
 				"fieldtype": "Float",
 				"width": 100,
 			}
@@ -663,7 +663,7 @@ def get_tax_accounts(
 		columns.append(
 			{
 				"label": _(desc + " Amount"),
-				"fieldname": frappe.scrub(desc + " Amount"),
+				"fieldname": nts .scrub(desc + " Amount"),
 				"fieldtype": "Currency",
 				"options": "currency",
 				"width": 100,
@@ -766,7 +766,7 @@ def get_display_value(filters, group_by_field, item):
 		else:
 			value = item.get("item_code", "")
 	elif filters.get("group_by") in ("Customer", "Supplier"):
-		party = frappe.scrub(filters.get("group_by"))
+		party = nts .scrub(filters.get("group_by"))
 		if item.get(party) != item.get(party + "_name"):
 			value = (
 				item.get(party)
@@ -791,7 +791,7 @@ def get_group_by_and_display_fields(filters):
 		group_by_field = "parent"
 		subtotal_display_field = "item_code"
 	else:
-		group_by_field = frappe.scrub(filters.get("group_by"))
+		group_by_field = nts .scrub(filters.get("group_by"))
 		subtotal_display_field = "item_code"
 
 	return group_by_field, subtotal_display_field
@@ -806,5 +806,5 @@ def add_sub_total_row(item, total_row_map, group_by_value, tax_columns):
 	total_row["percent_gt"] += item["percent_gt"]
 
 	for tax in tax_columns:
-		total_row.setdefault(frappe.scrub(tax + " Amount"), 0.0)
-		total_row[frappe.scrub(tax + " Amount")] += flt(item[frappe.scrub(tax + " Amount")])
+		total_row.setdefault(nts .scrub(tax + " Amount"), 0.0)
+		total_row[nts .scrub(tax + " Amount")] += flt(item[nts .scrub(tax + " Amount")])

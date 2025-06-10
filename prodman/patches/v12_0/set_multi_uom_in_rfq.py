@@ -1,14 +1,14 @@
-# Copyright (c) 2017, Frappe and Contributors
+# Copyright (c) 2017, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("buying", "doctype", "request_for_quotation_item")
+	nts.reload_doc("buying", "doctype", "request_for_quotation_item")
 
-	frappe.db.sql(
+	nts.db.sql(
 		"""UPDATE `tabRequest for Quotation Item`
 			SET
 				stock_uom = uom,

@@ -1,7 +1,7 @@
-// Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2023, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Subcontracting BOM", {
+nts.ui.form.on("Subcontracting BOM", {
 	setup: (frm) => {
 		frm.trigger("set_queries");
 	},

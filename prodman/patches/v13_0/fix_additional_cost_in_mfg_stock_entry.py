@@ -1,6 +1,6 @@
 from typing import NewType
 
-import frappe
+import nts
 
 StockEntryCode = NewType("StockEntryCode", str)
 
@@ -14,11 +14,11 @@ def execute():
 
 
 def find_broken_stock_entries() -> list[StockEntryCode]:
-	period_closing_date = frappe.db.get_value(
+	period_closing_date = nts.db.get_value(
 		"Period Closing Voucher", {"docstatus": 1}, "period_end_date", order_by="period_end_date desc"
 	)
 
-	stock_entries_to_patch = frappe.db.sql(
+	stock_entries_to_patch = nts.db.sql(
 		"""
 		select se.name, sum(sed.additional_cost) as item_additional_cost, se.total_additional_costs
 		from `tabStock Entry` se
@@ -40,7 +40,7 @@ def find_broken_stock_entries() -> list[StockEntryCode]:
 
 
 def patch_additional_cost(code: StockEntryCode):
-	stock_entry = frappe.get_doc("Stock Entry", code)
+	stock_entry = nts.get_doc("Stock Entry", code)
 	stock_entry.distribute_additional_costs()
 	stock_entry.update_valuation_rate()
 	stock_entry.set_total_incoming_outgoing_value()
@@ -55,7 +55,7 @@ def create_repost_item_valuation(stock_entry):
 	from prodman.controllers.stock_controller import create_repost_item_valuation_entry
 
 	# turn on recalculate flag so reposting corrects the incoming/outgoing rates.
-	frappe.db.set_value(
+	nts.db.set_value(
 		"Stock Ledger Entry",
 		{"voucher_no": stock_entry.name, "actual_qty": (">", 0)},
 		"recalculate_rate",
@@ -64,7 +64,7 @@ def create_repost_item_valuation(stock_entry):
 	)
 
 	create_repost_item_valuation_entry(
-		args=frappe._dict(
+		args=nts._dict(
 			{
 				"posting_date": stock_entry.posting_date,
 				"posting_time": stock_entry.posting_time,

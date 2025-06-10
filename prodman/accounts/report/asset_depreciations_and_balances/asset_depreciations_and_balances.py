@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import add_days, flt, formatdate
+import nts 
+from nts  import _
+from nts .utils import add_days, flt, formatdate
 
 
 def execute(filters=None):
@@ -27,7 +27,7 @@ def get_group_by_asset_category_data(filters):
 	assets = get_assets_for_grouped_by_category(filters)
 
 	for asset_category in asset_categories:
-		row = frappe._dict()
+		row = nts ._dict()
 		row.update(asset_category)
 
 		row.value_as_on_to_date = (
@@ -74,7 +74,7 @@ def get_asset_categories_for_grouped_by_category(filters):
 		condition += " and exists (select 1 from `tabAsset Depreciation Schedule` ads where ads.asset = a.name and ads.finance_book = %(finance_book)s)"
 
 	# nosemgrep
-	return frappe.db.sql(
+	return nts .db.sql(
 		f"""
 		SELECT a.asset_category,
 			   ifnull(sum(case when a.purchase_date < %(from_date)s then
@@ -155,7 +155,7 @@ def get_assets_for_grouped_by_category(filters):
 		condition += " and exists (select 1 from `tabAsset Depreciation Schedule` ads where ads.asset = a.name and ads.finance_book = %(finance_book)s)"
 
 	# nosemgrep
-	return frappe.db.sql(
+	return nts .db.sql(
 		f"""
 		SELECT results.asset_category,
 			   sum(results.accumulated_depreciation_as_on_from_date) as accumulated_depreciation_as_on_from_date,
@@ -236,7 +236,7 @@ def get_group_by_asset_data(filters):
 	assets = get_assets_for_grouped_by_asset(filters)
 
 	for asset_detail in asset_details:
-		row = frappe._dict()
+		row = nts ._dict()
 		row.update(asset_detail)
 
 		row.value_as_on_to_date = (
@@ -277,7 +277,7 @@ def get_asset_details_for_grouped_by_category(filters):
 		condition += " and exists (select 1 from `tabAsset Depreciation Schedule` ads where ads.asset = a.name and ads.finance_book = %(finance_book)s)"
 
 	# nosemgrep
-	return frappe.db.sql(
+	return nts .db.sql(
 		f"""
 		SELECT a.name,
 			   ifnull(sum(case when a.purchase_date < %(from_date)s then
@@ -358,7 +358,7 @@ def get_assets_for_grouped_by_asset(filters):
 		condition += " and exists (select 1 from `tabAsset Depreciation Schedule` ads where ads.asset = a.name and ads.finance_book = %(finance_book)s)"
 
 	# nosemgrep
-	return frappe.db.sql(
+	return nts .db.sql(
 		f"""
 		SELECT results.name as asset,
 			   sum(results.accumulated_depreciation_as_on_from_date) as accumulated_depreciation_as_on_from_date,

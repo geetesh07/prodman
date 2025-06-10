@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe import _
-from frappe.utils import cint, flt
+import nts
+from nts import _
+from nts.utils import cint, flt
 
 from prodman.stock.doctype.serial_no.serial_no import get_serial_nos, get_serial_nos_from_sle_list
 from prodman.stock.report.stock_ledger.stock_ledger import (
@@ -23,7 +23,7 @@ def execute(filters=None):
 
 	opening_row = get_opening_balance_data(filters, columns, sl_entries)
 
-	precision = cint(frappe.db.get_single_value("System Settings", "float_precision"))
+	precision = cint(nts.db.get_single_value("System Settings", "float_precision"))
 	data = process_stock_ledger_entries(sl_entries, item_details, opening_row, precision)
 
 	return columns, data
@@ -217,8 +217,8 @@ def get_columns(filters):
 
 
 def get_items(filters):
-	item = frappe.qb.DocType("Item")
-	query = frappe.qb.from_(item).select(item.name).where(item.has_serial_no == 1)
+	item = nts.qb.DocType("Item")
+	query = nts.qb.from_(item).select(item.name).where(item.has_serial_no == 1)
 
 	if item_code := filters.get("item_code"):
 		query = query.where(item.name == item_code)

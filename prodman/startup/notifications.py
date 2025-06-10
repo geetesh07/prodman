@@ -1,8 +1,8 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def get_notification_config():
@@ -53,7 +53,7 @@ def get_notification_config():
 	}
 
 	doctype = [d for d in notifications.get("for_doctype")]
-	for doc in frappe.get_all(
+	for doc in nts.get_all(
 		"DocType", fields=["name"], filters={"name": ("not in", doctype), "is_submittable": 1}
 	):
 		notifications["for_doctype"][doc.name] = {"docstatus": 0}

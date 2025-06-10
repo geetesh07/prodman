@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Customer Credit Balance"] = {
+nts.query_reports["Customer Credit Balance"] = {
 	filters: [
 		{
 			fieldname: "company",
@@ -9,7 +9,7 @@ frappe.query_reports["Customer Credit Balance"] = {
 			fieldtype: "Link",
 			options: "Company",
 			reqd: 1,
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 		},
 		{
 			fieldname: "customer",

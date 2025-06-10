@@ -1,8 +1,8 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		UPDATE
 			`tabWork Order Item`, `tabItem`

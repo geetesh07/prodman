@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.utils");
+nts.provide("prodman.utils");
 
 const SALES_DOCTYPES = ["Quotation", "Sales Order", "Delivery Note", "Sales Invoice"];
 const PURCHASE_DOCTYPES = ["Supplier Quotation", "Purchase Order", "Purchase Receipt", "Purchase Invoice"];
@@ -77,7 +77,7 @@ prodman.utils.get_party_details = function (frm, method, args, callback) {
 		}
 	}
 
-	if (frappe.meta.get_docfield(frm.doc.doctype, "taxes")) {
+	if (nts.meta.get_docfield(frm.doc.doctype, "taxes")) {
 		if (
 			!prodman.utils.validate_mandatory(
 				frm,
@@ -103,14 +103,14 @@ prodman.utils.get_party_details = function (frm, method, args, callback) {
 	args.currency = frm.doc.currency;
 	args.company = frm.doc.company;
 	args.doctype = frm.doc.doctype;
-	frappe.call({
+	nts.call({
 		method: method,
 		args: args,
 		callback: function (r) {
 			if (r.message) {
 				frm.supplier_tds = r.message.supplier_tds;
 				frm.updating_party_details = true;
-				frappe.run_serially([
+				nts.run_serially([
 					() => frm.set_value(r.message),
 					() => {
 						frm.updating_party_details = false;
@@ -126,14 +126,14 @@ prodman.utils.get_party_details = function (frm, method, args, callback) {
 
 prodman.utils.add_item = function (frm) {
 	if (frm.is_new()) {
-		var prev_route = frappe.get_prev_route();
+		var prev_route = nts.get_prev_route();
 		if (prev_route[1] === "Item" && !(frm.doc.items && frm.doc.items.length)) {
 			// add row
 			var item = frm.add_child("items");
 			frm.refresh_field("items");
 
 			// set item
-			frappe.model.set_value(item.doctype, item.name, "item_code", prev_route[2]);
+			nts.model.set_value(item.doctype, item.name, "item_code", prev_route[2]);
 		}
 	}
 };
@@ -151,8 +151,8 @@ prodman.utils.get_address_display = function (frm, address_field, display_field,
 
 	if (!display_field) display_field = "address_display";
 	if (frm.doc[address_field]) {
-		frappe.call({
-			method: "frappe.contacts.doctype.address.address.get_address_display",
+		nts.call({
+			method: "nts.contacts.doctype.address.address.get_address_display",
 			args: { address_dict: frm.doc[address_field] },
 			callback: function (r) {
 				if (r.message) {
@@ -173,7 +173,7 @@ prodman.utils.set_taxes_from_address = function (
 ) {
 	if (frm.updating_party_details) return;
 
-	if (frappe.meta.get_docfield(frm.doc.doctype, "taxes")) {
+	if (nts.meta.get_docfield(frm.doc.doctype, "taxes")) {
 		if (
 			!prodman.utils.validate_mandatory(
 				frm,
@@ -199,7 +199,7 @@ prodman.utils.set_taxes_from_address = function (
 		return;
 	}
 
-	frappe.call({
+	nts.call({
 		method: "prodman.accounts.party.get_address_tax_category",
 		args: {
 			tax_category: frm.doc.tax_category,
@@ -219,7 +219,7 @@ prodman.utils.set_taxes_from_address = function (
 };
 
 prodman.utils.set_taxes = function (frm, triggered_from_field) {
-	if (frappe.meta.get_docfield(frm.doc.doctype, "taxes")) {
+	if (nts.meta.get_docfield(frm.doc.doctype, "taxes")) {
 		if (!prodman.utils.validate_mandatory(frm, "Company", frm.doc.company, triggered_from_field)) {
 			return;
 		}
@@ -265,10 +265,10 @@ prodman.utils.set_taxes = function (frm, triggered_from_field) {
 	}
 
 	if (!frm.doc.company) {
-		frappe.throw(__("Kindly select the company first"));
+		nts.throw(__("Kindly select the company first"));
 	}
 
-	frappe.call({
+	nts.call({
 		method: "prodman.accounts.party.set_taxes",
 		args: {
 			party: party,
@@ -294,8 +294,8 @@ prodman.utils.get_contact_details = function (frm) {
 	if (frm.updating_party_details) return;
 
 	if (frm.doc["contact_person"]) {
-		frappe.call({
-			method: "frappe.contacts.doctype.contact.contact.get_contact_details",
+		nts.call({
+			method: "nts.contacts.doctype.contact.contact.get_contact_details",
 			args: { contact: frm.doc.contact_person },
 			callback: function (r) {
 				if (r.message) frm.set_value(r.message);
@@ -318,7 +318,7 @@ prodman.utils.validate_mandatory = function (frm, label, value, trigger_on) {
 	if (!value) {
 		frm.doc[trigger_on] = "";
 		refresh_field(trigger_on);
-		frappe.throw({ message: __("Please enter {0} first", [label]), title: __("Mandatory") });
+		nts.throw({ message: __("Please enter {0} first", [label]), title: __("Mandatory") });
 		return false;
 	}
 	return true;
@@ -335,7 +335,7 @@ prodman.utils.get_shipping_address = function (frm, callback) {
 				return callback();
 			}
 		}
-		frappe.call({
+		nts.call({
 			method: "prodman.accounts.custom.address.get_shipping_address",
 			args: {
 				company: frm.doc.company,
@@ -353,6 +353,6 @@ prodman.utils.get_shipping_address = function (frm, callback) {
 			},
 		});
 	} else {
-		frappe.msgprint(__("Select company first"));
+		nts.msgprint(__("Select company first"));
 	}
 };

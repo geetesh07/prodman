@@ -1,10 +1,10 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe.utils import cint, flt, getdate, today
+import nts 
+from nts .utils import cint, flt, getdate, today
 
 from prodman.accounts.doctype.loyalty_program.loyalty_program import (
 	get_loyalty_program_details_with_points,
@@ -19,16 +19,16 @@ class TestLoyaltyProgram(unittest.TestCase):
 		create_records()
 
 	def test_loyalty_points_earned_single_tier(self):
-		frappe.db.set_value("Customer", "Test Loyalty Customer", "loyalty_program", "Test Single Loyalty")
+		nts .db.set_value("Customer", "Test Loyalty Customer", "loyalty_program", "Test Single Loyalty")
 		# create a new sales invoice
 		si_original = create_sales_invoice_record()
 		si_original.insert()
 		si_original.submit()
 
-		customer = frappe.get_doc("Customer", {"customer_name": "Test Loyalty Customer"})
+		customer = nts .get_doc("Customer", {"customer_name": "Test Loyalty Customer"})
 		earned_points = get_points_earned(si_original)
 
-		lpe = frappe.get_doc(
+		lpe = nts .get_doc(
 			"Loyalty Point Entry",
 			{
 				"invoice_type": "Sales Invoice",
@@ -50,11 +50,11 @@ class TestLoyaltyProgram(unittest.TestCase):
 
 		earned_after_redemption = get_points_earned(si_redeem)
 
-		lpe_redeem = frappe.get_doc(
+		lpe_redeem = nts .get_doc(
 			"Loyalty Point Entry",
 			{"invoice_type": "Sales Invoice", "invoice": si_redeem.name, "redeem_against": lpe.name},
 		)
-		lpe_earn = frappe.get_doc(
+		lpe_earn = nts .get_doc(
 			"Loyalty Point Entry",
 			{"invoice_type": "Sales Invoice", "invoice": si_redeem.name, "name": ["!=", lpe_redeem.name]},
 		)
@@ -67,10 +67,10 @@ class TestLoyaltyProgram(unittest.TestCase):
 			d.cancel()
 
 	def test_loyalty_points_earned_multiple_tier(self):
-		frappe.db.set_value("Customer", "Test Loyalty Customer", "loyalty_program", "Test Multiple Loyalty")
+		nts .db.set_value("Customer", "Test Loyalty Customer", "loyalty_program", "Test Multiple Loyalty")
 		# assign multiple tier program to the customer
-		customer = frappe.get_doc("Customer", {"customer_name": "Test Loyalty Customer"})
-		customer.loyalty_program = frappe.get_doc(
+		customer = nts .get_doc("Customer", {"customer_name": "Test Loyalty Customer"})
+		customer.loyalty_program = nts .get_doc(
 			"Loyalty Program", {"loyalty_program_name": "Test Multiple Loyalty"}
 		).name
 		customer.save()
@@ -82,7 +82,7 @@ class TestLoyaltyProgram(unittest.TestCase):
 
 		earned_points = get_points_earned(si_original)
 
-		lpe = frappe.get_doc(
+		lpe = nts .get_doc(
 			"Loyalty Point Entry",
 			{
 				"invoice_type": "Sales Invoice",
@@ -102,14 +102,14 @@ class TestLoyaltyProgram(unittest.TestCase):
 		si_redeem.insert()
 		si_redeem.submit()
 
-		customer = frappe.get_doc("Customer", {"customer_name": "Test Loyalty Customer"})
+		customer = nts .get_doc("Customer", {"customer_name": "Test Loyalty Customer"})
 		earned_after_redemption = get_points_earned(si_redeem)
 
-		lpe_redeem = frappe.get_doc(
+		lpe_redeem = nts .get_doc(
 			"Loyalty Point Entry",
 			{"invoice_type": "Sales Invoice", "invoice": si_redeem.name, "redeem_against": lpe.name},
 		)
-		lpe_earn = frappe.get_doc(
+		lpe_earn = nts .get_doc(
 			"Loyalty Point Entry",
 			{"invoice_type": "Sales Invoice", "invoice": si_redeem.name, "name": ["!=", lpe_redeem.name]},
 		)
@@ -124,13 +124,13 @@ class TestLoyaltyProgram(unittest.TestCase):
 
 	def test_cancel_sales_invoice(self):
 		"""cancelling the sales invoice should cancel the earned points"""
-		frappe.db.set_value("Customer", "Test Loyalty Customer", "loyalty_program", "Test Single Loyalty")
+		nts .db.set_value("Customer", "Test Loyalty Customer", "loyalty_program", "Test Single Loyalty")
 		# create a new sales invoice
 		si = create_sales_invoice_record()
 		si.insert()
 		si.submit()
 
-		lpe = frappe.get_doc(
+		lpe = nts .get_doc(
 			"Loyalty Point Entry",
 			{"invoice_type": "Sales Invoice", "invoice": si.name, "customer": si.customer},
 		)
@@ -138,11 +138,11 @@ class TestLoyaltyProgram(unittest.TestCase):
 
 		# cancelling sales invoice
 		si.cancel()
-		lpe = frappe.db.exists("Loyalty Point Entry", lpe.name)
+		lpe = nts .db.exists("Loyalty Point Entry", lpe.name)
 		self.assertEqual(True, (lpe is None))
 
 	def test_sales_invoice_return(self):
-		frappe.db.set_value("Customer", "Test Loyalty Customer", "loyalty_program", "Test Single Loyalty")
+		nts .db.set_value("Customer", "Test Loyalty Customer", "loyalty_program", "Test Single Loyalty")
 		# create a new sales invoice
 		si_original = create_sales_invoice_record(2)
 		si_original.conversion_rate = flt(1)
@@ -150,7 +150,7 @@ class TestLoyaltyProgram(unittest.TestCase):
 		si_original.submit()
 
 		earned_points = get_points_earned(si_original)
-		lpe_original = frappe.get_doc(
+		lpe_original = nts .get_doc(
 			"Loyalty Point Entry",
 			{
 				"invoice_type": "Sales Invoice",
@@ -169,10 +169,10 @@ class TestLoyaltyProgram(unittest.TestCase):
 		si_return.submit()
 
 		# fetch original invoice again as its status would have been updated
-		si_original = frappe.get_doc("Sales Invoice", lpe_original.invoice)
+		si_original = nts .get_doc("Sales Invoice", lpe_original.invoice)
 
 		earned_points = get_points_earned(si_original)
-		lpe_after_return = frappe.get_doc(
+		lpe_after_return = nts .get_doc(
 			"Loyalty Point Entry",
 			{
 				"invoice_type": "Sales Invoice",
@@ -187,11 +187,11 @@ class TestLoyaltyProgram(unittest.TestCase):
 		for d in [si_return, si_original]:
 			try:
 				d.cancel()
-			except frappe.TimestampMismatchError:
-				frappe.get_doc("Sales Invoice", d.name).cancel()
+			except nts .TimestampMismatchError:
+				nts .get_doc("Sales Invoice", d.name).cancel()
 
 	def test_loyalty_points_for_dashboard(self):
-		doc = frappe.get_doc("Customer", "Test Loyalty Customer")
+		doc = nts .get_doc("Customer", "Test Loyalty Customer")
 		company_wise_info = get_dashboard_info("Customer", doc.name, doc.loyalty_program)
 
 		for d in company_wise_info:
@@ -200,7 +200,7 @@ class TestLoyaltyProgram(unittest.TestCase):
 
 def get_points_earned(self):
 	def get_returned_amount():
-		returned_amount = frappe.db.sql(
+		returned_amount = nts .db.sql(
 			"""
 			select sum(grand_total)
 			from `tabSales Invoice`
@@ -231,10 +231,10 @@ def get_points_earned(self):
 
 def create_sales_invoice_record(qty=1):
 	# return sales invoice doc object
-	return frappe.get_doc(
+	return nts .get_doc(
 		{
 			"doctype": "Sales Invoice",
-			"customer": frappe.get_doc("Customer", {"customer_name": "Test Loyalty Customer"}).name,
+			"customer": nts .get_doc("Customer", {"customer_name": "Test Loyalty Customer"}).name,
 			"company": "_Test Company",
 			"due_date": today(),
 			"posting_date": today(),
@@ -245,7 +245,7 @@ def create_sales_invoice_record(qty=1):
 			"items": [
 				{
 					"doctype": "Sales Invoice Item",
-					"item_code": frappe.get_doc("Item", {"item_name": "Loyal Item"}).name,
+					"item_code": nts .get_doc("Item", {"item_name": "Loyal Item"}).name,
 					"qty": qty,
 					"rate": 10000,
 					"income_account": "Sales - _TC",
@@ -259,8 +259,8 @@ def create_sales_invoice_record(qty=1):
 
 def create_records():
 	# create a new loyalty Account
-	if not frappe.db.exists("Account", "Loyalty - _TC"):
-		frappe.get_doc(
+	if not nts .db.exists("Account", "Loyalty - _TC"):
+		nts .get_doc(
 			{
 				"doctype": "Account",
 				"account_name": "Loyalty",
@@ -272,8 +272,8 @@ def create_records():
 		).insert()
 
 	# create a new loyalty program Single tier
-	if not frappe.db.exists("Loyalty Program", "Test Single Loyalty"):
-		frappe.get_doc(
+	if not nts .db.exists("Loyalty Program", "Test Single Loyalty"):
+		nts .get_doc(
 			{
 				"doctype": "Loyalty Program",
 				"loyalty_program_name": "Test Single Loyalty",
@@ -290,8 +290,8 @@ def create_records():
 		).insert()
 
 	# create a new customer
-	if not frappe.db.exists("Customer", "Test Loyalty Customer"):
-		frappe.get_doc(
+	if not nts .db.exists("Customer", "Test Loyalty Customer"):
+		nts .get_doc(
 			{
 				"customer_group": "_Test Customer Group",
 				"customer_name": "Test Loyalty Customer",
@@ -302,8 +302,8 @@ def create_records():
 		).insert()
 
 	# create a new loyalty program Multiple tier
-	if not frappe.db.exists("Loyalty Program", "Test Multiple Loyalty"):
-		frappe.get_doc(
+	if not nts .db.exists("Loyalty Program", "Test Multiple Loyalty"):
+		nts .get_doc(
 			{
 				"doctype": "Loyalty Program",
 				"loyalty_program_name": "Test Multiple Loyalty",
@@ -323,8 +323,8 @@ def create_records():
 		).insert()
 
 	# create an item
-	if not frappe.db.exists("Item", "Loyal Item"):
-		frappe.get_doc(
+	if not nts .db.exists("Item", "Loyal Item"):
+		nts .get_doc(
 			{
 				"doctype": "Item",
 				"item_code": "Loyal Item",
@@ -338,8 +338,8 @@ def create_records():
 		).insert()
 
 	# create item price
-	if not frappe.db.exists("Item Price", {"price_list": "Standard Selling", "item_code": "Loyal Item"}):
-		frappe.get_doc(
+	if not nts .db.exists("Item Price", {"price_list": "Standard Selling", "item_code": "Loyal Item"}):
+		nts .get_doc(
 			{
 				"doctype": "Item Price",
 				"price_list": "Standard Selling",

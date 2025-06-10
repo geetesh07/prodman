@@ -1,11 +1,11 @@
 import json
 import unittest
 
-import frappe
-import frappe.utils
-from frappe.model import mapper
-from frappe.test_runner import make_test_records
-from frappe.utils import add_months, nowdate
+import nts
+import nts.utils
+from nts.model import mapper
+from nts.test_runner import make_test_records
+from nts.utils import add_months, nowdate
 
 
 class TestMapper(unittest.TestCase):
@@ -29,7 +29,7 @@ class TestMapper(unittest.TestCase):
 		self.assertEqual(set(d for d in src_items), set(d.item_code for d in updated_so.items))
 
 	def make_quotation(self, item_list, customer):
-		qtn = frappe.get_doc(
+		qtn = nts.get_doc(
 			{
 				"doctype": "Quotation",
 				"quotation_to": "Customer",
@@ -46,7 +46,7 @@ class TestMapper(unittest.TestCase):
 		return qtn, item_list
 
 	def make_sales_order(self):
-		item = frappe.get_doc(
+		item = nts.get_doc(
 			{
 				"base_amount": 1000.0,
 				"base_rate": 100.0,
@@ -63,6 +63,6 @@ class TestMapper(unittest.TestCase):
 				"uom": "_Test UOM",
 			}
 		)
-		so = frappe.get_doc(frappe.get_test_records("Sales Order")[0])
+		so = nts.get_doc(nts.get_test_records("Sales Order")[0])
 		so.insert(ignore_permissions=True)
 		return so, [item.item_code]

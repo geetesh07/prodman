@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe.utils import format_date
-from frappe.utils.data import add_days, formatdate, today
+import nts
+from nts.utils import format_date
+from nts.utils.data import add_days, formatdate, today
 
 from prodman.maintenance.doctype.maintenance_schedule.maintenance_schedule import (
 	get_serial_nos_from_schedule,
@@ -14,7 +14,7 @@ from prodman.maintenance.doctype.maintenance_schedule.maintenance_schedule impor
 from prodman.stock.doctype.item.test_item import create_item
 from prodman.stock.doctype.stock_entry.test_stock_entry import make_serialized_item
 
-# test_records = frappe.get_test_records('Maintenance Schedule')
+# test_records = nts.get_test_records('Maintenance Schedule')
 
 
 class TestMaintenanceSchedule(unittest.TestCase):
@@ -67,7 +67,7 @@ class TestMaintenanceSchedule(unittest.TestCase):
 		self.assertEqual(len(test_map_visit.purposes), 1)
 		self.assertEqual(test_map_visit.purposes[0].item_name, "_Test Item")
 
-		visit = frappe.new_doc("Maintenance Visit")
+		visit = nts.new_doc("Maintenance Visit")
 		visit = test_map_visit
 		visit.maintenance_schedule = ms.name
 		visit.maintenance_schedule_detail = s_id
@@ -85,7 +85,7 @@ class TestMaintenanceSchedule(unittest.TestCase):
 		)
 		visit.save()
 		visit.submit()
-		ms = frappe.get_doc("Maintenance Schedule", ms.name)
+		ms = nts.get_doc("Maintenance Schedule", ms.name)
 
 		# checks if visit status is back updated in schedule
 		self.assertTrue(ms.schedules[1].completion_status, "Partially Completed")
@@ -121,7 +121,7 @@ class TestMaintenanceSchedule(unittest.TestCase):
 		serial_nos = get_serial_nos_from_schedule(mvi.item_name, ms.name)
 		self.assertEqual(serial_nos, ["TEST001", "TEST002"])
 
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def test_schedule_with_serials(self):
 		# Checks whether serials are automatically updated when changing in items table.
@@ -151,7 +151,7 @@ class TestMaintenanceSchedule(unittest.TestCase):
 		ms.save()
 		self.assertEqual(len(ms.schedules), 2)
 
-		frappe.db.rollback()
+		nts.db.rollback()
 
 
 def make_serial_item_with_serial(item_code):
@@ -160,20 +160,20 @@ def make_serial_item_with_serial(item_code):
 		serial_item_doc.has_serial_no = 1
 		serial_item_doc.serial_no_series = "TEST.###"
 		serial_item_doc.save(ignore_permissions=True)
-	active_serials = frappe.db.get_all("Serial No", {"status": "Active", "item_code": item_code})
+	active_serials = nts.db.get_all("Serial No", {"status": "Active", "item_code": item_code})
 	if len(active_serials) < 2:
 		make_serialized_item(item_code=item_code)
 
 
 def get_events(ms):
-	return frappe.get_all(
+	return nts.get_all(
 		"Event Participants",
 		filters={"reference_doctype": ms.doctype, "reference_docname": ms.name, "parenttype": "Event"},
 	)
 
 
 def make_maintenance_schedule(**args):
-	ms = frappe.new_doc("Maintenance Schedule")
+	ms = nts.new_doc("Maintenance Schedule")
 	ms.company = "_Test Company"
 	ms.customer = "_Test Customer"
 	ms.transaction_date = today()

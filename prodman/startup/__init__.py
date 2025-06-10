@@ -1,5 +1,5 @@
 # prodman - web based ERP (http://prodman.com)
-# Copyright (C) 2012 Frappe Technologies Pvt Ltd
+# Copyright (C) 2012 nts Technologies Pvt Ltd
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

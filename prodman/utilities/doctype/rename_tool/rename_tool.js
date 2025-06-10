@@ -1,9 +1,9 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.ui.form.on("Rename Tool", {
+nts.ui.form.on("Rename Tool", {
 	onload: function (frm) {
-		return frappe.call({
+		return nts.call({
 			method: "prodman.utilities.doctype.rename_tool.rename_tool.get_doctypes",
 			callback: function (r) {
 				frm.set_df_property("select_doctype", "options", r.message);
@@ -22,7 +22,7 @@ frappe.ui.form.on("Rename Tool", {
 		frm.trigger("render_overview");
 
 		frm.page.set_primary_action(__("Rename"), function () {
-			frappe.call({
+			nts.call({
 				method: "prodman.utilities.doctype.rename_tool.rename_tool.upload",
 				args: {
 					select_doctype: frm.doc.select_doctype,
@@ -30,7 +30,7 @@ frappe.ui.form.on("Rename Tool", {
 				freeze: true,
 				freeze_message: __("Scheduling..."),
 				callback: function () {
-					frappe.msgprint({
+					nts.msgprint({
 						message: __("Rename jobs for doctype {0} have been enqueued.", [
 							frm.doc.select_doctype,
 						]),
@@ -43,7 +43,7 @@ frappe.ui.form.on("Rename Tool", {
 					frm.trigger("render_overview");
 				},
 				error: function (r) {
-					frappe.msgprint({
+					nts.msgprint({
 						message: __("Rename jobs for doctype {0} have not been enqueued.", [
 							frm.doc.select_doctype,
 						]),
@@ -57,7 +57,7 @@ frappe.ui.form.on("Rename Tool", {
 		});
 	},
 	render_overview: function (frm) {
-		frappe.db
+		nts.db
 			.get_list("RQ Job", { filters: { status: ["in", ["started", "queued", "finished", "failed"]] } })
 			.then((jobs) => {
 				let counts = {
@@ -68,7 +68,7 @@ frappe.ui.form.on("Rename Tool", {
 				};
 
 				for (const job of jobs) {
-					if (job.job_name !== "frappe.model.rename_doc.bulk_rename") {
+					if (job.job_name !== "nts.model.rename_doc.bulk_rename") {
 						continue;
 					}
 

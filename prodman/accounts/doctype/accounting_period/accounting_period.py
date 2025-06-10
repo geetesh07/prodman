@@ -1,17 +1,17 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
+import nts 
+from nts  import _
+from nts .model.document import Document
 
 
-class OverlapError(frappe.ValidationError):
+class OverlapError(nts .ValidationError):
 	pass
 
 
-class ClosedAccountingPeriod(frappe.ValidationError):
+class ClosedAccountingPeriod(nts .ValidationError):
 	pass
 
 
@@ -22,7 +22,7 @@ class AccountingPeriod(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.closed_document.closed_document import ClosedDocument
 
@@ -40,11 +40,11 @@ class AccountingPeriod(Document):
 		self.bootstrap_doctypes_for_closing()
 
 	def autoname(self):
-		company_abbr = frappe.get_cached_value("Company", self.company, "abbr")
+		company_abbr = nts .get_cached_value("Company", self.company, "abbr")
 		self.name = " - ".join([self.period_name, company_abbr])
 
 	def validate_overlap(self):
-		existing_accounting_period = frappe.db.sql(
+		existing_accounting_period = nts .db.sql(
 			"""select name from `tabAccounting Period`
 			where (
 				(%(start_date)s between start_date and end_date)
@@ -62,16 +62,16 @@ class AccountingPeriod(Document):
 		)
 
 		if len(existing_accounting_period) > 0:
-			frappe.throw(
+			nts .throw(
 				_("Accounting Period overlaps with {0}").format(existing_accounting_period[0].get("name")),
 				OverlapError,
 			)
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def get_doctypes_for_closing(self):
 		docs_for_closing = []
 		# get period closing doctypes from all the apps
-		doctypes = frappe.get_hooks("period_closing_doctypes")
+		doctypes = nts .get_hooks("period_closing_doctypes")
 
 		closed_doctypes = [{"document_type": doctype, "closed": 1} for doctype in doctypes]
 		for closed_doctype in closed_doctypes:
@@ -106,11 +106,11 @@ def validate_accounting_period_on_doc_save(doc, method=None):
 	else:
 		date = doc.posting_date
 
-	ap = frappe.qb.DocType("Accounting Period")
-	cd = frappe.qb.DocType("Closed Document")
+	ap = nts .qb.DocType("Accounting Period")
+	cd = nts .qb.DocType("Closed Document")
 
 	accounting_period = (
-		frappe.qb.from_(ap)
+		nts .qb.from_(ap)
 		.from_(cd)
 		.select(ap.name)
 		.where(
@@ -124,9 +124,9 @@ def validate_accounting_period_on_doc_save(doc, method=None):
 	).run(as_dict=1)
 
 	if accounting_period:
-		frappe.throw(
+		nts .throw(
 			_("You cannot create a {0} within the closed Accounting Period {1}").format(
-				doc.doctype, frappe.bold(accounting_period[0]["name"])
+				doc.doctype, nts .bold(accounting_period[0]["name"])
 			),
 			ClosedAccountingPeriod,
 		)

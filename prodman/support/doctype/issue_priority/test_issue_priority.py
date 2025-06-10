@@ -1,15 +1,15 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2019, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts
 
 
 class TestIssuePriority(unittest.TestCase):
 	def test_priorities(self):
 		make_priorities()
-		priorities = frappe.get_list("Issue Priority")
+		priorities = nts.get_list("Issue Priority")
 
 		for priority in priorities:
 			self.assertIn(priority.name, ["Low", "Medium", "High"])
@@ -22,5 +22,5 @@ def make_priorities():
 
 
 def insert_priority(name):
-	if not frappe.db.exists("Issue Priority", name):
-		frappe.get_doc({"doctype": "Issue Priority", "name": name}).insert(ignore_permissions=True)
+	if not nts.db.exists("Issue Priority", name):
+		nts.get_doc({"doctype": "Issue Priority", "name": name}).insert(ignore_permissions=True)

@@ -1,13 +1,13 @@
-// Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Serial and Batch Bundle", {
+nts.ui.form.on("Serial and Batch Bundle", {
 	setup(frm) {
 		frm.trigger("set_queries");
 	},
 
 	before_submit(frm) {
-		frappe.throw(__("The user cannot submit the Serial and Batch Bundle manually"));
+		nts.throw(__("The user cannot submit the Serial and Batch Bundle manually"));
 	},
 
 	refresh(frm) {
@@ -56,7 +56,7 @@ frappe.ui.form.on("Serial and Batch Bundle", {
 			let fields = frm.events.get_prompt_fields(frm);
 
 			frm.add_custom_button(__("Make " + label), () => {
-				frappe.prompt(
+				nts.prompt(
 					fields,
 					(data) => {
 						frm.events.add_serial_batch(frm, data);
@@ -125,17 +125,17 @@ frappe.ui.form.on("Serial and Batch Bundle", {
 
 	validate_prompt_data(frm, prompt_data) {
 		if (prompt_data.using_csv_file && !prompt_data.csv_file) {
-			frappe.throw(__("Please attach CSV file"));
+			nts.throw(__("Please attach CSV file"));
 		}
 
 		if (frm.doc.has_serial_no && !prompt_data.csv_file && !prompt_data.serial_nos) {
-			frappe.throw(__("Please enter serial nos"));
+			nts.throw(__("Please enter serial nos"));
 		}
 	},
 
 	toggle_fields(frm) {
 		let show_naming_series_field =
-			frappe.user_defaults.set_serial_and_batch_bundle_naming_based_on_naming_series;
+			nts.user_defaults.set_serial_and_batch_bundle_naming_based_on_naming_series;
 		frm.toggle_display("naming_series", cint(show_naming_series_field));
 		frm.toggle_reqd("naming_series", cint(show_naming_series_field));
 
@@ -144,7 +144,7 @@ frappe.ui.form.on("Serial and Batch Bundle", {
 		if (frm.doc.has_serial_no) {
 			frm.doc.entries.forEach((row) => {
 				if (Math.abs(row.qty) !== 1) {
-					frappe.model.set_value(row.doctype, row.name, "qty", 1);
+					nts.model.set_value(row.doctype, row.name, "qty", 1);
 				}
 			});
 		}
@@ -251,10 +251,10 @@ frappe.ui.form.on("Serial and Batch Bundle", {
 	},
 });
 
-frappe.ui.form.on("Serial and Batch Entry", {
+nts.ui.form.on("Serial and Batch Entry", {
 	entries_add(frm, cdt, cdn) {
 		if (frm.doc.warehouse) {
-			frappe.model.set_value(cdt, cdn, "warehouse", frm.doc.warehouse);
+			nts.model.set_value(cdt, cdn, "warehouse", frm.doc.warehouse);
 		}
 	},
 });

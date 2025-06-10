@@ -1,4 +1,4 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 
@@ -10,12 +10,12 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		this.set_fields_onload_for_line_item();
 		this.frm.ignore_doctypes_on_cancel_all = ['Serial and Batch Bundle'];
 
-		frappe.flags.hide_serial_batch_dialog = true;
-		frappe.ui.form.on(this.frm.doctype + " Item", "rate", function(frm, cdt, cdn) {
-			var item = frappe.get_doc(cdt, cdn);
-			var has_margin_field = frappe.meta.has_field(cdt, 'margin_type');
+		nts.flags.hide_serial_batch_dialog = true;
+		nts.ui.form.on(this.frm.doctype + " Item", "rate", function(frm, cdt, cdn) {
+			var item = nts.get_doc(cdt, cdn);
+			var has_margin_field = nts.meta.has_field(cdt, 'margin_type');
 
-			frappe.model.round_floats_in(item, ["rate", "price_list_rate"]);
+			nts.model.round_floats_in(item, ["rate", "price_list_rate"]);
 
 			if(item.price_list_rate && !item.blanket_order_rate) {
 				if(item.rate > item.price_list_rate && has_margin_field) {
@@ -43,8 +43,8 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			item.base_rate_with_margin = item.rate_with_margin * flt(frm.doc.conversion_rate);
 
 			if (item.item_code && item.rate) {
-				frappe.call({
-					method: "frappe.client.get_value",
+				nts.call({
+					method: "nts.client.get_value",
 					args: {
 						doctype: "Item Tax",
 						parent: "Item",
@@ -60,7 +60,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 						let matched_template = tax_rule ? tax_rule.item_tax_template : null;
 
-						frappe.model.set_value(cdt, cdn, 'item_tax_template', matched_template);
+						nts.model.set_value(cdt, cdn, 'item_tax_template', matched_template);
 					}
 				});
 			}
@@ -70,24 +70,24 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			cur_frm.cscript.calculate_stock_uom_rate(frm, cdt, cdn);
 		});
 
-		frappe.ui.form.on(this.frm.cscript.tax_table, "rate", function(frm, cdt, cdn) {
+		nts.ui.form.on(this.frm.cscript.tax_table, "rate", function(frm, cdt, cdn) {
 			cur_frm.cscript.calculate_taxes_and_totals();
 		});
 
-		frappe.ui.form.on(this.frm.cscript.tax_table, "tax_amount", function(frm, cdt, cdn) {
+		nts.ui.form.on(this.frm.cscript.tax_table, "tax_amount", function(frm, cdt, cdn) {
 			cur_frm.cscript.calculate_taxes_and_totals();
 		});
 
-		frappe.ui.form.on(this.frm.cscript.tax_table, "row_id", function(frm, cdt, cdn) {
+		nts.ui.form.on(this.frm.cscript.tax_table, "row_id", function(frm, cdt, cdn) {
 			cur_frm.cscript.calculate_taxes_and_totals();
 		});
 
-		frappe.ui.form.on(this.frm.cscript.tax_table, "included_in_print_rate", function(frm, cdt, cdn) {
+		nts.ui.form.on(this.frm.cscript.tax_table, "included_in_print_rate", function(frm, cdt, cdn) {
 			cur_frm.cscript.set_dynamic_labels();
 			cur_frm.cscript.calculate_taxes_and_totals();
 		});
 
-		frappe.ui.form.on(this.frm.doctype, "apply_discount_on", function(frm) {
+		nts.ui.form.on(this.frm.doctype, "apply_discount_on", function(frm) {
 			if(frm.doc.additional_discount_percentage) {
 				frm.trigger("additional_discount_percentage");
 			} else {
@@ -95,9 +95,9 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			}
 		});
 
-		frappe.ui.form.on(this.frm.doctype, "additional_discount_percentage", function(frm) {
+		nts.ui.form.on(this.frm.doctype, "additional_discount_percentage", function(frm) {
 			if(!frm.doc.apply_discount_on) {
-				frappe.msgprint(__("Please set 'Apply Additional Discount On'"));
+				nts.msgprint(__("Please set 'Apply Additional Discount On'"));
 				return;
 			}
 
@@ -109,7 +109,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 				frm.cscript.calculate_taxes_and_totals();
 			}
 
-			var total = flt(frm.doc[frappe.model.scrub(frm.doc.apply_discount_on)]);
+			var total = flt(frm.doc[nts.model.scrub(frm.doc.apply_discount_on)]);
 			var discount_amount = flt(total*flt(frm.doc.additional_discount_percentage) / 100,
 				precision("discount_amount"));
 
@@ -117,7 +117,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 				.then(() => delete frm.via_discount_percentage);
 		});
 
-		frappe.ui.form.on(this.frm.doctype, "discount_amount", function(frm) {
+		nts.ui.form.on(this.frm.doctype, "discount_amount", function(frm) {
 			frm.cscript.set_dynamic_labels();
 
 			if (!frm.via_discount_percentage) {
@@ -127,9 +127,9 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			frm.cscript.calculate_taxes_and_totals();
 		});
 
-		frappe.ui.form.on(this.frm.doctype + " Item", {
+		nts.ui.form.on(this.frm.doctype + " Item", {
 			items_add: function(frm, cdt, cdn) {
-				var item = frappe.get_doc(cdt, cdn);
+				var item = nts.get_doc(cdt, cdn);
 				if (!item.warehouse && frm.doc.set_warehouse) {
 					item.warehouse = frm.doc.set_warehouse;
 				}
@@ -143,10 +143,10 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 				}
 
 				if (item.docstatus === 0
-					&& frappe.meta.has_field(item.doctype, "use_serial_batch_fields")
-					&& cint(frappe.user_defaults?.use_serial_batch_fields) === 1
+					&& nts.meta.has_field(item.doctype, "use_serial_batch_fields")
+					&& cint(nts.user_defaults?.use_serial_batch_fields) === 1
 				) {
-					frappe.model.set_value(item.doctype, item.name, "use_serial_batch_fields", 1);
+					nts.model.set_value(item.doctype, item.name, "use_serial_batch_fields", 1);
 				}
 
 				prodman.accounts.dimensions.copy_dimension_from_first_row(frm, cdt, cdn, 'items');
@@ -242,7 +242,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			});
 		}
 
-		if(frappe.meta.get_docfield(this.frm.doc.doctype, "pricing_rules")) {
+		if(nts.meta.get_docfield(this.frm.doc.doctype, "pricing_rules")) {
 			this.frm.set_indicator_formatter('pricing_rule', function(doc) {
 				return (doc.rule_applied) ? "green" : "red";
 			});
@@ -277,9 +277,9 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	use_serial_batch_fields(frm, cdt, cdn) {
 		const item = locals[cdt][cdn];
 		if (!item.use_serial_batch_fields) {
-			frappe.model.set_value(cdt, cdn, "serial_no", "");
-			frappe.model.set_value(cdt, cdn, "batch_no", "");
-			frappe.model.set_value(cdt, cdn, "rejected_serial_no", "");
+			nts.model.set_value(cdt, cdn, "serial_no", "");
+			nts.model.set_value(cdt, cdn, "batch_no", "");
+			nts.model.set_value(cdt, cdn, "rejected_serial_no", "");
 		}
 	}
 
@@ -287,17 +287,17 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		if (this.frm.is_new() && this.frm.doc?.items) {
 			this.frm.doc.items.forEach(item => {
 				if (item.docstatus === 0
-					&& frappe.meta.has_field(item.doctype, "use_serial_batch_fields")
-					&& cint(frappe.user_defaults?.use_serial_batch_fields) === 1
+					&& nts.meta.has_field(item.doctype, "use_serial_batch_fields")
+					&& cint(nts.user_defaults?.use_serial_batch_fields) === 1
 				) {
-					frappe.model.set_value(item.doctype, item.name, "use_serial_batch_fields", 1);
+					nts.model.set_value(item.doctype, item.name, "use_serial_batch_fields", 1);
 				}
 			})
 		}
 	}
 
 	toggle_enable_for_stock_uom(field) {
-		frappe.call({
+		nts.call({
 			method: 'prodman.stock.doctype.stock_settings.stock_settings.get_enable_stock_uom_editing',
 			callback: (r) => {
 				if (r.message) {
@@ -312,7 +312,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		var me = this;
 
 		if(this.frm.doc.__islocal) {
-			var currency = frappe.defaults.get_user_default("currency");
+			var currency = nts.defaults.get_user_default("currency");
 
 			let set_value = (fieldname, value) => {
 				if(me.frm.fields_dict[fieldname] && !me.frm.doc[fieldname]) {
@@ -322,7 +322,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 			this.frm.trigger('set_default_internal_warehouse');
 
-			return frappe.run_serially([
+			return nts.run_serially([
 				() => set_value('currency', currency),
 				() => set_value('price_list_currency', currency),
 				() => set_value('status', 'Draft'),
@@ -355,7 +355,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		const me = this;
 		if (!this.frm.is_new()
 			&& (this.frm.doc.docstatus === 0 || this.frm.doc.__onload?.allow_to_make_qc_after_submission)
-			&& frappe.model.can_create("Quality Inspection")
+			&& nts.model.can_create("Quality Inspection")
 			&& show_qc_button) {
 			this.frm.add_custom_button(__("Quality Inspection(s)"), () => {
 				me.make_quality_inspection();
@@ -397,7 +397,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		const payment_request_type = (['Sales Order', 'Sales Invoice'].includes(this.frm.doc.doctype))
 			? "Inward" : "Outward";
 
-		frappe.call({
+		nts.call({
 			method:"prodman.accounts.doctype.payment_request.payment_request.make_payment_request",
 			args: {
 				dt: me.frm.doc.doctype,
@@ -410,8 +410,8 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			},
 			callback: function(r) {
 				if(!r.exc){
-					frappe.model.sync(r.message);
-					frappe.set_route("Form", r.message.doctype, r.message.name);
+					nts.model.sync(r.message);
+					nts.set_route("Form", r.message.doctype, r.message.name);
 				}
 			}
 		})
@@ -420,12 +420,12 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	onload_post_render() {
 		if(this.frm.doc.__islocal && !(this.frm.doc.taxes || []).length
 			&& !this.frm.doc.__onload?.load_after_mapping) {
-			frappe.after_ajax(() => this.apply_default_taxes());
+			nts.after_ajax(() => this.apply_default_taxes());
 		} else if(this.frm.doc.__islocal && this.frm.doc.company && this.frm.doc["items"]
 			&& !this.frm.doc.is_pos) {
-			frappe.after_ajax(() => this.calculate_taxes_and_totals());
+			nts.after_ajax(() => this.calculate_taxes_and_totals());
 		}
-		if(frappe.meta.get_docfield(this.frm.doc.doctype + " Item", "item_code")) {
+		if(nts.meta.get_docfield(this.frm.doc.doctype + " Item", "item_code")) {
 			this.setup_item_selector();
 			this.frm.get_field("items").grid.set_multiple_add("item_code", "qty");
 		}
@@ -471,7 +471,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	}
 
 	scan_barcode() {
-		frappe.flags.dialog_set = false;
+		nts.flags.dialog_set = false;
 		const barcode_scanner = new prodman.utils.BarcodeScanner({frm:this.frm});
 		barcode_scanner.process_scan();
 	}
@@ -480,7 +480,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		let row = locals[cdt][cdn];
 		if (row.barcode) {
 			prodman.stock.utils.set_item_details_using_barcode(this.frm, row, (r) => {
-				frappe.model.set_value(cdt, cdn, {
+				nts.model.set_value(cdt, cdn, {
 					"item_code": r.message.item_code,
 					"qty": 1,
 				});
@@ -496,7 +496,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 	apply_default_taxes() {
 		var me = this;
-		var taxes_and_charges_field = frappe.meta.get_docfield(me.frm.doc.doctype, "taxes_and_charges",
+		var taxes_and_charges_field = nts.meta.get_docfield(me.frm.doc.doctype, "taxes_and_charges",
 			me.frm.doc.name);
 
 		if (!this.frm.doc.taxes_and_charges && this.frm.doc.taxes && this.frm.doc.taxes.length > 0) {
@@ -504,7 +504,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		}
 
 		if (taxes_and_charges_field) {
-			return frappe.call({
+			return nts.call({
 				method: "prodman.controllers.accounts_controller.get_default_taxes_and_charges",
 				args: {
 					"master_doctype": taxes_and_charges_field.options,
@@ -514,7 +514,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 				debounce: 2000,
 				callback: function(r) {
 					if(!r.exc && r.message) {
-						frappe.run_serially([
+						nts.run_serially([
 							() => {
 								// directly set in doc, so as not to call triggers
 								if(r.message.taxes_and_charges) {
@@ -538,7 +538,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	setup_sms() {
 		var me = this;
 		let blacklist = ['Purchase Invoice', 'BOM'];
-		if(frappe.boot.sms_gateway_enabled && this.frm.doc.docstatus===1 && !["Lost", "Stopped", "Closed"].includes(this.frm.doc.status)
+		if(nts.boot.sms_gateway_enabled && this.frm.doc.docstatus===1 && !["Lost", "Stopped", "Closed"].includes(this.frm.doc.status)
 			&& !blacklist.includes(this.frm.doctype)) {
 			this.frm.page.add_menu_item(__('Send SMS'), function() { me.send_sms(); });
 		}
@@ -550,7 +550,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 	item_code(doc, cdt, cdn) {
 		var me = this;
-		var item = frappe.get_doc(cdt, cdn);
+		var item = nts.get_doc(cdt, cdn);
 		var update_stock = 0, show_batch_dialog = 0;
 
 		item.weight_per_unit = 0;
@@ -634,12 +634,12 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 					callback: function(r) {
 						if(!r.exc) {
-							frappe.run_serially([
+							nts.run_serially([
 								() => {
 									if (item.docstatus === 0
-										&& frappe.meta.has_field(item.doctype, "use_serial_batch_fields")
+										&& nts.meta.has_field(item.doctype, "use_serial_batch_fields")
 										&& !item.use_serial_batch_fields
-										&& cint(frappe.user_defaults?.use_serial_batch_fields) === 1
+										&& cint(nts.user_defaults?.use_serial_batch_fields) === 1
 									) {
 										item["use_serial_batch_fields"] = 1;
 									}
@@ -667,12 +667,12 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 								},
 								() => me.toggle_conversion_factor(item),
 								() => {
-									if (show_batch_dialog && !frappe.flags.trigger_from_barcode_scanner)
-										return frappe.db.get_value("Item", item.item_code, ["has_batch_no", "has_serial_no"])
+									if (show_batch_dialog && !nts.flags.trigger_from_barcode_scanner)
+										return nts.db.get_value("Item", item.item_code, ["has_batch_no", "has_serial_no"])
 											.then((r) => {
 												if (r.message &&
 												(r.message.has_batch_no || r.message.has_serial_no)) {
-													frappe.flags.hide_serial_batch_dialog = false;
+													nts.flags.hide_serial_batch_dialog = false;
 												} else {
 													show_batch_dialog = false;
 												}
@@ -680,16 +680,16 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 								},
 								() => {
 									// check if batch serial selector is disabled or not
-									if (show_batch_dialog && !frappe.flags.hide_serial_batch_dialog)
-										return frappe.db.get_single_value('Stock Settings', 'disable_serial_no_and_batch_selector')
+									if (show_batch_dialog && !nts.flags.hide_serial_batch_dialog)
+										return nts.db.get_single_value('Stock Settings', 'disable_serial_no_and_batch_selector')
 											.then((value) => {
 												if (value) {
-													frappe.flags.hide_serial_batch_dialog = true;
+													nts.flags.hide_serial_batch_dialog = true;
 												}
 											});
 								},
 								() => {
-									if(show_batch_dialog && !frappe.flags.hide_serial_batch_dialog && !frappe.flags.dialog_set) {
+									if(show_batch_dialog && !nts.flags.hide_serial_batch_dialog && !nts.flags.dialog_set) {
 										var d = locals[cdt][cdn];
 										$.each(r.message, function(k, v) {
 											if(!d[k]) d[k] = v;
@@ -699,15 +699,15 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 											d.batch_no = undefined;
 										}
 
-										frappe.flags.dialog_set = true;
+										nts.flags.dialog_set = true;
 										prodman.show_serial_batch_selector(me.frm, d, (item) => {
 											me.frm.script_manager.trigger('qty', item.doctype, item.name);
 											if (!me.frm.doc.set_warehouse)
 												me.frm.script_manager.trigger('warehouse', item.doctype, item.name);
 											me.apply_price_list(item, true);
-										}, undefined, !frappe.flags.hide_serial_batch_dialog);
+										}, undefined, !nts.flags.hide_serial_batch_dialog);
 									} else {
-										frappe.flags.dialog_set = false;
+										nts.flags.dialog_set = false;
 									}
 								},
 								() => me.conversion_factor(doc, cdt, cdn, true),
@@ -731,8 +731,8 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	}
 
 	price_list_rate(doc, cdt, cdn) {
-		var item = frappe.get_doc(cdt, cdn);
-		frappe.model.round_floats_in(item, ["price_list_rate", "discount_percentage"]);
+		var item = nts.get_doc(cdt, cdn);
+		nts.model.round_floats_in(item, ["price_list_rate", "discount_percentage"]);
 
 		// check if child doctype is Sales Order Item/Quotation Item and calculate the rate
 		if (in_list(["Quotation Item", "Sales Order Item", "Delivery Note Item", "Sales Invoice Item", "POS Invoice Item", "Purchase Invoice Item", "Purchase Order Item", "Purchase Receipt Item"]), cdt)
@@ -746,7 +746,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 	margin_rate_or_amount(doc, cdt, cdn) {
 		// calculated the revised total margin and rate on margin rate changes
-		let item = frappe.get_doc(cdt, cdn);
+		let item = nts.get_doc(cdt, cdn);
 		this.apply_pricing_rule_on_item(item);
 		this.calculate_taxes_and_totals();
 		cur_frm.refresh_fields();
@@ -754,9 +754,9 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 	margin_type(doc, cdt, cdn) {
 		// calculate the revised total margin and rate on margin type changes
-		let item = frappe.get_doc(cdt, cdn);
+		let item = nts.get_doc(cdt, cdn);
 		if (!item.margin_type) {
-			frappe.model.set_value(cdt, cdn, "margin_rate_or_amount", 0);
+			nts.model.set_value(cdt, cdn, "margin_rate_or_amount", 0);
 		} else {
 			this.apply_pricing_rule_on_item(item, doc, cdt, cdn);
 			this.calculate_taxes_and_totals();
@@ -779,13 +779,13 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			'allow_zero_valuation_rate': item.allow_zero_valuation_rate
 		}
 
-		frappe.call({
+		nts.call({
 			method: 'prodman.stock.utils.get_incoming_rate',
 			args: {
 				args: item_args
 			},
 			callback: function(r) {
-				frappe.model.set_value(item.doctype, item.name, 'rate', r.message * item.conversion_factor);
+				nts.model.set_value(item.doctype, item.name, 'rate', r.message * item.conversion_factor);
 			}
 		});
 	}
@@ -793,7 +793,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	add_taxes_from_item_tax_template(item_tax_map) {
 		let me = this;
 
-		if(item_tax_map && cint(frappe.defaults.get_default("add_taxes_from_item_tax_template"))) {
+		if(item_tax_map && cint(nts.defaults.get_default("add_taxes_from_item_tax_template"))) {
 			if(typeof (item_tax_map) == "string") {
 				item_tax_map = JSON.parse(item_tax_map);
 			}
@@ -801,7 +801,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			$.each(item_tax_map, function(tax, rate) {
 				let found = (me.frm.doc.taxes || []).find(d => d.account_head === tax);
 				if(!found) {
-					let child = frappe.model.add_child(me.frm.doc, "taxes");
+					let child = nts.model.add_child(me.frm.doc, "taxes");
 					child.charge_type = "On Net Total";
 					child.account_head = tax;
 					child.rate = 0;
@@ -812,7 +812,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 	serial_no(doc, cdt, cdn) {
 		var me = this;
-		var item = frappe.get_doc(cdt, cdn);
+		var item = nts.get_doc(cdt, cdn);
 
 		if (item && item.doctype === 'Purchase Receipt Item Supplied') {
 			return;
@@ -850,7 +850,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	}
 
 	refresh_serial_batch_bundle_field() {
-		frappe.route_hooks.after_submit = (frm_obj) => {
+		nts.route_hooks.after_submit = (frm_obj) => {
 			frm_obj.reload_doc();
 		}
 	}
@@ -858,16 +858,16 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	update_qty(cdt, cdn) {
 		var valid_serial_nos = [];
 		var serialnos = [];
-		var item = frappe.get_doc(cdt, cdn);
+		var item = nts.get_doc(cdt, cdn);
 		serialnos = item.serial_no.split("\n");
 		for (var i = 0; i < serialnos.length; i++) {
 			if (serialnos[i] != "") {
 				valid_serial_nos.push(serialnos[i]);
 			}
 		}
-		frappe.model.set_value(item.doctype, item.name,
+		nts.model.set_value(item.doctype, item.name,
 			"qty", valid_serial_nos.length / item.conversion_factor);
-		frappe.model.set_value(item.doctype, item.name, "stock_qty", valid_serial_nos.length);
+		nts.model.set_value(item.doctype, item.name, "stock_qty", valid_serial_nos.length);
 	}
 
 	async validate() {
@@ -883,7 +883,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		if ((this.frm.doc.doctype === 'Sales Invoice' && me.frm.doc.update_stock)
 			|| this.frm.doc.doctype == 'Delivery Note') {
 			if (this.frm.doc.is_internal_customer && this.frm.doc.company === this.frm.doc.represents_company) {
-				frappe.db.get_value('Company', this.frm.doc.company, 'default_in_transit_warehouse', function(value) {
+				nts.db.get_value('Company', this.frm.doc.company, 'default_in_transit_warehouse', function(value) {
 					me.frm.set_value('set_target_warehouse', value.default_in_transit_warehouse);
 				});
 			}
@@ -892,7 +892,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		if ((this.frm.doc.doctype === 'Purchase Invoice' && me.frm.doc.update_stock)
 			|| this.frm.doc.doctype == 'Purchase Receipt') {
 			if (this.frm.doc.is_internal_supplier && this.frm.doc.company === this.frm.doc.represents_company) {
-				frappe.db.get_value('Company', this.frm.doc.company, 'default_in_transit_warehouse', function(value) {
+				nts.db.get_value('Company', this.frm.doc.company, 'default_in_transit_warehouse', function(value) {
 					me.frm.set_value('set_from_warehouse', value.default_in_transit_warehouse);
 				});
 			}
@@ -903,7 +903,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		var me = this;
 		var set_pricing = function() {
 			if(me.frm.doc.company && me.frm.fields_dict.currency) {
-				frappe.run_serially([
+				nts.run_serially([
 					() => get_party_currency(),
 					() => me.update_item_tax_map(),
 					() => me.apply_default_taxes(),
@@ -919,11 +919,11 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 				return;
 			}
 
-			var party_type = frappe.meta.has_field(me.frm.doc.doctype, "customer") ? "Customer" : "Supplier";
+			var party_type = nts.meta.has_field(me.frm.doc.doctype, "customer") ? "Customer" : "Supplier";
 			var party_name = me.frm.doc[party_type.toLowerCase()];
 			if (party_name) {
-				frappe.call({
-					method: "frappe.client.get_value",
+				nts.call({
+					method: "nts.client.get_value",
 					args: {
 						doctype: party_type,
 						filters: { name: party_name },
@@ -958,8 +958,8 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		}
 
 		var set_terms = function() {
-			if (frappe.meta.has_field(me.frm.doc.doctype, "tc_name") && !me.frm.doc.tc_name) {
-				var company_doc = frappe.get_doc(":Company", me.frm.doc.company);
+			if (nts.meta.has_field(me.frm.doc.doctype, "tc_name") && !me.frm.doc.tc_name) {
+				var company_doc = nts.get_doc(":Company", me.frm.doc.company);
 				var selling_doctypes = ["Quotation", "Sales Order", "Delivery Note", "Sales Invoice"];
 				var company_terms_fieldname = selling_doctypes.includes(me.frm.doc.doctype) ? "default_selling_terms" : "default_buying_terms";
 				if (company_doc && company_doc[company_terms_fieldname]) {
@@ -970,7 +970,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 		var set_letter_head = function() {
 			if(me.frm.fields_dict.letter_head) {
-				var company_doc = frappe.get_doc(":Company", me.frm.doc.company);
+				var company_doc = nts.get_doc(":Company", me.frm.doc.company);
 				if (company_doc && company_doc.default_letter_head) {
 					me.frm.set_value("letter_head", company_doc.default_letter_head);
 				}
@@ -987,9 +987,9 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 					var party_account_field = 'credit_to';
 				}
 
-				var party = me.frm.doc[frappe.model.scrub(party_type)];
+				var party = me.frm.doc[nts.model.scrub(party_type)];
 				if(party && me.frm.doc.company) {
-					return frappe.call({
+					return nts.call({
 						method: "prodman.accounts.party.get_party_account",
 						args: {
 							company: me.frm.doc.company,
@@ -1012,7 +1012,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 		}
 
-		if (frappe.meta.get_docfield(this.frm.doctype, "shipping_address") &&
+		if (nts.meta.get_docfield(this.frm.doctype, "shipping_address") &&
 			['Purchase Order', 'Purchase Receipt', 'Purchase Invoice'].includes(this.frm.doctype)) {
 				let is_drop_ship = me.frm.doc.items.some(item => item.delivered_by_supplier);
 
@@ -1034,7 +1034,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	transaction_date() {
 		if (this.frm.doc.transaction_date) {
 			this.frm.transaction_date = this.frm.doc.transaction_date;
-			frappe.ui.form.trigger(this.frm.doc.doctype, "currency");
+			nts.ui.form.trigger(this.frm.doc.doctype, "currency");
 		}
 	}
 
@@ -1045,7 +1045,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 			if ((this.frm.doc.doctype == "Sales Invoice" && this.frm.doc.customer) ||
 				(this.frm.doc.doctype == "Purchase Invoice" && this.frm.doc.supplier)) {
-				return frappe.call({
+				return nts.call({
 					method: "prodman.accounts.party.get_due_date",
 					args: {
 						"posting_date": me.frm.doc.posting_date,
@@ -1058,13 +1058,13 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 						if(r.message) {
 							me.frm.doc.due_date = r.message;
 							refresh_field("due_date");
-							frappe.ui.form.trigger(me.frm.doc.doctype, "currency");
+							nts.ui.form.trigger(me.frm.doc.doctype, "currency");
 							me.recalculate_terms();
 						}
 					}
 				})
 			} else {
-				frappe.ui.form.trigger(me.frm.doc.doctype, "currency");
+				nts.ui.form.trigger(me.frm.doc.doctype, "currency");
 			}
 		}
 	}
@@ -1096,19 +1096,19 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		) {
 			const to_clear = [];
 			if (doc.payment_terms_template) {
-				to_clear.push(__(frappe.meta.get_label(cdt, "payment_terms_template")));
+				to_clear.push(__(nts.meta.get_label(cdt, "payment_terms_template")));
 			}
 
 			if (doc.payment_schedule?.length) {
-				to_clear.push(__(frappe.meta.get_label(cdt, "payment_schedule")));
+				to_clear.push(__(nts.meta.get_label(cdt, "payment_schedule")));
 			}
 
-			frappe.confirm(
+			nts.confirm(
 				__(
 					"For the new {0} to take effect, would you like to clear the current {1}?",
 					[
-						__(frappe.meta.get_label(cdt, "due_date")),
-						frappe.utils.comma_and(to_clear)
+						__(nts.meta.get_label(cdt, "due_date")),
+						nts.utils.comma_and(to_clear)
 					],
 					"Clear payment terms template and/or payment schedule when due date is changed"
 				),
@@ -1136,7 +1136,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 					if (term.payment_term) {
 						me.payment_term(doc, term.doctype, term.name);
 					} else {
-						frappe.model.set_value(
+						nts.model.set_value(
 							term.doctype, term.name, 'due_date',
 							doc.posting_date || doc.transaction_date
 						);
@@ -1208,7 +1208,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	}
 
 	apply_discount_on_item(doc, cdt, cdn, field) {
-		var item = frappe.get_doc(cdt, cdn);
+		var item = nts.get_doc(cdt, cdn);
 		if(item && !item.price_list_rate) {
 			item[field] = 0.0;
 		} else {
@@ -1235,7 +1235,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			var me = this;
 			$.each(this.frm.doc.items || [], function(i, d) {
 				if(d.margin_type == "Amount") {
-					frappe.model.set_value(d.doctype, d.name, "margin_rate_or_amount",
+					nts.model.set_value(d.doctype, d.name, "margin_rate_or_amount",
 						flt(d.margin_rate_or_amount) / flt(exchange_rate));
 				}
 			});
@@ -1246,7 +1246,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		var me = this;
 		$.each(this.frm.doc.taxes || [], function(i, d) {
 			if(d.charge_type == "Actual") {
-				frappe.model.set_value(d.doctype, d.name, "tax_amount",
+				nts.model.set_value(d.doctype, d.name, "tax_amount",
 					flt(d.base_tax_amount) / flt(exchange_rate));
 			}
 		});
@@ -1262,7 +1262,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		}
 
 		if (!transaction_date || !from_currency || !to_currency) return;
-		return frappe.call({
+		return nts.call({
 			method: "prodman.setup.utils.get_exchange_rate",
 			args: {
 				transaction_date: transaction_date,
@@ -1311,7 +1311,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 	uom(doc, cdt, cdn) {
 		var me = this;
-		var item = frappe.get_doc(cdt, cdn);
+		var item = nts.get_doc(cdt, cdn);
 		item.pricing_rules = ''
 		if(item.item_code && item.uom) {
 			return this.frm.call({
@@ -1322,7 +1322,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 				},
 				callback: function(r) {
 					if(!r.exc) {
-						frappe.model.set_value(cdt, cdn, 'conversion_factor', r.message.conversion_factor);
+						nts.model.set_value(cdt, cdn, 'conversion_factor', r.message.conversion_factor);
 						me.apply_price_list(item, true);
 					}
 				}
@@ -1332,9 +1332,9 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	}
 
 	conversion_factor(doc, cdt, cdn, dont_fetch_price_list_rate) {
-		if(frappe.meta.get_docfield(cdt, "stock_qty", cdn)) {
-			var item = frappe.get_doc(cdt, cdn);
-			frappe.model.round_floats_in(item, ["qty", "conversion_factor"]);
+		if(nts.meta.get_docfield(cdt, "stock_qty", cdn)) {
+			var item = nts.get_doc(cdt, cdn);
+			nts.model.round_floats_in(item, ["qty", "conversion_factor"]);
 			item.stock_qty = flt(item.qty * item.conversion_factor, precision("stock_qty", item));
 			refresh_field("stock_qty", item.name, item.parentfield);
 			this.toggle_conversion_factor(item);
@@ -1346,12 +1346,12 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			}
 
 			// for handling customization not to fetch price list rate
-			if(frappe.flags.dont_fetch_price_list_rate) {
+			if(nts.flags.dont_fetch_price_list_rate) {
 				return
 			}
 
 			if (!dont_fetch_price_list_rate &&
-				frappe.meta.has_field(doc.doctype, "price_list_currency")) {
+				nts.meta.has_field(doc.doctype, "price_list_currency")) {
 				this.apply_price_list(item, true);
 			}
 			this.calculate_stock_uom_rate(doc, cdt, cdn);
@@ -1389,15 +1389,15 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		// toggle read only property for conversion factor field if the uom and stock uom are same
 		if(this.frm.get_field('items').grid.fields_map.conversion_factor) {
 			this.frm.fields_dict.items.grid.toggle_enable("conversion_factor",
-				((item.uom != item.stock_uom) && !frappe.meta.get_docfield(cur_frm.fields_dict.items.grid.doctype, "conversion_factor").read_only)? true: false);
+				((item.uom != item.stock_uom) && !nts.meta.get_docfield(cur_frm.fields_dict.items.grid.doctype, "conversion_factor").read_only)? true: false);
 		}
 	}
 
 	qty(doc, cdt, cdn) {
-		let item = frappe.get_doc(cdt, cdn);
+		let item = nts.get_doc(cdt, cdn);
 		if (!this.is_a_mapped_document(item)) {
 			// item.pricing_rules = ''
-			frappe.run_serially([
+			nts.run_serially([
 				() => this.remove_pricing_rule_for_item(item),
 				() => this.conversion_factor(doc, cdt, cdn, true),
 				() => this.apply_price_list(item, true), //reapply price list before applying pricing rule
@@ -1410,7 +1410,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	}
 
 	stock_qty(doc, cdt, cdn) {
-		let item = frappe.get_doc(cdt, cdn);
+		let item = nts.get_doc(cdt, cdn);
 		item.conversion_factor = 1.0;
 		if (item.stock_qty) {
 			item.conversion_factor = flt(item.stock_qty) / flt(item.qty);
@@ -1420,7 +1420,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	}
 
 	calculate_stock_uom_rate(doc, cdt, cdn) {
-		let item = frappe.get_doc(cdt, cdn);
+		let item = nts.get_doc(cdt, cdn);
 
 		if (item?.rate) {
 			item.stock_uom_rate = flt(item.rate) / flt(item.conversion_factor);
@@ -1436,11 +1436,11 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			let stop_date = Date.parse(child.service_stop_date);
 
 			if(stop_date < start_date) {
-				frappe.model.set_value(cdt, cdn, "service_stop_date", "");
-				frappe.throw(__("Service Stop Date cannot be before Service Start Date"));
+				nts.model.set_value(cdt, cdn, "service_stop_date", "");
+				nts.throw(__("Service Stop Date cannot be before Service Start Date"));
 			} else if (stop_date > end_date) {
-				frappe.model.set_value(cdt, cdn, "service_stop_date", "");
-				frappe.throw(__("Service Stop Date cannot be after Service End Date"));
+				nts.model.set_value(cdt, cdn, "service_stop_date", "");
+				nts.throw(__("Service Stop Date cannot be after Service End Date"));
 			}
 		}
 	}
@@ -1449,11 +1449,11 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		var child = locals[cdt][cdn];
 
 		if(child.service_start_date) {
-			frappe.call({
+			nts.call({
 				"method": "prodman.stock.get_item_details.calculate_service_end_date",
 				args: {"args": child},
 				callback: function(r) {
-					frappe.model.set_value(cdt, cdn, "service_end_date", r.message.service_end_date);
+					nts.model.set_value(cdt, cdn, "service_end_date", r.message.service_end_date);
 				}
 			})
 		}
@@ -1528,11 +1528,11 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		let show = cint(this.frm.doc.discount_amount) ||
 				((this.frm.doc.taxes || []).filter(function(d) {return d.included_in_print_rate===1}).length);
 
-		if(this.frm.doc.doctype && frappe.meta.get_docfield(this.frm.doc.doctype, "net_total")) {
+		if(this.frm.doc.doctype && nts.meta.get_docfield(this.frm.doc.doctype, "net_total")) {
 			this.frm.toggle_display("net_total", show);
 		}
 
-		if(this.frm.doc.doctype && frappe.meta.get_docfield(this.frm.doc.doctype, "base_net_total")) {
+		if(this.frm.doc.doctype && nts.meta.get_docfield(this.frm.doc.doctype, "base_net_total")) {
 			this.frm.toggle_display("base_net_total", (show && (me.frm.doc.currency != company_currency)));
 		}
 	}
@@ -1550,7 +1550,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 			var item_grid = this.frm.fields_dict["operations"].grid;
 			$.each(["base_operating_cost", "base_hour_rate"], function(i, fname) {
-				if(frappe.meta.get_docfield(item_grid.doctype, fname))
+				if(nts.meta.get_docfield(item_grid.doctype, fname))
 					item_grid.set_column_disp(fname, me.frm.doc.currency != company_currency);
 			});
 		}
@@ -1561,7 +1561,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 			var item_grid = this.frm.fields_dict["scrap_items"].grid;
 			$.each(["base_rate", "base_amount"], function(i, fname) {
-				if(frappe.meta.get_docfield(item_grid.doctype, fname))
+				if(nts.meta.get_docfield(item_grid.doctype, fname))
 					item_grid.set_column_disp(fname, me.frm.doc.currency != company_currency);
 			});
 		}
@@ -1602,7 +1602,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 			var schedule_grid = this.frm.fields_dict["payment_schedule"].grid;
 			$.each(["base_payment_amount", "base_outstanding", "base_paid_amount"], function(i, fname) {
-				if (frappe.meta.get_docfield(schedule_grid.doctype, fname))
+				if (nts.meta.get_docfield(schedule_grid.doctype, fname))
 					schedule_grid.set_column_disp(fname, me.frm.doc.currency != company_currency);
 			});
 		}
@@ -1620,7 +1620,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			params.batch_no = row.batch_no;
 			params.uom = row.uom;
 
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.get_item_details.get_batch_based_item_price",
 				args: {
 					params: params,
@@ -1643,7 +1643,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		// toggle columns
 		var item_grid = this.frm.fields_dict["items"].grid;
 		$.each(["base_rate", "base_price_list_rate", "base_amount", "base_rate_with_margin"], function(i, fname) {
-			if(frappe.meta.get_docfield(item_grid.doctype, fname))
+			if(nts.meta.get_docfield(item_grid.doctype, fname))
 				item_grid.set_column_disp(fname, me.frm.doc.currency != company_currency);
 		});
 
@@ -1651,12 +1651,12 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			((this.frm.doc.taxes || []).filter(function(d) {return d.included_in_print_rate===1}).length);
 
 		$.each(["net_rate", "net_amount"], function(i, fname) {
-			if(frappe.meta.get_docfield(item_grid.doctype, fname))
+			if(nts.meta.get_docfield(item_grid.doctype, fname))
 				item_grid.set_column_disp(fname, show);
 		});
 
 		$.each(["base_net_rate", "base_net_amount"], function(i, fname) {
-			if(frappe.meta.get_docfield(item_grid.doctype, fname))
+			if(nts.meta.get_docfield(item_grid.doctype, fname))
 				item_grid.set_column_disp(fname, (show && (me.frm.doc.currency != company_currency)));
 		});
 	}
@@ -1858,16 +1858,16 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		const items_rule_dict = {};
 
 		for (const child of children) {
-			const existing_pricing_rule = frappe.model.get_value(child.doctype, child.name, "pricing_rules");
+			const existing_pricing_rule = nts.model.get_value(child.doctype, child.name, "pricing_rules");
 
 			for (const [key, value] of Object.entries(child)) {
 				if (!["doctype", "name"].includes(key)) {
 					if (key === "price_list_rate") {
-						frappe.model.set_value(child.doctype, child.name, "rate", value);
+						nts.model.set_value(child.doctype, child.name, "rate", value);
 					}
 
 					if (key === "pricing_rules") {
-						frappe.model.set_value(child.doctype, child.name, key, value);
+						nts.model.set_value(child.doctype, child.name, key, value);
 					}
 
 					if (key !== "free_item_data") {
@@ -1877,21 +1877,21 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 							}
 						}
 
-						frappe.model.set_value(child.doctype, child.name, key, value);
+						nts.model.set_value(child.doctype, child.name, key, value);
 					}
 				}
 			}
 
-			frappe.model.round_floats_in(
-				frappe.get_doc(child.doctype, child.name),
+			nts.model.round_floats_in(
+				nts.get_doc(child.doctype, child.name),
 				["price_list_rate", "discount_percentage"],
 			);
 
 			// if pricing rule set as blank from an existing value, apply price_list
 			if (!this.frm.doc.ignore_pricing_rule && existing_pricing_rule && !child.pricing_rules) {
-				this.apply_price_list(frappe.get_doc(child.doctype, child.name));
+				this.apply_price_list(nts.get_doc(child.doctype, child.name));
 			} else if (!child.pricing_rules) {
-				this.remove_pricing_rule(frappe.get_doc(child.doctype, child.name));
+				this.remove_pricing_rule(nts.get_doc(child.doctype, child.name));
 			}
 
 			if (child.free_item_data && child.free_item_data.length > 0) {
@@ -1915,13 +1915,13 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			let data = args[k];
 
 			if (data && data.apply_rule_on_other_items && JSON.parse(data.apply_rule_on_other_items)) {
-				fields.push(frappe.scrub(data.pricing_rule_for))
+				fields.push(nts.scrub(data.pricing_rule_for))
 				me.frm.doc.items.forEach(d => {
 					if (JSON.parse(data.apply_rule_on_other_items).includes(d[data.apply_rule_on])) {
 						for(var k in data) {
 
 							if (in_list(fields, k) && data[k] && (data.price_or_product_discount === 'Price' || k === 'pricing_rules')) {
-								frappe.model.set_value(d.doctype, d.name, k, data[k]);
+								nts.model.set_value(d.doctype, d.name, k, data[k]);
 							}
 						}
 					}
@@ -1942,7 +1942,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			if (!items || !exist_items.filter(e_row => {
 				return e_row.item_code == pr_row.item_code && e_row.pricing_rules == pr_row.pricing_rules;
 			}).length) {
-				row_to_modify = frappe.model.add_child(this.frm.doc,
+				row_to_modify = nts.model.add_child(this.frm.doc,
 					this.frm.doc.doctype + ' Item', 'items');
 
 			} else if(items) {
@@ -1955,7 +1955,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			}
 
 			if (this.frm.doc.hasOwnProperty("is_pos") && this.frm.doc.is_pos) {
-				let r = await frappe.db.get_value("POS Profile", this.frm.doc.pos_profile, "cost_center");
+				let r = await nts.db.get_value("POS Profile", this.frm.doc.pos_profile, "cost_center");
 				if (r.message.cost_center) {
 					row_to_modify["cost_center"] = r.message.cost_center;
 				}
@@ -1996,7 +1996,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			args: {	args: args, doc: me.frm.doc },
 			callback: function(r) {
 				if (!r.exc) {
-					frappe.run_serially([
+					nts.run_serially([
 						() => {
 							if (r.message.parent.price_list_currency)
 								me.frm.set_value("price_list_currency", r.message.parent.price_list_currency);
@@ -2086,15 +2086,15 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		var me = this;
 		var valid = true;
 
-		if (frappe.flags.ignore_company_party_validation) {
+		if (nts.flags.ignore_company_party_validation) {
 			return valid;
 		}
 
 		$.each(["company", "customer"], function(i, fieldname) {
-			if(frappe.meta.has_field(me.frm.doc.doctype, fieldname) &&  !["Purchase Order","Purchase Invoice"].includes(me.frm.doc.doctype)) {
+			if(nts.meta.has_field(me.frm.doc.doctype, fieldname) &&  !["Purchase Order","Purchase Invoice"].includes(me.frm.doc.doctype)) {
 				if (!me.frm.doc[fieldname]) {
-					frappe.msgprint(__("Please specify") + ": " +
-						frappe.meta.get_label(me.frm.doc.doctype, fieldname, me.frm.doc.name) +
+					nts.msgprint(__("Please specify") + ": " +
+						nts.meta.get_label(me.frm.doc.doctype, fieldname, me.frm.doc.name) +
 						". " + __("It is needed to fetch Item Details."));
 					valid = false;
 				}
@@ -2119,7 +2119,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			return this.frm.call({
 				method: "prodman.controllers.accounts_controller.get_taxes_and_charges",
 				args: {
-					"master_doctype": frappe.meta.get_docfield(this.frm.doc.doctype, "taxes_and_charges",
+					"master_doctype": nts.meta.get_docfield(this.frm.doc.doctype, "taxes_and_charges",
 						this.frm.doc.name).options,
 					"master_name": this.frm.doc.taxes_and_charges
 				},
@@ -2145,7 +2145,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		var me = this;
 		if(me.frm.updating_party_details) return;
 
-		frappe.run_serially([
+		nts.run_serially([
 			() => this.update_item_tax_map(),
 			() => prodman.utils.set_taxes(this.frm, "tax_category"),
 		]);
@@ -2197,7 +2197,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		var me = this;
 		if(me.frm.updating_party_details) return;
 
-		var item = frappe.get_doc(cdt, cdn);
+		var item = nts.get_doc(cdt, cdn);
 
 		if(item.item_tax_template) {
 			return this.frm.call({
@@ -2225,7 +2225,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	is_recurring() {
 		// set default values for recurring documents
 		if(this.frm.doc.is_recurring && this.frm.doc.__islocal) {
-			frappe.msgprint(__("Please set recurring after saving"));
+			nts.msgprint(__("Please set recurring after saving"));
 			this.frm.set_value('is_recurring', 0);
 			return;
 		}
@@ -2236,12 +2236,12 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			}
 
 			var owner_email = this.frm.doc.owner=="Administrator"
-				? frappe.user_info("Administrator").email
+				? nts.user_info("Administrator").email
 				: this.frm.doc.owner;
 
 			this.frm.doc.notification_email_address = $.map([cstr(owner_email),
 				cstr(this.frm.doc.contact_email)], function(v) { return v || null; }).join(", ");
-			this.frm.doc.repeat_on_day_of_month = frappe.datetime.str_to_obj(this.frm.doc.posting_date).getDate();
+			this.frm.doc.repeat_on_day_of_month = nts.datetime.str_to_obj(this.frm.doc.posting_date).getDate();
 		}
 
 		refresh_many(["notification_email_address", "repeat_on_day_of_month"]);
@@ -2255,9 +2255,9 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 			var months = recurring_type_map[this.frm.doc.recurring_type];
 			if(months) {
-				var to_date = frappe.datetime.add_months(this.frm.doc.from_date,
+				var to_date = nts.datetime.add_months(this.frm.doc.from_date,
 					months);
-				this.frm.doc.to_date = frappe.datetime.add_days(to_date, -1);
+				this.frm.doc.to_date = nts.datetime.add_days(to_date, -1);
 				refresh_field('to_date');
 			}
 		}
@@ -2306,19 +2306,19 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	make_mapped_payment_entry(args) {
 		var me = this;
 		args = args || { "dt": this.frm.doc.doctype, "dn": this.frm.doc.name };
-		return frappe.call({
+		return nts.call({
 			method: me.get_method_for_payment(),
 			args: args,
 			callback: function(r) {
-				var doclist = frappe.model.sync(r.message);
-				frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				var doclist = nts.model.sync(r.message);
+				nts.set_route("Form", doclist[0].doctype, doclist[0].name);
 			}
 		});
 	}
 
 	prompt_user_for_reference_date(){
 		let me = this;
-		frappe.prompt({
+		nts.prompt({
 			label: __("Cheque/Reference Date"),
 			fieldname: "reference_date",
 			fieldtype: "Date",
@@ -2422,13 +2422,13 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		];
 
 		const me = this;
-		const dialog = new frappe.ui.Dialog({
+		const dialog = new nts.ui.Dialog({
 			title: __("Select Items for Quality Inspection"),
 			size: "extra-large",
 			fields: fields,
 			primary_action: function () {
 				const data = dialog.get_values();
-				frappe.call({
+				nts.call({
 					method: "prodman.controllers.stock_controller.make_quality_inspections",
 					args: {
 						doctype: me.frm.doc.doctype,
@@ -2439,13 +2439,13 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 					callback: function (r) {
 						if (r.message.length > 0) {
 							if (r.message.length === 1) {
-								frappe.set_route("Form", "Quality Inspection", r.message[0]);
+								nts.set_route("Form", "Quality Inspection", r.message[0]);
 							} else {
-								frappe.route_options = {
+								nts.route_options = {
 									"reference_type": me.frm.doc.doctype,
 									"reference_name": me.frm.doc.name
 								};
-								frappe.set_route("List", "Quality Inspection");
+								nts.set_route("List", "Quality Inspection");
 							}
 						}
 						dialog.hide();
@@ -2455,7 +2455,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 			primary_action_label: __("Create")
 		});
 
-		frappe.call({
+		nts.call({
 			method: "prodman.controllers.stock_controller.check_item_quality_inspection",
 			args: {
 				doctype: this.frm.doc.doctype,
@@ -2482,7 +2482,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 
 				data = dialog.fields_dict.items.df.data;
 				if (!data.length) {
-					frappe.msgprint(__("All items in this document already have a linked Quality Inspection."));
+					nts.msgprint(__("All items in this document already have a linked Quality Inspection."));
 				} else {
 					dialog.show();
 				}
@@ -2517,10 +2517,10 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		// Show item's batches in the dropdown of batch no
 
 		var me = this;
-		var item = frappe.get_doc(cdt, cdn);
+		var item = nts.get_doc(cdt, cdn);
 
 		if(!item.item_code) {
-			frappe.throw(__("Please enter Item Code to get batch no"));
+			nts.throw(__("Please enter Item Code to get batch no"));
 		} else if (doc.doctype == "Purchase Receipt" ||
 			(doc.doctype == "Purchase Invoice" && doc.update_stock)) {
 			return {
@@ -2529,7 +2529,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		} else {
 			let filters = {
 				'item_code': item.item_code,
-				'posting_date': me.frm.doc.posting_date || frappe.datetime.nowdate(),
+				'posting_date': me.frm.doc.posting_date || nts.datetime.nowdate(),
 			}
 
 			if (doc.is_return) {
@@ -2549,7 +2549,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	}
 
 	set_query_for_item_tax_template(doc, cdt, cdn) {
-		var item = frappe.get_doc(cdt, cdn);
+		var item = nts.get_doc(cdt, cdn);
 		if(!item.item_code) {
 			return doc.company ? {filters: {company: doc.company}} : {};
 		} else {
@@ -2576,7 +2576,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		const doc = this.frm.doc;
 		if(doc.payment_terms_template && doc.doctype !== 'Delivery Note' && !doc.is_return) {
 			var posting_date = doc.posting_date || doc.transaction_date;
-			frappe.call({
+			nts.call({
 				method: "prodman.controllers.accounts_controller.get_payment_terms",
 				args: {
 					terms_template: doc.payment_terms_template,
@@ -2600,7 +2600,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		const me = this;
 		var row = locals[cdt][cdn];
 		if(row.payment_term) {
-			frappe.call({
+			nts.call({
 				method: "prodman.controllers.accounts_controller.get_payment_term_details",
 				args: {
 					term: row.payment_term,
@@ -2612,7 +2612,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 				callback: function(r) {
 					if(r.message && !r.exc) {
 						for (var d in r.message) {
-							frappe.model.set_value(cdt, cdn, d, r.message[d]);
+							nts.model.set_value(cdt, cdn, d, r.message[d]);
 							const company_currency = me.get_company_currency();
 							me.update_payment_schedule_grid_labels(company_currency);
 						}
@@ -2625,8 +2625,8 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 	against_blanket_order(doc, cdt, cdn) {
 		var item = locals[cdt][cdn];
 		if(!item.against_blanket_order) {
-			frappe.model.set_value(this.frm.doctype + " Item", item.name, "blanket_order", null);
-			frappe.model.set_value(this.frm.doctype + " Item", item.name, "blanket_order_rate", 0.00);
+			nts.model.set_value(this.frm.doctype + " Item", item.name, "blanket_order", null);
+			nts.model.set_value(this.frm.doctype + " Item", item.name, "blanket_order_rate", 0.00);
 		}
 	}
 
@@ -2634,7 +2634,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		var me = this;
 		var item = locals[cdt][cdn];
 		if (item.blanket_order && (item.parenttype=="Sales Order" || item.parenttype=="Purchase Order")) {
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.get_item_details.get_blanket_order_details",
 				args: {
 					args:{
@@ -2648,10 +2648,10 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 				},
 				callback: function(r) {
 					if (!r.message) {
-						frappe.throw(__("Invalid Blanket Order for the selected Customer and Item"));
+						nts.throw(__("Invalid Blanket Order for the selected Customer and Item"));
 					} else {
-						frappe.run_serially([
-							() => frappe.model.set_value(cdt, cdn, "blanket_order_rate", r.message.blanket_order_rate),
+						nts.run_serially([
+							() => nts.model.set_value(cdt, cdn, "blanket_order_rate", r.message.blanket_order_rate),
 							() => me.frm.script_manager.trigger("price_list_rate", cdt, cdn)
 						]);
 					}
@@ -2680,7 +2680,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		if (warehouse && child_table && child_table.length) {
 			let doctype = child_table[0].doctype;
 			$.each(child_table || [], function(i, item) {
-				frappe.model.set_value(doctype, item.name, warehouse_field, warehouse);
+				nts.model.set_value(doctype, item.name, warehouse_field, warehouse);
 			});
 		}
 	}
@@ -2689,7 +2689,7 @@ prodman.TransactionController = class TransactionController extends prodman.taxe
 		if (this.frm.doc.coupon_code || this.frm._last_coupon_code) {
 			// reset pricing rules if coupon code is set or is unset
 			const _ignore_pricing_rule = this.frm.doc.ignore_pricing_rule;
-			return frappe.run_serially([
+			return nts.run_serially([
 				() => this.frm.doc.ignore_pricing_rule=1,
 				() => this.frm.trigger('ignore_pricing_rule'),
 				() => this.frm.doc.ignore_pricing_rule=_ignore_pricing_rule,
@@ -2763,18 +2763,18 @@ prodman.show_serial_batch_selector = function (frm, item_row, callback, on_close
 				update_values[warehouse_field] = r.warehouse;
 			}
 
-			frappe.model.set_value(item_row.doctype, item_row.name, update_values);
+			nts.model.set_value(item_row.doctype, item_row.name, update_values);
 		}
 	});
 }
 
 prodman.apply_putaway_rule = (frm, purpose=null) => {
 	if (!frm.doc.company) {
-		frappe.throw({message: __("Please select a Company first."), title: __("Mandatory")});
+		nts.throw({message: __("Please select a Company first."), title: __("Mandatory")});
 	}
 	if (!frm.doc.items.length) return;
 
-	frappe.call({
+	nts.call({
 		method: "prodman.stock.doctype.putaway_rule.putaway_rule.apply_putaway_rule",
 		args: {
 			doctype: frm.doctype,

@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe.utils import now
+import nts
+from nts.utils import now
 
 from prodman.assets.doctype.asset.test_asset import create_asset_data
 from prodman.setup.doctype.employee.test_employee import make_employee
@@ -13,7 +13,7 @@ from prodman.stock.doctype.purchase_receipt.test_purchase_receipt import make_pu
 
 class TestAssetMovement(unittest.TestCase):
 	def setUp(self):
-		frappe.db.set_value(
+		nts.db.set_value(
 			"Company", "_Test Company", "capital_work_in_progress_account", "CWIP Account - _TC"
 		)
 		create_asset_data()
@@ -22,8 +22,8 @@ class TestAssetMovement(unittest.TestCase):
 	def test_movement(self):
 		pr = make_purchase_receipt(item_code="Macbook Pro", qty=1, rate=100000.0, location="Test Location")
 
-		asset_name = frappe.db.get_value("Asset", {"purchase_receipt": pr.name}, "name")
-		asset = frappe.get_doc("Asset", asset_name)
+		asset_name = nts.db.get_value("Asset", {"purchase_receipt": pr.name}, "name")
+		asset = nts.get_doc("Asset", asset_name)
 		asset.calculate_depreciation = 1
 		asset.available_for_use_date = "2020-06-06"
 		asset.purchase_date = "2020-06-06"
@@ -42,8 +42,8 @@ class TestAssetMovement(unittest.TestCase):
 			asset.submit()
 
 		# check asset movement is created
-		if not frappe.db.exists("Location", "Test Location 2"):
-			frappe.get_doc({"doctype": "Location", "location_name": "Test Location 2"}).insert()
+		if not nts.db.exists("Location", "Test Location 2"):
+			nts.get_doc({"doctype": "Location", "location_name": "Test Location 2"}).insert()
 
 		create_asset_movement(
 			purpose="Transfer",
@@ -58,7 +58,7 @@ class TestAssetMovement(unittest.TestCase):
 			reference_doctype="Purchase Receipt",
 			reference_name=pr.name,
 		)
-		self.assertEqual(frappe.db.get_value("Asset", asset.name, "location"), "Test Location 2")
+		self.assertEqual(nts.db.get_value("Asset", asset.name, "location"), "Test Location 2")
 
 		movement1 = create_asset_movement(
 			purpose="Transfer",
@@ -73,10 +73,10 @@ class TestAssetMovement(unittest.TestCase):
 			reference_doctype="Purchase Receipt",
 			reference_name=pr.name,
 		)
-		self.assertEqual(frappe.db.get_value("Asset", asset.name, "location"), "Test Location")
+		self.assertEqual(nts.db.get_value("Asset", asset.name, "location"), "Test Location")
 
 		movement1.cancel()
-		self.assertEqual(frappe.db.get_value("Asset", asset.name, "location"), "Test Location 2")
+		self.assertEqual(nts.db.get_value("Asset", asset.name, "location"), "Test Location 2")
 
 		employee = make_employee("testassetmovemp@example.com", company="_Test Company")
 		create_asset_movement(
@@ -88,8 +88,8 @@ class TestAssetMovement(unittest.TestCase):
 		)
 
 		# after issuing, asset should belong to an employee not at a location
-		self.assertEqual(frappe.db.get_value("Asset", asset.name, "location"), None)
-		self.assertEqual(frappe.db.get_value("Asset", asset.name, "custodian"), employee)
+		self.assertEqual(nts.db.get_value("Asset", asset.name, "location"), None)
+		self.assertEqual(nts.db.get_value("Asset", asset.name, "custodian"), employee)
 
 		create_asset_movement(
 			purpose="Receipt",
@@ -100,13 +100,13 @@ class TestAssetMovement(unittest.TestCase):
 		)
 
 		# after receiving, asset should belong to a location not at an employee
-		self.assertEqual(frappe.db.get_value("Asset", asset.name, "location"), "Test Location")
+		self.assertEqual(nts.db.get_value("Asset", asset.name, "location"), "Test Location")
 
 	def test_last_movement_cancellation(self):
 		pr = make_purchase_receipt(item_code="Macbook Pro", qty=1, rate=100000.0, location="Test Location")
 
-		asset_name = frappe.db.get_value("Asset", {"purchase_receipt": pr.name}, "name")
-		asset = frappe.get_doc("Asset", asset_name)
+		asset_name = nts.db.get_value("Asset", {"purchase_receipt": pr.name}, "name")
+		asset = nts.get_doc("Asset", asset_name)
 		asset.calculate_depreciation = 1
 		asset.available_for_use_date = "2020-06-06"
 		asset.purchase_date = "2020-06-06"
@@ -123,11 +123,11 @@ class TestAssetMovement(unittest.TestCase):
 		if asset.docstatus == 0:
 			asset.submit()
 
-		if not frappe.db.exists("Location", "Test Location 2"):
-			frappe.get_doc({"doctype": "Location", "location_name": "Test Location 2"}).insert()
+		if not nts.db.exists("Location", "Test Location 2"):
+			nts.get_doc({"doctype": "Location", "location_name": "Test Location 2"}).insert()
 
-		movement = frappe.get_doc({"doctype": "Asset Movement", "reference_name": pr.name})
-		self.assertRaises(frappe.ValidationError, movement.cancel)
+		movement = nts.get_doc({"doctype": "Asset Movement", "reference_name": pr.name})
+		self.assertRaises(nts.ValidationError, movement.cancel)
 
 		movement1 = create_asset_movement(
 			purpose="Transfer",
@@ -142,19 +142,19 @@ class TestAssetMovement(unittest.TestCase):
 			reference_doctype="Purchase Receipt",
 			reference_name=pr.name,
 		)
-		self.assertEqual(frappe.db.get_value("Asset", asset.name, "location"), "Test Location 2")
+		self.assertEqual(nts.db.get_value("Asset", asset.name, "location"), "Test Location 2")
 
 		movement1.cancel()
-		self.assertEqual(frappe.db.get_value("Asset", asset.name, "location"), "Test Location")
+		self.assertEqual(nts.db.get_value("Asset", asset.name, "location"), "Test Location")
 
 
 def create_asset_movement(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
 	if not args.transaction_date:
 		args.transaction_date = now()
 
-	movement = frappe.new_doc("Asset Movement")
+	movement = nts.new_doc("Asset Movement")
 	movement.update(
 		{
 			"assets": args.assets,
@@ -174,5 +174,5 @@ def create_asset_movement(**args):
 
 def make_location():
 	for location in ["Pune", "Mumbai", "Nagpur"]:
-		if not frappe.db.exists("Location", location):
-			frappe.get_doc({"doctype": "Location", "location_name": location}).insert(ignore_permissions=True)
+		if not nts.db.exists("Location", location):
+			nts.get_doc({"doctype": "Location", "location_name": location}).insert(ignore_permissions=True)

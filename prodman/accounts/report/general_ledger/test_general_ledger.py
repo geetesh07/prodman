@@ -1,17 +1,17 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts  Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
-import frappe
-from frappe import qb
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import flt, today
+import nts 
+from nts  import qb
+from nts .tests.utils import nts TestCase
+from nts .utils import flt, today
 
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
 from prodman.accounts.report.general_ledger.general_ledger import execute
 from prodman.controllers.sales_and_purchase_return import make_return_doc
 
 
-class TestGeneralLedger(FrappeTestCase):
+class TestGeneralLedger(nts TestCase):
 	def setUp(self):
 		self.company = "_Test Company"
 		self.clear_old_entries()
@@ -35,7 +35,7 @@ class TestGeneralLedger(FrappeTestCase):
 		# create a new account with USD currency
 		account_name = "Test USD Account for Revalutation"
 		company = "_Test Company"
-		account = frappe.get_doc(
+		account = nts .get_doc(
 			{
 				"account_name": account_name,
 				"is_group": 0,
@@ -50,7 +50,7 @@ class TestGeneralLedger(FrappeTestCase):
 		)
 		account.insert(ignore_if_duplicate=True)
 		# create a JV to debit 1000 USD at 75 exchange rate
-		jv = frappe.new_doc("Journal Entry")
+		jv = nts .new_doc("Journal Entry")
 		jv.posting_date = today()
 		jv.company = company
 		jv.multi_currency = 1
@@ -76,7 +76,7 @@ class TestGeneralLedger(FrappeTestCase):
 		jv.save()
 		jv.submit()
 		# create a JV to credit 900 USD at 100 exchange rate
-		jv = frappe.new_doc("Journal Entry")
+		jv = nts .new_doc("Journal Entry")
 		jv.posting_date = today()
 		jv.company = company
 		jv.multi_currency = 1
@@ -103,7 +103,7 @@ class TestGeneralLedger(FrappeTestCase):
 		jv.submit()
 
 		# create an exchange rate revaluation entry at 77 exchange rate
-		revaluation = frappe.new_doc("Exchange Rate Revaluation")
+		revaluation = nts .new_doc("Exchange Rate Revaluation")
 		revaluation.posting_date = today()
 		revaluation.company = company
 		revaluation.set(
@@ -124,7 +124,7 @@ class TestGeneralLedger(FrappeTestCase):
 		revaluation.submit()
 
 		# post journal entry to revaluate
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Company", company, "unrealized_exchange_gain_loss_account", "_Test Exchange Gain/Loss - _TC"
 		)
 		revaluation_jv = revaluation.make_jv_for_revaluation()
@@ -135,7 +135,7 @@ class TestGeneralLedger(FrappeTestCase):
 		revaluation_jv.submit()
 
 		# check the balance of the account
-		balance = frappe.db.sql(
+		balance = nts .db.sql(
 			"""
 				select sum(debit_in_account_currency) - sum(credit_in_account_currency)
 				from `tabGL Entry`
@@ -149,7 +149,7 @@ class TestGeneralLedger(FrappeTestCase):
 
 		# check if general ledger shows correct balance
 		columns, data = execute(
-			frappe._dict(
+			nts ._dict(
 				{
 					"company": company,
 					"from_date": today(),
@@ -172,7 +172,7 @@ class TestGeneralLedger(FrappeTestCase):
 		# create a new account with USD currency
 		account_name = "Test Debtors USD"
 		company = "_Test Company"
-		account = frappe.get_doc(
+		account = nts .get_doc(
 			{
 				"account_name": account_name,
 				"is_group": 0,
@@ -187,7 +187,7 @@ class TestGeneralLedger(FrappeTestCase):
 		)
 		account.insert(ignore_if_duplicate=True)
 		# create a JV to debit 1000 USD at 75 exchange rate
-		jv = frappe.new_doc("Journal Entry")
+		jv = nts .new_doc("Journal Entry")
 		jv.posting_date = today()
 		jv.company = company
 		jv.multi_currency = 1
@@ -215,7 +215,7 @@ class TestGeneralLedger(FrappeTestCase):
 		jv.save()
 		jv.submit()
 
-		revaluation = frappe.new_doc("Exchange Rate Revaluation")
+		revaluation = nts .new_doc("Exchange Rate Revaluation")
 		revaluation.posting_date = today()
 		revaluation.company = company
 		accounts = revaluation.get_accounts_data()
@@ -228,7 +228,7 @@ class TestGeneralLedger(FrappeTestCase):
 		revaluation = revaluation.save().submit()
 
 		# post journal entry for Revaluation doc
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Company", company, "unrealized_exchange_gain_loss_account", "_Test Exchange Gain/Loss - _TC"
 		)
 		revaluation_jv = revaluation.make_jv_for_revaluation()
@@ -240,7 +240,7 @@ class TestGeneralLedger(FrappeTestCase):
 
 		# With ignore_err enabled
 		columns, data = execute(
-			frappe._dict(
+			nts ._dict(
 				{
 					"company": company,
 					"from_date": today(),
@@ -255,7 +255,7 @@ class TestGeneralLedger(FrappeTestCase):
 
 		# Without ignore_err enabled
 		columns, data = execute(
-			frappe._dict(
+			nts ._dict(
 				{
 					"company": company,
 					"from_date": today(),
@@ -274,7 +274,7 @@ class TestGeneralLedger(FrappeTestCase):
 		cr_note = make_return_doc(si.doctype, si.name)
 		cr_note.submit()
 
-		pr = frappe.get_doc("Payment Reconciliation")
+		pr = nts .get_doc("Payment Reconciliation")
 		pr.company = si.company
 		pr.party_type = "Customer"
 		pr.party = si.customer
@@ -284,10 +284,10 @@ class TestGeneralLedger(FrappeTestCase):
 
 		invoices = [invoice.as_dict() for invoice in pr.invoices if invoice.invoice_number == si.name]
 		payments = [payment.as_dict() for payment in pr.payments if payment.reference_name == cr_note.name]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 
-		system_generated_journal = frappe.db.get_all(
+		system_generated_journal = nts .db.get_all(
 			"Journal Entry",
 			filters={
 				"docstatus": 1,
@@ -302,7 +302,7 @@ class TestGeneralLedger(FrappeTestCase):
 		expected = set([si.name, cr_note.name, system_generated_journal[0].name])
 		# Without ignore_cr_dr_notes
 		columns, data = execute(
-			frappe._dict(
+			nts ._dict(
 				{
 					"company": si.company,
 					"from_date": si.posting_date,
@@ -319,7 +319,7 @@ class TestGeneralLedger(FrappeTestCase):
 		# Without ignore_cr_dr_notes
 		expected = set([si.name, cr_note.name])
 		columns, data = execute(
-			frappe._dict(
+			nts ._dict(
 				{
 					"company": si.company,
 					"from_date": si.posting_date,

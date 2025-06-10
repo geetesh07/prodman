@@ -1,8 +1,8 @@
-import frappe
+import nts
 
 
 def execute():
-	settings = frappe.get_doc("Currency Exchange Settings")
+	settings = nts.get_doc("Currency Exchange Settings")
 	if settings.service_provider != "frankfurter.app":
 		return
 

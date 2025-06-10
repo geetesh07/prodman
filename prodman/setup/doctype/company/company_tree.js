@@ -1,4 +1,4 @@
-frappe.treeview_settings["Company"] = {
+nts.treeview_settings["Company"] = {
 	ignore_fields: ["parent_company"],
 	get_tree_nodes: "prodman.setup.doctype.company.company.get_children",
 	add_tree_node: "prodman.setup.doctype.company.company.add_node",
@@ -22,9 +22,9 @@ frappe.treeview_settings["Company"] = {
 		{
 			label: __("New Company"),
 			action: function () {
-				frappe.new_doc("Company", true);
+				nts.new_doc("Company", true);
 			},
-			condition: 'frappe.boot.user.can_create.indexOf("Company") !== -1',
+			condition: 'nts.boot.user.can_create.indexOf("Company") !== -1',
 		},
 	],
 	onload: function (treeview) {

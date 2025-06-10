@@ -1,7 +1,7 @@
-// Copyright (c) 2024, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2024, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Available Batch Report"] = {
+nts.query_reports["Available Batch Report"] = {
 	filters: [
 		{
 			fieldname: "company",
@@ -9,7 +9,7 @@ frappe.query_reports["Available Batch Report"] = {
 			fieldtype: "Link",
 			width: "80",
 			options: "Company",
-			default: frappe.defaults.get_default("company"),
+			default: nts.defaults.get_default("company"),
 		},
 		{
 			fieldname: "to_date",
@@ -17,7 +17,7 @@ frappe.query_reports["Available Batch Report"] = {
 			fieldtype: "Date",
 			width: "80",
 			reqd: 1,
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 		},
 		{
 			fieldname: "item_code",
@@ -41,8 +41,8 @@ frappe.query_reports["Available Batch Report"] = {
 			width: "80",
 			options: "Warehouse",
 			get_query: () => {
-				let warehouse_type = frappe.query_report.get_filter_value("warehouse_type");
-				let company = frappe.query_report.get_filter_value("company");
+				let warehouse_type = nts.query_report.get_filter_value("warehouse_type");
+				let company = nts.query_report.get_filter_value("company");
 
 				return {
 					filters: {
@@ -66,7 +66,7 @@ frappe.query_reports["Available Batch Report"] = {
 			width: "80",
 			options: "Batch",
 			get_query: () => {
-				let item = frappe.query_report.get_filter_value("item_code");
+				let item = nts.query_report.get_filter_value("item_code");
 
 				return {
 					filters: {

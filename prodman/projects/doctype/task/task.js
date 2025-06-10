@@ -1,13 +1,13 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.projects");
+nts.provide("prodman.projects");
 
-frappe.ui.form.on("Task", {
+nts.ui.form.on("Task", {
 	setup: function (frm) {
 		frm.make_methods = {
 			Timesheet: () =>
-				frappe.model.open_mapped_doc({
+				nts.model.open_mapped_doc({
 					method: "prodman.projects.doctype.task.task.make_timesheet",
 					frm: frm,
 				}),
@@ -38,7 +38,7 @@ frappe.ui.form.on("Task", {
 	},
 
 	is_group: function (frm) {
-		frappe.call({
+		nts.call({
 			method: "prodman.projects.doctype.task.task.check_if_child_exists",
 			args: {
 				name: frm.doc.name,
@@ -49,7 +49,7 @@ frappe.ui.form.on("Task", {
 						"Cannot convert Task to non-group because the following child Tasks exist: {0}.",
 						[r.message.join(", ")]
 					);
-					frappe.msgprint(message);
+					nts.msgprint(message);
 					frm.reload_doc();
 				}
 			},
@@ -57,6 +57,6 @@ frappe.ui.form.on("Task", {
 	},
 
 	validate: function (frm) {
-		frm.doc.project && frappe.model.remove_from_locals("Project", frm.doc.project);
+		frm.doc.project && nts.model.remove_from_locals("Project", frm.doc.project);
 	},
 });

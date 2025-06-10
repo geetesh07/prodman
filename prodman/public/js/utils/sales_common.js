@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.selling");
+nts.provide("prodman.selling");
 
 prodman.sales_common = {
 	setup_selling_controller: function () {
@@ -101,7 +101,7 @@ prodman.sales_common = {
 			refresh() {
 				super.refresh();
 
-				frappe.dynamic_link = { doc: this.frm.doc, fieldname: "customer", doctype: "Customer" };
+				nts.dynamic_link = { doc: this.frm.doc, fieldname: "customer", doctype: "Customer" };
 
 				this.frm.toggle_display(
 					"customer_name",
@@ -117,10 +117,10 @@ prodman.sales_common = {
 			}
 
 			set_default_company_address() {
-				if (!frappe.meta.has_field(this.frm.doc.doctype, "company_address")) return;
+				if (!nts.meta.has_field(this.frm.doc.doctype, "company_address")) return;
 				var me = this;
 				if (this.frm.doc.company) {
-					frappe.call({
+					nts.call({
 						method: "prodman.setup.doctype.company.company.get_default_company_address",
 						args: {
 							name: this.frm.doc.company,
@@ -183,7 +183,7 @@ prodman.sales_common = {
 			}
 
 			discount_percentage(doc, cdt, cdn) {
-				var item = frappe.get_doc(cdt, cdn);
+				var item = nts.get_doc(cdt, cdn);
 				item.discount_amount = 0.0;
 				this.apply_discount_on_item(doc, cdt, cdn, "discount_percentage");
 			}
@@ -193,7 +193,7 @@ prodman.sales_common = {
 					return;
 				}
 
-				var item = frappe.get_doc(cdt, cdn);
+				var item = nts.get_doc(cdt, cdn);
 				item.discount_percentage = 0.0;
 				this.apply_discount_on_item(doc, cdt, cdn, "discount_amount");
 			}
@@ -203,7 +203,7 @@ prodman.sales_common = {
 			}
 
 			total_commission() {
-				frappe.model.round_floats_in(this.frm.doc, [
+				nts.model.round_floats_in(this.frm.doc, [
 					"amount_eligible_for_commission",
 					"total_commission",
 				]);
@@ -218,7 +218,7 @@ prodman.sales_common = {
 			}
 
 			allocated_percentage(doc, cdt, cdn) {
-				var sales_person = frappe.get_doc(cdt, cdn);
+				var sales_person = nts.get_doc(cdt, cdn);
 				if (sales_person.allocated_percentage) {
 					sales_person.allocated_percentage = flt(
 						sales_person.allocated_percentage,
@@ -242,14 +242,14 @@ prodman.sales_common = {
 			}
 
 			sales_person(doc, cdt, cdn) {
-				var row = frappe.get_doc(cdt, cdn);
+				var row = nts.get_doc(cdt, cdn);
 				this.calculate_incentive(row);
 				refresh_field("incentives", row.name, row.parentfield);
 			}
 
 			warehouse(doc, cdt, cdn) {
 				if (doc.docstatus === 0 && doc.is_return && !doc.return_against) {
-					frappe.model.set_value(cdt, cdn, "incoming_rate", 0.0);
+					nts.model.set_value(cdt, cdn, "incoming_rate", 0.0);
 				}
 
 				this.set_actual_qty(doc, cdt, cdn);
@@ -260,7 +260,7 @@ prodman.sales_common = {
 				let sales_doctypes = ["Sales Invoice", "Delivery Note", "Sales Order"];
 
 				if (row.item_code && row.warehouse && sales_doctypes.includes(doc.doctype)) {
-					frappe.call({
+					nts.call({
 						method: "prodman.stock.get_item_details.get_bin_details",
 						args: {
 							item_code: row.item_code,
@@ -268,7 +268,7 @@ prodman.sales_common = {
 						},
 						callback(r) {
 							if (r.message) {
-								frappe.model.set_value(cdt, cdn, "actual_qty", r.message.actual_qty);
+								nts.model.set_value(cdt, cdn, "actual_qty", r.message.actual_qty);
 							}
 						},
 					});
@@ -276,15 +276,15 @@ prodman.sales_common = {
 			}
 
 			toggle_editable_price_list_rate() {
-				var df = frappe.meta.get_docfield(
+				var df = nts.meta.get_docfield(
 					this.frm.doc.doctype + " Item",
 					"price_list_rate",
 					this.frm.doc.name
 				);
-				var editable_price_list_rate = cint(frappe.defaults.get_default("editable_price_list_rate"));
+				var editable_price_list_rate = cint(nts.defaults.get_default("editable_price_list_rate"));
 
 				if (df && editable_price_list_rate) {
-					const parent_field = frappe.meta.get_parentfield(
+					const parent_field = nts.meta.get_parentfield(
 						this.frm.doc.doctype,
 						this.frm.doc.doctype + " Item"
 					);
@@ -303,9 +303,9 @@ prodman.sales_common = {
 
 				if (this.frm.doc.commission_rate > 100) {
 					this.frm.set_value("commission_rate", 100);
-					frappe.throw(
+					nts.throw(
 						`${__(
-							frappe.meta.get_label(this.frm.doc.doctype, "commission_rate", this.frm.doc.name)
+							nts.meta.get_label(this.frm.doc.doctype, "commission_rate", this.frm.doc.name)
 						)} ${__("cannot be greater than 100")}`
 					);
 				}
@@ -326,7 +326,7 @@ prodman.sales_common = {
 			calculate_contribution() {
 				var me = this;
 				$.each(this.frm.doc.doctype.sales_team || [], function (i, sales_person) {
-					frappe.model.round_floats_in(sales_person);
+					nts.model.round_floats_in(sales_person);
 					if (!sales_person.allocated_percentage) return;
 
 					sales_person.allocated_amount = flt(
@@ -363,13 +363,13 @@ prodman.sales_common = {
 								"For 'Product Bundle' items, Warehouse, Serial No and Batch No will be considered from the 'Packing List' table. If Warehouse and Batch No are same for all packing items for any 'Product Bundle' item, those values can be entered in the main Item table, values will be copied to 'Packing List' table."
 							) +
 							"</div>";
-						frappe.meta.get_docfield(doc.doctype, "product_bundle_help", doc.name).options =
+						nts.meta.get_docfield(doc.doctype, "product_bundle_help", doc.name).options =
 							help_msg;
 					}
 				} else {
 					$(this.frm.fields_dict.packing_list.row.wrapper).toggle(false);
 					if (["Delivery Note", "Sales Invoice"].includes(doc.doctype)) {
-						frappe.meta.get_docfield(doc.doctype, "product_bundle_help", doc.name).options = "";
+						nts.meta.get_docfield(doc.doctype, "product_bundle_help", doc.name).options = "";
 					}
 				}
 				refresh_field("product_bundle_help");
@@ -378,8 +378,8 @@ prodman.sales_common = {
 			company_address() {
 				var me = this;
 				if (this.frm.doc.company_address) {
-					frappe.call({
-						method: "frappe.contacts.doctype.address.address.get_address_display",
+					nts.call({
+						method: "nts.contacts.doctype.address.address.get_address_display",
 						args: { address_dict: this.frm.doc.company_address },
 						callback: function (r) {
 							if (r.message) {
@@ -404,7 +404,7 @@ prodman.sales_common = {
 				let item = locals[cdt][cdn];
 				let me = this;
 
-				frappe.db.get_value("Item", item.item_code, ["has_batch_no", "has_serial_no"]).then((r) => {
+				nts.db.get_value("Item", item.item_code, ["has_batch_no", "has_serial_no"]).then((r) => {
 					if (r.message && (r.message.has_batch_no || r.message.has_serial_no)) {
 						item.has_serial_no = r.message.has_serial_no;
 						item.has_batch_no = r.message.has_batch_no;
@@ -423,7 +423,7 @@ prodman.sales_common = {
 									qty = qty * -1;
 								}
 
-								frappe.model.set_value(item.doctype, item.name, {
+								nts.model.set_value(item.doctype, item.name, {
 									serial_and_batch_bundle: r.name,
 									use_serial_batch_fields: 0,
 									incoming_rate: r.avg_rate,
@@ -442,20 +442,20 @@ prodman.sales_common = {
 
 			update_auto_repeat_reference(doc) {
 				if (doc.auto_repeat) {
-					frappe.call({
-						method: "frappe.automation.doctype.auto_repeat.auto_repeat.update_reference",
+					nts.call({
+						method: "nts.automation.doctype.auto_repeat.auto_repeat.update_reference",
 						args: {
 							docname: doc.auto_repeat,
 							reference: doc.name,
 						},
 						callback: function (r) {
 							if (r.message == "success") {
-								frappe.show_alert({
+								nts.show_alert({
 									message: __("Auto repeat document updated"),
 									indicator: "green",
 								});
 							} else {
-								frappe.show_alert({
+								nts.show_alert({
 									message: __("An error occurred during the update process"),
 									indicator: "red",
 								});
@@ -469,21 +469,21 @@ prodman.sales_common = {
 				let me = this;
 				if (["Delivery Note", "Sales Invoice", "Sales Order"].includes(this.frm.doc.doctype)) {
 					if (this.frm.doc.project) {
-						frappe.call({
+						nts.call({
 							method: "prodman.projects.doctype.project.project.get_cost_center_name",
 							args: { project: this.frm.doc.project },
 							callback: function (r, rt) {
 								if (!r.exc) {
 									if (r.message) {
 										$.each(me.frm.doc["items"] || [], function (i, row) {
-											frappe.model.set_value(
+											nts.model.set_value(
 												row.doctype,
 												row.name,
 												"cost_center",
 												r.message
 											);
 										});
-										frappe.msgprint(
+										nts.msgprint(
 											__("Cost Center for Item rows has been updated to {0}", [
 												r.message,
 											])
@@ -506,9 +506,9 @@ prodman.sales_common = {
 
 prodman.pre_sales = {
 	set_as_lost: function (doctype) {
-		frappe.ui.form.on(doctype, {
+		nts.ui.form.on(doctype, {
 			set_as_lost_dialog: function (frm) {
-				var dialog = new frappe.ui.Dialog({
+				var dialog = new nts.ui.Dialog({
 					title: __("Set as Lost"),
 					fields: [
 						{

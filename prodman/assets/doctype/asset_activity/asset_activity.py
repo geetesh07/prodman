@@ -1,9 +1,9 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe.model.document import Document
-from frappe.utils import now_datetime
+import nts 
+from nts .model.document import Document
+from nts .utils import now_datetime
 
 
 class AssetActivity(Document):
@@ -13,7 +13,7 @@ class AssetActivity(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		asset: DF.Link
 		date: DF.Datetime
@@ -25,12 +25,12 @@ class AssetActivity(Document):
 
 
 def add_asset_activity(asset, subject):
-	frappe.get_doc(
+	nts .get_doc(
 		{
 			"doctype": "Asset Activity",
 			"asset": asset,
 			"subject": subject,
-			"user": frappe.session.user,
+			"user": nts .session.user,
 			"date": now_datetime(),
 		}
 	).insert(ignore_permissions=True, ignore_links=True)

@@ -1,10 +1,10 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
-import frappe
-from frappe.desk.query_report import export_query
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days, getdate, today
+import nts 
+from nts .desk.query_report import export_query
+from nts .tests.utils import nts TestCase
+from nts .utils import add_days, getdate, today
 
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
 from prodman.accounts.report.financial_statements import get_period_list
@@ -12,17 +12,17 @@ from prodman.accounts.report.profit_and_loss_statement.profit_and_loss_statement
 from prodman.accounts.test.accounts_mixin import AccountsTestMixin
 
 
-class TestProfitAndLossStatement(AccountsTestMixin, FrappeTestCase):
+class TestProfitAndLossStatement(AccountsTestMixin, nts TestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_customer()
 		self.create_item()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def create_sales_invoice(self, qty=1, rate=150, no_payment_schedule=False, do_not_submit=False):
-		frappe.set_user("Administrator")
+		nts .set_user("Administrator")
 		si = create_sales_invoice(
 			item=self.item,
 			company=self.company,
@@ -42,15 +42,15 @@ class TestProfitAndLossStatement(AccountsTestMixin, FrappeTestCase):
 		return si
 
 	def get_fiscal_year(self):
-		active_fy = frappe.db.get_all(
+		active_fy = nts .db.get_all(
 			"Fiscal Year",
 			filters={"disabled": 0, "year_start_date": ("<=", today()), "year_end_date": (">=", today())},
 		)[0]
-		return frappe.get_doc("Fiscal Year", active_fy.name)
+		return nts .get_doc("Fiscal Year", active_fy.name)
 
 	def get_report_filters(self):
 		fy = self.get_fiscal_year()
-		return frappe._dict(
+		return nts ._dict(
 			company=self.company,
 			from_fiscal_year=fy.name,
 			to_fiscal_year=fy.name,
@@ -96,7 +96,7 @@ class TestProfitAndLossStatement(AccountsTestMixin, FrappeTestCase):
 		self.create_sales_invoice(qty=1, rate=150)
 
 		filters = self.get_report_filters()
-		frappe.local.form_dict = frappe._dict(
+		nts .local.form_dict = nts ._dict(
 			{
 				"report_name": "Profit and Loss Statement",
 				"file_format_type": "CSV",
@@ -105,8 +105,8 @@ class TestProfitAndLossStatement(AccountsTestMixin, FrappeTestCase):
 			}
 		)
 		export_query()
-		contents = frappe.response["filecontent"].decode()
-		sales_account = frappe.db.get_value("Company", self.company, "default_income_account")
+		contents = nts .response["filecontent"].decode()
+		sales_account = nts .db.get_value("Company", self.company, "default_income_account")
 
 		self.assertIn(sales_account, contents)
 
@@ -114,11 +114,11 @@ class TestProfitAndLossStatement(AccountsTestMixin, FrappeTestCase):
 		# ensure 2 fiscal years
 		cur_fy = self.get_fiscal_year()
 		find_for = add_days(cur_fy.year_start_date, -1)
-		_x = frappe.db.get_all(
+		_x = nts .db.get_all(
 			"Fiscal Year",
 			filters={"disabled": 0, "year_start_date": ("<=", find_for), "year_end_date": (">=", find_for)},
 		)[0]
-		prev_fy = frappe.get_doc("Fiscal Year", _x.name)
+		prev_fy = nts .get_doc("Fiscal Year", _x.name)
 		prev_fy.append("companies", {"company": self.company})
 		prev_fy.save()
 
@@ -131,7 +131,7 @@ class TestProfitAndLossStatement(AccountsTestMixin, FrappeTestCase):
 		self.create_sales_invoice(qty=1, rate=120)
 
 		# Unaccumualted
-		filters = frappe._dict(
+		filters = nts ._dict(
 			company=self.company,
 			from_fiscal_year=prev_fy.name,
 			to_fiscal_year=cur_fy.name,

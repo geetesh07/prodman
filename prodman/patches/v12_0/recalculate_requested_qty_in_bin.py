@@ -1,10 +1,10 @@
-import frappe
+import nts
 
 from prodman.stock.stock_balance import get_indented_qty, update_bin_qty
 
 
 def execute():
-	bin_details = frappe.db.sql(
+	bin_details = nts.db.sql(
 		"""
 		SELECT item_code, warehouse
 		FROM `tabBin`""",

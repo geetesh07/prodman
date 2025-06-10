@@ -1,7 +1,7 @@
 import unittest
 
-import frappe
-from frappe.utils.make_random import get_random
+import nts
+from nts.utils.make_random import get_random
 
 from prodman.tests.utils import ReportFilters, ReportName, execute_script_report
 

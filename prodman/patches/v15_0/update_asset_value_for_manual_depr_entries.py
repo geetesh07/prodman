@@ -1,15 +1,15 @@
-import frappe
-from frappe.query_builder.functions import IfNull, Sum
+import nts
+from nts.query_builder.functions import IfNull, Sum
 
 
 def execute():
-	asset = frappe.qb.DocType("Asset")
-	gle = frappe.qb.DocType("GL Entry")
-	aca = frappe.qb.DocType("Asset Category Account")
-	company = frappe.qb.DocType("Company")
+	asset = nts.qb.DocType("Asset")
+	gle = nts.qb.DocType("GL Entry")
+	aca = nts.qb.DocType("Asset Category Account")
+	company = nts.qb.DocType("Company")
 
 	asset_total_depr_value_map = (
-		frappe.qb.from_(gle)
+		nts.qb.from_(gle)
 		.join(asset)
 		.on(gle.against_voucher == asset.name)
 		.join(aca)
@@ -25,7 +25,7 @@ def execute():
 		.groupby(asset.name)
 	)
 
-	frappe.qb.update(asset).join(asset_total_depr_value_map).on(
+	nts.qb.update(asset).join(asset_total_depr_value_map).on(
 		asset_total_depr_value_map.asset_name == asset.name
 	).set(
 		asset.value_after_depreciation, asset.value_after_depreciation - asset_total_depr_value_map.value

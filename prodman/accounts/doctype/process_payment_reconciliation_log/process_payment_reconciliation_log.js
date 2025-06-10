@@ -1,7 +1,7 @@
-// Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Process Payment Reconciliation Log", {
+nts .ui.form.on("Process Payment Reconciliation Log", {
 	refresh(frm) {
 		if (["Completed", "Running", "Paused", "Partially Reconciled"].find((x) => x == frm.doc.status)) {
 			let progress = 0;

@@ -53,10 +53,10 @@
 	<div>
 		<div class="row transaction-subheading  mt-1">
 			<div class="col-6 text-muted small mt-1">
-				{{ frappe.utils.format_date(doc.transaction_date, 'medium') }}
+				{{ nts.utils.format_date(doc.transaction_date, 'medium') }}
 				{% if doc.valid_till %}
 					<p>
-						{{ _("Valid Till") }}: {{ frappe.utils.format_date(doc.valid_till, 'medium') }}
+						{{ _("Valid Till") }}: {{ nts.utils.format_date(doc.valid_till, 'medium') }}
 					</p>
 				{% endif %}
 			</div>
@@ -164,7 +164,7 @@
 					{{ product_image(d.thumbnail or d.image, no_border=True) }}
 				{% else %}
 					<div class="no-image-cart-item" style="min-height: 100px;">
-						{{ frappe.utils.get_abbr(d.item_name) or "NA" }}
+						{{ nts.utils.get_abbr(d.item_name) or "NA" }}
 					</div>
 				{% endif %}
 			</div>

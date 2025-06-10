@@ -1,12 +1,12 @@
-# Copyright (c) 2024, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2024, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 from collections import defaultdict
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import Sum
-from frappe.utils import flt, get_datetime, today
+import nts
+from nts import _
+from nts.query_builder.functions import Sum
+from nts.utils import flt, get_datetime, today
 
 
 def execute(filters=None):
@@ -90,13 +90,13 @@ def parse_batchwise_data(batchwise_data):
 
 
 def get_batchwise_data_from_stock_ledger(filters):
-	batchwise_data = frappe._dict({})
+	batchwise_data = nts._dict({})
 
-	table = frappe.qb.DocType("Stock Ledger Entry")
-	batch = frappe.qb.DocType("Batch")
+	table = nts.qb.DocType("Stock Ledger Entry")
+	batch = nts.qb.DocType("Batch")
 
 	query = (
-		frappe.qb.from_(table)
+		nts.qb.from_(table)
 		.inner_join(batch)
 		.on(table.batch_no == batch.name)
 		.select(
@@ -120,12 +120,12 @@ def get_batchwise_data_from_stock_ledger(filters):
 
 
 def get_batchwise_data_from_serial_batch_bundle(batchwise_data, filters):
-	table = frappe.qb.DocType("Stock Ledger Entry")
-	ch_table = frappe.qb.DocType("Serial and Batch Entry")
-	batch = frappe.qb.DocType("Batch")
+	table = nts.qb.DocType("Stock Ledger Entry")
+	ch_table = nts.qb.DocType("Serial and Batch Entry")
+	batch = nts.qb.DocType("Batch")
 
 	query = (
-		frappe.qb.from_(table)
+		nts.qb.from_(table)
 		.inner_join(ch_table)
 		.on(table.serial_and_batch_bundle == ch_table.parent)
 		.inner_join(batch)
@@ -171,15 +171,15 @@ def get_query_based_on_filters(query, batch, table, filters):
 		query = query.where(table.posting_datetime <= to_date)
 
 	if filters.warehouse:
-		lft, rgt = frappe.db.get_value("Warehouse", filters.warehouse, ["lft", "rgt"])
-		warehouses = frappe.get_all(
+		lft, rgt = nts.db.get_value("Warehouse", filters.warehouse, ["lft", "rgt"])
+		warehouses = nts.get_all(
 			"Warehouse", filters={"lft": (">=", lft), "rgt": ("<=", rgt), "is_group": 0}, pluck="name"
 		)
 
 		query = query.where(table.warehouse.isin(warehouses))
 
 	elif filters.warehouse_type:
-		warehouses = frappe.get_all(
+		warehouses = nts.get_all(
 			"Warehouse", filters={"warehouse_type": filters.warehouse_type, "is_group": 0}, pluck="name"
 		)
 

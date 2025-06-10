@@ -1,14 +1,14 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Stock Qty vs Serial No Count"] = {
+nts.query_reports["Stock Qty vs Serial No Count"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -17,7 +17,7 @@ frappe.query_reports["Stock Qty vs Serial No Count"] = {
 			fieldtype: "Link",
 			options: "Warehouse",
 			get_query: function () {
-				const company = frappe.query_report.get_filter_value("company");
+				const company = nts.query_report.get_filter_value("company");
 				return {
 					filters: { company: company },
 				};

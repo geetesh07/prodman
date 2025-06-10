@@ -1,7 +1,7 @@
-frappe.provide("frappe.ui.form");
+nts.provide("nts.ui.form");
 
-frappe.ui.form.ContactAddressQuickEntryForm = class ContactAddressQuickEntryForm extends (
-	frappe.ui.form.QuickEntryForm
+nts.ui.form.ContactAddressQuickEntryForm = class ContactAddressQuickEntryForm extends (
+	nts.ui.form.QuickEntryForm
 ) {
 	constructor(doctype, after_insert, init_callback, doc, force) {
 		super(doctype, after_insert, init_callback, doc, force);

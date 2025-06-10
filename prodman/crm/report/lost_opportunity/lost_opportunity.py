@@ -1,9 +1,9 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2020, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -66,7 +66,7 @@ def get_columns():
 
 
 def get_data(filters):
-	return frappe.db.sql(
+	return nts.db.sql(
 		f"""
 		SELECT
 			`tabOpportunity`.name,

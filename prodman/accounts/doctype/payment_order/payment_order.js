@@ -1,7 +1,7 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Payment Order", {
+nts .ui.form.on("Payment Order", {
 	setup: function (frm) {
 		frm.set_query("company_bank_account", function () {
 			return {
@@ -104,7 +104,7 @@ frappe.ui.form.on("Payment Order", {
 	},
 
 	make_payment_records: function (frm) {
-		var dialog = new frappe.ui.Dialog({
+		var dialog = new nts .ui.Dialog({
 			title: __("For Supplier"),
 			fields: [
 				{
@@ -140,7 +140,7 @@ frappe.ui.form.on("Payment Order", {
 			var args = dialog.get_values();
 			if (!args) return;
 
-			return frappe.call({
+			return nts .call({
 				method: "prodman.accounts.doctype.payment_order.payment_order.make_payment_records",
 				args: {
 					name: frm.doc.name,

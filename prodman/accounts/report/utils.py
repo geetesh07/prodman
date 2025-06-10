@@ -1,7 +1,7 @@
-import frappe
-from frappe.query_builder.custom import ConstantColumn
-from frappe.query_builder.functions import Sum
-from frappe.utils import flt, formatdate, get_datetime_str, get_table_name
+import nts 
+from nts .query_builder.custom import ConstantColumn
+from nts .query_builder.functions import Sum
+from nts .utils import flt, formatdate, get_datetime_str, get_table_name
 from pypika import Order
 
 from prodman import get_company_currency, get_default_company
@@ -135,13 +135,13 @@ def get_appropriate_company(filters):
 	return company
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_invoiced_item_gross_margin(sales_invoice=None, item_code=None, company=None, with_item_data=False):
 	from prodman.accounts.report.gross_profit.gross_profit import GrossProfitGenerator
 
-	sales_invoice = sales_invoice or frappe.form_dict.get("sales_invoice")
-	item_code = item_code or frappe.form_dict.get("item_code")
-	company = company or frappe.get_cached_value("Sales Invoice", sales_invoice, "company")
+	sales_invoice = sales_invoice or nts .form_dict.get("sales_invoice")
+	item_code = item_code or nts .form_dict.get("item_code")
+	company = company or nts .get_cached_value("Sales Invoice", sales_invoice, "company")
 
 	filters = {
 		"sales_invoice": sales_invoice,
@@ -189,8 +189,8 @@ def get_values_for_columns(report_columns, report_row):
 
 def get_party_details(party_type, party_list):
 	party_details = {}
-	party = frappe.qb.DocType(party_type)
-	query = frappe.qb.from_(party).select(party.name, party.tax_id).where(party.name.isin(party_list))
+	party = nts .qb.DocType(party_type)
+	query = nts .qb.from_(party).select(party.name, party.tax_id).where(party.name.isin(party_list))
 	if party_type == "Supplier":
 		query = query.select(party.supplier_group)
 	else:
@@ -203,10 +203,10 @@ def get_party_details(party_type, party_list):
 
 
 def get_taxes_query(invoice_list, doctype, parenttype):
-	taxes = frappe.qb.DocType(doctype)
+	taxes = nts .qb.DocType(doctype)
 
 	query = (
-		frappe.qb.from_(taxes)
+		nts .qb.from_(taxes)
 		.select(taxes.account_head)
 		.distinct()
 		.where(
@@ -226,10 +226,10 @@ def get_taxes_query(invoice_list, doctype, parenttype):
 
 
 def get_journal_entries(filters, args):
-	je = frappe.qb.DocType("Journal Entry")
-	journal_account = frappe.qb.DocType("Journal Entry Account")
+	je = nts .qb.DocType("Journal Entry")
+	journal_account = nts .qb.DocType("Journal Entry Account")
 	query = (
-		frappe.qb.from_(je)
+		nts .qb.from_(je)
 		.inner_join(journal_account)
 		.on(je.name == journal_account.parent)
 		.select(
@@ -264,9 +264,9 @@ def get_journal_entries(filters, args):
 
 
 def get_payment_entries(filters, args):
-	pe = frappe.qb.DocType("Payment Entry")
+	pe = nts .qb.DocType("Payment Entry")
 	query = (
-		frappe.qb.from_(pe)
+		nts .qb.from_(pe)
 		.select(
 			ConstantColumn("Payment Entry").as_("doctype"),
 			pe.name,
@@ -294,9 +294,9 @@ def get_payment_entries(filters, args):
 
 
 def apply_common_conditions(filters, query, doctype, child_doctype=None, payments=False):
-	parent_doc = frappe.qb.DocType(doctype)
+	parent_doc = nts .qb.DocType(doctype)
 	if child_doctype:
-		child_doc = frappe.qb.DocType(child_doctype)
+		child_doc = nts .qb.DocType(child_doctype)
 
 	join_required = False
 
@@ -340,14 +340,14 @@ def apply_common_conditions(filters, query, doctype, child_doctype=None, payment
 
 
 def get_advance_taxes_and_charges(invoice_list):
-	adv_taxes = frappe.qb.DocType("Advance Taxes and Charges")
+	adv_taxes = nts .qb.DocType("Advance Taxes and Charges")
 	return (
-		frappe.qb.from_(adv_taxes)
+		nts .qb.from_(adv_taxes)
 		.select(
 			adv_taxes.parent,
 			adv_taxes.account_head,
 			(
-				frappe.qb.terms.Case()
+				nts .qb.terms.Case()
 				.when(adv_taxes.add_deduct_tax == "Add", Sum(adv_taxes.base_tax_amount))
 				.else_(Sum(adv_taxes.base_tax_amount) * -1)
 			).as_("tax_amount"),
@@ -366,7 +366,7 @@ def filter_invoices_based_on_dimensions(filters, query, parent_doc):
 	if accounting_dimensions:
 		for dimension in accounting_dimensions:
 			if filters.get(dimension.fieldname):
-				if frappe.get_cached_value("DocType", dimension.document_type, "is_tree"):
+				if nts .get_cached_value("DocType", dimension.document_type, "is_tree"):
 					filters[dimension.fieldname] = get_dimension_with_children(
 						dimension.document_type, filters.get(dimension.fieldname)
 					)
@@ -377,9 +377,9 @@ def filter_invoices_based_on_dimensions(filters, query, parent_doc):
 
 def get_opening_row(party_type, party, from_date, company):
 	party_account = get_party_account(party_type, party, company, include_advance=True)
-	gle = frappe.qb.DocType("GL Entry")
+	gle = nts .qb.DocType("GL Entry")
 	return (
-		frappe.qb.from_(gle)
+		nts .qb.from_(gle)
 		.select(
 			ConstantColumn("Opening").as_("account"),
 			Sum(gle.debit).as_("debit"),

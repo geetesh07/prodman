@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe.model.document import Document
+import nts
+from nts.model.document import Document
 
 
 class WorkOrderItem(Document):
@@ -13,7 +13,7 @@ class WorkOrderItem(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		allow_alternative_item: DF.Check
 		amount: DF.Currency
@@ -41,4 +41,4 @@ class WorkOrderItem(Document):
 
 
 def on_doctype_update():
-	frappe.db.add_index("Work Order Item", ["item_code", "source_warehouse"])
+	nts.db.add_index("Work Order Item", ["item_code", "source_warehouse"])

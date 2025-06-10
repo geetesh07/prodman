@@ -1,9 +1,9 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2017, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.utils import add_months, cint, flt, get_link_to_form, getdate, time_diff_in_hours
+import nts 
+from nts  import _
+from nts .utils import add_months, cint, flt, get_link_to_form, getdate, time_diff_in_hours
 
 import prodman
 from prodman.accounts.general_ledger import make_gl_entries
@@ -23,7 +23,7 @@ class AssetRepair(AccountsController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.assets.doctype.asset_repair_consumed_item.asset_repair_consumed_item import (
 			AssetRepairConsumedItem,
@@ -52,7 +52,7 @@ class AssetRepair(AccountsController):
 	# end: auto-generated types
 
 	def validate(self):
-		self.asset_doc = frappe.get_doc("Asset", self.asset)
+		self.asset_doc = nts .get_doc("Asset", self.asset)
 		self.validate_dates()
 		self.update_status()
 
@@ -62,13 +62,13 @@ class AssetRepair(AccountsController):
 
 	def validate_dates(self):
 		if self.completion_date and (self.failure_date > self.completion_date):
-			frappe.throw(
+			nts .throw(
 				_("Completion Date can not be before Failure Date. Please adjust the dates accordingly.")
 			)
 
 	def update_status(self):
 		if self.repair_status == "Pending" and self.asset_doc.status != "Out of Order":
-			frappe.db.set_value("Asset", self.asset, "status", "Out of Order")
+			nts .db.set_value("Asset", self.asset, "status", "Out of Order")
 			add_asset_activity(
 				self.asset,
 				_("Asset out of order due to Asset Repair {0}").format(
@@ -132,7 +132,7 @@ class AssetRepair(AccountsController):
 				)
 
 	def before_cancel(self):
-		self.asset_doc = frappe.get_doc("Asset", self.asset)
+		self.asset_doc = nts .get_doc("Asset", self.asset)
 
 		self.asset_doc.flags.increase_in_asset_value_due_to_repair = False
 
@@ -173,15 +173,15 @@ class AssetRepair(AccountsController):
 				)
 
 	def after_delete(self):
-		frappe.get_doc("Asset", self.asset).set_status()
+		nts .get_doc("Asset", self.asset).set_status()
 
 	def check_repair_status(self):
 		if self.repair_status == "Pending":
-			frappe.throw(_("Please update Repair Status."))
+			nts .throw(_("Please update Repair Status."))
 
 	def check_for_stock_items_and_warehouse(self):
 		if not self.get("stock_items"):
-			frappe.throw(_("Please enter Stock Items consumed during the Repair."), title=_("Missing Items"))
+			nts .throw(_("Please enter Stock Items consumed during the Repair."), title=_("Missing Items"))
 
 	def increase_asset_value(self):
 		total_value_of_stock_consumed = self.get_total_value_of_stock_consumed()
@@ -212,7 +212,7 @@ class AssetRepair(AccountsController):
 		return total_value_of_stock_consumed
 
 	def decrease_stock_quantity(self):
-		stock_entry = frappe.get_doc(
+		stock_entry = nts .get_doc(
 			{"doctype": "Stock Entry", "stock_entry_type": "Material Issue", "company": self.company}
 		)
 		stock_entry.asset_repair = self.name
@@ -237,11 +237,11 @@ class AssetRepair(AccountsController):
 		stock_entry.submit()
 
 	def validate_serial_no(self, stock_item):
-		if not stock_item.serial_and_batch_bundle and frappe.get_cached_value(
+		if not stock_item.serial_and_batch_bundle and nts .get_cached_value(
 			"Item", stock_item.item_code, "has_serial_no"
 		):
 			msg = f"Serial No Bundle is mandatory for Item {stock_item.item_code}"
-			frappe.throw(msg, title=_("Missing Serial No Bundle"))
+			nts .throw(msg, title=_("Missing Serial No Bundle"))
 
 		if stock_item.serial_and_batch_bundle:
 			values_to_update = {
@@ -249,7 +249,7 @@ class AssetRepair(AccountsController):
 				"voucher_type": "Stock Entry",
 			}
 
-			frappe.db.set_value(
+			nts .db.set_value(
 				"Serial and Batch Bundle", stock_item.serial_and_batch_bundle, values_to_update
 			)
 
@@ -272,7 +272,7 @@ class AssetRepair(AccountsController):
 			return
 
 		pi_expense_account = (
-			frappe.get_doc("Purchase Invoice", self.purchase_invoice).items[0].expense_account
+			nts .get_doc("Purchase Invoice", self.purchase_invoice).items[0].expense_account
 		)
 
 		gl_entries.append(
@@ -316,15 +316,15 @@ class AssetRepair(AccountsController):
 			return
 
 		# creating GL Entries for each row in Stock Items based on the Stock Entry created for it
-		stock_entry = frappe.get_doc("Stock Entry", {"asset_repair": self.name})
+		stock_entry = nts .get_doc("Stock Entry", {"asset_repair": self.name})
 
 		default_expense_account = None
 		if not prodman.is_perpetual_inventory_enabled(self.company):
-			default_expense_account = frappe.get_cached_value(
+			default_expense_account = nts .get_cached_value(
 				"Company", self.company, "default_expense_account"
 			)
 			if not default_expense_account:
-				frappe.throw(_("Please set default Expense Account in Company {0}").format(self.company))
+				nts .throw(_("Please set default Expense Account in Company {0}").format(self.company))
 
 		for item in stock_entry.items:
 			if flt(item.amount) > 0:
@@ -432,7 +432,7 @@ class AssetRepair(AccountsController):
 			row.total_number_of_depreciations -= 1
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_downtime(failure_date, completion_date):
 	downtime = time_diff_in_hours(completion_date, failure_date)
 	return round(downtime, 2)

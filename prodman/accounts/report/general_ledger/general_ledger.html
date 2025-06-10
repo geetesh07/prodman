@@ -16,9 +16,9 @@
 </h6>
 
 <h5 class="text-center">
-	{%= frappe.datetime.str_to_user(filters.from_date) %}
+	{%= nts .datetime.str_to_user(filters.from_date) %}
 	{%= __("to") %}
-	{%= frappe.datetime.str_to_user(filters.to_date) %}
+	{%= nts .datetime.str_to_user(filters.to_date) %}
 </h5>
 <hr>
 <table class="table table-bordered">
@@ -36,7 +36,7 @@
 		{% for(var i=0, l=data.length; i<l; i++) { %}
 			<tr>
 			{% if(data[i].posting_date) { %}
-				<td>{%= frappe.datetime.str_to_user(data[i].posting_date) %}</td>
+				<td>{%= nts .datetime.str_to_user(data[i].posting_date) %}</td>
 				<td>{%= data[i].voucher_type %}
 					<br>{%= data[i].voucher_no %}
 				</td>
@@ -64,7 +64,7 @@
 			{% } else { %}
 				<td></td>
 				<td></td>
-				<td><b>{%= frappe.format(data[i].account, {fieldtype: "Link"}) || "&nbsp;" %}</b></td>
+				<td><b>{%= nts .format(data[i].account, {fieldtype: "Link"}) || "&nbsp;" %}</b></td>
 				<td style="text-align: right">
 					{%= data[i].account && format_currency(data[i].debit, filters.presentation_currency || data[i].account_currency) %}
 				</td>
@@ -79,4 +79,4 @@
 		{% } %}
 	</tbody>
 </table>
-<p class="text-right text-muted">{%= __("Printed on {0}", [frappe.datetime.str_to_user(frappe.datetime.get_datetime_as_string())]) %}</p>
+<p class="text-right text-muted">{%= __("Printed on {0}", [nts .datetime.str_to_user(nts .datetime.get_datetime_as_string())]) %}</p>

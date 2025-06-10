@@ -1,14 +1,14 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Profitability Analysis"] = {
+nts .query_reports["Profitability Analysis"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts .defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -21,7 +21,7 @@ frappe.query_reports["Profitability Analysis"] = {
 			on_change: function (query_report) {
 				let based_on = query_report.get_values().based_on;
 				if (based_on != "Accounting Dimension") {
-					frappe.query_report.set_filter_value({
+					nts .query_report.set_filter_value({
 						accounting_dimension: "",
 					});
 				}
@@ -38,16 +38,16 @@ frappe.query_reports["Profitability Analysis"] = {
 			label: __("Fiscal Year"),
 			fieldtype: "Link",
 			options: "Fiscal Year",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today()),
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today()),
 			reqd: 1,
 			on_change: function (query_report) {
 				var fiscal_year = query_report.get_values().fiscal_year;
 				if (!fiscal_year) {
 					return;
 				}
-				frappe.model.with_doc("Fiscal Year", fiscal_year, function (r) {
-					var fy = frappe.model.get_doc("Fiscal Year", fiscal_year);
-					frappe.query_report.set_filter_value({
+				nts .model.with_doc("Fiscal Year", fiscal_year, function (r) {
+					var fy = nts .model.get_doc("Fiscal Year", fiscal_year);
+					nts .query_report.set_filter_value({
 						from_date: fy.year_start_date,
 						to_date: fy.year_end_date,
 					});
@@ -58,13 +58,13 @@ frappe.query_reports["Profitability Analysis"] = {
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[1],
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today(), true)[1],
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[2],
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today(), true)[2],
 		},
 		{
 			fieldname: "show_zero_values",
@@ -77,7 +77,7 @@ frappe.query_reports["Profitability Analysis"] = {
 			value = data.account_name;
 
 			column.link_onclick =
-				"frappe.query_reports['Profitability Analysis'].open_profit_and_loss_statement(" +
+				"nts .query_reports['Profitability Analysis'].open_profit_and_loss_statement(" +
 				JSON.stringify(data) +
 				")";
 			column.is_tree = true;
@@ -100,19 +100,19 @@ frappe.query_reports["Profitability Analysis"] = {
 	open_profit_and_loss_statement: function (data) {
 		if (!data.account) return;
 
-		frappe.route_options = {
-			company: frappe.query_report.get_filter_value("company"),
+		nts .route_options = {
+			company: nts .query_report.get_filter_value("company"),
 			from_fiscal_year: data.fiscal_year,
 			to_fiscal_year: data.fiscal_year,
 		};
 
 		if (data.based_on == "Cost Center") {
-			frappe.route_options["cost_center"] = data.account;
+			nts .route_options["cost_center"] = data.account;
 		} else {
-			frappe.route_options["project"] = data.account;
+			nts .route_options["project"] = data.account;
 		}
 
-		frappe.set_route("query-report", "Profit and Loss Statement");
+		nts .set_route("query-report", "Profit and Loss Statement");
 	},
 	tree: true,
 	name_field: "account",

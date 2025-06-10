@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe.model.meta import get_field_precision
-from frappe.query_builder.functions import IfNull, Round
+import nts 
+from nts .model.meta import get_field_precision
+from nts .query_builder.functions import IfNull, Round
 
 from prodman import get_default_currency
 
@@ -14,19 +14,19 @@ def get_ordered_to_be_billed_data(args, filters=None):
 	child_tab = doctype + " Item"
 	precision = (
 		get_field_precision(
-			frappe.get_meta(child_tab).get_field("billed_amt"), currency=get_default_currency()
+			nts .get_meta(child_tab).get_field("billed_amt"), currency=get_default_currency()
 		)
 		or 2
 	)
 
-	doctype = frappe.qb.DocType(doctype)
-	child_doctype = frappe.qb.DocType(child_tab)
+	doctype = nts .qb.DocType(doctype)
+	child_doctype = nts .qb.DocType(child_tab)
 
 	docname = filters.get(args.get("reference_field"), None)
 	project_field = get_project_field(doctype, child_doctype, party)
 
 	query = (
-		frappe.qb.from_(doctype)
+		nts .qb.from_(doctype)
 		.inner_join(child_doctype)
 		.on(doctype.name == child_doctype.parent)
 		.select(

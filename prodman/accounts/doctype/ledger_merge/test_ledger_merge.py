@@ -3,39 +3,39 @@
 
 import unittest
 
-import frappe
+import nts 
 
 from prodman.accounts.doctype.ledger_merge.ledger_merge import start_merge
 
 
 class TestLedgerMerge(unittest.TestCase):
 	def test_merge_success(self):
-		if not frappe.db.exists("Account", "Indirect Expenses - _TC"):
-			acc = frappe.new_doc("Account")
+		if not nts .db.exists("Account", "Indirect Expenses - _TC"):
+			acc = nts .new_doc("Account")
 			acc.account_name = "Indirect Expenses"
 			acc.is_group = 1
 			acc.parent_account = "Expenses - _TC"
 			acc.company = "_Test Company"
 			acc.insert()
-		if not frappe.db.exists("Account", "Indirect Test Expenses - _TC"):
-			acc = frappe.new_doc("Account")
+		if not nts .db.exists("Account", "Indirect Test Expenses - _TC"):
+			acc = nts .new_doc("Account")
 			acc.account_name = "Indirect Test Expenses"
 			acc.is_group = 1
 			acc.parent_account = "Expenses - _TC"
 			acc.company = "_Test Company"
 			acc.insert()
-		if not frappe.db.exists("Account", "Administrative Test Expenses - _TC"):
-			acc = frappe.new_doc("Account")
+		if not nts .db.exists("Account", "Administrative Test Expenses - _TC"):
+			acc = nts .new_doc("Account")
 			acc.account_name = "Administrative Test Expenses"
 			acc.parent_account = "Indirect Test Expenses - _TC"
 			acc.company = "_Test Company"
 			acc.insert()
 
-		doc = frappe.get_doc(
+		doc = nts .get_doc(
 			{
 				"doctype": "Ledger Merge",
 				"company": "_Test Company",
-				"root_type": frappe.db.get_value("Account", "Indirect Test Expenses - _TC", "root_type"),
+				"root_type": nts .db.get_value("Account", "Indirect Test Expenses - _TC", "root_type"),
 				"account": "Indirect Expenses - _TC",
 				"merge_accounts": [
 					{"account": "Indirect Test Expenses - _TC", "account_name": "Indirect Expenses"}
@@ -43,43 +43,43 @@ class TestLedgerMerge(unittest.TestCase):
 			}
 		).insert(ignore_permissions=True)
 
-		parent = frappe.db.get_value("Account", "Administrative Test Expenses - _TC", "parent_account")
+		parent = nts .db.get_value("Account", "Administrative Test Expenses - _TC", "parent_account")
 		self.assertEqual(parent, "Indirect Test Expenses - _TC")
 
 		start_merge(doc.name)
 
-		parent = frappe.db.get_value("Account", "Administrative Test Expenses - _TC", "parent_account")
+		parent = nts .db.get_value("Account", "Administrative Test Expenses - _TC", "parent_account")
 		self.assertEqual(parent, "Indirect Expenses - _TC")
 
-		self.assertFalse(frappe.db.exists("Account", "Indirect Test Expenses - _TC"))
+		self.assertFalse(nts .db.exists("Account", "Indirect Test Expenses - _TC"))
 
 	def test_partial_merge_success(self):
-		if not frappe.db.exists("Account", "Indirect Income - _TC"):
-			acc = frappe.new_doc("Account")
+		if not nts .db.exists("Account", "Indirect Income - _TC"):
+			acc = nts .new_doc("Account")
 			acc.account_name = "Indirect Income"
 			acc.is_group = 1
 			acc.parent_account = "Income - _TC"
 			acc.company = "_Test Company"
 			acc.insert()
-		if not frappe.db.exists("Account", "Indirect Test Income - _TC"):
-			acc = frappe.new_doc("Account")
+		if not nts .db.exists("Account", "Indirect Test Income - _TC"):
+			acc = nts .new_doc("Account")
 			acc.account_name = "Indirect Test Income"
 			acc.is_group = 1
 			acc.parent_account = "Income - _TC"
 			acc.company = "_Test Company"
 			acc.insert()
-		if not frappe.db.exists("Account", "Administrative Test Income - _TC"):
-			acc = frappe.new_doc("Account")
+		if not nts .db.exists("Account", "Administrative Test Income - _TC"):
+			acc = nts .new_doc("Account")
 			acc.account_name = "Administrative Test Income"
 			acc.parent_account = "Indirect Test Income - _TC"
 			acc.company = "_Test Company"
 			acc.insert()
 
-		doc = frappe.get_doc(
+		doc = nts .get_doc(
 			{
 				"doctype": "Ledger Merge",
 				"company": "_Test Company",
-				"root_type": frappe.db.get_value("Account", "Indirect Income - _TC", "root_type"),
+				"root_type": nts .db.get_value("Account", "Indirect Income - _TC", "root_type"),
 				"account": "Indirect Income - _TC",
 				"merge_accounts": [
 					{"account": "Indirect Test Income - _TC", "account_name": "Indirect Test Income"},
@@ -91,20 +91,20 @@ class TestLedgerMerge(unittest.TestCase):
 			}
 		).insert(ignore_permissions=True)
 
-		parent = frappe.db.get_value("Account", "Administrative Test Income - _TC", "parent_account")
+		parent = nts .db.get_value("Account", "Administrative Test Income - _TC", "parent_account")
 		self.assertEqual(parent, "Indirect Test Income - _TC")
 
 		start_merge(doc.name)
 
-		parent = frappe.db.get_value("Account", "Administrative Test Income - _TC", "parent_account")
+		parent = nts .db.get_value("Account", "Administrative Test Income - _TC", "parent_account")
 		self.assertEqual(parent, "Indirect Income - _TC")
 
-		self.assertFalse(frappe.db.exists("Account", "Indirect Test Income - _TC"))
-		self.assertTrue(frappe.db.exists("Account", "Administrative Test Income - _TC"))
+		self.assertFalse(nts .db.exists("Account", "Indirect Test Income - _TC"))
+		self.assertTrue(nts .db.exists("Account", "Administrative Test Income - _TC"))
 
 	def tearDown(self):
-		for entry in frappe.db.get_all("Ledger Merge"):
-			frappe.delete_doc("Ledger Merge", entry.name)
+		for entry in nts .db.get_all("Ledger Merge"):
+			nts .delete_doc("Ledger Merge", entry.name)
 
 		test_accounts = [
 			"Indirect Test Expenses - _TC",
@@ -113,4 +113,4 @@ class TestLedgerMerge(unittest.TestCase):
 			"Administrative Test Income - _TC",
 		]
 		for account in test_accounts:
-			frappe.delete_doc_if_exists("Account", account)
+			nts .delete_doc_if_exists("Account", account)

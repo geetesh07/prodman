@@ -1,8 +1,8 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		UPDATE `tabStock Ledger Entry`
 			SET posting_datetime = DATE_FORMAT(timestamp(posting_date, posting_time), '%Y-%m-%d %H:%i:%s')
@@ -13,7 +13,7 @@ def execute():
 
 
 def drop_indexes():
-	if not frappe.db.has_index("tabStock Ledger Entry", "posting_sort_index"):
+	if not nts.db.has_index("tabStock Ledger Entry", "posting_sort_index"):
 		return
 
-	frappe.db.sql_ddl("ALTER TABLE `tabStock Ledger Entry` DROP INDEX `posting_sort_index`")
+	nts.db.sql_ddl("ALTER TABLE `tabStock Ledger Entry` DROP INDEX `posting_sort_index`")

@@ -1,12 +1,12 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
 from unittest.mock import MagicMock, call
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, add_to_date, now, nowdate, today
+import nts
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import add_days, add_to_date, now, nowdate, today
 
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
 from prodman.accounts.utils import repost_gle_for_stock_vouchers
@@ -21,12 +21,12 @@ from prodman.stock.tests.test_utils import StockTestMixin
 from prodman.stock.utils import PendingRepostingError
 
 
-class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
+class TestRepostItemValuation(ntsTestCase, StockTestMixin):
 	def tearDown(self):
-		frappe.flags.dont_execute_stock_reposts = False
+		nts.flags.dont_execute_stock_reposts = False
 
 	def test_repost_time_slot(self):
-		repost_settings = frappe.get_doc("Stock Reposting Settings")
+		repost_settings = nts.get_doc("Stock Reposting Settings")
 
 		positive_cases = [
 			{"limit_reposting_timeslot": 0},
@@ -88,7 +88,7 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 	def test_clear_old_logs(self):
 		# create 10 logs
 		for i in range(1, 20):
-			repost_doc = frappe.get_doc(
+			repost_doc = nts.get_doc(
 				doctype="Repost Item Valuation",
 				item_code="_Test Item",
 				warehouse="_Test Warehouse - _TC",
@@ -102,14 +102,14 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 			repost_doc.modified = add_days(now(), days=-i * 10)
 			repost_doc.db_update_all()
 
-		logs = frappe.get_all("Repost Item Valuation", filters={"status": "Skipped"})
+		logs = nts.get_all("Repost Item Valuation", filters={"status": "Skipped"})
 		self.assertTrue(len(logs) > 10)
 
 		from prodman.stock.doctype.repost_item_valuation.repost_item_valuation import RepostItemValuation
 
 		RepostItemValuation.clear_old_logs(days=1)
 
-		logs = frappe.get_all("Repost Item Valuation", filters={"status": "Skipped"})
+		logs = nts.get_all("Repost Item Valuation", filters={"status": "Skipped"})
 		self.assertTrue(len(logs) == 0)
 
 	def test_create_item_wise_repost_item_valuation_entries(self):
@@ -132,7 +132,7 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 			doc.load_from_db()
 			self.assertEqual(doc.status, status)
 
-		riv_args = frappe._dict(
+		riv_args = nts._dict(
 			doctype="Repost Item Valuation",
 			item_code="_Test Item",
 			warehouse="_Test Warehouse - _TC",
@@ -144,7 +144,7 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 		)
 
 		# new repost without any duplicates
-		riv1 = frappe.get_doc(riv_args)
+		riv1 = nts.get_doc(riv_args)
 		riv1.flags.dont_run_in_test = True
 		riv1.submit()
 		_assert_status(riv1, "Queued")
@@ -152,14 +152,14 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 		self.assertEqual(riv1.voucher_no, "SI-1")
 
 		# newer than existing duplicate - riv1
-		riv2 = frappe.get_doc(riv_args.update({"posting_date": "2021-01-03"}))
+		riv2 = nts.get_doc(riv_args.update({"posting_date": "2021-01-03"}))
 		riv2.flags.dont_run_in_test = True
 		riv2.submit()
 		riv1.deduplicate_similar_repost()
 		_assert_status(riv2, "Skipped")
 
 		# older than exisitng duplicate - riv1
-		riv3 = frappe.get_doc(riv_args.update({"posting_date": "2021-01-01"}))
+		riv3 = nts.get_doc(riv_args.update({"posting_date": "2021-01-01"}))
 		riv3.flags.dont_run_in_test = True
 		riv3.submit()
 		riv3.deduplicate_similar_repost()
@@ -167,7 +167,7 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 		_assert_status(riv1, "Skipped")
 
 		# unrelated reposts, shouldn't do anything to others.
-		riv4 = frappe.get_doc(riv_args.update({"warehouse": "Stores - _TC"}))
+		riv4 = nts.get_doc(riv_args.update({"warehouse": "Stores - _TC"}))
 		riv4.flags.dont_run_in_test = True
 		riv4.submit()
 		riv4.deduplicate_similar_repost()
@@ -181,7 +181,7 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 	def test_stock_freeze_validation(self):
 		today = nowdate()
 
-		riv = frappe.get_doc(
+		riv = nts.get_doc(
 			doctype="Repost Item Valuation",
 			item_code="_Test Item",
 			warehouse="_Test Warehouse - _TC",
@@ -192,7 +192,7 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 		riv.flags.dont_run_in_test = True  # keep it queued
 		riv.submit()
 
-		stock_settings = frappe.get_doc("Stock Settings")
+		stock_settings = nts.get_doc("Stock Settings")
 		stock_settings.stock_frozen_upto = today
 
 		self.assertRaises(PendingRepostingError, stock_settings.save)
@@ -201,7 +201,7 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 
 	@change_settings("Stock Reposting Settings", {"item_based_reposting": 0})
 	def test_prevention_of_cancelled_transaction_riv(self):
-		frappe.flags.dont_execute_stock_reposts = True
+		nts.flags.dont_execute_stock_reposts = True
 
 		item = make_item()
 		warehouse = "_Test Warehouse - _TC"
@@ -210,10 +210,10 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 
 		old.cancel()
 
-		riv = frappe.get_last_doc(
+		riv = nts.get_last_doc(
 			"Repost Item Valuation", {"voucher_type": old.doctype, "voucher_no": old.name}
 		)
-		self.assertRaises(frappe.ValidationError, riv.cancel)
+		self.assertRaises(nts.ValidationError, riv.cancel)
 
 		riv.db_set("status", "Skipped")
 		riv.reload()
@@ -223,7 +223,7 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 		# Make sure set/tuple -> list behaviour is retained.
 		self.assertEqual(
 			[["a", "b"], ["c", "d"]],
-			sorted(frappe.parse_json(frappe.as_json(set([("a", "b"), ("c", "d")])))),
+			sorted(nts.parse_json(nts.as_json(set([("a", "b"), ("c", "d")])))),
 		)
 
 	def test_gl_repost_progress(self):
@@ -234,7 +234,7 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 		utils.GL_REPOSTING_CHUNK = 1
 		self.addCleanup(setattr, utils, "GL_REPOSTING_CHUNK", orig_chunk_size)
 
-		doc = frappe.new_doc("Repost Item Valuation")
+		doc = nts.new_doc("Repost Item Valuation")
 		doc.db_set = MagicMock()
 
 		vouchers = []
@@ -342,7 +342,7 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 			posting_date=add_to_date(today(), days=-1),
 		)
 
-		ple_entries = frappe.db.get_list(
+		ple_entries = nts.db.get_list(
 			"Payment Ledger Entry",
 			filters={"voucher_type": sinv.doctype, "voucher_no": sinv.name, "delinked": 0},
 		)
@@ -357,7 +357,7 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 	def test_account_freeze_validation(self):
 		today = nowdate()
 
-		riv = frappe.get_doc(
+		riv = nts.get_doc(
 			doctype="Repost Item Valuation",
 			item_code="_Test Item",
 			warehouse="_Test Warehouse - _TC",
@@ -367,12 +367,12 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 		)
 		riv.flags.dont_run_in_test = True  # keep it queued
 
-		accounts_settings = frappe.get_doc("Accounts Settings")
+		accounts_settings = nts.get_doc("Accounts Settings")
 		accounts_settings.acc_frozen_upto = today
 		accounts_settings.frozen_accounts_modifier = ""
 		accounts_settings.save()
 
-		self.assertRaises(frappe.ValidationError, riv.save)
+		self.assertRaises(nts.ValidationError, riv.save)
 
 		accounts_settings.acc_frozen_upto = ""
 		accounts_settings.save()
@@ -386,20 +386,20 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 		)
 
 		self.assertTrue(pr.docstatus == 1)
-		self.assertFalse(frappe.db.exists("Repost Item Valuation", {"voucher_no": pr.name}))
+		self.assertFalse(nts.db.exists("Repost Item Valuation", {"voucher_no": pr.name}))
 
 		pr.load_from_db()
 
 		pr.cancel()
 		self.assertTrue(pr.docstatus == 2)
-		self.assertTrue(frappe.db.exists("Repost Item Valuation", {"voucher_no": pr.name}))
+		self.assertTrue(nts.db.exists("Repost Item Valuation", {"voucher_no": pr.name}))
 
 	def test_repost_item_valuation_for_closing_stock_balance(self):
 		from prodman.stock.doctype.closing_stock_balance.closing_stock_balance import (
 			prepare_closing_stock_balance,
 		)
 
-		doc = frappe.new_doc("Closing Stock Balance")
+		doc = nts.new_doc("Closing Stock Balance")
 		doc.company = "_Test Company"
 		doc.from_date = today()
 		doc.to_date = today()
@@ -410,7 +410,7 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 		self.assertEqual(doc.docstatus, 1)
 		self.assertEqual(doc.status, "Completed")
 
-		riv = frappe.new_doc("Repost Item Valuation")
+		riv = nts.new_doc("Repost Item Valuation")
 		riv.update(
 			{
 				"item_code": "_Test Item",
@@ -421,7 +421,7 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 			}
 		)
 
-		self.assertRaises(frappe.ValidationError, riv.save)
+		self.assertRaises(nts.ValidationError, riv.save)
 		doc.cancel()
 
 	def test_remove_attached_file(self):
@@ -440,9 +440,9 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 			posting_date=add_days(today(), days=-1),
 		)
 
-		if docname := frappe.db.exists("Repost Item Valuation", {"voucher_no": pr1.name}):
+		if docname := nts.db.exists("Repost Item Valuation", {"voucher_no": pr1.name}):
 			self.assertFalse(
-				frappe.db.get_value(
+				nts.db.get_value(
 					"File",
 					{"attached_to_doctype": "Repost Item Valuation", "attached_to_name": docname},
 					"name",
@@ -452,7 +452,7 @@ class TestRepostItemValuation(FrappeTestCase, StockTestMixin):
 			repost_entries = create_item_wise_repost_entries(pr1.doctype, pr1.name)
 			for entry in repost_entries:
 				self.assertFalse(
-					frappe.db.get_value(
+					nts.db.get_value(
 						"File",
 						{"attached_to_doctype": "Repost Item Valuation", "attached_to_name": entry.name},
 						"name",

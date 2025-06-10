@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 
-import frappe
-from frappe import _, msgprint, scrub
-from frappe.utils import comma_and, cstr, flt, fmt_money, formatdate, get_link_to_form, nowdate
+import nts 
+from nts  import _, msgprint, scrub
+from nts .utils import comma_and, cstr, flt, fmt_money, formatdate, get_link_to_form, nowdate
 
 import prodman
 from prodman.accounts.deferred_revenue import get_deferred_booking_accounts
@@ -34,7 +34,7 @@ from prodman.assets.doctype.asset_depreciation_schedule.asset_depreciation_sched
 from prodman.controllers.accounts_controller import AccountsController
 
 
-class StockAccountInvalidTransaction(frappe.ValidationError):
+class StockAccountInvalidTransaction(nts .ValidationError):
 	pass
 
 
@@ -45,7 +45,7 @@ class JournalEntry(AccountsController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.journal_entry_account.journal_entry_account import JournalEntryAccount
 
@@ -128,7 +128,7 @@ class JournalEntry(AccountsController):
 		self.validate_debit_credit_amount()
 		self.set_total_debit_credit()
 
-		if not frappe.flags.is_reverse_depr_entry:
+		if not nts .flags.is_reverse_depr_entry:
 			self.validate_against_jv()
 			self.validate_stock_accounts()
 
@@ -154,14 +154,14 @@ class JournalEntry(AccountsController):
 		journal_accounts = set([x.account for x in self.accounts])
 		advance_accounts = set()
 		advance_accounts.add(
-			frappe.get_cached_value("Company", self.company, "default_advance_received_account")
+			nts .get_cached_value("Company", self.company, "default_advance_received_account")
 		)
-		advance_accounts.add(frappe.get_cached_value("Company", self.company, "default_advance_paid_account"))
+		advance_accounts.add(nts .get_cached_value("Company", self.company, "default_advance_paid_account"))
 		if advance_accounts_used := journal_accounts & advance_accounts:
-			frappe.msgprint(
+			nts .msgprint(
 				_(
 					"Making Journal Entries against advance accounts: {0} is not recommended. These Journals won't be available for Reconciliation."
-				).format(frappe.bold(comma_and(advance_accounts_used)))
+				).format(nts .bold(comma_and(advance_accounts_used)))
 			)
 
 	def validate_for_repost(self):
@@ -184,7 +184,7 @@ class JournalEntry(AccountsController):
 
 	def before_submit(self):
 		# Do not validate while importing via data import
-		if not frappe.flags.in_import:
+		if not nts .flags.in_import:
 			self.validate_total_debit_and_credit()
 
 	def on_submit(self):
@@ -238,40 +238,40 @@ class JournalEntry(AccountsController):
 		return self.pay_to_recd_from or self.accounts[0].account
 
 	def update_advance_paid(self):
-		advance_paid = frappe._dict()
+		advance_paid = nts ._dict()
 		for d in self.get("accounts"):
 			if d.is_advance:
-				if d.reference_type in frappe.get_hooks("advance_payment_doctypes"):
+				if d.reference_type in nts .get_hooks("advance_payment_doctypes"):
 					advance_paid.setdefault(d.reference_type, []).append(d.reference_name)
 
 		for voucher_type, order_list in advance_paid.items():
 			for voucher_no in list(set(order_list)):
-				frappe.get_doc(voucher_type, voucher_no).set_total_advance_paid()
+				nts .get_doc(voucher_type, voucher_no).set_total_advance_paid()
 
 	def validate_inter_company_accounts(self):
 		if self.voucher_type == "Inter Company Journal Entry" and self.inter_company_journal_entry_reference:
-			doc = frappe.db.get_value(
+			doc = nts .db.get_value(
 				"Journal Entry",
 				self.inter_company_journal_entry_reference,
 				["company", "total_debit", "total_credit"],
 				as_dict=True,
 			)
-			account_currency = frappe.get_cached_value("Company", self.company, "default_currency")
-			previous_account_currency = frappe.get_cached_value("Company", doc.company, "default_currency")
+			account_currency = nts .get_cached_value("Company", self.company, "default_currency")
+			previous_account_currency = nts .get_cached_value("Company", doc.company, "default_currency")
 			if account_currency == previous_account_currency:
 				credit_precision = self.precision("total_credit")
 				debit_precision = self.precision("total_debit")
 				if (flt(self.total_credit, credit_precision) != flt(doc.total_debit, debit_precision)) or (
 					flt(self.total_debit, debit_precision) != flt(doc.total_credit, credit_precision)
 				):
-					frappe.throw(_("Total Credit/ Debit Amount should be same as linked Journal Entry"))
+					nts .throw(_("Total Credit/ Debit Amount should be same as linked Journal Entry"))
 
 	def validate_depr_entry_voucher_type(self):
 		if (
 			any(d.account_type == "Depreciation" for d in self.get("accounts"))
 			and self.voucher_type != "Depreciation Entry"
 		):
-			frappe.throw(_("Journal Entry type should be set as Depreciation Entry for asset depreciation"))
+			nts .throw(_("Journal Entry type should be set as Depreciation Entry for asset depreciation"))
 
 	def validate_stock_accounts(self):
 		stock_accounts = get_stock_accounts(self.company, accounts=self.accounts)
@@ -281,7 +281,7 @@ class JournalEntry(AccountsController):
 			)
 
 			if account_bal == stock_bal:
-				frappe.throw(
+				nts .throw(
 					_("Account: {0} can only be updated via Stock Transactions").format(account),
 					StockAccountInvalidTransaction,
 				)
@@ -296,7 +296,7 @@ class JournalEntry(AccountsController):
 		parties = list(set(parties))
 
 		if len(parties) > 1:
-			frappe.throw(_("Cannot apply TDS against multiple parties in one entry"))
+			nts .throw(_("Cannot apply TDS against multiple parties in one entry"))
 
 		account_type_map = get_account_type_map(self.company)
 		party_type = "supplier" if self.voucher_type == "Credit Note" else "customer"
@@ -324,7 +324,7 @@ class JournalEntry(AccountsController):
 			d.get(rev_debit_or_credit) for d in self.get("accounts") if d.account == party_account
 		)
 
-		inv = frappe._dict(
+		inv = nts ._dict(
 			{
 				party_type: parties[0],
 				"doctype": doctype,
@@ -386,7 +386,7 @@ class JournalEntry(AccountsController):
 				and d.account_type == "Depreciation"
 				and d.debit
 			):
-				asset = frappe.get_doc("Asset", d.reference_name)
+				asset = nts .get_doc("Asset", d.reference_name)
 
 				if asset.calculate_depreciation:
 					fb_idx = 1
@@ -405,7 +405,7 @@ class JournalEntry(AccountsController):
 
 	def update_inter_company_jv(self):
 		if self.voucher_type == "Inter Company Journal Entry" and self.inter_company_journal_entry_reference:
-			frappe.db.set_value(
+			nts .db.set_value(
 				"Journal Entry",
 				self.inter_company_journal_entry_reference,
 				"inter_company_journal_entry_reference",
@@ -416,7 +416,7 @@ class JournalEntry(AccountsController):
 		def _validate_invoice_discounting_status(inv_disc, id_status, expected_status, row_id):
 			id_link = get_link_to_form("Invoice Discounting", inv_disc)
 			if id_status != expected_status:
-				frappe.throw(
+				nts .throw(
 					_("Row #{0}: Status must be {1} for Invoice Discounting {2}").format(
 						d.idx, expected_status, id_link
 					)
@@ -426,7 +426,7 @@ class JournalEntry(AccountsController):
 			set([d.reference_name for d in self.accounts if d.reference_type == "Invoice Discounting"])
 		)
 		for inv_disc in invoice_discounting_list:
-			inv_disc_doc = frappe.get_doc("Invoice Discounting", inv_disc)
+			inv_disc_doc = nts .get_doc("Invoice Discounting", inv_disc)
 			status = None
 			for d in self.accounts:
 				if d.account == inv_disc_doc.short_term_loan and d.reference_name == inv_disc:
@@ -462,10 +462,10 @@ class JournalEntry(AccountsController):
 				self.voucher_type == "Depreciation Entry"
 				and d.reference_type == "Asset"
 				and d.reference_name
-				and frappe.get_cached_value("Account", d.account, "root_type") == "Expense"
+				and nts .get_cached_value("Account", d.account, "root_type") == "Expense"
 				and d.debit
 			):
-				asset = frappe.get_doc("Asset", d.reference_name)
+				asset = nts .get_doc("Asset", d.reference_name)
 				for fb_row in asset.get("finance_books"):
 					if fb_row.finance_book == self.finance_book:
 						if cancel:
@@ -478,7 +478,7 @@ class JournalEntry(AccountsController):
 	def unlink_advance_entry_reference(self):
 		for d in self.get("accounts"):
 			if d.is_advance == "Yes" and d.reference_type in ("Sales Invoice", "Purchase Invoice"):
-				doc = frappe.get_doc(d.reference_type, d.reference_name)
+				doc = nts .get_doc(d.reference_type, d.reference_name)
 				doc.delink_advance_entries(self.name)
 				d.reference_type = ""
 				d.reference_name = ""
@@ -490,10 +490,10 @@ class JournalEntry(AccountsController):
 				self.voucher_type == "Depreciation Entry"
 				and d.reference_type == "Asset"
 				and d.reference_name
-				and frappe.get_cached_value("Account", d.account, "root_type") == "Expense"
+				and nts .get_cached_value("Account", d.account, "root_type") == "Expense"
 				and d.debit
 			):
-				asset = frappe.get_doc("Asset", d.reference_name)
+				asset = nts .get_doc("Asset", d.reference_name)
 
 				if asset.calculate_depreciation:
 					je_found = False
@@ -528,27 +528,27 @@ class JournalEntry(AccountsController):
 					asset.db_set("value_after_depreciation", asset.value_after_depreciation + d.debit)
 				asset.set_status()
 			elif self.voucher_type == "Journal Entry" and d.reference_type == "Asset" and d.reference_name:
-				journal_entry_for_scrap = frappe.db.get_value(
+				journal_entry_for_scrap = nts .db.get_value(
 					"Asset", d.reference_name, "journal_entry_for_scrap"
 				)
 
 				if journal_entry_for_scrap == self.name:
-					frappe.throw(
+					nts .throw(
 						_("Journal Entry for Asset scrapping cannot be cancelled. Please restore the Asset.")
 					)
 
 	def unlink_inter_company_jv(self):
 		if self.voucher_type == "Inter Company Journal Entry" and self.inter_company_journal_entry_reference:
-			frappe.db.set_value(
+			nts .db.set_value(
 				"Journal Entry",
 				self.inter_company_journal_entry_reference,
 				"inter_company_journal_entry_reference",
 				"",
 			)
-			frappe.db.set_value("Journal Entry", self.name, "inter_company_journal_entry_reference", "")
+			nts .db.set_value("Journal Entry", self.name, "inter_company_journal_entry_reference", "")
 
 	def unlink_asset_adjustment_entry(self):
-		frappe.db.sql(
+		nts .db.sql(
 			""" update `tabAsset Value Adjustment`
 			set journal_entry = null where journal_entry = %s""",
 			self.name,
@@ -556,19 +556,19 @@ class JournalEntry(AccountsController):
 
 	def validate_party(self):
 		for d in self.get("accounts"):
-			account_type = frappe.get_cached_value("Account", d.account, "account_type")
+			account_type = nts .get_cached_value("Account", d.account, "account_type")
 			if account_type in ["Receivable", "Payable"]:
 				if not (d.party_type and d.party):
-					frappe.throw(
+					nts .throw(
 						_(
 							"Row {0}: Party Type and Party is required for Receivable / Payable account {1}"
 						).format(d.idx, d.account)
 					)
 				elif (
 					d.party_type
-					and frappe.db.get_value("Party Type", d.party_type, "account_type") != account_type
+					and nts .db.get_value("Party Type", d.party_type, "account_type") != account_type
 				):
-					frappe.throw(
+					nts .throw(
 						_("Row {0}: Account {1} and Party Type {2} have different account types").format(
 							d.idx, d.account, d.party_type
 						)
@@ -585,8 +585,8 @@ class JournalEntry(AccountsController):
 		if customers:
 			from prodman.selling.doctype.customer.customer import check_credit_limit
 
-			customer_details = frappe._dict(
-				frappe.db.get_all(
+			customer_details = nts ._dict(
+				nts .db.get_all(
 					"Customer Credit Limit",
 					filters={
 						"parent": ["in", customers],
@@ -627,7 +627,7 @@ class JournalEntry(AccountsController):
 							alert=True,
 						)
 					elif d.reference_type in ("Sales Order", "Purchase Order") and d.is_advance != "Yes":
-						frappe.throw(
+						nts .throw(
 							_(
 								"Row {0}: Payment against Sales/Purchase Order should always be marked as advance"
 							).format(d.idx)
@@ -635,9 +635,9 @@ class JournalEntry(AccountsController):
 
 				if d.is_advance == "Yes":
 					if d.party_type == "Customer" and flt(d.debit) > 0:
-						frappe.throw(_("Row {0}: Advance against Customer must be credit").format(d.idx))
+						nts .throw(_("Row {0}: Advance against Customer must be credit").format(d.idx))
 					elif d.party_type == "Supplier" and flt(d.credit) > 0:
-						frappe.throw(_("Row {0}: Advance against Supplier must be debit").format(d.idx))
+						nts .throw(_("Row {0}: Advance against Supplier must be debit").format(d.idx))
 
 	def system_generated_gain_loss(self):
 		return (
@@ -647,13 +647,13 @@ class JournalEntry(AccountsController):
 	def validate_against_jv(self):
 		for d in self.get("accounts"):
 			if d.reference_type == "Journal Entry":
-				account_root_type = frappe.get_cached_value("Account", d.account, "root_type")
+				account_root_type = nts .get_cached_value("Account", d.account, "root_type")
 				if (
 					account_root_type == "Asset"
 					and flt(d.debit) > 0
 					and not self.system_generated_gain_loss()
 				):
-					frappe.throw(
+					nts .throw(
 						_(
 							"Row #{0}: For {1}, you can select reference document only if account gets credited"
 						).format(d.idx, d.account)
@@ -663,16 +663,16 @@ class JournalEntry(AccountsController):
 					and flt(d.credit) > 0
 					and not self.system_generated_gain_loss()
 				):
-					frappe.throw(
+					nts .throw(
 						_(
 							"Row #{0}: For {1}, you can select reference document only if account gets debited"
 						).format(d.idx, d.account)
 					)
 
 				if d.reference_name == self.name:
-					frappe.throw(_("You can not enter current voucher in 'Against Journal Entry' column"))
+					nts .throw(_("You can not enter current voucher in 'Against Journal Entry' column"))
 
-				against_entries = frappe.db.sql(
+				against_entries = nts .db.sql(
 					"""select * from `tabJournal Entry Account`
 					where account = %s and docstatus = 1 and parent = %s
 					and (reference_type is null or reference_type in ('', 'Sales Order', 'Purchase Order'))
@@ -683,7 +683,7 @@ class JournalEntry(AccountsController):
 
 				if not against_entries:
 					if self.voucher_type != "Exchange Gain Or Loss":
-						frappe.throw(
+						nts .throw(
 							_(
 								"Journal Entry {0} does not have account {1} or already matched against other voucher"
 							).format(d.reference_name, d.account)
@@ -695,7 +695,7 @@ class JournalEntry(AccountsController):
 						if flt(jvd[dr_or_cr]) > 0:
 							valid = True
 					if not valid and not self.system_generated_gain_loss():
-						frappe.throw(
+						nts .throw(
 							_("Against Journal Entry {0} does not have any unmatched {1} entry").format(
 								d.reference_name, dr_or_cr
 							)
@@ -728,12 +728,12 @@ class JournalEntry(AccountsController):
 
 				# check debit or credit type Sales / Purchase Order
 				if d.reference_type == "Sales Order" and flt(d.debit) > 0:
-					frappe.throw(
+					nts .throw(
 						_("Row {0}: Debit entry can not be linked with a {1}").format(d.idx, d.reference_type)
 					)
 
 				if d.reference_type == "Purchase Order" and flt(d.credit) > 0:
-					frappe.throw(
+					nts .throw(
 						_("Row {0}: Credit entry can not be linked with a {1}").format(
 							d.idx, d.reference_type
 						)
@@ -749,12 +749,12 @@ class JournalEntry(AccountsController):
 				self.reference_types[d.reference_name] = d.reference_type
 				self.reference_accounts[d.reference_name] = d.account
 
-				against_voucher = frappe.db.get_value(
+				against_voucher = nts .db.get_value(
 					d.reference_type, d.reference_name, [scrub(dt) for dt in field_dict.get(d.reference_type)]
 				)
 
 				if not against_voucher:
-					frappe.throw(_("Row {0}: Invalid reference {1}").format(d.idx, d.reference_name))
+					nts .throw(_("Row {0}: Invalid reference {1}").format(d.idx, d.reference_name))
 
 				# check if party and account match
 				if d.reference_type in ("Sales Invoice", "Purchase Invoice"):
@@ -779,7 +779,7 @@ class JournalEntry(AccountsController):
 					if (
 						against_voucher[0] != cstr(d.party) or party_account != d.account
 					) and self.voucher_type != "Exchange Gain Or Loss":
-						frappe.throw(
+						nts .throw(
 							_("Row {0}: Party / Account does not match with {1} / {2} in {3} {4}").format(
 								d.idx,
 								field_dict.get(d.reference_type)[0],
@@ -793,7 +793,7 @@ class JournalEntry(AccountsController):
 				if d.reference_type in ("Sales Order", "Purchase Order"):
 					# set totals
 					if against_voucher != d.party:
-						frappe.throw(
+						nts .throw(
 							_("Row {0}: {1} {2} does not match with {3}").format(
 								d.idx, d.party_type, d.party, d.reference_type
 							)
@@ -809,16 +809,16 @@ class JournalEntry(AccountsController):
 			account = self.reference_accounts[reference_name]
 
 			if reference_type in ("Sales Order", "Purchase Order"):
-				order = frappe.get_doc(reference_type, reference_name)
+				order = nts .get_doc(reference_type, reference_name)
 
 				if order.docstatus != 1:
-					frappe.throw(_("{0} {1} is not submitted").format(reference_type, reference_name))
+					nts .throw(_("{0} {1} is not submitted").format(reference_type, reference_name))
 
 				if flt(order.per_billed) >= 100:
-					frappe.throw(_("{0} {1} is fully billed").format(reference_type, reference_name))
+					nts .throw(_("{0} {1} is fully billed").format(reference_type, reference_name))
 
 				if cstr(order.status) == "Closed":
-					frappe.throw(_("{0} {1} is closed").format(reference_type, reference_name))
+					nts .throw(_("{0} {1} is closed").format(reference_type, reference_name))
 
 				account_currency = get_account_currency(account)
 				if account_currency == self.company_currency:
@@ -833,7 +833,7 @@ class JournalEntry(AccountsController):
 					)
 
 				if flt(voucher_total) < (flt(order.advance_paid) + total):
-					frappe.throw(
+					nts .throw(
 						_("Advance paid against {0} {1} cannot be greater than Grand Total {2}").format(
 							reference_type, reference_name, formatted_voucher_total
 						)
@@ -848,15 +848,15 @@ class JournalEntry(AccountsController):
 				"Debit Note",
 				"Credit Note",
 			]:
-				invoice = frappe.db.get_value(
+				invoice = nts .db.get_value(
 					reference_type, reference_name, ["docstatus", "outstanding_amount"], as_dict=1
 				)
 
 				if invoice.docstatus != 1:
-					frappe.throw(_("{0} {1} is not submitted").format(reference_type, reference_name))
+					nts .throw(_("{0} {1} is not submitted").format(reference_type, reference_name))
 
 				if total and flt(invoice.outstanding_amount) < total:
-					frappe.throw(
+					nts .throw(
 						_("Payment against {0} {1} cannot be greater than Outstanding Amount {2}").format(
 							reference_type, reference_name, invoice.outstanding_amount
 						)
@@ -871,7 +871,7 @@ class JournalEntry(AccountsController):
 				else:
 					field = "supplier"
 
-				d.against_account = frappe.db.get_value(d.reference_type, d.reference_name, field)
+				d.against_account = nts .db.get_value(d.reference_type, d.reference_name, field)
 		else:
 			for d in self.get("accounts"):
 				if flt(d.debit) > 0:
@@ -889,12 +889,12 @@ class JournalEntry(AccountsController):
 		if not (self.voucher_type == "Exchange Gain Or Loss" and self.multi_currency):
 			for d in self.get("accounts"):
 				if not flt(d.debit) and not flt(d.credit):
-					frappe.throw(_("Row {0}: Both Debit and Credit values cannot be zero").format(d.idx))
+					nts .throw(_("Row {0}: Both Debit and Credit values cannot be zero").format(d.idx))
 
 	def validate_total_debit_and_credit(self):
 		if not (self.voucher_type == "Exchange Gain Or Loss" and self.multi_currency):
 			if self.difference:
-				frappe.throw(
+				nts .throw(
 					_("Total Debit must be equal to Total Credit. The difference is {0}").format(
 						self.difference
 					)
@@ -904,7 +904,7 @@ class JournalEntry(AccountsController):
 		self.total_debit, self.total_credit, self.difference = 0, 0, 0
 		for d in self.get("accounts"):
 			if d.debit and d.credit:
-				frappe.throw(_("You cannot credit and debit same account at the same time"))
+				nts .throw(_("You cannot credit and debit same account at the same time"))
 
 			self.total_debit = flt(self.total_debit) + flt(d.debit, d.precision("debit"))
 			self.total_credit = flt(self.total_credit) + flt(d.credit, d.precision("credit"))
@@ -916,7 +916,7 @@ class JournalEntry(AccountsController):
 	def validate_multi_currency(self):
 		alternate_currency = []
 		for d in self.get("accounts"):
-			account = frappe.get_cached_value(
+			account = nts .get_cached_value(
 				"Account", d.account, ["account_currency", "account_type"], as_dict=1
 			)
 			if account:
@@ -931,7 +931,7 @@ class JournalEntry(AccountsController):
 
 		if alternate_currency:
 			if not self.multi_currency:
-				frappe.throw(_("Please check Multi Currency option to allow accounts with other currency"))
+				nts .throw(_("Please check Multi Currency option to allow accounts with other currency"))
 
 		self.set_exchange_rate()
 
@@ -980,7 +980,7 @@ class JournalEntry(AccountsController):
 					)
 
 			if not d.exchange_rate:
-				frappe.throw(_("Row {0}: Exchange Rate is mandatory").format(d.idx))
+				nts .throw(_("Row {0}: Exchange Rate is mandatory").format(d.idx))
 
 	def create_remarks(self):
 		r = []
@@ -995,7 +995,7 @@ class JournalEntry(AccountsController):
 			if self.cheque_date:
 				r.append(_("Reference #{0} dated {1}").format(self.cheque_no, formatdate(self.cheque_date)))
 			else:
-				msgprint(_("Please enter Reference date"), raise_exception=frappe.MandatoryError)
+				msgprint(_("Please enter Reference date"), raise_exception=nts .MandatoryError)
 
 		for d in self.get("accounts"):
 			if d.reference_type == "Sales Invoice" and d.credit:
@@ -1013,7 +1013,7 @@ class JournalEntry(AccountsController):
 				)
 
 			if d.reference_type == "Purchase Invoice" and d.debit:
-				bill_no = frappe.db.sql(
+				bill_no = nts .db.sql(
 					"""select bill_no, bill_date
 					from `tabPurchase Invoice` where name=%s""",
 					d.reference_name,
@@ -1055,12 +1055,12 @@ class JournalEntry(AccountsController):
 					party_amount += flt(d.debit_in_account_currency) or flt(d.credit_in_account_currency)
 					party_account_currency = d.account_currency
 
-			elif frappe.get_cached_value("Account", d.account, "account_type") in ["Bank", "Cash"]:
+			elif nts .get_cached_value("Account", d.account, "account_type") in ["Bank", "Cash"]:
 				bank_amount += flt(d.debit_in_account_currency) or flt(d.credit_in_account_currency)
 				bank_account_currency = d.account_currency
 
 		if party_type and pay_to_recd_from:
-			self.pay_to_recd_from = frappe.db.get_value(
+			self.pay_to_recd_from = nts .db.get_value(
 				party_type, pay_to_recd_from, "customer_name" if party_type == "Customer" else "supplier_name"
 			)
 			if bank_amount:
@@ -1075,7 +1075,7 @@ class JournalEntry(AccountsController):
 	def set_total_amount(self, amt, currency):
 		self.total_amount = amt
 		self.total_amount_currency = currency
-		from frappe.utils import money_in_words
+		from nts .utils import money_in_words
 
 		self.total_amount_in_words = money_in_words(amt, currency)
 
@@ -1144,7 +1144,7 @@ class JournalEntry(AccountsController):
 	def make_gl_entries(self, cancel=0, adv_adj=0):
 		from prodman.accounts.general_ledger import make_gl_entries
 
-		merge_entries = frappe.db.get_single_value("Accounts Settings", "merge_similar_account_heads")
+		merge_entries = nts .db.get_single_value("Accounts Settings", "merge_similar_account_heads")
 
 		gl_map = self.build_gl_map()
 		if self.voucher_type in ("Deferred Revenue", "Deferred Expense"):
@@ -1161,9 +1161,9 @@ class JournalEntry(AccountsController):
 				update_outstanding=update_outstanding,
 			)
 			if cancel:
-				cancel_exchange_gain_loss_journal(frappe._dict(doctype=self.doctype, name=self.name))
+				cancel_exchange_gain_loss_journal(nts ._dict(doctype=self.doctype, name=self.name))
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def get_balance(self, difference_account=None):
 		if not self.get("accounts"):
 			msgprint(_("'Entries' cannot be empty"), raise_exception=True)
@@ -1198,7 +1198,7 @@ class JournalEntry(AccountsController):
 			self.set_total_debit_credit()
 			self.validate_total_debit_and_credit()
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def get_outstanding_invoices(self):
 		self.set("accounts", [])
 		total = 0
@@ -1233,7 +1233,7 @@ class JournalEntry(AccountsController):
 		cond = f" and outstanding_amount <= {self.write_off_amount}" if flt(self.write_off_amount) > 0 else ""
 
 		if self.write_off_based_on == "Accounts Receivable":
-			return frappe.db.sql(
+			return nts .db.sql(
 				"""select name, debit_to as account, customer as party, outstanding_amount
 				from `tabSales Invoice` where docstatus = 1 and company = {}
 				and outstanding_amount > 0 {}""".format("%s", cond),
@@ -1241,7 +1241,7 @@ class JournalEntry(AccountsController):
 				as_dict=True,
 			)
 		elif self.write_off_based_on == "Accounts Payable":
-			return frappe.db.sql(
+			return nts .db.sql(
 				"""select name, credit_to as account, supplier as party, outstanding_amount
 				from `tabPurchase Invoice` where docstatus = 1 and company = {}
 				and outstanding_amount > 0 {}""".format("%s", cond),
@@ -1251,13 +1251,13 @@ class JournalEntry(AccountsController):
 
 	def validate_credit_debit_note(self):
 		if self.stock_entry:
-			if frappe.db.get_value("Stock Entry", self.stock_entry, "docstatus") != 1:
-				frappe.throw(_("Stock Entry {0} is not submitted").format(self.stock_entry))
+			if nts .db.get_value("Stock Entry", self.stock_entry, "docstatus") != 1:
+				nts .throw(_("Stock Entry {0} is not submitted").format(self.stock_entry))
 
-			if frappe.db.exists(
+			if nts .db.exists(
 				{"doctype": "Journal Entry", "stock_entry": self.stock_entry, "docstatus": 1}
 			):
-				frappe.msgprint(
+				nts .msgprint(
 					_("Warning: Another {0} # {1} exists against stock entry {2}").format(
 						self.voucher_type, self.name, self.stock_entry
 					)
@@ -1265,10 +1265,10 @@ class JournalEntry(AccountsController):
 
 	def validate_empty_accounts_table(self):
 		if not self.get("accounts"):
-			frappe.throw(_("Accounts table cannot be blank."))
+			nts .throw(_("Accounts table cannot be blank."))
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_default_bank_cash_account(company, account_type=None, mode_of_payment=None, account=None):
 	from prodman.accounts.doctype.sales_invoice.sales_invoice import get_bank_cash_account
 
@@ -1282,29 +1282,29 @@ def get_default_bank_cash_account(company, account_type=None, mode_of_payment=No
 		account (of that type), otherwise return empty dict.
 		"""
 		if account_type == "Bank":
-			account = frappe.get_cached_value("Company", company, "default_bank_account")
+			account = nts .get_cached_value("Company", company, "default_bank_account")
 			if not account:
-				account_list = frappe.get_all(
+				account_list = nts .get_all(
 					"Account", filters={"company": company, "account_type": "Bank", "is_group": 0}
 				)
 				if len(account_list) == 1:
 					account = account_list[0].name
 
 		elif account_type == "Cash":
-			account = frappe.get_cached_value("Company", company, "default_cash_account")
+			account = nts .get_cached_value("Company", company, "default_cash_account")
 			if not account:
-				account_list = frappe.get_all(
+				account_list = nts .get_all(
 					"Account", filters={"company": company, "account_type": "Cash", "is_group": 0}
 				)
 				if len(account_list) == 1:
 					account = account_list[0].name
 
 	if account:
-		account_details = frappe.get_cached_value(
+		account_details = nts .get_cached_value(
 			"Account", account, ["account_currency", "account_type"], as_dict=1
 		)
 
-		return frappe._dict(
+		return nts ._dict(
 			{
 				"account": account,
 				"balance": get_balance_on(account),
@@ -1313,17 +1313,17 @@ def get_default_bank_cash_account(company, account_type=None, mode_of_payment=No
 			}
 		)
 	else:
-		return frappe._dict()
+		return nts ._dict()
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_payment_entry_against_order(
 	dt, dn, amount=None, debit_in_account_currency=None, journal_entry=False, bank_account=None
 ):
-	ref_doc = frappe.get_doc(dt, dn)
+	ref_doc = nts .get_doc(dt, dn)
 
 	if flt(ref_doc.per_billed, 2) > 0:
-		frappe.throw(_("Can only make payment against unbilled {0}").format(dt))
+		nts .throw(_("Can only make payment against unbilled {0}").format(dt))
 
 	if dt == "Sales Order":
 		party_type = "Customer"
@@ -1361,11 +1361,11 @@ def get_payment_entry_against_order(
 	)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_payment_entry_against_invoice(
 	dt, dn, amount=None, debit_in_account_currency=None, journal_entry=False, bank_account=None
 ):
-	ref_doc = frappe.get_doc(dt, dn)
+	ref_doc = nts .get_doc(dt, dn)
 	if dt == "Sales Invoice":
 		party_type = "Customer"
 		party_account = get_party_account_based_on_invoice_discounting(dn) or ref_doc.debit_to
@@ -1401,7 +1401,7 @@ def get_payment_entry_against_invoice(
 
 
 def get_payment_entry(ref_doc, args):
-	cost_center = ref_doc.get("cost_center") or frappe.get_cached_value(
+	cost_center = ref_doc.get("cost_center") or nts .get_cached_value(
 		"Company", ref_doc.company, "cost_center"
 	)
 	exchange_rate = 1
@@ -1417,7 +1417,7 @@ def get_payment_entry(ref_doc, args):
 			ref_doc.name,
 		)
 
-	je = frappe.new_doc("Journal Entry")
+	je = nts .new_doc("Journal Entry")
 	je.update({"voucher_type": "Bank Entry", "company": ref_doc.company, "remark": args.get("remarks")})
 
 	party_row = je.append(
@@ -1427,7 +1427,7 @@ def get_payment_entry(ref_doc, args):
 			"party_type": args.get("party_type"),
 			"party": ref_doc.get(args.get("party_type").lower()),
 			"cost_center": cost_center,
-			"account_type": frappe.get_cached_value("Account", args.get("party_account"), "account_type"),
+			"account_type": nts .get_cached_value("Account", args.get("party_account"), "account_type"),
 			"account_currency": args.get("party_account_currency")
 			or get_account_currency(args.get("party_account")),
 			"exchange_rate": exchange_rate,
@@ -1474,13 +1474,13 @@ def get_payment_entry(ref_doc, args):
 	return je if args.get("journal_entry") else je.as_dict()
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts .whitelist()
+@nts .validate_and_sanitize_search_inputs
 def get_against_jv(doctype, txt, searchfield, start, page_len, filters):
-	if not frappe.db.has_column("Journal Entry", searchfield):
+	if not nts .db.has_column("Journal Entry", searchfield):
 		return []
 
-	return frappe.db.sql(
+	return nts .db.sql(
 		f"""
 		SELECT jv.name, jv.posting_date, jv.user_remark
 		FROM `tabJournal Entry` jv, `tabJournal Entry Account` jv_detail
@@ -1506,10 +1506,10 @@ def get_against_jv(doctype, txt, searchfield, start, page_len, filters):
 	)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_outstanding(args):
-	if not frappe.has_permission("Account"):
-		frappe.msgprint(_("No Permission"), raise_exception=1)
+	if not nts .has_permission("Account"):
+		nts .msgprint(_("No Permission"), raise_exception=1)
 
 	if isinstance(args, str):
 		args = json.loads(args)
@@ -1520,7 +1520,7 @@ def get_outstanding(args):
 	if args.get("doctype") == "Journal Entry":
 		condition = " and party=%(party)s" if args.get("party") else ""
 
-		against_jv_amount = frappe.db.sql(
+		against_jv_amount = nts .db.sql(
 			f"""
 			select sum(debit_in_account_currency) - sum(credit_in_account_currency)
 			from `tabJournal Entry Account` where parent=%(docname)s and account=%(account)s {condition}
@@ -1533,7 +1533,7 @@ def get_outstanding(args):
 		return {amount_field: abs(against_jv_amount)}
 	elif args.get("doctype") in ("Sales Invoice", "Purchase Invoice"):
 		party_type = "Customer" if args.get("doctype") == "Sales Invoice" else "Supplier"
-		invoice = frappe.db.get_value(
+		invoice = nts .db.get_value(
 			args["doctype"],
 			args["docname"],
 			["outstanding_amount", "conversion_rate", scrub(party_type), "due_date"],
@@ -1566,27 +1566,27 @@ def get_outstanding(args):
 		}
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_party_account_and_currency(company, party_type, party):
-	if not frappe.has_permission("Account"):
-		frappe.msgprint(_("No Permission"), raise_exception=1)
+	if not nts .has_permission("Account"):
+		nts .msgprint(_("No Permission"), raise_exception=1)
 
 	account = get_party_account(party_type, party, company)
 
 	return {
 		"account": account,
-		"account_currency": frappe.get_cached_value("Account", account, "account_currency"),
+		"account_currency": nts .get_cached_value("Account", account, "account_currency"),
 	}
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_account_details_and_party_type(account, date, company, debit=None, credit=None, exchange_rate=None):
 	"""Returns dict of account details and party type to be set in Journal Entry on selection of account."""
-	if not frappe.has_permission("Account"):
-		frappe.msgprint(_("No Permission"), raise_exception=1)
+	if not nts .has_permission("Account"):
+		nts .msgprint(_("No Permission"), raise_exception=1)
 
 	company_currency = prodman.get_company_currency(company)
-	account_details = frappe.get_cached_value(
+	account_details = nts .get_cached_value(
 		"Account", account, ["account_type", "account_currency"], as_dict=1
 	)
 
@@ -1624,7 +1624,7 @@ def get_account_details_and_party_type(account, date, company, debit=None, credi
 	return grid_values
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_exchange_rate(
 	posting_date,
 	account=None,
@@ -1638,12 +1638,12 @@ def get_exchange_rate(
 ):
 	from prodman.setup.utils import get_exchange_rate
 
-	account_details = frappe.get_cached_value(
+	account_details = nts .get_cached_value(
 		"Account", account, ["account_type", "root_type", "account_currency", "company"], as_dict=1
 	)
 
 	if not account_details:
-		frappe.throw(_("Please select correct account"))
+		nts .throw(_("Please select correct account"))
 
 	if not company:
 		company = account_details.company
@@ -1655,7 +1655,7 @@ def get_exchange_rate(
 
 	if account_currency != company_currency:
 		if reference_type in ("Sales Invoice", "Purchase Invoice") and reference_name:
-			exchange_rate = frappe.db.get_value(reference_type, reference_name, "conversion_rate")
+			exchange_rate = nts .db.get_value(reference_type, reference_name, "conversion_rate")
 
 		# The date used to retreive the exchange rate here is the date passed
 		# in as an argument to this function.
@@ -1668,7 +1668,7 @@ def get_exchange_rate(
 	return exchange_rate or 1
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_average_exchange_rate(account):
 	exchange_rate = 0
 	bank_balance_in_account_currency = get_balance_on(account)
@@ -1679,9 +1679,9 @@ def get_average_exchange_rate(account):
 	return exchange_rate
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def make_inter_company_journal_entry(name, voucher_type, company):
-	journal_entry = frappe.new_doc("Journal Entry")
+	journal_entry = nts .new_doc("Journal Entry")
 	journal_entry.voucher_type = voucher_type
 	journal_entry.company = company
 	journal_entry.posting_date = nowdate()
@@ -1689,9 +1689,9 @@ def make_inter_company_journal_entry(name, voucher_type, company):
 	return journal_entry.as_dict()
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def make_reverse_journal_entry(source_name, target_doc=None):
-	from frappe.model.mapper import get_mapped_doc
+	from nts .model.mapper import get_mapped_doc
 
 	def post_process(source, target):
 		target.reversal_of = source.name

@@ -1,9 +1,9 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doctype("Payment Entry")
-	frappe.db.sql(
+	nts.reload_doctype("Payment Entry")
+	nts.db.sql(
 		"""update `tabPayment Entry` set status = CASE
 		WHEN docstatus = 1 THEN 'Submitted'
 		WHEN docstatus = 2 THEN 'Cancelled'

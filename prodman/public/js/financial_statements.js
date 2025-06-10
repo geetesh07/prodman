@@ -1,11 +1,11 @@
-frappe.provide("prodman.financial_statements");
+nts.provide("prodman.financial_statements");
 
 prodman.financial_statements = {
 	filters: get_filters(),
 	baseData: null,
 	formatter: function (value, row, column, data, default_formatter, filter) {
 		if (
-			frappe.query_report.get_filter_value("selected_view") == "Growth" &&
+			nts.query_report.get_filter_value("selected_view") == "Growth" &&
 			data &&
 			column.colIndex >= 3
 		) {
@@ -27,7 +27,7 @@ prodman.financial_statements = {
 			value = $(value).wrap("<p></p>").parent().html();
 
 			return value;
-		} else if (frappe.query_report.get_filter_value("selected_view") == "Margin" && data) {
+		} else if (nts.query_report.get_filter_value("selected_view") == "Margin" && data) {
 			if (column.fieldname == "account" && data.account_name == __("Income")) {
 				//Taking the total income from each column (for all the financial years) as the base (100%)
 				this.baseData = row;
@@ -79,13 +79,13 @@ prodman.financial_statements = {
 	},
 	open_general_ledger: function (data) {
 		if (!data.account && !data.accounts) return;
-		let project = $.grep(frappe.query_report.filters, function (e) {
+		let project = $.grep(nts.query_report.filters, function (e) {
 			return e.df.fieldname == "project";
 		});
 
-		frappe.route_options = {
+		nts.route_options = {
 			account: data.account || data.accounts,
-			company: frappe.query_report.get_filter_value("company"),
+			company: nts.query_report.get_filter_value("company"),
 			from_date: data.from_date || data.year_start_date,
 			to_date: data.to_date || data.year_end_date,
 			project: project && project.length > 0 ? project[0].$input.val() : "",
@@ -95,11 +95,11 @@ prodman.financial_statements = {
 
 		if (["Payable", "Receivable"].includes(data.account_type)) {
 			report = data.account_type == "Payable" ? "Accounts Payable" : "Accounts Receivable";
-			frappe.route_options["party_account"] = data.account;
-			frappe.route_options["report_date"] = data.year_end_date;
+			nts.route_options["party_account"] = data.account;
+			nts.route_options["report_date"] = data.year_end_date;
 		}
 
-		frappe.set_route("query-report", report);
+		nts.set_route("query-report", report);
 	},
 	tree: true,
 	name_field: "account",
@@ -109,13 +109,13 @@ prodman.financial_statements = {
 		// dropdown for links to other financial statements
 		prodman.financial_statements.filters = get_filters();
 
-		let fiscal_year = prodman.utils.get_fiscal_year(frappe.datetime.get_today());
+		let fiscal_year = prodman.utils.get_fiscal_year(nts.datetime.get_today());
 		var filters = report.get_values();
 
 		if (!filters.period_start_date || !filters.period_end_date) {
-			frappe.model.with_doc("Fiscal Year", fiscal_year, function (r) {
-				var fy = frappe.model.get_doc("Fiscal Year", fiscal_year);
-				frappe.query_report.set_filter_value({
+			nts.model.with_doc("Fiscal Year", fiscal_year, function (r) {
+				var fy = nts.model.get_doc("Fiscal Year", fiscal_year);
+				nts.query_report.set_filter_value({
 					period_start_date: fy.year_start_date,
 					period_end_date: fy.year_end_date,
 				});
@@ -127,17 +127,17 @@ prodman.financial_statements = {
 
 			report.page.add_custom_menu_item(views_menu, __("Balance Sheet"), function () {
 				var filters = report.get_values();
-				frappe.set_route("query-report", "Balance Sheet", { company: filters.company });
+				nts.set_route("query-report", "Balance Sheet", { company: filters.company });
 			});
 
 			report.page.add_custom_menu_item(views_menu, __("Profit and Loss"), function () {
 				var filters = report.get_values();
-				frappe.set_route("query-report", "Profit and Loss Statement", { company: filters.company });
+				nts.set_route("query-report", "Profit and Loss Statement", { company: filters.company });
 			});
 
 			report.page.add_custom_menu_item(views_menu, __("Cash Flow Statement"), function () {
 				var filters = report.get_values();
-				frappe.set_route("query-report", "Cash Flow", { company: filters.company });
+				nts.set_route("query-report", "Cash Flow", { company: filters.company });
 			});
 		}
 	},
@@ -150,7 +150,7 @@ function get_filters() {
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -167,22 +167,22 @@ function get_filters() {
 			default: ["Fiscal Year"],
 			reqd: 1,
 			on_change: function () {
-				let filter_based_on = frappe.query_report.get_filter_value("filter_based_on");
-				frappe.query_report.toggle_filter_display(
+				let filter_based_on = nts.query_report.get_filter_value("filter_based_on");
+				nts.query_report.toggle_filter_display(
 					"from_fiscal_year",
 					filter_based_on === "Date Range"
 				);
-				frappe.query_report.toggle_filter_display("to_fiscal_year", filter_based_on === "Date Range");
-				frappe.query_report.toggle_filter_display(
+				nts.query_report.toggle_filter_display("to_fiscal_year", filter_based_on === "Date Range");
+				nts.query_report.toggle_filter_display(
 					"period_start_date",
 					filter_based_on === "Fiscal Year"
 				);
-				frappe.query_report.toggle_filter_display(
+				nts.query_report.toggle_filter_display(
 					"period_end_date",
 					filter_based_on === "Fiscal Year"
 				);
 
-				frappe.query_report.refresh();
+				nts.query_report.refresh();
 			},
 		},
 		{
@@ -243,8 +243,8 @@ function get_filters() {
 			label: __("Cost Center"),
 			fieldtype: "MultiSelectList",
 			get_data: function (txt) {
-				return frappe.db.get_link_options("Cost Center", txt, {
-					company: frappe.query_report.get_filter_value("company"),
+				return nts.db.get_link_options("Cost Center", txt, {
+					company: nts.query_report.get_filter_value("company"),
 				});
 			},
 			options: "Cost Center",
@@ -254,8 +254,8 @@ function get_filters() {
 			label: __("Project"),
 			fieldtype: "MultiSelectList",
 			get_data: function (txt) {
-				return frappe.db.get_link_options("Project", txt, {
-					company: frappe.query_report.get_filter_value("company"),
+				return nts.db.get_link_options("Project", txt, {
+					company: nts.query_report.get_filter_value("company"),
 				});
 			},
 			options: "Project",
@@ -266,9 +266,9 @@ function get_filters() {
 	let fy_filters = filters.filter((x) => {
 		return ["from_fiscal_year", "to_fiscal_year"].includes(x.fieldname);
 	});
-	let fiscal_year = prodman.utils.get_fiscal_year(frappe.datetime.get_today(), false, true);
+	let fiscal_year = prodman.utils.get_fiscal_year(nts.datetime.get_today(), false, true);
 	if (fiscal_year) {
-		let fy = prodman.utils.get_fiscal_year(frappe.datetime.get_today(), false, false);
+		let fy = prodman.utils.get_fiscal_year(nts.datetime.get_today(), false, false);
 		fy_filters.forEach((x) => {
 			x.default = fy;
 		});

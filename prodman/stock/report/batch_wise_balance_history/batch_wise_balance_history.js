@@ -1,14 +1,14 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.query_reports["Batch-Wise Balance History"] = {
+nts.query_reports["Batch-Wise Balance History"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -16,7 +16,7 @@ frappe.query_reports["Batch-Wise Balance History"] = {
 			label: __("From Date"),
 			fieldtype: "Date",
 			width: "80",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[1],
+			default: prodman.utils.get_fiscal_year(nts.datetime.get_today(), true)[1],
 			reqd: 1,
 		},
 		{
@@ -24,7 +24,7 @@ frappe.query_reports["Batch-Wise Balance History"] = {
 			label: __("To Date"),
 			fieldtype: "Date",
 			width: "80",
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 			reqd: 1,
 		},
 		{
@@ -53,8 +53,8 @@ frappe.query_reports["Batch-Wise Balance History"] = {
 			fieldtype: "Link",
 			options: "Warehouse",
 			get_query: function () {
-				let warehouse_type = frappe.query_report.get_filter_value("warehouse_type");
-				let company = frappe.query_report.get_filter_value("company");
+				let warehouse_type = nts.query_report.get_filter_value("warehouse_type");
+				let company = nts.query_report.get_filter_value("company");
 				return {
 					filters: {
 						...(warehouse_type && { warehouse_type }),
@@ -69,7 +69,7 @@ frappe.query_reports["Batch-Wise Balance History"] = {
 			fieldtype: "Link",
 			options: "Batch",
 			get_query: function () {
-				let item_code = frappe.query_report.get_filter_value("item_code");
+				let item_code = nts.query_report.get_filter_value("item_code");
 				return {
 					filters: {
 						item: item_code,
@@ -82,7 +82,7 @@ frappe.query_reports["Batch-Wise Balance History"] = {
 		if (column.fieldname == "Batch" && data && !!data["Batch"]) {
 			value = data["Batch"];
 			column.link_onclick =
-				"frappe.query_reports['Batch-Wise Balance History'].set_batch_route_to_stock_ledger(" +
+				"nts.query_reports['Batch-Wise Balance History'].set_batch_route_to_stock_ledger(" +
 				JSON.stringify(data) +
 				")";
 		}
@@ -91,10 +91,10 @@ frappe.query_reports["Batch-Wise Balance History"] = {
 		return value;
 	},
 	set_batch_route_to_stock_ledger: function (data) {
-		frappe.route_options = {
+		nts.route_options = {
 			batch_no: data["Batch"],
 		};
 
-		frappe.set_route("query-report", "Stock Ledger");
+		nts.set_route("query-report", "Stock Ledger");
 	},
 };

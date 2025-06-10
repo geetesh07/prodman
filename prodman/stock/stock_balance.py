@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.utils import cstr, flt, now, nowdate, nowtime
+import nts
+from nts.utils import cstr, flt, now, nowdate, nowtime
 
 from prodman.controllers.stock_controller import create_repost_item_valuation_entry
 
@@ -12,13 +12,13 @@ def repost(only_actual=False, allow_negative_stock=False, allow_zero_rate=False,
 	"""
 	Repost everything!
 	"""
-	frappe.db.auto_commit_on_many_writes = 1
+	nts.db.auto_commit_on_many_writes = 1
 
 	if allow_negative_stock:
-		existing_allow_negative_stock = frappe.db.get_value("Stock Settings", None, "allow_negative_stock")
-		frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
+		existing_allow_negative_stock = nts.db.get_value("Stock Settings", None, "allow_negative_stock")
+		nts.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
 
-	item_warehouses = frappe.db.sql(
+	item_warehouses = nts.db.sql(
 		"""
 		select distinct item_code, warehouse
 		from
@@ -30,13 +30,13 @@ def repost(only_actual=False, allow_negative_stock=False, allow_zero_rate=False,
 	for d in item_warehouses:
 		try:
 			repost_stock(d[0], d[1], allow_zero_rate, only_actual, only_bin, allow_negative_stock)
-			frappe.db.commit()
+			nts.db.commit()
 		except Exception:
-			frappe.db.rollback()
+			nts.db.rollback()
 
 	if allow_negative_stock:
-		frappe.db.set_single_value("Stock Settings", "allow_negative_stock", existing_allow_negative_stock)
-	frappe.db.auto_commit_on_many_writes = 0
+		nts.db.set_single_value("Stock Settings", "allow_negative_stock", existing_allow_negative_stock)
+	nts.db.auto_commit_on_many_writes = 0
 
 
 def repost_stock(
@@ -77,7 +77,7 @@ def repost_actual_qty(item_code, warehouse, allow_zero_rate=False, allow_negativ
 
 
 def get_balance_qty_from_sle(item_code, warehouse):
-	balance_qty = frappe.db.sql(
+	balance_qty = nts.db.sql(
 		"""select qty_after_transaction from `tabStock Ledger Entry`
 		where item_code=%s and warehouse=%s and is_cancelled=0
 		order by posting_datetime desc, creation desc
@@ -89,10 +89,10 @@ def get_balance_qty_from_sle(item_code, warehouse):
 
 
 def get_reserved_qty(item_code, warehouse):
-	dont_reserve_on_return = frappe.get_cached_value(
+	dont_reserve_on_return = nts.get_cached_value(
 		"Selling Settings", "Selling Settings", "dont_reserve_sales_order_qty_on_sales_return"
 	)
-	reserved_qty = frappe.db.sql(
+	reserved_qty = nts.db.sql(
 		f"""
 		select
 			sum(dnpi_qty * ((so_item_qty - so_item_delivered_qty - if(dont_reserve_qty_on_return, so_item_returned_qty, 0)) / so_item_qty))
@@ -150,7 +150,7 @@ def get_reserved_qty(item_code, warehouse):
 
 def get_indented_qty(item_code, warehouse):
 	# Ordered Qty is always maintained in stock UOM
-	inward_qty = frappe.db.sql(
+	inward_qty = nts.db.sql(
 		"""
 		select sum(mr_item.stock_qty - mr_item.ordered_qty)
 		from `tabMaterial Request Item` mr_item, `tabMaterial Request` mr
@@ -163,7 +163,7 @@ def get_indented_qty(item_code, warehouse):
 	)
 	inward_qty = flt(inward_qty[0][0]) if inward_qty else 0
 
-	outward_qty = frappe.db.sql(
+	outward_qty = nts.db.sql(
 		"""
 		select sum(mr_item.stock_qty - mr_item.ordered_qty)
 		from `tabMaterial Request Item` mr_item, `tabMaterial Request` mr
@@ -182,7 +182,7 @@ def get_indented_qty(item_code, warehouse):
 
 
 def get_ordered_qty(item_code, warehouse):
-	ordered_qty = frappe.db.sql(
+	ordered_qty = nts.db.sql(
 		"""
 		select sum((po_item.qty - po_item.received_qty)*po_item.conversion_factor)
 		from `tabPurchase Order Item` po_item, `tabPurchase Order` po
@@ -197,7 +197,7 @@ def get_ordered_qty(item_code, warehouse):
 
 
 def get_planned_qty(item_code, warehouse):
-	planned_qty = frappe.db.sql(
+	planned_qty = nts.db.sql(
 		"""
 		select sum(qty - produced_qty) from `tabWork Order`
 		where production_item = %s and fg_warehouse = %s and status not in ('Stopped', 'Completed', 'Closed')
@@ -235,7 +235,7 @@ def set_stock_balance_as_per_serial_no(
 
 	condition = " and item.name='%s'" % item_code.replace("'", "'") if item_code else ""
 
-	bin = frappe.db.sql(
+	bin = nts.db.sql(
 		"""select bin.item_code, bin.warehouse, bin.actual_qty, item.stock_uom
 		from `tabBin` bin, tabItem item
 		where bin.item_code = item.name and item.has_serial_no = 1 %s"""
@@ -243,13 +243,13 @@ def set_stock_balance_as_per_serial_no(
 	)
 
 	for d in bin:
-		serial_nos = frappe.db.sql(
+		serial_nos = nts.db.sql(
 			"""select count(name) from `tabSerial No`
 			where item_code=%s and warehouse=%s and docstatus < 2""",
 			(d[0], d[1]),
 		)
 
-		sle = frappe.db.sql(
+		sle = nts.db.sql(
 			"""select valuation_rate, company from `tabStock Ledger Entry`
 			where item_code = %s and warehouse = %s and is_cancelled = 0
 			order by posting_date desc limit 1""",
@@ -274,7 +274,7 @@ def set_stock_balance_as_per_serial_no(
 			"serial_no": "",
 		}
 
-		sle_doc = frappe.get_doc(sle_dict)
+		sle_doc = nts.get_doc(sle_dict)
 		sle_doc.flags.ignore_validate = True
 		sle_doc.flags.ignore_links = True
 		sle_doc.insert()

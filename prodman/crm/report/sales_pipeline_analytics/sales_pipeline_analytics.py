@@ -1,14 +1,14 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import json
 from datetime import date
 from itertools import groupby
 
-import frappe
+import nts
 from dateutil.relativedelta import relativedelta
-from frappe import _
-from frappe.utils import cint, flt, getdate
+from nts import _
+from nts.utils import cint, flt, getdate
 
 from prodman.setup.utils import get_exchange_rate
 
@@ -19,14 +19,14 @@ def execute(filters=None):
 
 class SalesPipelineAnalytics:
 	def __init__(self, filters=None):
-		self.filters = frappe._dict(filters or {})
+		self.filters = nts._dict(filters or {})
 
 	def validate_filters(self):
 		if not self.filters.from_date:
-			frappe.throw(_("From Date is mandatory"))
+			nts.throw(_("From Date is mandatory"))
 
 		if not self.filters.to_date:
-			frappe.throw(_("To Date is mandatory"))
+			nts.throw(_("To Date is mandatory"))
 
 	def run(self):
 		self.validate_filters()
@@ -102,7 +102,7 @@ class SalesPipelineAnalytics:
 		self.get_fields()
 
 		if self.filters.get("based_on") == "Number":
-			self.query_result = frappe.db.get_list(
+			self.query_result = nts.db.get_list(
 				"Opportunity",
 				filters=self.get_conditions(),
 				fields=[self.based_on, self.data_based_on, self.duration],
@@ -111,7 +111,7 @@ class SalesPipelineAnalytics:
 			)
 
 		if self.filters.get("based_on") == "Amount":
-			self.query_result = frappe.db.get_list(
+			self.query_result = nts.db.get_list(
 				"Opportunity",
 				filters=self.get_conditions(),
 				fields=[self.based_on, self.data_based_on, self.duration, "currency"],
@@ -175,7 +175,7 @@ class SalesPipelineAnalytics:
 		return self.chart
 
 	def get_periodic_data(self):
-		self.periodic_data = frappe._dict()
+		self.periodic_data = nts._dict()
 
 		based_on = {"Number": "count", "Amount": "amount"}[self.filters.get("based_on")]
 
@@ -211,20 +211,20 @@ class SalesPipelineAnalytics:
 					for user in assigned_to:
 						if self.filters.get("assigned_to") == user:
 							value = user
-							self.periodic_data.setdefault(value, frappe._dict()).setdefault(period, 0)
+							self.periodic_data.setdefault(value, nts._dict()).setdefault(period, 0)
 							self.periodic_data[value][period] += count_or_amount
 				else:
 					for user in assigned_to:
 						value = user
-						self.periodic_data.setdefault(value, frappe._dict()).setdefault(period, 0)
+						self.periodic_data.setdefault(value, nts._dict()).setdefault(period, 0)
 						self.periodic_data[value][period] += count_or_amount
 			else:
 				value = assigned_to[0]
-				self.periodic_data.setdefault(value, frappe._dict()).setdefault(period, 0)
+				self.periodic_data.setdefault(value, nts._dict()).setdefault(period, 0)
 				self.periodic_data[value][period] += count_or_amount
 
 		else:
-			self.periodic_data.setdefault(value, frappe._dict()).setdefault(period, 0)
+			self.periodic_data.setdefault(value, nts._dict()).setdefault(period, 0)
 			self.periodic_data[value][period] += count_or_amount
 
 	def check_for_assigned_to(self, period, value, count_or_amount, assigned_to, info):
@@ -282,10 +282,10 @@ class SalesPipelineAnalytics:
 
 	def get_default_currency(self):
 		company = self.filters.get("company")
-		return frappe.db.get_value("Company", company, ["default_currency"])
+		return nts.db.get_value("Company", company, ["default_currency"])
 
 	def get_currency_rate(self, from_currency, to_currency):
-		cacheobj = frappe.cache()
+		cacheobj = nts.cache()
 
 		if cacheobj.get(from_currency):
 			return flt(str(cacheobj.get(from_currency), "UTF-8"))

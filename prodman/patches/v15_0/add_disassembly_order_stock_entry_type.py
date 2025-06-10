@@ -1,9 +1,9 @@
-import frappe
+import nts
 
 
 def execute():
-	if not frappe.db.exists("Stock Entry Type", "Disassemble"):
-		frappe.get_doc(
+	if not nts.db.exists("Stock Entry Type", "Disassemble"):
+		nts.get_doc(
 			{
 				"doctype": "Stock Entry Type",
 				"name": "Disassemble",

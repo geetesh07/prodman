@@ -1,8 +1,8 @@
-frappe.ui.form.on("Issue", {
+nts.ui.form.on("Issue", {
 	onload: function (frm) {
 		frm.email_field = "raised_by";
 
-		frappe.db.get_value(
+		nts.db.get_value(
 			"Support Settings",
 			{ name: "Support Settings" },
 			["allow_resetting_service_level_agreement", "track_service_level_agreement"],
@@ -28,7 +28,7 @@ frappe.ui.form.on("Issue", {
 			frm.add_custom_button(
 				__("Task"),
 				function () {
-					frappe.model.open_mapped_doc({
+					nts.model.open_mapped_doc({
 						method: "prodman.support.doctype.issue.issue.make_task",
 						frm: frm,
 					});
@@ -44,7 +44,7 @@ frappe.ui.form.on("Issue", {
 	},
 
 	reset_service_level_agreement: function (frm) {
-		let reset_sla = new frappe.ui.Dialog({
+		let reset_sla = new nts.ui.Dialog({
 			title: __("Reset Service Level Agreement"),
 			fields: [
 				{
@@ -60,23 +60,23 @@ frappe.ui.form.on("Issue", {
 				reset_sla.hide();
 				reset_sla.clear();
 
-				frappe.show_alert({
+				nts.show_alert({
 					indicator: "green",
 					message: __("Resetting Service Level Agreement."),
 				});
 
-				frappe.call(
+				nts.call(
 					"prodman.support.doctype.service_level_agreement.service_level_agreement.reset_service_level_agreement",
 					{
 						reason: values.reason,
-						user: frappe.session.user_email,
+						user: nts.session.user_email,
 						doctype: frm.doc.doctype,
 						docname: frm.doc.name,
 					},
 					() => {
 						reset_sla.enable_primary_action();
 						frm.refresh();
-						frappe.msgprint(__("Service Level Agreement was reset."));
+						nts.msgprint(__("Service Level Agreement was reset."));
 					}
 				);
 			},
@@ -89,7 +89,7 @@ frappe.ui.form.on("Issue", {
 		if (!frm.timeline.wrapper.find(".btn-split-issue").length) {
 			let split_issue_btn = $(`
 				<a class="action-btn btn-split-issue" title="${__("Split Issue")}">
-					${frappe.utils.icon("branch", "sm")}
+					${nts.utils.icon("branch", "sm")}
 				</a>
 			`);
 
@@ -98,7 +98,7 @@ frappe.ui.form.on("Issue", {
 
 			if (!frm.timeline.wrapper.data("split-issue-event-attached")) {
 				frm.timeline.wrapper.on("click", ".btn-split-issue", (e) => {
-					var dialog = new frappe.ui.Dialog({
+					var dialog = new nts.ui.Dialog({
 						title: __("Split Issue"),
 						fields: [
 							{
@@ -122,7 +122,7 @@ frappe.ui.form.on("Issue", {
 										.getAttribute("data-name"),
 								},
 								(r) => {
-									frappe.msgprint(
+									nts.msgprint(
 										`New issue created: <a href="/app/issue/${r.message}">${r.message}</a>`
 									);
 									frm.reload_doc();
@@ -138,13 +138,13 @@ frappe.ui.form.on("Issue", {
 		}
 
 		// create button for "Help Article"
-		// if (frappe.model.can_create("Help Article")) {
+		// if (nts.model.can_create("Help Article")) {
 		// 	// Removing Help Article button if exists to avoid multiple occurrence
 		// 	frm.timeline.wrapper.find('.action-btn .btn-add-to-kb').remove();
 
 		// 	let help_article = $(`
 		// 		<a class="action-btn btn-add-to-kb" title="${__('Help Article')}">
-		// 			${frappe.utils.icon('solid-info', 'sm')}
+		// 			${nts.utils.icon('solid-info', 'sm')}
 		// 		</a>
 		// 	`);
 
@@ -153,10 +153,10 @@ frappe.ui.form.on("Issue", {
 		// 	if (!frm.timeline.wrapper.data("help-article-event-attached")) {
 		// 		frm.timeline.wrapper.on('click', '.btn-add-to-kb', function () {
 		// 			const content = $(this).parents('.timeline-item[data-doctype="Communication"]:first').find(".content").html();
-		// 			const doc = frappe.model.get_new_doc("Help Article");
+		// 			const doc = nts.model.get_new_doc("Help Article");
 		// 			doc.title = frm.doc.subject;
 		// 			doc.content = content;
-		// 			frappe.set_route("Form", "Help Article", doc.name);
+		// 			nts.set_route("Form", "Help Article", doc.name);
 		// 		});
 		// 	}
 		// 	frm.timeline.wrapper.data("help-article-event-attached", true);

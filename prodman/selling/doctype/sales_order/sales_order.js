@@ -1,4 +1,4 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 cur_frm.cscript.tax_table = "Sales Taxes and Charges";
@@ -7,7 +7,7 @@ prodman.accounts.taxes.setup_tax_filters("Sales Taxes and Charges");
 prodman.accounts.taxes.setup_tax_validations("Sales Order");
 prodman.sales_common.setup_selling_controller();
 
-frappe.ui.form.on("Sales Order", {
+nts.ui.form.on("Sales Order", {
 	setup: function (frm) {
 		frm.custom_make_buttons = {
 			"Delivery Note": "Delivery Note",
@@ -84,7 +84,7 @@ frappe.ui.form.on("Sales Order", {
 			if (
 				frm.doc.__onload &&
 				frm.doc.__onload.has_reserved_stock &&
-				frappe.model.can_cancel("Stock Reservation Entry")
+				nts.model.can_cancel("Stock Reservation Entry")
 			) {
 				frm.add_custom_button(
 					__("Unreserve"),
@@ -94,7 +94,7 @@ frappe.ui.form.on("Sales Order", {
 			}
 
 			frm.doc.items.forEach((item) => {
-				if (flt(item.stock_reserved_qty) > 0 && frappe.model.can_read("Stock Reservation Entry")) {
+				if (flt(item.stock_reserved_qty) > 0 && nts.model.can_read("Stock Reservation Entry")) {
 					frm.add_custom_button(
 						__("Reserved Stock"),
 						() => frm.events.show_reserved_stock(frm),
@@ -113,7 +113,7 @@ frappe.ui.form.on("Sales Order", {
 			}
 
 			if (frm.doc.docstatus === 0) {
-				frappe.call({
+				nts.call({
 					method: "prodman.selling.doctype.sales_order.sales_order.get_stock_reservation_status",
 					callback: function (r) {
 						if (!r.message) {
@@ -144,7 +144,7 @@ frappe.ui.form.on("Sales Order", {
 	},
 
 	get_items_from_internal_purchase_order(frm) {
-		if (!frappe.model.can_read("Purchase Order")) {
+		if (!nts.model.can_read("Purchase Order")) {
 			return;
 		}
 
@@ -177,7 +177,7 @@ frappe.ui.form.on("Sales Order", {
 
 	onload: function (frm) {
 		if (!frm.doc.transaction_date) {
-			frm.set_value("transaction_date", frappe.datetime.get_today());
+			frm.set_value("transaction_date", nts.datetime.get_today());
 		}
 		prodman.queries.setup_queries(frm, "Warehouse", function () {
 			return {
@@ -217,7 +217,7 @@ frappe.ui.form.on("Sales Order", {
 	},
 
 	create_stock_reservation_entries(frm) {
-		const dialog = new frappe.ui.Dialog({
+		const dialog = new nts.ui.Dialog({
 			title: __("Stock Reservation"),
 			size: "extra-large",
 			fields: [
@@ -370,7 +370,7 @@ frappe.ui.form.on("Sales Order", {
 				var data = { items: dialog.fields_dict.items.grid.get_selected_children() };
 
 				if (data.items && data.items.length > 0) {
-					frappe.call({
+					nts.call({
 						doc: frm.doc,
 						method: "create_stock_reservation_entries",
 						args: {
@@ -387,7 +387,7 @@ frappe.ui.form.on("Sales Order", {
 
 					dialog.hide();
 				} else {
-					frappe.msgprint(__("Please select items to reserve."));
+					nts.msgprint(__("Please select items to reserve."));
 				}
 			},
 		});
@@ -418,7 +418,7 @@ frappe.ui.form.on("Sales Order", {
 	},
 
 	cancel_stock_reservation_entries(frm) {
-		const dialog = new frappe.ui.Dialog({
+		const dialog = new nts.ui.Dialog({
 			title: __("Stock Unreservation"),
 			size: "extra-large",
 			fields: [
@@ -475,7 +475,7 @@ frappe.ui.form.on("Sales Order", {
 				var data = { sr_entries: dialog.fields_dict.sr_entries.grid.get_selected_children() };
 
 				if (data.sr_entries && data.sr_entries.length > 0) {
-					frappe.call({
+					nts.call({
 						doc: frm.doc,
 						method: "cancel_stock_reservation_entries",
 						args: {
@@ -491,12 +491,12 @@ frappe.ui.form.on("Sales Order", {
 
 					dialog.hide();
 				} else {
-					frappe.msgprint(__("Please select items to unreserve."));
+					nts.msgprint(__("Please select items to unreserve."));
 				}
 			},
 		});
 
-		frappe
+		nts
 			.call({
 				method: "prodman.stock.doctype.stock_reservation_entry.stock_reservation_entry.get_stock_reservation_entries_for_voucher",
 				args: {
@@ -530,18 +530,18 @@ frappe.ui.form.on("Sales Order", {
 			"YYYY-MM-DD"
 		);
 
-		frappe.route_options = {
+		nts.route_options = {
 			company: frm.doc.company,
 			from_date: frm.doc.transaction_date,
 			to_date: to_date,
 			voucher_type: frm.doc.doctype,
 			voucher_no: frm.doc.name,
 		};
-		frappe.set_route("query-report", "Reserved Stock");
+		nts.set_route("query-report", "Reserved Stock");
 	},
 });
 
-frappe.ui.form.on("Sales Order Item", {
+nts.ui.form.on("Sales Order Item", {
 	item_code: function (frm, cdt, cdn) {
 		var row = locals[cdt][cdn];
 		if (frm.doc.delivery_date) {
@@ -625,7 +625,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 						(!doc.__onload || !doc.__onload.has_reserved_stock) &&
 						flt(doc.per_picked) < 100 &&
 						flt(doc.per_delivered) < 100 &&
-						frappe.model.can_create("Pick List")
+						nts.model.can_create("Pick List")
 					) {
 						this.frm.add_custom_button(
 							__("Pick List"),
@@ -646,7 +646,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 						(order_is_a_sale || order_is_a_custom_sale) &&
 						allow_delivery
 					) {
-						if (frappe.model.can_create("Delivery Note")) {
+						if (nts.model.can_create("Delivery Note")) {
 							this.frm.add_custom_button(
 								__("Delivery Note"),
 								() => this.make_delivery_note_based_on_delivery_date(true),
@@ -654,7 +654,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 							);
 						}
 
-						if (frappe.model.can_create("Work Order")) {
+						if (nts.model.can_create("Work Order")) {
 							this.frm.add_custom_button(
 								__("Work Order"),
 								() => this.make_work_order(),
@@ -664,7 +664,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 					}
 
 					// sales invoice
-					if (flt(doc.per_billed) < 100 && frappe.model.can_create("Sales Invoice")) {
+					if (flt(doc.per_billed) < 100 && nts.model.can_create("Sales Invoice")) {
 						this.frm.add_custom_button(
 							__("Sales Invoice"),
 							() => me.make_sales_invoice(),
@@ -676,7 +676,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 					if (
 						(!doc.order_type ||
 							((order_is_a_sale || order_is_a_custom_sale) && flt(doc.per_delivered) < 100)) &&
-						frappe.model.can_create("Material Request")
+						nts.model.can_create("Material Request")
 					) {
 						this.frm.add_custom_button(
 							__("Material Request"),
@@ -691,7 +691,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 					}
 
 					// Make Purchase Order
-					if (!this.frm.doc.is_internal_customer && frappe.model.can_create("Purchase Order")) {
+					if (!this.frm.doc.is_internal_customer && nts.model.can_create("Purchase Order")) {
 						this.frm.add_custom_button(
 							__("Purchase Order"),
 							() => this.make_purchase_order(),
@@ -701,14 +701,14 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 
 					// maintenance
 					if (flt(doc.per_delivered) < 100 && (order_is_maintenance || order_is_a_custom_sale)) {
-						if (frappe.model.can_create("Maintenance Visit")) {
+						if (nts.model.can_create("Maintenance Visit")) {
 							this.frm.add_custom_button(
 								__("Maintenance Visit"),
 								() => this.make_maintenance_visit(),
 								__("Create")
 							);
 						}
-						if (frappe.model.can_create("Maintenance Schedule")) {
+						if (nts.model.can_create("Maintenance Schedule")) {
 							this.frm.add_custom_button(
 								__("Maintenance Schedule"),
 								() => this.make_maintenance_schedule(),
@@ -718,14 +718,14 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 					}
 
 					// project
-					if (flt(doc.per_delivered) < 100 && frappe.model.can_create("Project")) {
+					if (flt(doc.per_delivered) < 100 && nts.model.can_create("Project")) {
 						this.frm.add_custom_button(__("Project"), () => this.make_project(), __("Create"));
 					}
 
 					if (
 						doc.docstatus === 1 &&
 						!doc.inter_company_order_reference &&
-						frappe.model.can_create("Purchase Order")
+						nts.model.can_create("Purchase Order")
 					) {
 						let me = this;
 						let internal = me.frm.doc.is_internal_customer;
@@ -746,14 +746,14 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 					}
 				}
 				// payment request
-				if (flt(doc.per_billed) < 100 + frappe.boot.sysdefaults.over_billing_allowance) {
+				if (flt(doc.per_billed) < 100 + nts.boot.sysdefaults.over_billing_allowance) {
 					this.frm.add_custom_button(
 						__("Payment Request"),
 						() => this.make_payment_request(),
 						__("Create")
 					);
 
-					if (frappe.model.can_create("Payment Entry")) {
+					if (nts.model.can_create("Payment Entry")) {
 						this.frm.add_custom_button(
 							__("Payment"),
 							() => this.make_payment_entry(),
@@ -765,7 +765,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 			}
 		}
 
-		if (this.frm.doc.docstatus === 0 && frappe.model.can_read("Quotation")) {
+		if (this.frm.doc.docstatus === 0 && nts.model.can_read("Quotation")) {
 			this.frm.add_custom_button(
 				__("Quotation"),
 				function () {
@@ -805,7 +805,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 	}
 
 	create_pick_list() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.selling.doctype.sales_order.sales_order.create_pick_list",
 			frm: this.frm,
 		});
@@ -821,7 +821,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 			freeze: true,
 			callback: function (r) {
 				if (!r.message) {
-					frappe.msgprint({
+					nts.msgprint({
 						title: __("Work Order not created"),
 						message: __("No Items with Bill of Materials to Manufacture"),
 						indicator: "orange",
@@ -873,13 +873,13 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 							},
 						},
 					];
-					var d = new frappe.ui.Dialog({
+					var d = new nts.ui.Dialog({
 						title: __("Select Items to Manufacture"),
 						fields: fields,
 						primary_action: function () {
 							var data = { items: d.fields_dict.items.grid.get_selected_children() };
 							if (!data) {
-								frappe.throw(__("Please select items"));
+								nts.throw(__("Please select items"));
 							}
 							me.frm.call({
 								method: "make_work_orders",
@@ -892,7 +892,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 								freeze: true,
 								callback: function (r) {
 									if (r.message) {
-										frappe.msgprint({
+										nts.msgprint({
 											message: __("Work Orders Created: {0}", [
 												r.message
 													.map(function (d) {
@@ -927,7 +927,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 	}
 
 	make_material_request() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.selling.doctype.sales_order.sales_order.make_material_request",
 			frm: this.frm,
 		});
@@ -954,7 +954,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 			},
 			callback: function (r) {
 				if (!r.message) {
-					frappe.msgprint({
+					nts.msgprint({
 						message: __("No Items with Bill of Materials."),
 						indicator: "orange",
 					});
@@ -1018,7 +1018,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 				},
 			},
 		];
-		var d = new frappe.ui.Dialog({
+		var d = new nts.ui.Dialog({
 			title: __("Items for Raw Material Request"),
 			fields: fields,
 			primary_action: function () {
@@ -1034,7 +1034,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 					freeze: true,
 					callback: function (r) {
 						if (r.message) {
-							frappe.msgprint(
+							nts.msgprint(
 								__("Material Request {0} submitted.", [
 									'<a href="/app/material-request/' +
 										r.message.name +
@@ -1062,7 +1062,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 
 		var item_grid = this.frm.fields_dict["items"].grid;
 		if (!item_grid.get_selected().length && delivery_dates.length > 1) {
-			var dialog = new frappe.ui.Dialog({
+			var dialog = new nts.ui.Dialog({
 				title: __("Select Items based on Delivery Date"),
 				fields: [{ fieldtype: "HTML", fieldname: "dates_html" }],
 			});
@@ -1081,7 +1081,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 							<div class="list-item__content list-item__content--flex-2">
 								<label>
 								<input type="checkbox" data-date="${date}" checked="checked"/>
-								${frappe.datetime.str_to_user(date)}
+								${nts.datetime.str_to_user(date)}
 								</label>
 							</div>
 						</div>
@@ -1112,7 +1112,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 	}
 
 	make_delivery_note(delivery_dates, for_reserved_stock = false) {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.selling.doctype.sales_order.sales_order.make_delivery_note",
 			frm: this.frm,
 			args: {
@@ -1125,35 +1125,35 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 	}
 
 	make_sales_invoice() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.selling.doctype.sales_order.sales_order.make_sales_invoice",
 			frm: this.frm,
 		});
 	}
 
 	make_maintenance_schedule() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.selling.doctype.sales_order.sales_order.make_maintenance_schedule",
 			frm: this.frm,
 		});
 	}
 
 	make_project() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.selling.doctype.sales_order.sales_order.make_project",
 			frm: this.frm,
 		});
 	}
 
 	make_inter_company_order() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.selling.doctype.sales_order.sales_order.make_inter_company_purchase_order",
 			frm: this.frm,
 		});
 	}
 
 	make_maintenance_visit() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.selling.doctype.sales_order.sales_order.make_maintenance_visit",
 			frm: this.frm,
 		});
@@ -1165,14 +1165,14 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 			return pending_qty > 0;
 		});
 		if (!pending_items) {
-			frappe.throw({
+			nts.throw({
 				message: __("Purchase Order already created for all Sales Order items"),
 				title: __("Note"),
 			});
 		}
 
 		var me = this;
-		var dialog = new frappe.ui.Dialog({
+		var dialog = new nts.ui.Dialog({
 			title: __("Select Items"),
 			size: "large",
 			fields: [
@@ -1231,7 +1231,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 
 				let selected_items = dialog.fields_dict.items_for_po.grid.get_selected_children();
 				if (selected_items.length == 0) {
-					frappe.throw({
+					nts.throw({
 						message: "Please select Items from the Table",
 						title: __("Items Required"),
 						indicator: "blue",
@@ -1243,7 +1243,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 				var method = args.against_default_supplier
 					? "make_purchase_order_for_default_supplier"
 					: "make_purchase_order";
-				return frappe.call({
+				return nts.call({
 					method: "prodman.selling.doctype.sales_order.sales_order." + method,
 					freeze_message: __("Creating Purchase Order ..."),
 					args: {
@@ -1254,13 +1254,13 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 					callback: function (r) {
 						if (!r.exc) {
 							if (!args.against_default_supplier) {
-								frappe.model.sync(r.message);
-								frappe.set_route("Form", r.message.doctype, r.message.name);
+								nts.model.sync(r.message);
+								nts.set_route("Form", r.message.doctype, r.message.name);
 							} else {
-								frappe.route_options = {
+								nts.route_options = {
 									sales_order: me.frm.doc.name,
 								};
-								frappe.set_route("List", "Purchase Order");
+								nts.set_route("List", "Purchase Order");
 							}
 						}
 					},
@@ -1324,7 +1324,7 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 
 	hold_sales_order() {
 		var me = this;
-		var d = new frappe.ui.Dialog({
+		var d = new nts.ui.Dialog({
 			title: __("Reason for Hold"),
 			fields: [
 				{
@@ -1335,14 +1335,14 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 			],
 			primary_action: function () {
 				var data = d.get_values();
-				frappe.call({
-					method: "frappe.desk.form.utils.add_comment",
+				nts.call({
+					method: "nts.desk.form.utils.add_comment",
 					args: {
 						reference_doctype: me.frm.doctype,
 						reference_name: me.frm.docname,
 						content: __("Reason for hold:") + " " + data.reason_for_hold,
-						comment_email: frappe.session.user,
-						comment_by: frappe.session.user_fullname,
+						comment_email: nts.session.user,
+						comment_by: nts.session.user_fullname,
 					},
 					callback: function (r) {
 						if (!r.exc) {
@@ -1361,15 +1361,15 @@ prodman.selling.SalesOrderController = class SalesOrderController extends prodma
 	update_status(label, status) {
 		var doc = this.frm.doc;
 		var me = this;
-		frappe.ui.form.is_saving = true;
-		frappe.call({
+		nts.ui.form.is_saving = true;
+		nts.call({
 			method: "prodman.selling.doctype.sales_order.sales_order.update_status",
 			args: { status: status, name: doc.name },
 			callback: function (r) {
 				me.frm.reload_doc();
 			},
 			always: function () {
-				frappe.ui.form.is_saving = false;
+				nts.ui.form.is_saving = false;
 			},
 		});
 	}

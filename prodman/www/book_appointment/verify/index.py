@@ -1,5 +1,5 @@
-import frappe
-from frappe.utils.verified_command import verify_request
+import nts
+from nts.utils.verified_command import verify_request
 
 
 def get_context(context):
@@ -7,11 +7,11 @@ def get_context(context):
 		context.success = False
 		return context
 
-	email = frappe.form_dict["email"]
-	appointment_name = frappe.form_dict["appointment"]
+	email = nts.form_dict["email"]
+	appointment_name = nts.form_dict["appointment"]
 
 	if email and appointment_name:
-		appointment = frappe.get_doc("Appointment", appointment_name)
+		appointment = nts.get_doc("Appointment", appointment_name)
 		appointment.set_verified(email)
 		context.success = True
 		return context

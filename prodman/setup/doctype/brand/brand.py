@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import copy
 
-import frappe
-from frappe.model.document import Document
+import nts
+from nts.model.document import Document
 
 
 class Brand(Document):
@@ -15,7 +15,7 @@ class Brand(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.stock.doctype.item_default.item_default import ItemDefault
 
@@ -29,9 +29,9 @@ class Brand(Document):
 
 
 def get_brand_defaults(item, company):
-	item = frappe.get_cached_doc("Item", item)
+	item = nts.get_cached_doc("Item", item)
 	if item.brand:
-		brand = frappe.get_cached_doc("Brand", item.brand)
+		brand = nts.get_cached_doc("Brand", item.brand)
 
 		for d in brand.brand_defaults or []:
 			if d.company == company:
@@ -39,4 +39,4 @@ def get_brand_defaults(item, company):
 				row.pop("name")
 				return row
 
-	return frappe._dict()
+	return nts._dict()

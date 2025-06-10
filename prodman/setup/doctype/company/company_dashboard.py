@@ -1,10 +1,10 @@
-from frappe import _
+from nts import _
 
 
 def get_data():
 	return {
 		"graph": True,
-		"graph_method": "frappe.utils.goal.get_monthly_goal_graph_data",
+		"graph_method": "nts.utils.goal.get_monthly_goal_graph_data",
 		"graph_method_args": {
 			"title": _("Sales"),
 			"goal_value_field": "monthly_sales_target",

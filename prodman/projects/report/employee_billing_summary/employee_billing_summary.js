@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Employee Billing Summary"] = {
+nts.query_reports["Employee Billing Summary"] = {
 	filters: [
 		{
 			fieldname: "employee",
@@ -14,14 +14,14 @@ frappe.query_reports["Employee Billing Summary"] = {
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.add_months(frappe.datetime.month_start(), -1),
+			default: nts.datetime.add_months(nts.datetime.month_start(), -1),
 			reqd: 1,
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.add_days(frappe.datetime.month_start(), -1),
+			default: nts.datetime.add_days(nts.datetime.month_start(), -1),
 			reqd: 1,
 		},
 		{

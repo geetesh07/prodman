@@ -1,7 +1,7 @@
-// Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2021, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.ui.form.on("Product Bundle", {
+nts.ui.form.on("Product Bundle", {
 	refresh: function (frm) {
 		frm.toggle_enable("new_item_code", frm.is_new());
 		frm.set_query("new_item_code", () => {

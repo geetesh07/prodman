@@ -1,13 +1,13 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 
-import frappe
-from frappe.test_runner import make_test_records
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import flt
+import nts
+from nts.test_runner import make_test_records
+from nts.tests.utils import ntsTestCase
+from nts.utils import flt
 
 from prodman.accounts.party import get_due_date
 from prodman.exceptions import PartyDisabled, PartyFrozen
@@ -20,19 +20,19 @@ from prodman.tests.utils import create_test_contact_and_address
 
 test_ignore = ["Price List"]
 test_dependencies = ["Payment Term", "Payment Terms Template"]
-test_records = frappe.get_test_records("Customer")
+test_records = nts.get_test_records("Customer")
 
 
-class TestCustomer(FrappeTestCase):
+class TestCustomer(ntsTestCase):
 	def setUp(self):
-		if not frappe.get_value("Item", "_Test Item"):
+		if not nts.get_value("Item", "_Test Item"):
 			make_test_records("Item")
 
 	def tearDown(self):
 		set_credit_limit("_Test Customer", "_Test Company", 0)
 
 	def test_get_customer_group_details(self):
-		doc = frappe.new_doc("Customer Group")
+		doc = nts.new_doc("Customer Group")
 		doc.customer_group_name = "_Testing Customer Group"
 		doc.payment_terms = "_Test Payment Term Template 3"
 		doc.accounts = []
@@ -47,7 +47,7 @@ class TestCustomer(FrappeTestCase):
 		doc.append("credit_limits", test_credit_limits)
 		doc.insert()
 
-		c_doc = frappe.new_doc("Customer")
+		c_doc = nts.new_doc("Customer")
 		c_doc.customer_name = "Testing Customer"
 		c_doc.customer_group = "_Testing Customer Group"
 		c_doc.payment_terms = c_doc.default_price_list = ""
@@ -86,7 +86,7 @@ class TestCustomer(FrappeTestCase):
 
 		create_test_contact_and_address()
 
-		frappe.db.set_value(
+		nts.db.set_value(
 			"Contact", "_Test Contact for _Test Customer-_Test Customer", "is_primary_contact", 1
 		)
 
@@ -102,14 +102,14 @@ class TestCustomer(FrappeTestCase):
 	def test_party_details_tax_category(self):
 		from prodman.accounts.party import get_party_details
 
-		frappe.delete_doc_if_exists("Address", "_Test Address With Tax Category-Billing")
-		frappe.delete_doc_if_exists("Address", "_Test Address With Tax Category-Shipping")
+		nts.delete_doc_if_exists("Address", "_Test Address With Tax Category-Billing")
+		nts.delete_doc_if_exists("Address", "_Test Address With Tax Category-Shipping")
 
 		# Tax Category without Address
 		details = get_party_details("_Test Customer With Tax Category")
 		self.assertEqual(details.tax_category, "_Test Tax Category 1")
 
-		billing_address = frappe.get_doc(
+		billing_address = nts.get_doc(
 			dict(
 				doctype="Address",
 				address_title="_Test Address With Tax Category",
@@ -121,7 +121,7 @@ class TestCustomer(FrappeTestCase):
 				links=[dict(link_doctype="Customer", link_name="_Test Customer With Tax Category")],
 			)
 		).insert()
-		shipping_address = frappe.get_doc(
+		shipping_address = nts.get_doc(
 			dict(
 				doctype="Address",
 				address_title="_Test Address With Tax Category",
@@ -134,7 +134,7 @@ class TestCustomer(FrappeTestCase):
 			)
 		).insert()
 
-		settings = frappe.get_single("Accounts Settings")
+		settings = nts.get_single("Accounts Settings")
 		rollback_setting = settings.determine_address_tax_category_from
 
 		# Tax Category from Billing Address
@@ -160,27 +160,27 @@ class TestCustomer(FrappeTestCase):
 
 		new_name = "_Test Customer 1 Renamed"
 		for name in ("_Test Customer 1", new_name):
-			frappe.db.sql(
+			nts.db.sql(
 				"""delete from `tabComment`
 				where reference_doctype=%s and reference_name=%s""",
 				("Customer", name),
 			)
 
 		# add comments
-		comment = frappe.get_doc("Customer", "_Test Customer 1").add_comment(
+		comment = nts.get_doc("Customer", "_Test Customer 1").add_comment(
 			"Comment", "Test Comment for Rename"
 		)
 
 		# rename
-		frappe.rename_doc("Customer", "_Test Customer 1", new_name)
+		nts.rename_doc("Customer", "_Test Customer 1", new_name)
 
 		# check if customer renamed
-		self.assertTrue(frappe.db.exists("Customer", new_name))
-		self.assertFalse(frappe.db.exists("Customer", "_Test Customer 1"))
+		self.assertTrue(nts.db.exists("Customer", new_name))
+		self.assertFalse(nts.db.exists("Customer", "_Test Customer 1"))
 
 		# test that comment gets linked to renamed doc
 		self.assertEqual(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Comment",
 				{
 					"reference_doctype": "Customer",
@@ -192,14 +192,14 @@ class TestCustomer(FrappeTestCase):
 		)
 
 		# rename back to original
-		frappe.rename_doc("Customer", new_name, "_Test Customer 1")
+		nts.rename_doc("Customer", new_name, "_Test Customer 1")
 
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def test_freezed_customer(self):
 		make_test_records("Item")
 
-		frappe.db.set_value("Customer", "_Test Customer", "is_frozen", 1)
+		nts.db.set_value("Customer", "_Test Customer", "is_frozen", 1)
 
 		from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
 
@@ -207,24 +207,24 @@ class TestCustomer(FrappeTestCase):
 
 		self.assertRaises(PartyFrozen, so.save)
 
-		frappe.db.set_value("Customer", "_Test Customer", "is_frozen", 0)
+		nts.db.set_value("Customer", "_Test Customer", "is_frozen", 0)
 
 		so.save()
 
 	def test_delete_customer_contact(self):
-		customer = frappe.get_doc(get_customer_dict("_Test Customer for delete")).insert(
+		customer = nts.get_doc(get_customer_dict("_Test Customer for delete")).insert(
 			ignore_permissions=True
 		)
 
 		customer.mobile_no = "8989889890"
 		customer.save()
 		self.assertTrue(customer.customer_primary_contact)
-		frappe.delete_doc("Customer", customer.name)
+		nts.delete_doc("Customer", customer.name)
 
 	def test_disabled_customer(self):
 		make_test_records("Item")
 
-		frappe.db.set_value("Customer", "_Test Customer", "disabled", 1)
+		nts.db.set_value("Customer", "_Test Customer", "disabled", 1)
 
 		from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
 
@@ -232,21 +232,21 @@ class TestCustomer(FrappeTestCase):
 
 		self.assertRaises(PartyDisabled, so.save)
 
-		frappe.db.set_value("Customer", "_Test Customer", "disabled", 0)
+		nts.db.set_value("Customer", "_Test Customer", "disabled", 0)
 
 		so.save()
 
 	def test_duplicate_customer(self):
-		frappe.db.sql("delete from `tabCustomer` where customer_name='_Test Customer 1'")
+		nts.db.sql("delete from `tabCustomer` where customer_name='_Test Customer 1'")
 
-		if not frappe.db.get_value("Customer", "_Test Customer 1"):
-			test_customer_1 = frappe.get_doc(get_customer_dict("_Test Customer 1")).insert(
+		if not nts.db.get_value("Customer", "_Test Customer 1"):
+			test_customer_1 = nts.get_doc(get_customer_dict("_Test Customer 1")).insert(
 				ignore_permissions=True
 			)
 		else:
-			test_customer_1 = frappe.get_doc("Customer", "_Test Customer 1")
+			test_customer_1 = nts.get_doc("Customer", "_Test Customer 1")
 
-		duplicate_customer = frappe.get_doc(get_customer_dict("_Test Customer 1")).insert(
+		duplicate_customer = nts.get_doc(get_customer_dict("_Test Customer 1")).insert(
 			ignore_permissions=True
 		)
 
@@ -284,15 +284,15 @@ class TestCustomer(FrappeTestCase):
 
 		# Sales Order
 		so = make_sales_order(do_not_submit=True)
-		self.assertRaises(frappe.ValidationError, so.submit)
+		self.assertRaises(nts.ValidationError, so.submit)
 
 		# Delivery Note
 		dn = create_delivery_note(do_not_submit=True)
-		self.assertRaises(frappe.ValidationError, dn.submit)
+		self.assertRaises(nts.ValidationError, dn.submit)
 
 		# Sales Invoice
 		si = create_sales_invoice(do_not_submit=True)
-		self.assertRaises(frappe.ValidationError, si.submit)
+		self.assertRaises(nts.ValidationError, si.submit)
 
 		if credit_limit > outstanding_amt:
 			set_credit_limit("_Test Customer", "_Test Company", credit_limit)
@@ -314,13 +314,13 @@ class TestCustomer(FrappeTestCase):
 		so = make_sales_order(rate=100, qty=1)
 		# Update qty in submitted Sales Order to trigger Credit Limit validation
 		fields = ["name", "item_code", "delivery_date", "conversion_factor", "qty", "rate", "uom", "idx"]
-		modified_item = frappe._dict()
+		modified_item = nts._dict()
 		for x in fields:
 			modified_item[x] = so.items[0].get(x)
 		modified_item["docname"] = so.items[0].name
 		modified_item["qty"] = 2
 		self.assertRaises(
-			frappe.ValidationError,
+			nts.ValidationError,
 			update_child_qty_rate,
 			so.doctype,
 			json.dumps([modified_item]),
@@ -329,7 +329,7 @@ class TestCustomer(FrappeTestCase):
 
 	def test_customer_credit_limit_on_change(self):
 		outstanding_amt = self.get_customer_outstanding_amount()
-		customer = frappe.get_doc("Customer", "_Test Customer")
+		customer = nts.get_doc("Customer", "_Test Customer")
 		customer.append(
 			"credit_limits", {"credit_limit": flt(outstanding_amt - 100), "company": "_Test Company"}
 		)
@@ -338,10 +338,10 @@ class TestCustomer(FrappeTestCase):
 		customer.append(
 			"credit_limits", {"credit_limit": flt(outstanding_amt - 100), "company": "_Test Company"}
 		)
-		self.assertRaises(frappe.ValidationError, customer.save)
+		self.assertRaises(nts.ValidationError, customer.save)
 
 	def test_customer_payment_terms(self):
-		frappe.db.set_value(
+		nts.db.set_value(
 			"Customer", "_Test Customer With Template", "payment_terms", "_Test Payment Term Template 3"
 		)
 
@@ -351,7 +351,7 @@ class TestCustomer(FrappeTestCase):
 		due_date = get_due_date("2017-01-22", "Customer", "_Test Customer With Template")
 		self.assertEqual(due_date, "2017-02-21")
 
-		frappe.db.set_value(
+		nts.db.set_value(
 			"Customer", "_Test Customer With Template", "payment_terms", "_Test Payment Term Template 1"
 		)
 
@@ -361,7 +361,7 @@ class TestCustomer(FrappeTestCase):
 		due_date = get_due_date("2017-01-22", "Customer", "_Test Customer With Template")
 		self.assertEqual(due_date, "2017-02-28")
 
-		frappe.db.set_value("Customer", "_Test Customer With Template", "payment_terms", "")
+		nts.db.set_value("Customer", "_Test Customer With Template", "payment_terms", "")
 
 		# No default payment term template attached
 		due_date = get_due_date("2016-01-22", "Customer", "_Test Customer")
@@ -398,7 +398,7 @@ def get_customer_dict(customer_name):
 
 
 def set_credit_limit(customer, company, credit_limit):
-	customer = frappe.get_doc("Customer", customer)
+	customer = nts.get_doc("Customer", customer)
 	existing_row = None
 	for d in customer.credit_limits:
 		if d.company == company:
@@ -418,12 +418,12 @@ def create_internal_customer(customer_name=None, represents_company=None, allowe
 	if not allowed_to_interact_with:
 		allowed_to_interact_with = represents_company
 
-	exisiting_representative = frappe.db.get_value("Customer", {"represents_company": represents_company})
+	exisiting_representative = nts.db.get_value("Customer", {"represents_company": represents_company})
 	if exisiting_representative:
 		return exisiting_representative
 
-	if not frappe.db.exists("Customer", customer_name):
-		customer = frappe.get_doc(
+	if not nts.db.exists("Customer", customer_name):
+		customer = nts.get_doc(
 			{
 				"doctype": "Customer",
 				"customer_group": "_Test Customer Group",
@@ -440,6 +440,6 @@ def create_internal_customer(customer_name=None, represents_company=None, allowe
 		customer.insert()
 		customer_name = customer.name
 	else:
-		customer_name = frappe.db.get_value("Customer", customer_name)
+		customer_name = nts.db.get_value("Customer", customer_name)
 
 	return customer_name

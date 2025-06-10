@@ -1,12 +1,12 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2017, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-from frappe.contacts.address_and_contact import (
+from nts .contacts.address_and_contact import (
 	delete_contact_and_address,
 	load_address_and_contact,
 )
-from frappe.model.document import Document
+from nts .model.document import Document
 
 
 class Shareholder(Document):
@@ -16,7 +16,7 @@ class Shareholder(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.share_balance.share_balance import ShareBalance
 

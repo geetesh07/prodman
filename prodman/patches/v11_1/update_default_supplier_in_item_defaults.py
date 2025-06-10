@@ -1,8 +1,8 @@
-# Copyright (c) 2018, Frappe and Contributors
+# Copyright (c) 2018, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
@@ -11,15 +11,15 @@ def execute():
 	        this patch will set the default supplier
 
 	"""
-	if not frappe.db.has_column("Item", "default_supplier"):
+	if not nts.db.has_column("Item", "default_supplier"):
 		return
 
-	frappe.reload_doc("stock", "doctype", "item_default")
-	frappe.reload_doc("stock", "doctype", "item")
+	nts.reload_doc("stock", "doctype", "item_default")
+	nts.reload_doc("stock", "doctype", "item")
 
-	companies = frappe.get_all("Company")
+	companies = nts.get_all("Company")
 	if len(companies) > 1:
-		frappe.db.sql(
+		nts.db.sql(
 			""" UPDATE `tabItem Default`, `tabItem`
 			SET `tabItem Default`.default_supplier = `tabItem`.default_supplier
 			WHERE

@@ -106,7 +106,7 @@
 	</div>
 </div>
 				<script>
-					frappe.ready(function() {
+					nts.ready(function() {
 						var n_comments = $(".comment-row").length;
 						$(".add-comment").click(function() {
 							$(this).toggle(false);
@@ -124,15 +124,15 @@
 								route: "tasks",
 							}
 
-							frappe.call({
+							nts.call({
 								btn: this,
 								type: "POST",
-								method: "frappe.templates.includes.comments.comments.add_comment",
+								method: "nts.templates.includes.comments.comments.add_comment",
 								args: args,
 								callback: function(r) {
 									if(r.exc) {
 										if(r._server_messages)
-											frappe.msgprint(r._server_messages);
+											nts.msgprint(r._server_messages);
 									} else {
 										$(r.message).appendTo("#comment-list");
 										$(".no-comment, .add-comment").toggle(false);

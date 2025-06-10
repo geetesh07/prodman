@@ -1,12 +1,12 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import inspect
 
-import frappe
-from frappe import _, qb
-from frappe.model.document import Document
-from frappe.utils.data import comma_and
+import nts 
+from nts  import _, qb
+from nts .model.document import Document
+from nts .utils.data import comma_and
 
 from prodman.stock import get_warehouse_account_map
 
@@ -18,7 +18,7 @@ class RepostAccountingLedger(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.repost_accounting_ledger_items.repost_accounting_ledger_items import (
 			RepostAccountingLedgerItems,
@@ -47,7 +47,7 @@ class RepostAccountingLedger(Document):
 	def validate_for_closed_fiscal_year(self):
 		if self.vouchers:
 			latest_pcv = (
-				frappe.db.get_all(
+				nts .db.get_all(
 					"Period Closing Voucher",
 					filters={"company": self.company, "docstatus": 1},
 					order_by="period_end_date desc",
@@ -61,7 +61,7 @@ class RepostAccountingLedger(Document):
 
 			for vtype in self._allowed_types:
 				if names := [x.voucher_no for x in self.vouchers if x.voucher_type == vtype]:
-					latest_voucher = frappe.db.get_all(
+					latest_voucher = nts .db.get_all(
 						vtype,
 						filters={"name": ["in", names]},
 						pluck="posting_date",
@@ -69,7 +69,7 @@ class RepostAccountingLedger(Document):
 						limit=1,
 					)[0]
 					if latest_voucher and latest_pcv[0] >= latest_voucher:
-						frappe.throw(_("Cannot Resubmit Ledger entries for vouchers in Closed fiscal year."))
+						nts .throw(_("Cannot Resubmit Ledger entries for vouchers in Closed fiscal year."))
 
 	def validate_vouchers(self):
 		if self.vouchers:
@@ -84,19 +84,19 @@ class RepostAccountingLedger(Document):
 			.where((gl.voucher_no.isin(vouchers)) & (gl.is_cancelled == 0))
 			.run(as_dict=True)
 		)
-		self.gles = frappe._dict({})
+		self.gles = nts ._dict({})
 
 		for gle in existing_gles:
-			self.gles.setdefault((gle.voucher_type, gle.voucher_no), frappe._dict({})).setdefault(
+			self.gles.setdefault((gle.voucher_type, gle.voucher_no), nts ._dict({})).setdefault(
 				"existing", []
 			).append(gle.update({"old": True}))
 
 	def generate_preview_data(self):
-		frappe.flags.through_repost_accounting_ledger = True
+		nts .flags.through_repost_accounting_ledger = True
 		self.gl_entries = []
 		self.get_existing_ledger_entries()
 		for x in self.vouchers:
-			doc = frappe.get_doc(x.voucher_type, x.voucher_no)
+			doc = nts .get_doc(x.voucher_type, x.voucher_no)
 			if doc.doctype in ["Payment Entry", "Journal Entry"]:
 				gle_map = doc.build_gl_map()
 			elif doc.doctype == "Purchase Receipt":
@@ -110,7 +110,7 @@ class RepostAccountingLedger(Document):
 				self.gl_entries.extend(old_entries.existing)
 			self.gl_entries.extend(gle_map)
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def generate_preview(self):
 		from prodman.accounts.report.general_ledger.general_ledger import get_columns as get_gl_columns
 
@@ -126,7 +126,7 @@ class RepostAccountingLedger(Document):
 				gl_columns.append(x)
 
 			gl_data = self.gl_entries
-		rendered_page = frappe.render_template(
+		rendered_page = nts .render_template(
 			"prodman/accounts/doctype/repost_accounting_ledger/repost_accounting_ledger.html",
 			{"gl_columns": gl_columns, "gl_data": gl_data},
 		)
@@ -136,37 +136,37 @@ class RepostAccountingLedger(Document):
 	def on_submit(self):
 		if len(self.vouchers) > 5:
 			job_name = "repost_accounting_ledger_" + self.name
-			frappe.enqueue(
+			nts .enqueue(
 				method="prodman.accounts.doctype.repost_accounting_ledger.repost_accounting_ledger.start_repost",
 				account_repost_doc=self.name,
 				is_async=True,
 				job_name=job_name,
 			)
-			frappe.msgprint(_("Repost has started in the background"))
+			nts .msgprint(_("Repost has started in the background"))
 		else:
 			start_repost(self.name)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def start_repost(account_repost_doc=str) -> None:
 	from prodman.accounts.general_ledger import make_reverse_gl_entries
 
-	frappe.flags.through_repost_accounting_ledger = True
+	nts .flags.through_repost_accounting_ledger = True
 	if account_repost_doc:
-		repost_doc = frappe.get_doc("Repost Accounting Ledger", account_repost_doc)
+		repost_doc = nts .get_doc("Repost Accounting Ledger", account_repost_doc)
 
 		if repost_doc.docstatus == 1:
 			# Prevent repost on invoices with deferred accounting
 			repost_doc.validate_for_deferred_accounting()
 
 			for x in repost_doc.vouchers:
-				doc = frappe.get_doc(x.voucher_type, x.voucher_no)
+				doc = nts .get_doc(x.voucher_type, x.voucher_no)
 
 				if repost_doc.delete_cancelled_entries:
-					frappe.db.delete(
+					nts .db.delete(
 						"GL Entry", filters={"voucher_type": doc.doctype, "voucher_no": doc.name}
 					)
-					frappe.db.delete(
+					nts .db.delete(
 						"Payment Ledger Entry", filters={"voucher_type": doc.doctype, "voucher_no": doc.name}
 					)
 
@@ -194,7 +194,7 @@ def start_repost(account_repost_doc=str) -> None:
 					if not repost_doc.delete_cancelled_entries:
 						doc.make_gl_entries(1)
 					doc.make_gl_entries()
-				elif doc.doctype in frappe.get_hooks("repost_allowed_doctypes"):
+				elif doc.doctype in nts .get_hooks("repost_allowed_doctypes"):
 					if hasattr(doc, "make_gl_entries") and callable(doc.make_gl_entries):
 						if not repost_doc.delete_cancelled_entries:
 							if "cancel" in inspect.getfullargspec(doc.make_gl_entries):
@@ -207,21 +207,21 @@ def start_repost(account_repost_doc=str) -> None:
 def get_allowed_types_from_settings():
 	return [
 		x.document_type
-		for x in frappe.db.get_all(
+		for x in nts .db.get_all(
 			"Repost Allowed Types", filters={"allowed": True}, fields=["distinct(document_type)"]
 		)
 	]
 
 
 def validate_docs_for_deferred_accounting(sales_docs, purchase_docs):
-	docs_with_deferred_revenue = frappe.db.get_all(
+	docs_with_deferred_revenue = nts .db.get_all(
 		"Sales Invoice Item",
 		filters={"parent": ["in", sales_docs], "docstatus": 1, "enable_deferred_revenue": True},
 		fields=["parent"],
 		as_list=1,
 	)
 
-	docs_with_deferred_expense = frappe.db.get_all(
+	docs_with_deferred_expense = nts .db.get_all(
 		"Purchase Invoice Item",
 		filters={"parent": ["in", purchase_docs], "docstatus": 1, "enable_deferred_expense": 1},
 		fields=["parent"],
@@ -229,9 +229,9 @@ def validate_docs_for_deferred_accounting(sales_docs, purchase_docs):
 	)
 
 	if docs_with_deferred_revenue or docs_with_deferred_expense:
-		frappe.throw(
+		nts .throw(
 			_("Documents: {0} have deferred revenue/expense enabled for them. Cannot repost.").format(
-				frappe.bold(
+				nts .bold(
 					comma_and([x[0] for x in docs_with_deferred_expense + docs_with_deferred_revenue])
 				)
 			)
@@ -244,12 +244,12 @@ def validate_docs_for_voucher_types(doc_voucher_types):
 	voucher_types = set(doc_voucher_types)
 	if disallowed_types := voucher_types.difference(allowed_types):
 		message = "are" if len(disallowed_types) > 1 else "is"
-		frappe.throw(
+		nts .throw(
 			_("{0} {1} not allowed to be reposted. Modify {2} to enable reposting.").format(
-				frappe.bold(comma_and(list(disallowed_types))),
+				nts .bold(comma_and(list(disallowed_types))),
 				message,
-				frappe.bold(
-					frappe.utils.get_link_to_form(
+				nts .bold(
+					nts .utils.get_link_to_form(
 						"Repost Accounting Ledger Settings", "Repost Accounting Ledger Settings"
 					)
 				),
@@ -257,15 +257,15 @@ def validate_docs_for_voucher_types(doc_voucher_types):
 		)
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts .whitelist()
+@nts .validate_and_sanitize_search_inputs
 def get_repost_allowed_types(doctype, txt, searchfield, start, page_len, filters):
 	filters = {"allowed": True}
 
 	if txt:
 		filters.update({"document_type": ("like", f"%{txt}%")})
 
-	if allowed_types := frappe.db.get_all(
+	if allowed_types := nts .db.get_all(
 		"Repost Allowed Types", filters=filters, fields=["distinct(document_type)"], as_list=1
 	):
 		return allowed_types

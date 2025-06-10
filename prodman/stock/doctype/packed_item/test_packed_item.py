@@ -1,10 +1,10 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_to_date, nowdate
+import nts
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import add_to_date, nowdate
 
 from prodman.selling.doctype.sales_order.sales_order import make_delivery_note
 from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
@@ -25,7 +25,7 @@ def create_product_bundle(
 
 	bundle = make_item(properties={"is_stock_item": 0}).name
 
-	bundle_doc = frappe.get_doc({"doctype": "Product Bundle", "new_item_code": bundle})
+	bundle_doc = nts.get_doc({"doctype": "Product Bundle", "new_item_code": bundle})
 
 	components = []
 	for qty in quantities:
@@ -40,7 +40,7 @@ def create_product_bundle(
 	return bundle, components
 
 
-class TestPackedItem(FrappeTestCase):
+class TestPackedItem(ntsTestCase):
 	"Test impact on Packed Items table in various scenarios."
 
 	@classmethod

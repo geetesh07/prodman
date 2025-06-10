@@ -1,7 +1,7 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Subscription", {
+nts .ui.form.on("Subscription", {
 	setup: function (frm) {
 		frm.set_query("party_type", function () {
 			return {
@@ -59,7 +59,7 @@ frappe.ui.form.on("Subscription", {
 	},
 
 	cancel_this_subscription: function (frm) {
-		frappe.confirm(
+		nts .confirm(
 			__("This action will stop future billing. Are you sure you want to cancel this subscription?"),
 			() => {
 				frm.call("cancel_subscription").then((r) => {
@@ -72,7 +72,7 @@ frappe.ui.form.on("Subscription", {
 	},
 
 	renew_this_subscription: function (frm) {
-		frappe.confirm(__("Are you sure you want to restart this subscription?"), () => {
+		nts .confirm(__("Are you sure you want to restart this subscription?"), () => {
 			frm.call("restart_subscription").then((r) => {
 				if (!r.exec) {
 					frm.reload_doc();

@@ -1,7 +1,7 @@
-import frappe
-from frappe import qb
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import nowdate
+import nts 
+from nts  import qb
+from nts .tests.utils import nts TestCase, change_settings
+from nts .utils import nowdate
 
 from prodman.accounts.doctype.account.test_account import create_account
 from prodman.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
@@ -13,7 +13,7 @@ from prodman.accounts.test.accounts_mixin import AccountsTestMixin
 from prodman.accounts.utils import get_fiscal_year
 
 
-class TestDeferredRevenueAndExpense(FrappeTestCase, AccountsTestMixin):
+class TestDeferredRevenueAndExpense(nts TestCase, AccountsTestMixin):
 	@classmethod
 	def setUpClass(self):
 		self.maxDiff = None
@@ -70,12 +70,12 @@ class TestDeferredRevenueAndExpense(FrappeTestCase, AccountsTestMixin):
 		self.clear_old_entries()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	@change_settings("Accounts Settings", {"book_deferred_entries_based_on": "Months"})
 	def test_deferred_revenue(self):
 		self.create_item("_Test Internet Subscription", 0, self.warehouse, self.company)
-		item = frappe.get_doc("Item", self.item)
+		item = nts .get_doc("Item", self.item)
 		item.enable_deferred_revenue = 1
 		item.item_defaults[0].deferred_revenue_account = self.deferred_revenue_account
 		item.no_of_months = 3
@@ -102,7 +102,7 @@ class TestDeferredRevenueAndExpense(FrappeTestCase, AccountsTestMixin):
 		si.save()
 		si.submit()
 
-		pda = frappe.get_doc(
+		pda = nts .get_doc(
 			dict(
 				doctype="Process Deferred Accounting",
 				posting_date=nowdate(),
@@ -116,8 +116,8 @@ class TestDeferredRevenueAndExpense(FrappeTestCase, AccountsTestMixin):
 		pda.submit()
 
 		# execute report
-		fiscal_year = frappe.get_doc("Fiscal Year", get_fiscal_year(date="2021-05-01"))
-		self.filters = frappe._dict(
+		fiscal_year = nts .get_doc("Fiscal Year", get_fiscal_year(date="2021-05-01"))
+		self.filters = nts ._dict(
 			{
 				"company": self.company,
 				"filter_based_on": "Date Range",
@@ -144,7 +144,7 @@ class TestDeferredRevenueAndExpense(FrappeTestCase, AccountsTestMixin):
 	@change_settings("Accounts Settings", {"book_deferred_entries_based_on": "Months"})
 	def test_deferred_expense(self):
 		self.create_item("_Test Office Desk", 0, self.warehouse, self.company)
-		item = frappe.get_doc("Item", self.item)
+		item = nts .get_doc("Item", self.item)
 		item.enable_deferred_expense = 1
 		item.item_defaults[0].deferred_expense_account = self.deferred_expense_account
 		item.no_of_months_exp = 3
@@ -156,7 +156,7 @@ class TestDeferredRevenueAndExpense(FrappeTestCase, AccountsTestMixin):
 			supplier=self.supplier,
 			is_return=False,
 			update_stock=False,
-			posting_date=frappe.utils.datetime.date(2021, 5, 1),
+			posting_date=nts .utils.datetime.date(2021, 5, 1),
 			parent_cost_center=self.cost_center,
 			cost_center=self.cost_center,
 			do_not_save=True,
@@ -174,7 +174,7 @@ class TestDeferredRevenueAndExpense(FrappeTestCase, AccountsTestMixin):
 		pi.save()
 		pi.submit()
 
-		pda = frappe.get_doc(
+		pda = nts .get_doc(
 			dict(
 				doctype="Process Deferred Accounting",
 				posting_date=nowdate(),
@@ -188,8 +188,8 @@ class TestDeferredRevenueAndExpense(FrappeTestCase, AccountsTestMixin):
 		pda.submit()
 
 		# execute report
-		fiscal_year = frappe.get_doc("Fiscal Year", get_fiscal_year(date="2021-05-01"))
-		self.filters = frappe._dict(
+		fiscal_year = nts .get_doc("Fiscal Year", get_fiscal_year(date="2021-05-01"))
+		self.filters = nts ._dict(
 			{
 				"company": self.company,
 				"filter_based_on": "Date Range",
@@ -216,7 +216,7 @@ class TestDeferredRevenueAndExpense(FrappeTestCase, AccountsTestMixin):
 	@change_settings("Accounts Settings", {"book_deferred_entries_based_on": "Months"})
 	def test_zero_months(self):
 		self.create_item("_Test Internet Subscription", 0, self.warehouse, self.company)
-		item = frappe.get_doc("Item", self.item)
+		item = nts .get_doc("Item", self.item)
 		item.enable_deferred_revenue = 1
 		item.deferred_revenue_account = self.deferred_revenue_account
 		item.no_of_months = 0
@@ -241,7 +241,7 @@ class TestDeferredRevenueAndExpense(FrappeTestCase, AccountsTestMixin):
 		si.save()
 		si.submit()
 
-		pda = frappe.get_doc(
+		pda = nts .get_doc(
 			dict(
 				doctype="Process Deferred Accounting",
 				posting_date=nowdate(),
@@ -255,8 +255,8 @@ class TestDeferredRevenueAndExpense(FrappeTestCase, AccountsTestMixin):
 		pda.submit()
 
 		# execute report
-		fiscal_year = frappe.get_doc("Fiscal Year", get_fiscal_year(date="2021-05-01"))
-		self.filters = frappe._dict(
+		fiscal_year = nts .get_doc("Fiscal Year", get_fiscal_year(date="2021-05-01"))
+		self.filters = nts ._dict(
 			{
 				"company": self.company,
 				"filter_based_on": "Date Range",
@@ -286,7 +286,7 @@ class TestDeferredRevenueAndExpense(FrappeTestCase, AccountsTestMixin):
 	)
 	def test_zero_amount(self):
 		self.create_item("_Test Office Desk", 0, self.warehouse, self.company)
-		item = frappe.get_doc("Item", self.item)
+		item = nts .get_doc("Item", self.item)
 		item.enable_deferred_expense = 1
 		item.item_defaults[0].deferred_expense_account = self.deferred_expense_account
 		item.no_of_months_exp = 12
@@ -298,7 +298,7 @@ class TestDeferredRevenueAndExpense(FrappeTestCase, AccountsTestMixin):
 			supplier=self.supplier,
 			is_return=False,
 			update_stock=False,
-			posting_date=frappe.utils.datetime.date(2021, 12, 30),
+			posting_date=nts .utils.datetime.date(2021, 12, 30),
 			parent_cost_center=self.cost_center,
 			cost_center=self.cost_center,
 			do_not_save=True,
@@ -316,7 +316,7 @@ class TestDeferredRevenueAndExpense(FrappeTestCase, AccountsTestMixin):
 		pi.save()
 		pi.submit()
 
-		pda = frappe.get_doc(
+		pda = nts .get_doc(
 			doctype="Process Deferred Accounting",
 			posting_date=nowdate(),
 			start_date="2022-01-01",
@@ -328,8 +328,8 @@ class TestDeferredRevenueAndExpense(FrappeTestCase, AccountsTestMixin):
 		pda.submit()
 
 		# execute report
-		fiscal_year = frappe.get_doc("Fiscal Year", get_fiscal_year(date="2022-01-31"))
-		self.filters = frappe._dict(
+		fiscal_year = nts .get_doc("Fiscal Year", get_fiscal_year(date="2022-01-31"))
+		self.filters = nts ._dict(
 			{
 				"company": self.company,
 				"filter_based_on": "Date Range",

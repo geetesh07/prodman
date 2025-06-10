@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2019, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest

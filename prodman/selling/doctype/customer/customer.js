@@ -1,16 +1,16 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.ui.form.on("Customer", {
+nts.ui.form.on("Customer", {
 	setup: function (frm) {
 		frm.make_methods = {
 			Quotation: () =>
-				frappe.model.open_mapped_doc({
+				nts.model.open_mapped_doc({
 					method: "prodman.selling.doctype.customer.customer.make_quotation",
 					frm: cur_frm,
 				}),
 			Opportunity: () =>
-				frappe.model.open_mapped_doc({
+				nts.model.open_mapped_doc({
 					method: "prodman.selling.doctype.customer.customer.make_opportunity",
 					frm: cur_frm,
 				}),
@@ -87,8 +87,8 @@ frappe.ui.form.on("Customer", {
 	},
 	customer_primary_address: function (frm) {
 		if (frm.doc.customer_primary_address) {
-			frappe.call({
-				method: "frappe.contacts.doctype.address.address.get_address_display",
+			nts.call({
+				method: "nts.contacts.doctype.address.address.get_address_display",
 				args: {
 					address_dict: frm.doc.customer_primary_address,
 				},
@@ -124,21 +124,21 @@ frappe.ui.form.on("Customer", {
 	},
 
 	refresh: function (frm) {
-		if (frappe.defaults.get_default("cust_master_name") != "Naming Series") {
+		if (nts.defaults.get_default("cust_master_name") != "Naming Series") {
 			frm.toggle_display("naming_series", false);
 		} else {
 			prodman.toggle_naming_series();
 		}
 
 		if (!frm.doc.__islocal) {
-			frappe.contacts.render_address_and_contact(frm);
+			nts.contacts.render_address_and_contact(frm);
 
 			// custom buttons
 
 			frm.add_custom_button(
 				__("Accounts Receivable"),
 				function () {
-					frappe.set_route("query-report", "Accounts Receivable", {
+					nts.set_route("query-report", "Accounts Receivable", {
 						party_type: "Customer",
 						party: frm.doc.name,
 					});
@@ -149,7 +149,7 @@ frappe.ui.form.on("Customer", {
 			frm.add_custom_button(
 				__("Accounting Ledger"),
 				function () {
-					frappe.set_route("query-report", "General Ledger", {
+					nts.set_route("query-report", "General Ledger", {
 						party_type: "Customer",
 						party: frm.doc.name,
 						party_name: frm.doc.customer_name,
@@ -174,7 +174,7 @@ frappe.ui.form.on("Customer", {
 				__("Actions")
 			);
 
-			if (cint(frappe.defaults.get_default("enable_common_party_accounting"))) {
+			if (cint(nts.defaults.get_default("enable_common_party_accounting"))) {
 				frm.add_custom_button(
 					__("Link with Supplier"),
 					function () {
@@ -187,7 +187,7 @@ frappe.ui.form.on("Customer", {
 			// indicator
 			prodman.utils.set_party_dashboard_indicators(frm);
 		} else {
-			frappe.contacts.clear_address_and_contact(frm);
+			nts.contacts.clear_address_and_contact(frm);
 		}
 
 		var grid = cur_frm.get_field("sales_team").grid;
@@ -195,10 +195,10 @@ frappe.ui.form.on("Customer", {
 		grid.set_column_disp("incentives", false);
 	},
 	validate: function (frm) {
-		if (frm.doc.lead_name) frappe.model.clear_doc("Lead", frm.doc.lead_name);
+		if (frm.doc.lead_name) nts.model.clear_doc("Lead", frm.doc.lead_name);
 	},
 	get_customer_group_details: function (frm) {
-		frappe.call({
+		nts.call({
 			method: "get_customer_group_details",
 			doc: frm.doc,
 			callback: function () {
@@ -207,7 +207,7 @@ frappe.ui.form.on("Customer", {
 		});
 	},
 	show_party_link_dialog: function (frm) {
-		const dialog = new frappe.ui.Dialog({
+		const dialog = new nts.ui.Dialog({
 			title: __("Select a Supplier"),
 			fields: [
 				{
@@ -219,7 +219,7 @@ frappe.ui.form.on("Customer", {
 				},
 			],
 			primary_action: function ({ supplier }) {
-				frappe.call({
+				nts.call({
 					method: "prodman.accounts.doctype.party_link.party_link.create_party_link",
 					args: {
 						primary_role: "Customer",
@@ -229,14 +229,14 @@ frappe.ui.form.on("Customer", {
 					freeze: true,
 					callback: function () {
 						dialog.hide();
-						frappe.msgprint({
+						nts.msgprint({
 							message: __("Successfully linked to Supplier"),
 							alert: true,
 						});
 					},
 					error: function () {
 						dialog.hide();
-						frappe.msgprint({
+						nts.msgprint({
 							message: __("Linking to Supplier Failed. Please try again."),
 							title: __("Linking Failed"),
 							indicator: "red",

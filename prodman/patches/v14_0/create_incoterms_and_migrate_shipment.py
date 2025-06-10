@@ -1,4 +1,4 @@
-import frappe
+import nts
 
 from prodman.setup.doctype.incoterm.incoterm import create_incoterms
 
@@ -9,7 +9,7 @@ def execute():
 
 
 def migrate_shipments():
-	if not frappe.db.count("Shipment"):
+	if not nts.db.count("Shipment"):
 		return
 
 	OLD_VALUES = [
@@ -24,8 +24,8 @@ def migrate_shipments():
 		"DAP (Delivered At Place)",
 		"DDP (Delivered Duty Paid)",
 	]
-	shipment = frappe.qb.DocType("Shipment")
+	shipment = nts.qb.DocType("Shipment")
 	for old_value in OLD_VALUES:
-		frappe.qb.update(shipment).set(shipment.incoterm, old_value[:3]).where(
+		nts.qb.update(shipment).set(shipment.incoterm, old_value[:3]).where(
 			shipment.incoterm == old_value
 		).run()

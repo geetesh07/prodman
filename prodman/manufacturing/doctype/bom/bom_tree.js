@@ -1,4 +1,4 @@
-frappe.treeview_settings["BOM"] = {
+nts.treeview_settings["BOM"] = {
 	get_tree_nodes: "prodman.manufacturing.doctype.bom.bom.get_children",
 	filters: [
 		{
@@ -22,15 +22,15 @@ frappe.treeview_settings["BOM"] = {
 		}
 	},
 	onload: function (me) {
-		var label = frappe.get_route()[0] + "/" + frappe.get_route()[1];
-		if (frappe.pages[label]) {
-			delete frappe.pages[label];
+		var label = nts.get_route()[0] + "/" + nts.get_route()[1];
+		if (nts.pages[label]) {
+			delete nts.pages[label];
 		}
 
 		var filter = me.opts.filters[0];
-		if (frappe.route_options && frappe.route_options[filter.fieldname]) {
-			var val = frappe.route_options[filter.fieldname];
-			delete frappe.route_options[filter.fieldname];
+		if (nts.route_options && nts.route_options[filter.fieldname]) {
+			var val = nts.route_options[filter.fieldname];
+			delete nts.route_options[filter.fieldname];
 			filter.default = "";
 			me.args[filter.fieldname] = val;
 			me.root_label = val;
@@ -46,7 +46,7 @@ frappe.treeview_settings["BOM"] = {
 				return node.expandable;
 			},
 			click: function (node) {
-				frappe.set_route("Form", "BOM", node.data.value);
+				nts.set_route("Form", "BOM", node.data.value);
 			},
 		},
 	],
@@ -54,15 +54,15 @@ frappe.treeview_settings["BOM"] = {
 		{
 			label: __("New BOM"),
 			action: function () {
-				frappe.new_doc("BOM", true);
+				nts.new_doc("BOM", true);
 			},
-			condition: 'frappe.boot.user.can_create.indexOf("BOM") !== -1',
+			condition: 'nts.boot.user.can_create.indexOf("BOM") !== -1',
 		},
 	],
 	onrender: function (node) {
 		if (node.is_root && node.data.value != "BOM") {
-			frappe.model.with_doc("BOM", node.data.value, function () {
-				var bom = frappe.model.get_doc("BOM", node.data.value);
+			nts.model.with_doc("BOM", node.data.value, function () {
+				var bom = nts.model.get_doc("BOM", node.data.value);
 				node.data.image = escape(bom.image) || "";
 				node.data.description = bom.description || "";
 				node.data.item_code = bom.item || "";

@@ -1,8 +1,8 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-from frappe.model.utils.rename_field import rename_field
+from nts.model.utils.rename_field import rename_field
 
 
 def execute():

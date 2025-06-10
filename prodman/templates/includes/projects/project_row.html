@@ -14,7 +14,7 @@
             "orange" %}
           <div class="ellipsis">
             <span class="indicator-pill {{ pill_class }} filterable ellipsis">
-              <span>{{ frappe.utils.cint(doc.percent_complete) }}
+              <span>{{ nts.utils.cint(doc.percent_complete) }}
                 %</span>
             </span>
           </div>
@@ -27,7 +27,7 @@
         {% set assigned_users = json.loads(doc["_assign"])%}
         <div class="col-xs-2 project-users">
           {% for user in assigned_users %}
-            {% set user_details = frappe
+            {% set user_details = nts
               .db
               .get_value("User", user, [
                 "full_name", "user_image"
@@ -39,7 +39,7 @@
             {% else %}
               <span class="avatar avatar-small" style="width:32px; height:32px;" title="{{ user_details.full_name }}">
                 <div class='standard-image' style="background-color: #F5F4F4; color: #000;">
-                  {{ frappe.utils.get_abbr(user_details.full_name) }}
+                  {{ nts.utils.get_abbr(user_details.full_name) }}
                 </div>
               </span>
             {% endif %}
@@ -47,7 +47,7 @@
         </div>
       {% endif %}
       <div class="col-xs-3 text-right small text-muted project-modified-on">
-        {{ frappe.utils.pretty_date(doc.modified) }}
+        {{ nts.utils.pretty_date(doc.modified) }}
       </div>
     </div>
   </div>

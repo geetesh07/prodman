@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2022, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
 function get_filters() {
@@ -8,7 +8,7 @@ function get_filters() {
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts .defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -16,14 +16,14 @@ function get_filters() {
 			label: __("Start Date"),
 			fieldtype: "Date",
 			reqd: 1,
-			default: frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+			default: nts .datetime.add_months(nts .datetime.get_today(), -1),
 		},
 		{
 			fieldname: "period_end_date",
 			label: __("End Date"),
 			fieldtype: "Date",
 			reqd: 1,
-			default: frappe.datetime.get_today(),
+			default: nts .datetime.get_today(),
 		},
 		{
 			fieldname: "account",
@@ -31,8 +31,8 @@ function get_filters() {
 			fieldtype: "MultiSelectList",
 			options: "Account",
 			get_data: function (txt) {
-				return frappe.db.get_link_options("Account", txt, {
-					company: frappe.query_report.get_filter_value("company"),
+				return nts .db.get_link_options("Account", txt, {
+					company: nts .query_report.get_filter_value("company"),
 				});
 			},
 		},
@@ -43,7 +43,7 @@ function get_filters() {
 			options: "Party Type",
 			default: "",
 			on_change: function () {
-				frappe.query_report.set_filter_value("party", "");
+				nts .query_report.set_filter_value("party", "");
 			},
 		},
 		{
@@ -52,12 +52,12 @@ function get_filters() {
 			fieldtype: "MultiSelectList",
 			options: "party_type",
 			get_data: function (txt) {
-				if (!frappe.query_report.filters) return;
+				if (!nts .query_report.filters) return;
 
-				let party_type = frappe.query_report.get_filter_value("party_type");
+				let party_type = nts .query_report.get_filter_value("party_type");
 				if (!party_type) return;
 
-				return frappe.db.get_link_options(party_type, txt);
+				return nts .db.get_link_options(party_type, txt);
 			},
 		},
 		{
@@ -88,6 +88,6 @@ function get_filters() {
 	return filters;
 }
 
-frappe.query_reports["Payment Ledger"] = {
+nts .query_reports["Payment Ledger"] = {
 	filters: get_filters(),
 };

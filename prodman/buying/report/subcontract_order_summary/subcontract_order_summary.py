@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -39,7 +39,7 @@ def get_subcontracted_orders(report_filters):
 
 	filters = get_filters(report_filters)
 
-	return frappe.get_all(report_filters.order_type, fields=fields, filters=filters) or []
+	return nts.get_all(report_filters.order_type, fields=fields, filters=filters) or []
 
 
 def get_filters(report_filters):
@@ -87,7 +87,7 @@ def get_supplied_items(orders, report_filters):
 		if report_filters.order_type == "Purchase Order"
 		else "Subcontracting Order Supplied Item"
 	)
-	for row in frappe.get_all(supplied_items_table, fields=fields, filters=filters):
+	for row in nts.get_all(supplied_items_table, fields=fields, filters=filters):
 		new_key = (row.parent, row.reference_name, row.main_item_code)
 
 		supplied_items.setdefault(new_key, []).append(row)
@@ -100,7 +100,7 @@ def prepare_subcontracted_data(orders, supplied_items):
 	for row in orders:
 		key = (row.order_id, row.name, row.item_code)
 		if key not in order_details:
-			order_details.setdefault(key, frappe._dict({"order_item": row, "supplied_items": []}))
+			order_details.setdefault(key, nts._dict({"order_item": row, "supplied_items": []}))
 
 		details = order_details[key]
 

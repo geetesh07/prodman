@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts 
 
 
 class TestModeofPayment(unittest.TestCase):
@@ -12,10 +12,10 @@ class TestModeofPayment(unittest.TestCase):
 
 def set_default_account_for_mode_of_payment(mode_of_payment, company, account):
 	mode_of_payment.reload()
-	if frappe.db.exists(
+	if nts .db.exists(
 		"Mode of Payment Account", {"parent": mode_of_payment.mode_of_payment, "company": company}
 	):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Mode of Payment Account",
 			{"parent": mode_of_payment.mode_of_payment, "company": company},
 			"default_account",

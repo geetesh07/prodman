@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 import json
 from collections import defaultdict
 
-import frappe
-from frappe import _, bold
-from frappe.utils import cint, cstr, flt, get_link_to_form, getdate
+import nts
+from nts import _, bold
+from nts.utils import cint, cstr, flt, get_link_to_form, getdate
 
 import prodman
 from prodman.accounts.general_ledger import (
@@ -31,19 +31,19 @@ from prodman.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle impor
 from prodman.stock.stock_ledger import get_items_to_be_repost
 
 
-class QualityInspectionRequiredError(frappe.ValidationError):
+class QualityInspectionRequiredError(nts.ValidationError):
 	pass
 
 
-class QualityInspectionRejectedError(frappe.ValidationError):
+class QualityInspectionRejectedError(nts.ValidationError):
 	pass
 
 
-class QualityInspectionNotSubmittedError(frappe.ValidationError):
+class QualityInspectionNotSubmittedError(nts.ValidationError):
 	pass
 
 
-class BatchExpiredError(frappe.ValidationError):
+class BatchExpiredError(nts.ValidationError):
 	pass
 
 
@@ -72,7 +72,7 @@ class StockController(AccountsController):
 
 			if row.conversion_factor != 1.0:
 				row.conversion_factor = 1.0
-				frappe.msgprint(
+				nts.msgprint(
 					_(
 						"Conversion factor for item {0} has been reset to 1.0 as the uom {1} is same as stock uom {2}."
 					).format(bold(row.item_code), bold(row.uom), bold(row.stock_uom)),
@@ -85,11 +85,11 @@ class StockController(AccountsController):
 
 		items = [d.item_code for d in self.get("items")]
 
-		exists_items = frappe.get_all("Item", filters={"name": ("in", items)}, pluck="name")
+		exists_items = nts.get_all("Item", filters={"name": ("in", items)}, pluck="name")
 		non_exists_items = set(items) - set(exists_items)
 
 		if non_exists_items:
-			frappe.throw(_("Items {0} do not exist in the Item master.").format(", ".join(non_exists_items)))
+			nts.throw(_("Items {0} do not exist in the Item master.").format(", ".join(non_exists_items)))
 
 	def validate_duplicate_serial_and_batch_bundle(self, table_name):
 		if not self.get(table_name):
@@ -104,9 +104,9 @@ class StockController(AccountsController):
 				sbb_list.append(item.get("rejected_serial_and_batch_bundle"))
 
 		if sbb_list:
-			SLE = frappe.qb.DocType("Stock Ledger Entry")
+			SLE = nts.qb.DocType("Stock Ledger Entry")
 			data = (
-				frappe.qb.from_(SLE)
+				nts.qb.from_(SLE)
 				.select(SLE.voucher_type, SLE.voucher_no, SLE.serial_and_batch_bundle)
 				.where(
 					(SLE.docstatus == 1)
@@ -118,9 +118,9 @@ class StockController(AccountsController):
 
 			if data:
 				data = data[0]
-				frappe.throw(
+				nts.throw(
 					_("Serial and Batch Bundle {0} is already used in {1} {2}.").format(
-						frappe.bold(data.serial_and_batch_bundle), data.voucher_type, data.voucher_no
+						nts.bold(data.serial_and_batch_bundle), data.voucher_type, data.voucher_no
 					)
 				)
 
@@ -129,7 +129,7 @@ class StockController(AccountsController):
 			make_reverse_gl_entries(voucher_type=self.doctype, voucher_no=self.name)
 
 		provisional_accounting_for_non_stock_items = cint(
-			frappe.get_cached_value(
+			nts.get_cached_value(
 				"Company", self.company, "enable_provisional_accounting_for_non_stock_items"
 			)
 		)
@@ -161,7 +161,7 @@ class StockController(AccountsController):
 
 		for d in self.get("items"):
 			if hasattr(d, "serial_no") and hasattr(d, "batch_no") and d.serial_no and d.batch_no:
-				serial_nos = frappe.get_all(
+				serial_nos = nts.get_all(
 					"Serial No",
 					fields=["batch_no", "name", "warehouse"],
 					filters={"name": ("in", get_serial_nos(d.serial_no))},
@@ -169,7 +169,7 @@ class StockController(AccountsController):
 
 				for row in serial_nos:
 					if row.warehouse and row.batch_no != d.batch_no:
-						frappe.throw(
+						nts.throw(
 							_("Row #{0}: Serial No {1} does not belong to Batch {2}").format(
 								d.idx, row.name, d.batch_no
 							)
@@ -179,10 +179,10 @@ class StockController(AccountsController):
 				continue
 
 			if flt(d.qty) > 0.0 and d.get("batch_no") and self.get("posting_date") and self.docstatus < 2:
-				expiry_date = frappe.get_cached_value("Batch", d.get("batch_no"), "expiry_date")
+				expiry_date = nts.get_cached_value("Batch", d.get("batch_no"), "expiry_date")
 
 				if expiry_date and getdate(expiry_date) < getdate(self.posting_date):
-					frappe.throw(
+					nts.throw(
 						_("Row #{0}: The batch {1} has already expired.").format(
 							d.idx, get_link_to_form("Batch", d.get("batch_no"))
 						),
@@ -207,7 +207,7 @@ class StockController(AccountsController):
 			return
 
 		# To handle test cases
-		if frappe.flags.in_test and frappe.flags.use_serial_and_batch_fields:
+		if nts.flags.in_test and nts.flags.use_serial_and_batch_fields:
 			return
 
 		if not table_name:
@@ -216,7 +216,7 @@ class StockController(AccountsController):
 		if self.doctype == "Asset Capitalization":
 			table_name = "stock_items"
 
-		parent_details = frappe._dict()
+		parent_details = nts._dict()
 		if table_name == "packed_items":
 			parent_details = self.get_parent_details_for_packed_items()
 
@@ -258,7 +258,7 @@ class StockController(AccountsController):
 					self.create_serial_batch_bundle(bundle_details, row)
 
 	def get_parent_details_for_packed_items(self):
-		parent_details = frappe._dict()
+		parent_details = nts._dict()
 		for row in self.get("items"):
 			parent_details[row.name] = row
 
@@ -298,9 +298,9 @@ class StockController(AccountsController):
 					warehouse_field = "warehouse"
 
 				if not data.get("qty"):
-					frappe.throw(
+					nts.throw(
 						_("For the {0}, no stock is available for the return in the warehouse {1}.").format(
-							frappe.bold(row.item_code), row.get(warehouse_field)
+							nts.bold(row.item_code), row.get(warehouse_field)
 						)
 					)
 
@@ -347,7 +347,7 @@ class StockController(AccountsController):
 
 				if self.doctype in ["Sales Invoice", "Delivery Note"]:
 					row.db_set(
-						"incoming_rate", frappe.db.get_value("Serial and Batch Bundle", bundle, "avg_rate")
+						"incoming_rate", nts.db.get_value("Serial and Batch Bundle", bundle, "avg_rate")
 					)
 
 	def get_reference_ids(self, table_name, qty_field=None, bundle_field=None) -> tuple[str, list[str]]:
@@ -386,12 +386,12 @@ class StockController(AccountsController):
 
 		return field, reference_ids
 
-	@frappe.request_cache
+	@nts.request_cache
 	def is_serial_batch_item(self, item_code) -> bool:
-		if not frappe.db.exists("Item", item_code):
-			frappe.throw(_("Item {0} does not exist.").format(bold(item_code)))
+		if not nts.db.exists("Item", item_code):
+			nts.throw(_("Item {0} does not exist.").format(bold(item_code)))
 
-		item_details = frappe.db.get_value("Item", item_code, ["has_serial_no", "has_batch_no"], as_dict=1)
+		item_details = nts.db.get_value("Item", item_code, ["has_serial_no", "has_batch_no"], as_dict=1)
 
 		if item_details.has_serial_no or item_details.has_batch_no:
 			return True
@@ -451,7 +451,7 @@ class StockController(AccountsController):
 				"is_rejected": is_rejected,
 				"type_of_transaction": type_of_transaction,
 				"warehouse": warehouse,
-				"batches": frappe._dict({row.batch_no: qty}) if row.batch_no else None,
+				"batches": nts._dict({row.batch_no: qty}) if row.batch_no else None,
 				"serial_nos": get_serial_nos(serial_nos) if serial_nos else None,
 				"batch_no": row.batch_no,
 			}
@@ -474,7 +474,7 @@ class StockController(AccountsController):
 
 		throw_error = False
 		if row.serial_no:
-			serial_nos = frappe.get_all(
+			serial_nos = nts.get_all(
 				"Serial and Batch Entry",
 				fields=["serial_no"],
 				filters={"parent": row.serial_and_batch_bundle},
@@ -491,7 +491,7 @@ class StockController(AccountsController):
 						break
 
 		elif row.batch_no:
-			batches = frappe.get_all(
+			batches = nts.get_all(
 				"Serial and Batch Entry", fields=["batch_no"], filters={"parent": row.serial_and_batch_bundle}
 			)
 			batches = sorted([d.batch_no for d in batches])
@@ -500,14 +500,14 @@ class StockController(AccountsController):
 				throw_error = True
 
 		if throw_error:
-			frappe.throw(
+			nts.throw(
 				_(
 					"At row {0}: Serial and Batch Bundle {1} has already created. Please remove the values from the serial no or batch no fields."
 				).format(row.idx, row.serial_and_batch_bundle)
 			)
 
 	def set_use_serial_batch_fields(self):
-		if frappe.db.get_single_value("Stock Settings", "use_serial_batch_fields"):
+		if nts.db.get_single_value("Stock Settings", "use_serial_batch_fields"):
 			for row in self.items:
 				row.use_serial_batch_fields = 1
 
@@ -586,12 +586,12 @@ class StockController(AccountsController):
 				elif self.get("is_internal_supplier"):
 					warehouse_asset_account = warehouse_account[item_row.get("warehouse")]["account"]
 
-				expense_account = frappe.get_cached_value("Company", self.company, "default_expense_account")
+				expense_account = nts.get_cached_value("Company", self.company, "default_expense_account")
 				if not expense_account:
-					frappe.throw(
+					nts.throw(
 						_(
 							"Please set default cost of goods sold account in company {0} for booking rounding gain and loss during stock transfer"
-						).format(frappe.bold(self.company))
+						).format(nts.bold(self.company))
 					)
 
 				gl_list.append(
@@ -627,8 +627,8 @@ class StockController(AccountsController):
 
 		if warehouse_with_no_account:
 			for wh in warehouse_with_no_account:
-				if frappe.get_cached_value("Warehouse", wh, "company"):
-					frappe.throw(
+				if nts.get_cached_value("Warehouse", wh, "company"):
+					nts.throw(
 						_(
 							"Warehouse {0} is not linked to any account, please mention the account in the warehouse record or set default inventory account in company {1}."
 						).format(wh, self.company)
@@ -637,19 +637,19 @@ class StockController(AccountsController):
 		return process_gl_map(gl_list, precision=precision)
 
 	def get_debit_field_precision(self):
-		if not frappe.flags.debit_field_precision:
-			frappe.flags.debit_field_precision = frappe.get_precision("GL Entry", "debit_in_account_currency")
+		if not nts.flags.debit_field_precision:
+			nts.flags.debit_field_precision = nts.get_precision("GL Entry", "debit_in_account_currency")
 
-		return frappe.flags.debit_field_precision
+		return nts.flags.debit_field_precision
 
 	def get_voucher_details(self, default_expense_account, default_cost_center, sle_map):
 		if self.doctype == "Stock Reconciliation":
-			reconciliation_purpose = frappe.db.get_value(self.doctype, self.name, "purpose")
+			reconciliation_purpose = nts.db.get_value(self.doctype, self.name, "purpose")
 			is_opening = "Yes" if reconciliation_purpose == "Opening Stock" else "No"
 			details = []
 			for voucher_detail_no in sle_map:
 				details.append(
-					frappe._dict(
+					nts._dict(
 						{
 							"name": voucher_detail_no,
 							"expense_account": default_expense_account,
@@ -697,10 +697,10 @@ class StockController(AccountsController):
 	def get_stock_ledger_details(self):
 		stock_ledger = {}
 
-		table = frappe.qb.DocType("Stock Ledger Entry")
+		table = nts.qb.DocType("Stock Ledger Entry")
 
 		stock_ledger_entries = (
-			frappe.qb.from_(table)
+			nts.qb.from_(table)
 			.select(
 				table.name,
 				table.warehouse,
@@ -729,16 +729,16 @@ class StockController(AccountsController):
 	def check_expense_account(self, item):
 		if not item.get("expense_account"):
 			msg = _("Please set an Expense Account in the Items table")
-			frappe.throw(
+			nts.throw(
 				_("Row #{0}: Expense Account not set for the Item {1}. {2}").format(
-					item.idx, frappe.bold(item.item_code), msg
+					item.idx, nts.bold(item.item_code), msg
 				),
 				title=_("Expense Account Missing"),
 			)
 
 		else:
 			is_expense_account = (
-				frappe.get_cached_value("Account", item.get("expense_account"), "report_type")
+				nts.get_cached_value("Account", item.get("expense_account"), "report_type")
 				== "Profit and Loss"
 			)
 			if (
@@ -752,13 +752,13 @@ class StockController(AccountsController):
 				)
 				and not is_expense_account
 			):
-				frappe.throw(
+				nts.throw(
 					_("Expense / Difference account ({0}) must be a 'Profit or Loss' account").format(
 						item.get("expense_account")
 					)
 				)
 			if is_expense_account and not item.get("cost_center"):
-				frappe.throw(
+				nts.throw(
 					_("{0} {1}: Cost Center is mandatory for Item {2}").format(
 						_(self.doctype), self.name, item.get("item_code")
 					)
@@ -776,7 +776,7 @@ class StockController(AccountsController):
 
 				if row.get("serial_and_batch_bundle"):
 					update_values["serial_and_batch_bundle"] = None
-					frappe.db.set_value(
+					nts.db.set_value(
 						"Serial and Batch Bundle", row.serial_and_batch_bundle, {"is_cancelled": 1}
 					)
 
@@ -784,7 +784,7 @@ class StockController(AccountsController):
 					row.db_set(update_values)
 
 				if table_name == "items" and row.get("rejected_serial_and_batch_bundle"):
-					frappe.db.set_value(
+					nts.db.set_value(
 						"Serial and Batch Bundle", row.rejected_serial_and_batch_bundle, {"is_cancelled": 1}
 					)
 
@@ -806,7 +806,7 @@ class StockController(AccountsController):
 		for row in self.get(table_name):
 			for field in QTY_FIELD.keys():
 				if row.get(field):
-					frappe.get_doc("Serial and Batch Bundle", row.get(field)).set_serial_and_batch_values(
+					nts.get_doc("Serial and Batch Bundle", row.get(field)).set_serial_and_batch_values(
 						self, row, qty_field=QTY_FIELD[field]
 					)
 
@@ -826,7 +826,7 @@ class StockController(AccountsController):
 		)
 
 	def get_sl_entries(self, d, args):
-		sl_dict = frappe._dict(
+		sl_dict = nts._dict(
 			{
 				"item_code": d.get("item_code", None),
 				"warehouse": d.get("warehouse", None),
@@ -838,7 +838,7 @@ class StockController(AccountsController):
 				"voucher_no": self.name,
 				"voucher_detail_no": d.name,
 				"actual_qty": (self.docstatus == 1 and 1 or -1) * flt(d.get("stock_qty")),
-				"stock_uom": frappe.get_cached_value(
+				"stock_uom": nts.get_cached_value(
 					"Item", args.get("item_code") or d.get("item_code"), "stock_uom"
 				),
 				"incoming_rate": 0,
@@ -934,7 +934,7 @@ class StockController(AccountsController):
 					fieldname = next(
 						(
 							field.fieldname
-							for field in frappe.get_meta(self.doctype).fields
+							for field in nts.get_meta(self.doctype).fields
 							if field.options == dimension.fetch_from_parent
 						),
 						None,
@@ -954,8 +954,8 @@ class StockController(AccountsController):
 		update_batch_qty(self.doctype, self.name, via_landed_cost_voucher=via_landed_cost_voucher)
 
 	def make_gl_entries_on_cancel(self):
-		cancel_exchange_gain_loss_journal(frappe._dict(doctype=self.doctype, name=self.name))
-		if frappe.db.sql(
+		cancel_exchange_gain_loss_journal(nts._dict(doctype=self.doctype, name=self.name))
+		if nts.db.sql(
 			"""select name from `tabGL Entry` where voucher_type=%s
 			and voucher_no=%s""",
 			(self.doctype, self.name),
@@ -966,7 +966,7 @@ class StockController(AccountsController):
 		serialized_items = []
 		item_codes = list(set(d.item_code for d in self.get("items")))
 		if item_codes:
-			serialized_items = frappe.db.sql_list(
+			serialized_items = nts.db.sql_list(
 				"""select name from `tabItem`
 				where has_serial_no=1 and name in ({})""".format(", ".join(["%s"] * len(item_codes))),
 				tuple(item_codes),
@@ -1039,7 +1039,7 @@ class StockController(AccountsController):
 
 		for row in self.get("items"):
 			qi_required = False
-			if inspection_required_fieldname and frappe.db.get_value(
+			if inspection_required_fieldname and nts.db.get_value(
 				"Item", row.item_code, inspection_required_fieldname
 			):
 				qi_required = True
@@ -1062,59 +1062,59 @@ class StockController(AccountsController):
 			"Purchase Invoice",
 			"Sales Invoice",
 			"Delivery Note",
-		] and frappe.db.get_single_value(
+		] and nts.db.get_single_value(
 			"Stock Settings", "allow_to_make_quality_inspection_after_purchase_or_delivery"
 		):
 			return
 
 		if not row.quality_inspection:
 			msg = _("Row #{0}: Quality Inspection is required for Item {1}").format(
-				row.idx, frappe.bold(row.item_code)
+				row.idx, nts.bold(row.item_code)
 			)
 			if self.docstatus == 1:
-				frappe.throw(msg, title=_("Inspection Required"), exc=QualityInspectionRequiredError)
+				nts.throw(msg, title=_("Inspection Required"), exc=QualityInspectionRequiredError)
 			else:
-				frappe.msgprint(msg, title=_("Inspection Required"), indicator="blue")
+				nts.msgprint(msg, title=_("Inspection Required"), indicator="blue")
 
 	def validate_qi_submission(self, row):
 		"""Check if QI is submitted on row level, during submission"""
-		action = frappe.db.get_single_value("Stock Settings", "action_if_quality_inspection_is_not_submitted")
-		qa_docstatus = frappe.db.get_value("Quality Inspection", row.quality_inspection, "docstatus")
+		action = nts.db.get_single_value("Stock Settings", "action_if_quality_inspection_is_not_submitted")
+		qa_docstatus = nts.db.get_value("Quality Inspection", row.quality_inspection, "docstatus")
 
 		if not qa_docstatus == 1:
-			link = frappe.utils.get_link_to_form("Quality Inspection", row.quality_inspection)
+			link = nts.utils.get_link_to_form("Quality Inspection", row.quality_inspection)
 			msg = _("Row #{0}: Quality Inspection {1} is not submitted for the item: {2}").format(
 				row.idx, link, row.item_code
 			)
 			if action == "Stop":
-				frappe.throw(msg, title=_("Inspection Submission"), exc=QualityInspectionNotSubmittedError)
+				nts.throw(msg, title=_("Inspection Submission"), exc=QualityInspectionNotSubmittedError)
 			else:
-				frappe.msgprint(msg, alert=True, indicator="orange")
+				nts.msgprint(msg, alert=True, indicator="orange")
 
 	def validate_qi_rejection(self, row):
 		"""Check if QI is rejected on row level, during submission"""
-		action = frappe.db.get_single_value("Stock Settings", "action_if_quality_inspection_is_rejected")
-		qa_status = frappe.db.get_value("Quality Inspection", row.quality_inspection, "status")
+		action = nts.db.get_single_value("Stock Settings", "action_if_quality_inspection_is_rejected")
+		qa_status = nts.db.get_value("Quality Inspection", row.quality_inspection, "status")
 
 		if qa_status == "Rejected":
-			link = frappe.utils.get_link_to_form("Quality Inspection", row.quality_inspection)
+			link = nts.utils.get_link_to_form("Quality Inspection", row.quality_inspection)
 			msg = _("Row #{0}: Quality Inspection {1} was rejected for item {2}").format(
 				row.idx, link, row.item_code
 			)
 			if action == "Stop":
-				frappe.throw(msg, title=_("Inspection Rejected"), exc=QualityInspectionRejectedError)
+				nts.throw(msg, title=_("Inspection Rejected"), exc=QualityInspectionRejectedError)
 			else:
-				frappe.msgprint(msg, alert=True, indicator="orange")
+				nts.msgprint(msg, alert=True, indicator="orange")
 
 	def update_blanket_order(self):
 		blanket_orders = list(set([d.blanket_order for d in self.items if d.blanket_order]))
 		for blanket_order in blanket_orders:
-			frappe.get_doc("Blanket Order", blanket_order).update_ordered_qty()
+			nts.get_doc("Blanket Order", blanket_order).update_ordered_qty()
 
 	def validate_customer_provided_item(self):
 		for d in self.get("items"):
 			# Customer Provided parts will have zero valuation rate
-			if frappe.get_cached_value("Item", d.item_code, "is_customer_provided_item"):
+			if nts.get_cached_value("Item", d.item_code, "is_customer_provided_item"):
 				d.allow_zero_valuation_rate = 1
 
 	def set_rate_of_stock_uom(self):
@@ -1154,7 +1154,7 @@ class StockController(AccountsController):
 		if (self.doctype == "Sales Invoice" and self.get("update_stock")) or self.doctype == "Delivery Note":
 			for item in self.get("items"):
 				if not item.target_warehouse:
-					frappe.throw(
+					nts.throw(
 						_("Row {0}: Target Warehouse is mandatory for internal transfers").format(item.idx)
 					)
 
@@ -1163,17 +1163,17 @@ class StockController(AccountsController):
 		) or self.doctype == "Purchase Receipt":
 			for item in self.get("items"):
 				if not item.from_warehouse:
-					frappe.throw(
+					nts.throw(
 						_("Row {0}: From Warehouse is mandatory for internal transfers").format(item.idx)
 					)
 
 	def validate_multi_currency(self):
 		if self.currency != self.company_currency:
-			frappe.throw(_("Internal transfers can only be done in company's default currency"))
+			nts.throw(_("Internal transfers can only be done in company's default currency"))
 
 	def validate_packed_items(self):
 		if self.doctype in ("Sales Invoice", "Delivery Note Item") and self.get("packed_items"):
-			frappe.throw(_("Packed Items cannot be transferred internally"))
+			nts.throw(_("Packed Items cannot be transferred internally"))
 
 	def validate_internal_transfer_qty(self):
 		if self.doctype not in ["Purchase Invoice", "Purchase Receipt"]:
@@ -1190,9 +1190,9 @@ class StockController(AccountsController):
 			return
 
 		item_wise_received_qty = self.get_item_wise_inter_received_qty()
-		precision = frappe.get_precision(self.doctype + " Item", "qty")
+		precision = nts.get_precision(self.doctype + " Item", "qty")
 
-		over_receipt_allowance = frappe.db.get_single_value(
+		over_receipt_allowance = nts.db.get_single_value(
 			"Stock Settings", "over_delivery_receipt_allowance"
 		)
 
@@ -1209,7 +1209,7 @@ class StockController(AccountsController):
 				)
 
 			if recevied_qty > flt(transferred_qty, precision):
-				frappe.throw(
+				nts.throw(
 					_("For Item {0} cannot be received more than {1} qty against the {2} {3}").format(
 						bold(key[1]),
 						bold(flt(transferred_qty, precision)),
@@ -1226,11 +1226,11 @@ class StockController(AccountsController):
 
 		child_doctype = parent_doctype + " Item"
 
-		parent_tab = frappe.qb.DocType(parent_doctype)
-		child_tab = frappe.qb.DocType(child_doctype)
+		parent_tab = nts.qb.DocType(parent_doctype)
+		child_tab = nts.qb.DocType(child_doctype)
 
 		query = (
-			frappe.qb.from_(parent_doctype)
+			nts.qb.from_(parent_doctype)
 			.inner_join(child_tab)
 			.on(child_tab.parent == parent_tab.name)
 			.select(
@@ -1251,11 +1251,11 @@ class StockController(AccountsController):
 	def get_item_wise_inter_received_qty(self):
 		child_doctype = self.doctype + " Item"
 
-		parent_tab = frappe.qb.DocType(self.doctype)
-		child_tab = frappe.qb.DocType(child_doctype)
+		parent_tab = nts.qb.DocType(self.doctype)
+		child_tab = nts.qb.DocType(child_doctype)
 
 		query = (
-			frappe.qb.from_(self.doctype)
+			nts.qb.from_(self.doctype)
 			.inner_join(child_tab)
 			.on(child_tab.parent == parent_tab.name)
 			.select(
@@ -1299,7 +1299,7 @@ class StockController(AccountsController):
 			"Stock Reconciliation",
 		)
 
-		if not frappe.get_all("Putaway Rule", limit=1):
+		if not nts.get_all("Putaway Rule", limit=1):
 			return
 
 		if self.doctype == "Purchase Invoice" and self.get("update_stock") == 0:
@@ -1309,7 +1309,7 @@ class StockController(AccountsController):
 			rule_map = defaultdict(dict)
 			for item in self.get("items"):
 				warehouse_field = "t_warehouse" if self.doctype == "Stock Entry" else "warehouse"
-				rule = frappe.db.get_value(
+				rule = nts.db.get_value(
 					"Putaway Rule",
 					{"item_code": item.get("item_code"), "warehouse": item.get(warehouse_field)},
 					["name", "disable"],
@@ -1337,22 +1337,22 @@ class StockController(AccountsController):
 			for rule, values in rule_map.items():
 				if flt(values["qty_put"]) > flt(values["capacity"]):
 					message = self.prepare_over_receipt_message(rule, values)
-					frappe.throw(msg=message, title=_("Over Receipt"))
+					nts.throw(msg=message, title=_("Over Receipt"))
 
 	def prepare_over_receipt_message(self, rule, values):
 		message = _("{0} qty of Item {1} is being received into Warehouse {2} with capacity {3}.").format(
-			frappe.bold(values["qty_put"]),
-			frappe.bold(values["item"]),
-			frappe.bold(values["warehouse"]),
-			frappe.bold(values["capacity"]),
+			nts.bold(values["qty_put"]),
+			nts.bold(values["item"]),
+			nts.bold(values["warehouse"]),
+			nts.bold(values["capacity"]),
 		)
 		message += "<br><br>"
-		rule_link = frappe.utils.get_link_to_form("Putaway Rule", rule)
+		rule_link = nts.utils.get_link_to_form("Putaway Rule", rule)
 		message += _("Please adjust the qty or edit {0} to proceed.").format(rule_link)
 		return message
 
 	def repost_future_sle_and_gle(self, force=False, via_landed_cost_voucher=False):
-		args = frappe._dict(
+		args = nts._dict(
 			{
 				"posting_date": self.posting_date,
 				"posting_time": self.posting_time,
@@ -1368,7 +1368,7 @@ class StockController(AccountsController):
 
 		if force or future_sle_exists(args) or repost_required_for_queue(self):
 			item_based_reposting = cint(
-				frappe.db.get_single_value("Stock Reposting Settings", "item_based_reposting")
+				nts.db.get_single_value("Stock Reposting Settings", "item_based_reposting")
 			)
 			if item_based_reposting:
 				create_item_wise_repost_entries(
@@ -1420,28 +1420,28 @@ class StockController(AccountsController):
 		gl_entries.append(self.get_gl_dict(gl_entry, item=item))
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def show_accounting_ledger_preview(company, doctype, docname):
-	filters = frappe._dict(company=company, include_dimensions=1)
-	doc = frappe.get_doc(doctype, docname)
+	filters = nts._dict(company=company, include_dimensions=1)
+	doc = nts.get_doc(doctype, docname)
 	doc.run_method("before_gl_preview")
 
 	gl_columns, gl_data = get_accounting_ledger_preview(doc, filters)
 
-	frappe.db.rollback()
+	nts.db.rollback()
 
 	return {"gl_columns": gl_columns, "gl_data": gl_data}
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def show_stock_ledger_preview(company, doctype, docname):
-	filters = frappe._dict(company=company)
-	doc = frappe.get_doc(doctype, docname)
+	filters = nts._dict(company=company)
+	doc = nts.get_doc(doctype, docname)
 	doc.run_method("before_sl_preview")
 
 	sl_columns, sl_data = get_stock_ledger_preview(doc, filters)
 
-	frappe.db.rollback()
+	nts.db.rollback()
 
 	return {
 		"sl_columns": sl_columns,
@@ -1522,7 +1522,7 @@ def get_stock_ledger_preview(doc, filters):
 
 
 def get_sl_entries_for_preview(doctype, docname, fields):
-	sl_entries = frappe.get_all(
+	sl_entries = nts.get_all(
 		"Stock Ledger Entry", filters={"voucher_type": doctype, "voucher_no": docname}, fields=fields
 	)
 
@@ -1540,7 +1540,7 @@ def get_sl_entries_for_preview(doctype, docname, fields):
 
 
 def get_gl_entries_for_preview(doctype, docname, fields):
-	return frappe.get_all("GL Entry", filters={"voucher_type": doctype, "voucher_no": docname}, fields=fields)
+	return nts.get_all("GL Entry", filters={"voucher_type": doctype, "voucher_no": docname}, fields=fields)
 
 
 def get_columns(raw_columns, fields):
@@ -1569,7 +1569,7 @@ def repost_required_for_queue(doc: StockController) -> bool:
 	if queue exists for repeated items then SLEs need to reprocessed in background again.
 	"""
 
-	consuming_sles = frappe.db.get_all(
+	consuming_sles = nts.db.get_all(
 		"Stock Ledger Entry",
 		filters={
 			"voucher_type": doc.doctype,
@@ -1592,7 +1592,7 @@ def repost_required_for_queue(doc: StockController) -> bool:
 	return False
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def check_item_quality_inspection(doctype, items):
 	if isinstance(items, str):
 		items = json.loads(items)
@@ -1607,14 +1607,14 @@ def check_item_quality_inspection(doctype, items):
 
 	items_to_remove = []
 	for item in items:
-		if not frappe.db.get_value("Item", item.get("item_code"), inspection_fieldname_map.get(doctype)):
+		if not nts.db.get_value("Item", item.get("item_code"), inspection_fieldname_map.get(doctype)):
 			items_to_remove.append(item)
 	items = [item for item in items if item not in items_to_remove]
 
 	return items
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_quality_inspections(doctype, docname, items):
 	if isinstance(items, str):
 		items = json.loads(items)
@@ -1622,7 +1622,7 @@ def make_quality_inspections(doctype, docname, items):
 	inspections = []
 	for item in items:
 		if flt(item.get("sample_size")) > flt(item.get("qty")):
-			frappe.throw(
+			nts.throw(
 				_(
 					"{item_name}'s Sample Size ({sample_size}) cannot be greater than the Accepted Quantity ({accepted_quantity})"
 				).format(
@@ -1632,11 +1632,11 @@ def make_quality_inspections(doctype, docname, items):
 				)
 			)
 
-		quality_inspection = frappe.get_doc(
+		quality_inspection = nts.get_doc(
 			{
 				"doctype": "Quality Inspection",
 				"inspection_type": "Incoming",
-				"inspected_by": frappe.session.user,
+				"inspected_by": nts.session.user,
 				"reference_type": doctype,
 				"reference_name": docname,
 				"item_code": item.get("item_code"),
@@ -1653,7 +1653,7 @@ def make_quality_inspections(doctype, docname, items):
 
 
 def is_reposting_pending():
-	return frappe.db.exists(
+	return nts.db.exists(
 		"Repost Item Valuation", {"docstatus": 1, "status": ["in", ["Queued", "In Progress"]]}
 	)
 
@@ -1661,14 +1661,14 @@ def is_reposting_pending():
 def future_sle_exists(args, sl_entries=None, allow_force_reposting=True):
 	from prodman.stock.utils import get_combine_datetime
 
-	if allow_force_reposting and frappe.db.get_single_value(
+	if allow_force_reposting and nts.db.get_single_value(
 		"Stock Reposting Settings", "do_reposting_for_each_stock_transaction"
 	):
 		return True
 
 	key = (args.voucher_type, args.voucher_no)
-	if not hasattr(frappe.local, "future_sle"):
-		frappe.local.future_sle = {}
+	if not hasattr(nts.local, "future_sle"):
+		nts.local.future_sle = {}
 
 	if validate_future_sle_not_exists(args, key, sl_entries):
 		return False
@@ -1684,7 +1684,7 @@ def future_sle_exists(args, sl_entries=None, allow_force_reposting=True):
 
 	args["posting_datetime"] = get_combine_datetime(args["posting_date"], args["posting_time"])
 
-	data = frappe.db.sql(
+	data = nts.db.sql(
 		"""
 		select item_code, warehouse, count(name) as total_row
 		from `tabStock Ledger Entry`
@@ -1701,7 +1701,7 @@ def future_sle_exists(args, sl_entries=None, allow_force_reposting=True):
 	)
 
 	for d in data:
-		frappe.local.future_sle[key][(d.item_code, d.warehouse)] = d.total_row
+		nts.local.future_sle[key][(d.item_code, d.warehouse)] = d.total_row
 
 	return len(data)
 
@@ -1711,31 +1711,31 @@ def validate_future_sle_not_exists(args, key, sl_entries=None):
 	if args.get("item_code"):
 		item_key = (args.get("item_code"), args.get("warehouse"))
 
-	if not sl_entries and hasattr(frappe.local, "future_sle"):
-		if key not in frappe.local.future_sle:
+	if not sl_entries and hasattr(nts.local, "future_sle"):
+		if key not in nts.local.future_sle:
 			return False
 
-		if not frappe.local.future_sle.get(key) or (
-			item_key and item_key not in frappe.local.future_sle.get(key)
+		if not nts.local.future_sle.get(key) or (
+			item_key and item_key not in nts.local.future_sle.get(key)
 		):
 			return True
 
 
 def get_cached_data(args, key):
-	if key not in frappe.local.future_sle:
-		frappe.local.future_sle[key] = frappe._dict({})
+	if key not in nts.local.future_sle:
+		nts.local.future_sle[key] = nts._dict({})
 
 	if args.get("item_code"):
 		item_key = (args.get("item_code"), args.get("warehouse"))
-		count = frappe.local.future_sle[key].get(item_key)
+		count = nts.local.future_sle[key].get(item_key)
 
 		return True if (count or count == 0) else False
 	else:
-		return frappe.local.future_sle[key]
+		return nts.local.future_sle[key]
 
 
 def get_sle_entries_against_voucher(args):
-	return frappe.get_all(
+	return nts.get_all(
 		"Stock Ledger Entry",
 		filters={"voucher_type": args.voucher_type, "voucher_no": args.voucher_no},
 		fields=["item_code", "warehouse"],
@@ -1754,16 +1754,16 @@ def get_conditions_to_validate_future_sle(sl_entries):
 	or_conditions = []
 	for warehouse, items in warehouse_items_map.items():
 		or_conditions.append(
-			f"""warehouse = {frappe.db.escape(warehouse)}
-				and item_code in ({', '.join(frappe.db.escape(item) for item in items)})"""
+			f"""warehouse = {nts.db.escape(warehouse)}
+				and item_code in ({', '.join(nts.db.escape(item) for item in items)})"""
 		)
 
 	return or_conditions
 
 
 def create_repost_item_valuation_entry(args):
-	args = frappe._dict(args)
-	repost_entry = frappe.new_doc("Repost Item Valuation")
+	args = nts._dict(args)
+	repost_entry = nts.new_doc("Repost Item Valuation")
 	repost_entry.based_on = args.based_on
 	if not args.based_on:
 		repost_entry.based_on = "Transaction" if args.voucher_no else "Item and Warehouse"
@@ -1798,7 +1798,7 @@ def create_item_wise_repost_entries(
 			continue
 		distinct_item_warehouses.add(item_wh)
 
-		repost_entry = frappe.new_doc("Repost Item Valuation")
+		repost_entry = nts.new_doc("Repost Item Valuation")
 		repost_entry.based_on = "Item and Warehouse"
 
 		repost_entry.item_code = sle.item_code
@@ -1817,14 +1817,14 @@ def create_item_wise_repost_entries(
 
 def make_bundle_for_material_transfer(**kwargs):
 	if isinstance(kwargs, dict):
-		kwargs = frappe._dict(kwargs)
+		kwargs = nts._dict(kwargs)
 
-	bundle_doc = frappe.get_doc("Serial and Batch Bundle", kwargs.serial_and_batch_bundle)
+	bundle_doc = nts.get_doc("Serial and Batch Bundle", kwargs.serial_and_batch_bundle)
 
 	if not kwargs.type_of_transaction:
 		kwargs.type_of_transaction = "Inward"
 
-	bundle_doc = frappe.copy_doc(bundle_doc)
+	bundle_doc = nts.copy_doc(bundle_doc)
 	bundle_doc.docstatus = 0
 	bundle_doc.warehouse = kwargs.warehouse
 	bundle_doc.type_of_transaction = kwargs.type_of_transaction

@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.mapper import get_mapped_doc
-from frappe.utils import flt, getdate, nowdate
+import nts
+from nts import _
+from nts.model.mapper import get_mapped_doc
+from nts.utils import flt, getdate, nowdate
 
 from prodman.buying.utils import validate_for_items
 from prodman.controllers.buying_controller import BuyingController
@@ -20,7 +20,7 @@ class SupplierQuotation(BuyingController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.accounts.doctype.pricing_rule_detail.pricing_rule_detail import PricingRuleDetail
 		from prodman.accounts.doctype.purchase_taxes_and_charges.purchase_taxes_and_charges import (
@@ -138,7 +138,7 @@ class SupplierQuotation(BuyingController):
 		"""
 		If permitted in settings and any item has 0 qty, the SQ has unit price items.
 		"""
-		if not frappe.db.get_single_value("Buying Settings", "allow_zero_qty_in_supplier_quotation"):
+		if not nts.db.get_single_value("Buying Settings", "allow_zero_qty_in_supplier_quotation"):
 			return
 
 		self.has_unit_price_items = any(
@@ -162,7 +162,7 @@ class SupplierQuotation(BuyingController):
 
 	def validate_valid_till(self):
 		if self.valid_till and getdate(self.valid_till) < getdate(self.transaction_date):
-			frappe.throw(_("Valid till Date cannot be before Transaction Date"))
+			nts.throw(_("Valid till Date cannot be before Transaction Date"))
 
 	def update_rfq_supplier_status(self, include_me):
 		rfq_list = set([])
@@ -170,8 +170,8 @@ class SupplierQuotation(BuyingController):
 			if item.request_for_quotation:
 				rfq_list.add(item.request_for_quotation)
 		for rfq in rfq_list:
-			doc = frappe.get_doc("Request for Quotation", rfq)
-			doc_sup = frappe.get_all(
+			doc = nts.get_doc("Request for Quotation", rfq)
+			doc_sup = nts.get_all(
 				"Request for Quotation Supplier",
 				filters={"parent": doc.name, "supplier": self.supplier},
 				fields=["name", "quote_status"],
@@ -179,7 +179,7 @@ class SupplierQuotation(BuyingController):
 
 			doc_sup = doc_sup[0] if doc_sup else None
 			if not doc_sup:
-				frappe.throw(
+				nts.throw(
 					_("Supplier {0} not found in {1}").format(
 						self.supplier,
 						"<a href='desk/app/Form/Request for Quotation/{0}'> Request for Quotation {0} </a>".format(
@@ -190,7 +190,7 @@ class SupplierQuotation(BuyingController):
 
 			quote_status = _("Received")
 			for item in doc.items:
-				sqi_count = frappe.db.sql(
+				sqi_count = nts.db.sql(
 					"""
 					SELECT
 						COUNT(sqi.name) as count
@@ -213,7 +213,7 @@ class SupplierQuotation(BuyingController):
 				if (sqi_count.count + self_count) == 0:
 					quote_status = _("Pending")
 
-				frappe.db.set_value(
+				nts.db.set_value(
 					"Request for Quotation Supplier", doc_sup.name, "quote_status", quote_status
 				)
 
@@ -234,7 +234,7 @@ def get_list_context(context=None):
 	return list_context
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_purchase_order(source_name, target_doc=None):
 	def set_missing_values(source, target):
 		target.run_method("set_missing_values")
@@ -277,7 +277,7 @@ def make_purchase_order(source_name, target_doc=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_purchase_invoice(source_name, target_doc=None):
 	doc = get_mapped_doc(
 		"Supplier Quotation",
@@ -298,7 +298,7 @@ def make_purchase_invoice(source_name, target_doc=None):
 	return doc
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_quotation(source_name, target_doc=None):
 	doclist = get_mapped_doc(
 		"Supplier Quotation",
@@ -312,7 +312,7 @@ def make_quotation(source_name, target_doc=None):
 			},
 			"Supplier Quotation Item": {
 				"doctype": "Quotation Item",
-				"condition": lambda doc: frappe.db.get_value("Item", doc.item_code, "is_sales_item") == 1,
+				"condition": lambda doc: nts.db.get_value("Item", doc.item_code, "is_sales_item") == 1,
 				"add_if_empty": True,
 			},
 		},
@@ -323,7 +323,7 @@ def make_quotation(source_name, target_doc=None):
 
 
 def set_expired_status():
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		UPDATE
 			`tabSupplier Quotation` SET `status` = 'Expired'

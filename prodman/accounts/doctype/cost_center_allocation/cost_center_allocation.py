@@ -1,29 +1,29 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import add_days, flt, format_date, getdate
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .utils import add_days, flt, format_date, getdate
 
 
-class MainCostCenterCantBeChild(frappe.ValidationError):
+class MainCostCenterCantBeChild(nts .ValidationError):
 	pass
 
 
-class InvalidMainCostCenter(frappe.ValidationError):
+class InvalidMainCostCenter(nts .ValidationError):
 	pass
 
 
-class InvalidChildCostCenter(frappe.ValidationError):
+class InvalidChildCostCenter(nts .ValidationError):
 	pass
 
 
-class WrongPercentageAllocation(frappe.ValidationError):
+class WrongPercentageAllocation(nts .ValidationError):
 	pass
 
 
-class InvalidDateError(frappe.ValidationError):
+class InvalidDateError(nts .ValidationError):
 	pass
 
 
@@ -34,7 +34,7 @@ class CostCenterAllocation(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.cost_center_allocation_percentage.cost_center_allocation_percentage import (
 			CostCenterAllocationPercentage,
@@ -63,13 +63,13 @@ class CostCenterAllocation(Document):
 		total_percentage = sum([flt(d.percentage) for d in self.get("allocation_percentages", [])])
 
 		if total_percentage != 100:
-			frappe.throw(_("Total percentage against cost centers should be 100"), WrongPercentageAllocation)
+			nts .throw(_("Total percentage against cost centers should be 100"), WrongPercentageAllocation)
 
 	def validate_from_date_based_on_existing_gle(self):
 		# Check if GLE exists against the main cost center
 		# If exists ensure from date is set after posting date of last GLE
 
-		last_gle_date = frappe.db.get_value(
+		last_gle_date = nts .db.get_value(
 			"GL Entry",
 			{"cost_center": self.main_cost_center, "is_cancelled": 0},
 			"posting_date",
@@ -78,7 +78,7 @@ class CostCenterAllocation(Document):
 
 		if last_gle_date:
 			if getdate(self.valid_from) <= getdate(last_gle_date):
-				frappe.throw(
+				nts .throw(
 					_(
 						"Valid From must be after {0} as last GL Entry against the cost center {1} posted on this date"
 					).format(last_gle_date, self.main_cost_center),
@@ -89,7 +89,7 @@ class CostCenterAllocation(Document):
 		# Check if there are any future existing allocation records against the main cost center
 		# If exists, warn the user about it
 
-		future_allocation = frappe.db.get_value(
+		future_allocation = nts .db.get_value(
 			"Cost Center Allocation",
 			filters={
 				"main_cost_center": self.main_cost_center,
@@ -103,13 +103,13 @@ class CostCenterAllocation(Document):
 		)
 
 		if future_allocation:
-			frappe.msgprint(
+			nts .msgprint(
 				_(
 					"Another Cost Center Allocation record {0} applicable from {1}, hence this allocation will be applicable upto {2}"
 				).format(
-					frappe.bold(future_allocation.name),
-					frappe.bold(format_date(future_allocation.valid_from)),
-					frappe.bold(format_date(add_days(future_allocation.valid_from, -1))),
+					nts .bold(future_allocation.name),
+					nts .bold(format_date(future_allocation.valid_from)),
+					nts .bold(format_date(add_days(future_allocation.valid_from, -1))),
 				),
 				title=_("Warning!"),
 				indicator="orange",
@@ -119,20 +119,20 @@ class CostCenterAllocation(Document):
 	def validate_main_cost_center(self):
 		# Main cost center itself cannot be entered in child table
 		if self.main_cost_center in [d.cost_center for d in self.allocation_percentages]:
-			frappe.throw(
+			nts .throw(
 				_("Main Cost Center {0} cannot be entered in the child table").format(self.main_cost_center),
 				MainCostCenterCantBeChild,
 			)
 
 		# If main cost center is used for allocation under any other cost center,
 		# allocation cannot be done against it
-		parent = frappe.db.get_value(
+		parent = nts .db.get_value(
 			"Cost Center Allocation Percentage",
 			filters={"cost_center": self.main_cost_center, "docstatus": 1},
 			fieldname="parent",
 		)
 		if parent:
-			frappe.throw(
+			nts .throw(
 				_(
 					"{0} cannot be used as a Main Cost Center because it has been used as child in Cost Center Allocation {1}"
 				).format(self.main_cost_center, parent),
@@ -143,12 +143,12 @@ class CostCenterAllocation(Document):
 		# Check if child cost center is used as main cost center in any existing allocation
 		main_cost_centers = [
 			d.main_cost_center
-			for d in frappe.get_all("Cost Center Allocation", {"docstatus": 1}, "main_cost_center")
+			for d in nts .get_all("Cost Center Allocation", {"docstatus": 1}, "main_cost_center")
 		]
 
 		for d in self.allocation_percentages:
 			if d.cost_center in main_cost_centers:
-				frappe.throw(
+				nts .throw(
 					_(
 						"Cost Center {0} cannot be used for allocation as it is used as main cost center in other allocation record."
 					).format(d.cost_center),

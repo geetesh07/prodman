@@ -1,4 +1,4 @@
-frappe.listview_settings["Issue"] = {
+nts.listview_settings["Issue"] = {
 	colwidths: { subject: 6 },
 	add_fields: ["priority"],
 	filters: [["status", "=", "Open"]],

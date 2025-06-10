@@ -1,8 +1,8 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.maintenance");
-frappe.ui.form.on("Maintenance Schedule", {
+nts.provide("prodman.maintenance");
+nts.ui.form.on("Maintenance Schedule", {
 	setup: function (frm) {
 		frm.set_query("contact_person", prodman.queries.contact_query);
 		frm.set_query("customer_address", prodman.queries.address_query);
@@ -26,7 +26,7 @@ frappe.ui.form.on("Maintenance Schedule", {
 			frm.set_value({ status: "Draft" });
 		}
 		if (frm.doc.__islocal) {
-			frm.set_value({ transaction_date: frappe.datetime.get_today() });
+			frm.set_value({ transaction_date: nts.datetime.get_today() });
 		}
 	},
 	refresh: function (frm) {
@@ -46,7 +46,7 @@ frappe.ui.form.on("Maintenance Schedule", {
 	},
 	generate_schedule: function (frm) {
 		if (frm.is_new()) {
-			frappe.msgprint(__("Please save first"));
+			nts.msgprint(__("Please save first"));
 		} else {
 			frm.call("generate_schedule");
 		}
@@ -54,9 +54,9 @@ frappe.ui.form.on("Maintenance Schedule", {
 });
 
 // TODO commonify this code
-prodman.maintenance.MaintenanceSchedule = class MaintenanceSchedule extends frappe.ui.form.Controller {
+prodman.maintenance.MaintenanceSchedule = class MaintenanceSchedule extends nts.ui.form.Controller {
 	refresh() {
-		frappe.dynamic_link = { doc: this.frm.doc, fieldname: "customer", doctype: "Customer" };
+		nts.dynamic_link = { doc: this.frm.doc, fieldname: "customer", doctype: "Customer" };
 
 		var me = this;
 
@@ -92,7 +92,7 @@ prodman.maintenance.MaintenanceSchedule = class MaintenanceSchedule extends frap
 							options = r.message;
 
 							let schedule_id = "";
-							let d = new frappe.ui.Dialog({
+							let d = new nts.ui.Dialog({
 								title: __("Enter Visit Details"),
 								fields: [
 									{
@@ -136,7 +136,7 @@ prodman.maintenance.MaintenanceSchedule = class MaintenanceSchedule extends frap
 								],
 								primary_action_label: "Create Visit",
 								primary_action(values) {
-									frappe.call({
+									nts.call({
 										method: "prodman.maintenance.doctype.maintenance_schedule.maintenance_schedule.make_maintenance_visit",
 										args: {
 											item_name: values.item_name,
@@ -145,8 +145,8 @@ prodman.maintenance.MaintenanceSchedule = class MaintenanceSchedule extends frap
 										},
 										callback: function (r) {
 											if (!r.exc) {
-												frappe.model.sync(r.message);
-												frappe.set_route("Form", r.message.doctype, r.message.name);
+												nts.model.sync(r.message);
+												nts.set_route("Form", r.message.doctype, r.message.name);
 											}
 										},
 									});

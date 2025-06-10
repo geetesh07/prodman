@@ -1,14 +1,14 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Product Bundle Balance"] = {
+nts.query_reports["Product Bundle Balance"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -17,7 +17,7 @@ frappe.query_reports["Product Bundle Balance"] = {
 			fieldtype: "Date",
 			width: "80",
 			reqd: 1,
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 		},
 		{
 			fieldname: "item_code",

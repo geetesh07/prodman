@@ -5,7 +5,7 @@
  "custom_options": "{\"type\": \"bar\", \"colors\": [\"#fc4f51\", \"#78d6ff\", \"#7575ff\"], \"axisOptions\": { \"shortenYAxisNumbers\": 1}, \"barOptions\": { \"stacked\": 1 }}",
  "docstatus": 0,
  "doctype": "Dashboard Chart",
- "dynamic_filters_json": "{\"company\":\"frappe.defaults.get_user_default(\\\"Company\\\")\"}",
+ "dynamic_filters_json": "{\"company\":\"nts.defaults.get_user_default(\\\"Company\\\")\"}",
  "filters_json": "{\"status\":\"Open\"}",
  "idx": 0,
  "is_public": 1,

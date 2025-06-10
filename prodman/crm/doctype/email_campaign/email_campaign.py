@@ -1,12 +1,12 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2019, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.core.doctype.communication.email import make
-from frappe.model.document import Document
-from frappe.utils import add_days, getdate, today
+import nts
+from nts import _
+from nts.core.doctype.communication.email import make
+from nts.model.document import Document
+from nts.utils import add_days, getdate, today
 
 
 class EmailCampaign(Document):
@@ -16,7 +16,7 @@ class EmailCampaign(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		campaign_name: DF.Link
 		email_campaign_for: DF.Literal["", "Lead", "Contact", "Email Group"]
@@ -37,27 +37,27 @@ class EmailCampaign(Document):
 
 	def set_date(self):
 		if getdate(self.start_date) < getdate(today()):
-			frappe.throw(_("Start Date cannot be before the current date"))
+			nts.throw(_("Start Date cannot be before the current date"))
 		# set the end date as start date + max(send after days) in campaign schedule
 		send_after_days = []
-		campaign = frappe.get_doc("Campaign", self.campaign_name)
+		campaign = nts.get_doc("Campaign", self.campaign_name)
 		for entry in campaign.get("campaign_schedules"):
 			send_after_days.append(entry.send_after_days)
 		try:
 			self.end_date = add_days(getdate(self.start_date), max(send_after_days))
 		except ValueError:
-			frappe.throw(
+			nts.throw(
 				_("Please set up the Campaign Schedule in the Campaign {0}").format(self.campaign_name)
 			)
 
 	def validate_lead(self):
-		lead_email_id = frappe.db.get_value("Lead", self.recipient, "email_id")
+		lead_email_id = nts.db.get_value("Lead", self.recipient, "email_id")
 		if not lead_email_id:
-			lead_name = frappe.db.get_value("Lead", self.recipient, "lead_name")
-			frappe.throw(_("Please set an email id for the Lead {0}").format(lead_name))
+			lead_name = nts.db.get_value("Lead", self.recipient, "lead_name")
+			nts.throw(_("Please set an email id for the Lead {0}").format(lead_name))
 
 	def validate_email_campaign_already_exists(self):
-		email_campaign_exists = frappe.db.exists(
+		email_campaign_exists = nts.db.exists(
 			"Email Campaign",
 			{
 				"campaign_name": self.campaign_name,
@@ -67,7 +67,7 @@ class EmailCampaign(Document):
 			},
 		)
 		if email_campaign_exists:
-			frappe.throw(
+			nts.throw(
 				_("The Campaign '{0}' already exists for the {1} '{2}'").format(
 					self.campaign_name, self.email_campaign_for, self.recipient
 				)
@@ -87,12 +87,12 @@ class EmailCampaign(Document):
 
 # called through hooks to send campaign mails to leads
 def send_email_to_leads_or_contacts():
-	email_campaigns = frappe.get_all(
+	email_campaigns = nts.get_all(
 		"Email Campaign", filters={"status": ("not in", ["Unsubscribed", "Completed", "Scheduled"])}
 	)
 	for camp in email_campaigns:
-		email_campaign = frappe.get_doc("Email Campaign", camp.name)
-		campaign = frappe.get_cached_doc("Campaign", email_campaign.campaign_name)
+		email_campaign = nts.get_doc("Email Campaign", camp.name)
+		campaign = nts.get_cached_doc("Campaign", email_campaign.campaign_name)
 		for entry in campaign.get("campaign_schedules"):
 			scheduled_date = add_days(email_campaign.get("start_date"), entry.get("send_after_days"))
 			if scheduled_date == getdate(today()):
@@ -102,26 +102,26 @@ def send_email_to_leads_or_contacts():
 def send_mail(entry, email_campaign):
 	recipient_list = []
 	if email_campaign.email_campaign_for == "Email Group":
-		for member in frappe.db.get_list(
+		for member in nts.db.get_list(
 			"Email Group Member", filters={"email_group": email_campaign.get("recipient")}, fields=["email"]
 		):
 			recipient_list.append(member["email"])
 	else:
 		recipient_list.append(
-			frappe.db.get_value(
+			nts.db.get_value(
 				email_campaign.email_campaign_for, email_campaign.get("recipient"), "email_id"
 			)
 		)
 
-	email_template = frappe.get_doc("Email Template", entry.get("email_template"))
-	sender = frappe.db.get_value("User", email_campaign.get("sender"), "email")
-	context = {"doc": frappe.get_doc(email_campaign.email_campaign_for, email_campaign.recipient)}
+	email_template = nts.get_doc("Email Template", entry.get("email_template"))
+	sender = nts.db.get_value("User", email_campaign.get("sender"), "email")
+	context = {"doc": nts.get_doc(email_campaign.email_campaign_for, email_campaign.recipient)}
 	# send mail and link communication to document
 	comm = make(
 		doctype="Email Campaign",
 		name=email_campaign.name,
-		subject=frappe.render_template(email_template.get("subject"), context),
-		content=frappe.render_template(email_template.response_, context),
+		subject=nts.render_template(email_template.get("subject"), context),
+		content=nts.render_template(email_template.response_, context),
 		sender=sender,
 		recipients=recipient_list,
 		communication_medium="Email",
@@ -135,12 +135,12 @@ def send_mail(entry, email_campaign):
 # called from hooks on doc_event Email Unsubscribe
 def unsubscribe_recipient(unsubscribe, method):
 	if unsubscribe.reference_doctype == "Email Campaign":
-		frappe.db.set_value("Email Campaign", unsubscribe.reference_name, "status", "Unsubscribed")
+		nts.db.set_value("Email Campaign", unsubscribe.reference_name, "status", "Unsubscribed")
 
 
 # called through hooks to update email campaign status daily
 def set_email_campaign_status():
-	email_campaigns = frappe.get_all("Email Campaign", filters={"status": ("!=", "Unsubscribed")})
+	email_campaigns = nts.get_all("Email Campaign", filters={"status": ("!=", "Unsubscribed")})
 	for entry in email_campaigns:
-		email_campaign = frappe.get_doc("Email Campaign", entry.name)
+		email_campaign = nts.get_doc("Email Campaign", entry.name)
 		email_campaign.update_status()

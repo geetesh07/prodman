@@ -1,11 +1,11 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and contributors
 # License: GNU GPL v3. See LICENSE
 
 import json
 
-import frappe
-from frappe import _
-from frappe.utils import cint, flt, get_link_to_form, parse_json
+import nts
+from nts import _
+from nts.utils import cint, flt, get_link_to_form, parse_json
 
 SLE_FIELDS = (
 	"name",
@@ -40,7 +40,7 @@ def get_data(filters):
 
 
 def get_stock_ledger_entries(filters):
-	return frappe.get_all(
+	return nts.get_all(
 		"Stock Ledger Entry",
 		fields=SLE_FIELDS,
 		filters={"item_code": filters.item_code, "warehouse": filters.warehouse, "is_cancelled": 0},
@@ -53,7 +53,7 @@ def add_invariant_check_fields(sles, filters):
 	balance_stock_value = 0.0
 
 	incorrect_idx = 0
-	precision = frappe.get_precision("Stock Ledger Entry", "actual_qty")
+	precision = nts.get_precision("Stock Ledger Entry", "actual_qty")
 	for idx, sle in enumerate(sles):
 		queue = json.loads(sle.stock_queue) if sle.stock_queue else []
 
@@ -73,7 +73,7 @@ def add_invariant_check_fields(sles, filters):
 			and not sle.batch_no
 			and not sle.serial_and_batch_bundle
 		):
-			balance_qty = frappe.db.get_value("Stock Reconciliation Item", sle.voucher_detail_no, "qty")
+			balance_qty = nts.db.get_value("Stock Reconciliation Item", sle.voucher_detail_no, "qty")
 			if balance_qty is None:
 				balance_qty = sle.qty_after_transaction
 
@@ -109,7 +109,7 @@ def add_invariant_check_fields(sles, filters):
 			sle.fifo_difference_diff = sle.fifo_stock_diff - sle.stock_value_difference
 
 		if sle.batch_no:
-			sle.use_batchwise_valuation = frappe.db.get_value(
+			sle.use_batchwise_valuation = nts.db.get_value(
 				"Batch", sle.batch_no, "use_batchwise_valuation", cache=True
 			)
 
@@ -295,17 +295,17 @@ def get_columns():
 	]
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def create_reposting_entries(rows, item_code=None, warehouse=None):
 	if isinstance(rows, str):
 		rows = parse_json(rows)
 
 	entries = []
 	for row in rows:
-		row = frappe._dict(row)
+		row = nts._dict(row)
 
 		try:
-			doc = frappe.get_doc(
+			doc = nts.get_doc(
 				{
 					"doctype": "Repost Item Valuation",
 					"based_on": "Item and Warehouse",
@@ -319,9 +319,9 @@ def create_reposting_entries(rows, item_code=None, warehouse=None):
 			).submit()
 
 			entries.append(get_link_to_form("Repost Item Valuation", doc.name))
-		except frappe.DuplicateEntryError:
+		except nts.DuplicateEntryError:
 			continue
 
 	if entries:
 		entries = ", ".join(entries)
-		frappe.msgprint(_("Reposting entries created: {0}").format(entries))
+		nts.msgprint(_("Reposting entries created: {0}").format(entries))

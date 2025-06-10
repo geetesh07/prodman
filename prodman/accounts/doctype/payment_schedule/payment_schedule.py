@@ -1,8 +1,8 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2017, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-from frappe.model.document import Document
+from nts .model.document import Document
 
 
 class PaymentSchedule(Document):
@@ -12,7 +12,7 @@ class PaymentSchedule(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		base_outstanding: DF.Currency
 		base_paid_amount: DF.Currency

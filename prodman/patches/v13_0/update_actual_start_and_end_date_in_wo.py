@@ -1,27 +1,27 @@
-# Copyright (c) 2019, Frappe and Contributors
+# Copyright (c) 2019, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.utils import add_to_date
+import nts
+from nts.utils import add_to_date
 
 
 def execute():
-	frappe.reload_doc("manufacturing", "doctype", "work_order")
-	frappe.reload_doc("manufacturing", "doctype", "work_order_item")
-	frappe.reload_doc("manufacturing", "doctype", "job_card")
+	nts.reload_doc("manufacturing", "doctype", "work_order")
+	nts.reload_doc("manufacturing", "doctype", "work_order_item")
+	nts.reload_doc("manufacturing", "doctype", "job_card")
 
-	data = frappe.get_all(
+	data = nts.get_all(
 		"Work Order", filters={"docstatus": 1, "status": ("in", ["In Process", "Completed"])}
 	)
 
 	for d in data:
-		doc = frappe.get_doc("Work Order", d.name)
+		doc = nts.get_doc("Work Order", d.name)
 		doc.set_actual_dates()
 		doc.db_set("actual_start_date", doc.actual_start_date, update_modified=False)
 
 		if doc.status == "Completed":
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Work Order",
 				d.name,
 				{"actual_end_date": doc.actual_end_date, "lead_time": doc.lead_time},
@@ -32,7 +32,7 @@ def execute():
 				add_to_date(doc.planned_start_date, minutes=doc.lead_time)
 				doc.db_set("planned_end_date", doc.actual_start_date, update_modified=False)
 
-	frappe.db.sql(
+	nts.db.sql(
 		""" UPDATE `tabJob Card` as jc, `tabWork Order` as wo
 		SET
 			jc.production_item = wo.production_item, jc.item_name = wo.item_name

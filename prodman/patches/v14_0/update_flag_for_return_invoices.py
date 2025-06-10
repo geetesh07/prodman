@@ -1,4 +1,4 @@
-from frappe import qb
+from nts import qb
 
 
 def execute():
@@ -8,7 +8,7 @@ def execute():
 	gle = qb.DocType("GL Entry")
 
 	# Use hardcoded 'creation' date to isolate Credit/Debit notes created post v14 backport
-	# https://github.com/frappe/prodman/pull/39497
+	# https://github.com/nts/prodman/pull/39497
 	creation_date = "2024-01-25"
 
 	si = qb.DocType("Sales Invoice")

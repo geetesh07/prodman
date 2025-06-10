@@ -7,14 +7,14 @@
 				{{ product_image(d.image) }}
 			{% else %}
 				<div class="website-image h-100 w-100" style="background-color:var(--gray-100);text-align: center;line-height: 3.6;">
-					{{ frappe.utils.get_abbr(d.item_name)}}
+					{{ nts.utils.get_abbr(d.item_name)}}
 				</div>
 			{% endif %}
 		</div>
 		<div class="col-9">
 			{{ d.item_code }}
 			<p class="text-muted small">{{ d.description }}</p>
-			{% set supplier_part_no = frappe.db.get_value("Item Supplier", {'parent': d.item_code, 'supplier': doc.supplier}, "supplier_part_no") %}
+			{% set supplier_part_no = nts.db.get_value("Item Supplier", {'parent': d.item_code, 'supplier': doc.supplier}, "supplier_part_no") %}
 			<p class="text-muted small supplier-part-no">
 				{% if supplier_part_no %}
 					{{_("Supplier Part No") + ": "+ supplier_part_no}}

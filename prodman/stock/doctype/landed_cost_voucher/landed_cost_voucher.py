@@ -1,13 +1,13 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.model.meta import get_field_precision
-from frappe.query_builder.custom import ConstantColumn
-from frappe.utils import cint, flt
+import nts
+from nts import _
+from nts.model.document import Document
+from nts.model.meta import get_field_precision
+from nts.query_builder.custom import ConstantColumn
+from nts.utils import cint, flt
 
 import prodman
 from prodman.controllers.taxes_and_totals import init_landed_taxes_and_totals
@@ -21,7 +21,7 @@ class LandedCostVoucher(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.stock.doctype.landed_cost_item.landed_cost_item import LandedCostItem
 		from prodman.stock.doctype.landed_cost_purchase_receipt.landed_cost_purchase_receipt import (
@@ -42,7 +42,7 @@ class LandedCostVoucher(Document):
 		total_taxes_and_charges: DF.Currency
 	# end: auto-generated types
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_items_from_purchase_receipts(self):
 		self.set("items", [])
 		for pr in self.get("purchase_receipts"):
@@ -78,62 +78,62 @@ class LandedCostVoucher(Document):
 			if (
 				d.docstatus == 0
 				and d.purchase_receipt_item
-				and not frappe.db.exists(
+				and not nts.db.exists(
 					d.receipt_document_type + " Item",
 					{"name": d.purchase_receipt_item, "parent": d.receipt_document},
 				)
 			):
-				frappe.throw(
+				nts.throw(
 					_("Row {0}: {2} Item {1} does not exist in {2} {3}").format(
 						d.idx,
-						frappe.bold(d.purchase_receipt_item),
+						nts.bold(d.purchase_receipt_item),
 						d.receipt_document_type,
-						frappe.bold(d.receipt_document),
+						nts.bold(d.receipt_document),
 					),
 					title=_("Incorrect Reference Document (Purchase Receipt Item)"),
 				)
 
 	def check_mandatory(self):
 		if not self.get("purchase_receipts"):
-			frappe.throw(_("Please enter Receipt Document"))
+			nts.throw(_("Please enter Receipt Document"))
 
 	def validate_receipt_documents(self):
 		receipt_documents = []
 
 		for d in self.get("purchase_receipts"):
-			docstatus = frappe.db.get_value(d.receipt_document_type, d.receipt_document, "docstatus")
+			docstatus = nts.db.get_value(d.receipt_document_type, d.receipt_document, "docstatus")
 			if docstatus != 1:
-				msg = f"Row {d.idx}: {d.receipt_document_type} {frappe.bold(d.receipt_document)} must be submitted"
-				frappe.throw(_(msg), title=_("Invalid Document"))
+				msg = f"Row {d.idx}: {d.receipt_document_type} {nts.bold(d.receipt_document)} must be submitted"
+				nts.throw(_(msg), title=_("Invalid Document"))
 
 			if d.receipt_document_type == "Purchase Invoice":
-				update_stock = frappe.db.get_value(
+				update_stock = nts.db.get_value(
 					d.receipt_document_type, d.receipt_document, "update_stock"
 				)
 				if not update_stock:
 					msg = _("Row {0}: Purchase Invoice {1} has no stock impact.").format(
-						d.idx, frappe.bold(d.receipt_document)
+						d.idx, nts.bold(d.receipt_document)
 					)
 					msg += "<br>" + _(
 						"Please create Landed Cost Vouchers against Invoices that have 'Update Stock' enabled."
 					)
-					frappe.throw(msg, title=_("Incorrect Invoice"))
+					nts.throw(msg, title=_("Incorrect Invoice"))
 
 			receipt_documents.append(d.receipt_document)
 
 		for item in self.get("items"):
 			if not item.receipt_document:
-				frappe.throw(_("Item must be added using 'Get Items from Purchase Receipts' button"))
+				nts.throw(_("Item must be added using 'Get Items from Purchase Receipts' button"))
 
 			elif item.receipt_document not in receipt_documents:
-				frappe.throw(
+				nts.throw(
 					_("Item Row {0}: {1} {2} does not exist in above '{1}' table").format(
 						item.idx, item.receipt_document_type, item.receipt_document
 					)
 				)
 
 			if not item.cost_center:
-				frappe.throw(
+				nts.throw(
 					_("Row {0}: Cost center is required for an item {1}").format(item.idx, item.item_code)
 				)
 
@@ -145,14 +145,14 @@ class LandedCostVoucher(Document):
 			total_item_cost = 0.0
 			total_charges = 0.0
 			item_count = 0
-			based_on_field = frappe.scrub(self.distribute_charges_based_on)
+			based_on_field = nts.scrub(self.distribute_charges_based_on)
 
 			for item in self.get("items"):
 				total_item_cost += item.get(based_on_field)
 
 			for item in self.get("items"):
 				if not total_item_cost and not item.get(based_on_field):
-					frappe.throw(
+					nts.throw(
 						_(
 							"It's not possible to distribute charges equally when total amount is zero, please set 'Distribute Charges Based On' as 'Quantity'"
 						)
@@ -172,7 +172,7 @@ class LandedCostVoucher(Document):
 
 	def validate_applicable_charges_for_item(self):
 		if self.distribute_charges_based_on == "Distribute Manually" and len(self.taxes) > 1:
-			frappe.throw(
+			nts.throw(
 				_(
 					"Please keep one Applicable Charges, when 'Distribute Charges Based On' is 'Distribute Manually'. For more charges, please create another Landed Cost Voucher."
 				)
@@ -187,7 +187,7 @@ class LandedCostVoucher(Document):
 			total = sum(flt(d.get("applicable_charges")) for d in self.get("items"))
 
 		if not total:
-			frappe.throw(
+			nts.throw(
 				_(
 					"Total {0} for all items is zero, may be you should change 'Distribute Charges Based On'"
 				).format(based_on)
@@ -196,8 +196,8 @@ class LandedCostVoucher(Document):
 		total_applicable_charges = sum(flt(d.applicable_charges) for d in self.get("items"))
 
 		precision = get_field_precision(
-			frappe.get_meta("Landed Cost Item").get_field("applicable_charges"),
-			currency=frappe.get_cached_value("Company", self.company, "default_currency"),
+			nts.get_meta("Landed Cost Item").get_field("applicable_charges"),
+			currency=nts.get_cached_value("Company", self.company, "default_currency"),
 		)
 
 		diff = flt(self.total_taxes_and_charges) - flt(total_applicable_charges)
@@ -206,7 +206,7 @@ class LandedCostVoucher(Document):
 		if abs(diff) < (2.0 / (10**precision)):
 			self.items[-1].applicable_charges += diff
 		else:
-			frappe.throw(
+			nts.throw(
 				_(
 					"Total Applicable Charges in Purchase Receipt Items table must be same as Total Taxes and Charges"
 				)
@@ -221,7 +221,7 @@ class LandedCostVoucher(Document):
 
 	def update_landed_cost(self):
 		for d in self.get("purchase_receipts"):
-			doc = frappe.get_doc(d.receipt_document_type, d.receipt_document)
+			doc = nts.get_doc(d.receipt_document_type, d.receipt_document)
 			# check if there are {qty} assets created and linked to this receipt document
 			if self.docstatus != 2:
 				self.validate_asset_qty_and_status(d.receipt_document_type, doc)
@@ -242,7 +242,7 @@ class LandedCostVoucher(Document):
 			self.update_rate_in_serial_no_for_non_asset_items(doc)
 
 		for d in self.get("purchase_receipts"):
-			doc = frappe.get_doc(d.receipt_document_type, d.receipt_document)
+			doc = nts.get_doc(d.receipt_document_type, d.receipt_document)
 			# update stock & gl entries for cancelled state of PR
 			doc.docstatus = 2
 			doc.update_stock_ledger(allow_negative_stock=True, via_landed_cost_voucher=True)
@@ -266,7 +266,7 @@ class LandedCostVoucher(Document):
 					if item.receipt_document_type == "Purchase Invoice"
 					else "purchase_receipt"
 				)
-				docs = frappe.db.get_all(
+				docs = nts.db.get_all(
 					"Asset",
 					filters={
 						receipt_document_type: item.receipt_document,
@@ -279,7 +279,7 @@ class LandedCostVoucher(Document):
 				total_asset_qty = sum((cint(d.asset_quantity)) for d in docs)
 
 				if not docs or total_asset_qty < item.qty:
-					frappe.throw(
+					nts.throw(
 						_(
 							"For item <b>{0}</b>, only <b>{1}</b> asset have been created or linked to <b>{2}</b>. "
 							"Please create or link <b>{3}</b> more asset with the respective document."
@@ -290,7 +290,7 @@ class LandedCostVoucher(Document):
 				if docs:
 					for d in docs:
 						if d.docstatus == 1:
-							frappe.throw(
+							nts.throw(
 								_(
 									"{0} <b>{1}</b> has submitted Assets. Remove Item <b>{2}</b> from table to continue."
 								).format(item.receipt_document_type, item.receipt_document, item.item_code)
@@ -301,7 +301,7 @@ class LandedCostVoucher(Document):
 			if not item.is_fixed_asset and item.serial_no:
 				serial_nos = get_serial_nos(item.serial_no)
 				if serial_nos:
-					frappe.db.sql(
+					nts.db.sql(
 						"update `tabSerial No` set purchase_rate=%s where name in ({})".format(
 							", ".join(["%s"] * len(serial_nos))
 						),
@@ -310,10 +310,10 @@ class LandedCostVoucher(Document):
 
 
 def get_pr_items(purchase_receipt):
-	item = frappe.qb.DocType("Item")
-	pr_item = frappe.qb.DocType(purchase_receipt.receipt_document_type + " Item")
+	item = nts.qb.DocType("Item")
+	pr_item = nts.qb.DocType(purchase_receipt.receipt_document_type + " Item")
 	return (
-		frappe.qb.from_(pr_item)
+		nts.qb.from_(pr_item)
 		.inner_join(item)
 		.on(item.name == pr_item.item_code)
 		.select(

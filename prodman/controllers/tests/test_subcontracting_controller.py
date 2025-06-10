@@ -1,12 +1,12 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import copy
 from collections import defaultdict
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import cint
+import nts
+from nts.tests.utils import ntsTestCase
+from nts.utils import cint
 
 from prodman.buying.doctype.purchase_order.test_purchase_order import create_purchase_order
 from prodman.controllers.subcontracting_controller import (
@@ -25,7 +25,7 @@ from prodman.subcontracting.doctype.subcontracting_order.subcontracting_order im
 )
 
 
-class TestSubcontractingController(FrappeTestCase):
+class TestSubcontractingController(ntsTestCase):
 	def setUp(self):
 		make_subcontracted_items()
 		make_raw_materials()
@@ -138,7 +138,7 @@ class TestSubcontractingController(FrappeTestCase):
 		- Create partial SCR against the SCO and check serial nos and batch no.
 		"""
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
 		set_backflush_based_on("Material Transferred for Subcontract")
 		service_items = [
 			{
@@ -201,7 +201,7 @@ class TestSubcontractingController(FrappeTestCase):
 				if value.get(field):
 					self.assertEqual(value.get(field), transferred_detais.get(field))
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
 
 	def test_subcontracting_with_same_components_different_fg(self):
 		"""
@@ -212,7 +212,7 @@ class TestSubcontractingController(FrappeTestCase):
 		- Create partial SCR against the SCO and check serial nos.
 		"""
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
 		set_backflush_based_on("Material Transferred for Subcontract")
 		service_items = [
 			{
@@ -280,7 +280,7 @@ class TestSubcontractingController(FrappeTestCase):
 			self.assertEqual(value.qty, 6)
 			self.assertEqual(sorted(value.serial_no), sorted(transferred_detais.get("serial_no")[6:12]))
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
 
 	def test_return_non_consumed_batch_materials(self):
 		"""
@@ -292,7 +292,7 @@ class TestSubcontractingController(FrappeTestCase):
 		- After that return the non consumed material back to the store from supplier's warehouse.
 		"""
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
 		set_backflush_based_on("Material Transferred for Subcontract")
 		service_item = make_item("Subcontracted Service FG Item A", properties={"is_stock_item": 0}).name
 		fg_item = make_item(
@@ -353,7 +353,7 @@ class TestSubcontractingController(FrappeTestCase):
 		self.assertEqual(doc.items[0].t_warehouse, "_Test Warehouse - _TC")
 		self.assertTrue(doc.items[0].batch_no)
 		self.assertTrue(doc.items[0].use_serial_batch_fields)
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
 
 	def test_return_non_consumed_materials(self):
 		"""
@@ -365,7 +365,7 @@ class TestSubcontractingController(FrappeTestCase):
 		- After that return the non consumed material back to the store from supplier's warehouse.
 		"""
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
 		set_backflush_based_on("Material Transferred for Subcontract")
 		service_items = [
 			{
@@ -411,7 +411,7 @@ class TestSubcontractingController(FrappeTestCase):
 			get_serial_nos(doc.items[0].serial_no),
 			itemwise_details.get(doc.items[0].item_code)["serial_no"][5:6],
 		)
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
 
 	def test_item_with_batch_based_on_bom(self):
 		"""
@@ -507,7 +507,7 @@ class TestSubcontractingController(FrappeTestCase):
 		for _key, value in get_supplied_items(scr1).items():
 			self.assertEqual(value.qty, 4)
 
-		frappe.flags.add_debugger = True
+		nts.flags.add_debugger = True
 		scr2 = make_subcontracting_receipt(sco.name)
 		scr2.items[0].qty = 2
 		add_second_row_in_scr(scr2)
@@ -656,7 +656,7 @@ class TestSubcontractingController(FrappeTestCase):
 		- Create SCR for remaining qty against the SCO and change the qty manually.
 		"""
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
 		set_backflush_based_on("Material Transferred for Subcontract")
 		service_items = [
 			{
@@ -722,7 +722,7 @@ class TestSubcontractingController(FrappeTestCase):
 			self.assertEqual(value.qty, details.qty)
 			self.assertEqual(sorted(value.serial_no), sorted(details.serial_no))
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
 
 	def test_incorrect_serial_no_components_based_on_material_transfer(self):
 		"""
@@ -733,10 +733,10 @@ class TestSubcontractingController(FrappeTestCase):
 		- System should throw the error and not allowed to save the SCR.
 		"""
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
 		serial_no = "ABC"
-		if not frappe.db.exists("Serial No", serial_no):
-			frappe.get_doc(
+		if not nts.db.exists("Serial No", serial_no):
+			nts.get_doc(
 				{
 					"doctype": "Serial No",
 					"item_code": "Subcontracted SRM Item 2",
@@ -770,7 +770,7 @@ class TestSubcontractingController(FrappeTestCase):
 
 		scr1 = make_subcontracting_receipt(sco.name)
 		scr1.save()
-		bundle = frappe.get_doc("Serial and Batch Bundle", scr1.supplied_items[0].serial_and_batch_bundle)
+		bundle = nts.get_doc("Serial and Batch Bundle", scr1.supplied_items[0].serial_and_batch_bundle)
 		original_serial_no = ""
 		for row in bundle.entries:
 			if row.idx == 1:
@@ -780,7 +780,7 @@ class TestSubcontractingController(FrappeTestCase):
 
 		bundle.save()
 
-		self.assertRaises(frappe.ValidationError, scr1.save)
+		self.assertRaises(nts.ValidationError, scr1.save)
 		bundle.load_from_db()
 		for row in bundle.entries:
 			if row.idx == 1:
@@ -792,7 +792,7 @@ class TestSubcontractingController(FrappeTestCase):
 		scr1.save()
 		self.delete_bundle_from_scr(scr1)
 		scr1.delete()
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
 
 	@staticmethod
 	def delete_bundle_from_scr(scr):
@@ -800,7 +800,7 @@ class TestSubcontractingController(FrappeTestCase):
 			if not row.serial_and_batch_bundle:
 				continue
 
-			frappe.delete_doc("Serial and Batch Bundle", row.serial_and_batch_bundle)
+			nts.delete_doc("Serial and Batch Bundle", row.serial_and_batch_bundle)
 
 	def test_partial_transfer_batch_based_on_material_transfer(self):
 		"""
@@ -1169,7 +1169,7 @@ def get_supplied_items(scr_doc):
 	for row in scr_doc.get("supplied_items"):
 		if row.rm_item_code not in supplied_items:
 			supplied_items.setdefault(
-				row.rm_item_code, frappe._dict({"qty": 0, "serial_no": [], "batch_no": defaultdict(float)})
+				row.rm_item_code, nts._dict({"qty": 0, "serial_no": [], "batch_no": defaultdict(float)})
 			)
 
 		details = supplied_items[row.rm_item_code]
@@ -1179,11 +1179,11 @@ def get_supplied_items(scr_doc):
 
 
 def make_stock_in_entry(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
 	items = {}
 	for row in args.rm_items:
-		row = frappe._dict(row)
+		row = nts._dict(row)
 
 		doc = make_stock_entry(
 			target=row.warehouse or "_Test Warehouse - _TC",
@@ -1194,7 +1194,7 @@ def make_stock_in_entry(**args):
 
 		if row.item_code not in items:
 			items.setdefault(
-				row.item_code, frappe._dict({"qty": 0, "serial_no": [], "batch_no": defaultdict(float)})
+				row.item_code, nts._dict({"qty": 0, "serial_no": [], "batch_no": defaultdict(float)})
 			)
 
 		child_row = doc.items[0]
@@ -1211,7 +1211,7 @@ def update_item_details(child_row, details):
 
 	details.use_serial_batch_fields = child_row.get("use_serial_batch_fields")
 	if child_row.serial_and_batch_bundle:
-		doc = frappe.get_doc("Serial and Batch Bundle", child_row.serial_and_batch_bundle)
+		doc = nts.get_doc("Serial and Batch Bundle", child_row.serial_and_batch_bundle)
 		for row in doc.get("entries"):
 			if row.serial_no:
 				details.serial_no.append(row.serial_no)
@@ -1229,11 +1229,11 @@ def update_item_details(child_row, details):
 
 
 def make_stock_transfer_entry(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
 	items = []
 	for row in args.rm_items:
-		row = frappe._dict(row)
+		row = nts._dict(row)
 
 		item = {
 			"item_code": row.main_item_code or args.main_item_code,
@@ -1266,7 +1266,7 @@ def make_stock_transfer_entry(**args):
 
 		if not row.get("use_serial_batch_fields") and (serial_nos or batches):
 			item["serial_and_batch_bundle"] = make_serial_batch_bundle(
-				frappe._dict(
+				nts._dict(
 					{
 						"item_code": row.item_code,
 						"warehouse": row.warehouse or "_Test Warehouse - _TC",
@@ -1286,7 +1286,7 @@ def make_stock_transfer_entry(**args):
 		items.append(item)
 
 	ste_dict = make_rm_stock_entry(args.sco_no, items)
-	doc = frappe.get_doc(ste_dict)
+	doc = nts.get_doc(ste_dict)
 	doc.insert()
 	doc.submit()
 
@@ -1311,7 +1311,7 @@ def make_subcontracted_items():
 	}
 
 	for item, properties in sub_contracted_items.items():
-		if not frappe.db.exists("Item", item):
+		if not nts.db.exists("Item", item):
 			properties.update({"is_stock_item": 1, "is_sub_contracted_item": 1})
 			make_item(item, properties)
 
@@ -1332,7 +1332,7 @@ def make_raw_materials():
 	}
 
 	for item, properties in raw_materials.items():
-		if not frappe.db.exists("Item", item):
+		if not nts.db.exists("Item", item):
 			properties.update({"is_stock_item": 1})
 			properties.update({"valuation_rate": 100})
 			make_item(item, properties)
@@ -1341,7 +1341,7 @@ def make_raw_materials():
 def make_service_item(item, properties=None):
 	if properties is None:
 		properties = {}
-	if not frappe.db.exists("Item", item):
+	if not nts.db.exists("Item", item):
 		properties.update({"is_stock_item": 0})
 		make_item(item, properties)
 
@@ -1384,12 +1384,12 @@ def make_bom_for_subcontracted_items():
 	}
 
 	for item_code, raw_materials in boms.items():
-		if not frappe.db.exists("BOM", {"item": item_code}):
+		if not nts.db.exists("BOM", {"item": item_code}):
 			make_bom(item=item_code, raw_materials=raw_materials, rate=100, currency="INR")
 
 
 def set_backflush_based_on(based_on):
-	frappe.db.set_single_value("Buying Settings", "backflush_raw_materials_of_subcontract_based_on", based_on)
+	nts.db.set_single_value("Buying Settings", "backflush_raw_materials_of_subcontract_based_on", based_on)
 
 
 def get_subcontracting_order(**args):
@@ -1397,10 +1397,10 @@ def get_subcontracting_order(**args):
 		create_subcontracting_order,
 	)
 
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
 	if args.get("po_name"):
-		po = frappe.get_doc("Purchase Order", args.get("po_name"))
+		po = nts.get_doc("Purchase Order", args.get("po_name"))
 
 		if po.is_subcontracted:
 			return create_subcontracting_order(**args)
@@ -1451,9 +1451,9 @@ def get_rm_items(supplied_items):
 def make_subcontracted_item(**args):
 	from prodman.manufacturing.doctype.production_plan.test_production_plan import make_bom
 
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
-	if not frappe.db.exists("Item", args.item_code):
+	if not nts.db.exists("Item", args.item_code):
 		make_item(
 			args.item_code,
 			{
@@ -1464,7 +1464,7 @@ def make_subcontracted_item(**args):
 		)
 
 	if not args.raw_materials:
-		if not frappe.db.exists("Item", "Test Extra Item 1"):
+		if not nts.db.exists("Item", "Test Extra Item 1"):
 			make_item(
 				"Test Extra Item 1",
 				{
@@ -1472,7 +1472,7 @@ def make_subcontracted_item(**args):
 				},
 			)
 
-		if not frappe.db.exists("Item", "Test Extra Item 2"):
+		if not nts.db.exists("Item", "Test Extra Item 2"):
 			make_item(
 				"Test Extra Item 2",
 				{
@@ -1482,5 +1482,5 @@ def make_subcontracted_item(**args):
 
 		args.raw_materials = ["_Test FG Item", "Test Extra Item 1"]
 
-	if not frappe.db.get_value("BOM", {"item": args.item_code}, "name"):
+	if not nts.db.get_value("BOM", {"item": args.item_code}, "name"):
 		make_bom(item=args.item_code, raw_materials=args.get("raw_materials"))

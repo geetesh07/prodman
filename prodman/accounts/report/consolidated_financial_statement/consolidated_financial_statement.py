@@ -1,13 +1,13 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 from collections import defaultdict
 
-import frappe
-from frappe import _
-from frappe.query_builder import Criterion
-from frappe.utils import flt, getdate
+import nts 
+from nts  import _
+from nts .query_builder import Criterion
+from nts .utils import flt, getdate
 
 import prodman
 from prodman.accounts.report.balance_sheet.balance_sheet import (
@@ -147,7 +147,7 @@ def get_opening_balance(account_name, data, company):
 
 
 def get_root_account_name(root_type, company):
-	root_account = frappe.get_all(
+	root_account = nts .get_all(
 		"Account",
 		fields=["account_name"],
 		filters={
@@ -335,7 +335,7 @@ def get_data(companies, root_type, balance_must_be, fiscal_year, filters=None, i
 	filters.end_date = end_date
 
 	gl_entries_by_account = {}
-	for root in frappe.db.sql(
+	for root in nts .db.sql(
 		"""select lft, rgt from tabAccount
 			where root_type=%s and ifnull(parent_account, '') = ''""",
 		root_type,
@@ -370,7 +370,7 @@ def get_data(companies, root_type, balance_must_be, fiscal_year, filters=None, i
 
 
 def get_company_currency(filters=None):
-	return filters.get("presentation_currency") or frappe.get_cached_value(
+	return filters.get("presentation_currency") or nts .get_cached_value(
 		"Company", filters.company, "default_currency"
 	)
 
@@ -498,9 +498,9 @@ def get_companies(filters):
 
 
 def get_subsidiary_companies(company):
-	lft, rgt = frappe.get_cached_value("Company", company, ["lft", "rgt"])
+	lft, rgt = nts .get_cached_value("Company", company, ["lft", "rgt"])
 
-	return frappe.db.sql_list(
+	return nts .db.sql_list(
 		f"""select name from `tabCompany`
 		where lft >= {lft} and rgt <= {rgt} order by lft, rgt"""
 	)
@@ -511,7 +511,7 @@ def get_accounts(root_type, companies):
 
 	for company in companies:
 		accounts.extend(
-			frappe.get_all(
+			nts .get_all(
 				"Account",
 				fields=[
 					"name",
@@ -539,7 +539,7 @@ def prepare_data(accounts, start_date, end_date, balance_must_be, companies, com
 		# add to output
 		has_value = False
 		total = 0
-		row = frappe._dict(
+		row = nts ._dict(
 			{
 				"account_name": (
 					f"{_(d.account_number)} - {_(d.account_name)}" if d.account_number else _(d.account_name)
@@ -590,9 +590,9 @@ def set_gl_entries_by_account(
 ):
 	"""Returns a dict like { "account": [gl entries], ... }"""
 
-	company_lft, company_rgt = frappe.get_cached_value("Company", filters.get("company"), ["lft", "rgt"])
+	company_lft, company_rgt = nts .get_cached_value("Company", filters.get("company"), ["lft", "rgt"])
 
-	companies = frappe.db.sql(
+	companies = nts .db.sql(
 		""" select name, default_currency from `tabCompany`
 		where lft >= %(company_lft)s and rgt <= %(company_rgt)s""",
 		{
@@ -602,15 +602,15 @@ def set_gl_entries_by_account(
 		as_dict=1,
 	)
 
-	currency_info = frappe._dict(
+	currency_info = nts ._dict(
 		{"report_date": to_date, "presentation_currency": filters.get("presentation_currency")}
 	)
 
 	for d in companies:
-		gle = frappe.qb.DocType("GL Entry")
-		account = frappe.qb.DocType("Account")
+		gle = nts .qb.DocType("GL Entry")
+		account = nts .qb.DocType("Account")
 		query = (
-			frappe.qb.from_(gle)
+			nts .qb.from_(gle)
 			.inner_join(account)
 			.on(account.name == gle.account)
 			.select(
@@ -662,7 +662,7 @@ def set_gl_entries_by_account(
 
 
 def get_account_details(account):
-	return frappe.get_cached_value(
+	return nts .get_cached_value(
 		"Account",
 		account,
 		[
@@ -714,7 +714,7 @@ def validate_entries(key, entry, accounts_by_name, accounts):
 
 
 def get_additional_conditions(from_date, ignore_closing_entries, filters, d):
-	gle = frappe.qb.DocType("GL Entry")
+	gle = nts .qb.DocType("GL Entry")
 	additional_conditions = []
 
 	if ignore_closing_entries:
@@ -729,7 +729,7 @@ def get_additional_conditions(from_date, ignore_closing_entries, filters, d):
 		finance_books.append(filter_fb)
 
 	if filters.get("include_default_book_entries"):
-		if company_fb := frappe.get_cached_value("Company", d.name, "default_finance_book"):
+		if company_fb := nts .get_cached_value("Company", d.name, "default_finance_book"):
 			finance_books.append(company_fb)
 
 		additional_conditions.append((gle.finance_book.isin(finance_books)) | gle.finance_book.isnull())

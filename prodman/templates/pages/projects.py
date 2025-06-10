@@ -1,32 +1,32 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def get_context(context):
-	project_user = frappe.db.get_value(
+	project_user = nts.db.get_value(
 		"Project User",
-		{"parent": frappe.form_dict.project, "user": frappe.session.user},
+		{"parent": nts.form_dict.project, "user": nts.session.user},
 		["user", "view_attachments", "hide_timesheets"],
 		as_dict=True,
 	)
-	if frappe.session.user != "Administrator" and (not project_user or frappe.session.user == "Guest"):
-		raise frappe.PermissionError
+	if nts.session.user != "Administrator" and (not project_user or nts.session.user == "Guest"):
+		raise nts.PermissionError
 
 	context.no_cache = 1
 	context.show_sidebar = True
-	project = frappe.get_doc("Project", frappe.form_dict.project)
+	project = nts.get_doc("Project", nts.form_dict.project)
 
 	project.has_permission("read")
 
 	project.tasks = get_tasks(
-		project.name, start=0, item_status="open", search=frappe.form_dict.get("search")
+		project.name, start=0, item_status="open", search=nts.form_dict.get("search")
 	)
 
 	if project_user and not project_user.hide_timesheets:
-		project.timesheets = get_timesheets(project.name, start=0, search=frappe.form_dict.get("search"))
+		project.timesheets = get_timesheets(project.name, start=0, search=nts.form_dict.get("search"))
 
 	if project_user and project_user.view_attachments:
 		project.attachments = get_attachments(project.name)
@@ -38,7 +38,7 @@ def get_tasks(project, start=0, search=None, item_status=None):
 	filters = {"project": project}
 	if search:
 		filters["subject"] = ("like", f"%{search}%")
-	tasks = frappe.get_all(
+	tasks = nts.get_all(
 		"Task",
 		filters=filters,
 		fields=[
@@ -64,9 +64,9 @@ def get_tasks(project, start=0, search=None, item_status=None):
 	return list(filter(lambda x: not x.parent_task, tasks))
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_task_html(project, start=0, item_status=None):
-	return frappe.render_template(
+	return nts.render_template(
 		"prodman/templates/includes/projects/project_tasks.html",
 		{
 			"doc": {
@@ -84,7 +84,7 @@ def get_timesheets(project, start=0, search=None):
 	if search:
 		filters["activity_type"] = ("like", f"%{search}%")
 
-	timesheets = frappe.get_all(
+	timesheets = nts.get_all(
 		"Timesheet Detail",
 		filters=filters,
 		fields=["project", "activity_type", "from_time", "to_time", "parent"],
@@ -92,7 +92,7 @@ def get_timesheets(project, start=0, search=None):
 		limit_page_length=10,
 	)
 	for timesheet in timesheets:
-		info = frappe.get_all(
+		info = nts.get_all(
 			"Timesheet",
 			filters={"name": timesheet.parent},
 			fields=["name", "status", "modified", "modified_by"],
@@ -104,9 +104,9 @@ def get_timesheets(project, start=0, search=None):
 	return timesheets
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_timesheet_html(project, start=0):
-	return frappe.render_template(
+	return nts.render_template(
 		"prodman/templates/includes/projects/project_timesheets.html",
 		{"doc": {"timesheets": get_timesheets(project, start)}},
 		is_path=True,
@@ -114,7 +114,7 @@ def get_timesheet_html(project, start=0):
 
 
 def get_attachments(project):
-	return frappe.get_all(
+	return nts.get_all(
 		"File",
 		filters={"attached_to_name": project, "attached_to_doctype": "Project", "is_private": 0},
 		fields=["file_name", "file_url", "file_size"],

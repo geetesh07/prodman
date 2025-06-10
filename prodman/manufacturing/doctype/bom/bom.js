@@ -1,9 +1,9 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.bom");
+nts.provide("prodman.bom");
 
-frappe.ui.form.on("BOM", {
+nts.ui.form.on("BOM", {
 	setup(frm) {
 		frm.custom_make_buttons = {
 			"Work Order": "Work Order",
@@ -66,7 +66,7 @@ frappe.ui.form.on("BOM", {
 
 	validate: function (frm) {
 		if (frm.doc.fg_based_operating_cost && frm.doc.with_operations) {
-			frappe.throw({
+			nts.throw({
 				message: __("Please check either with operations or FG Based Operating Cost."),
 				title: __("Mandatory"),
 			});
@@ -100,17 +100,17 @@ frappe.ui.form.on("BOM", {
 				frm.events.update_cost(frm, true);
 			});
 			frm.add_custom_button(__("Browse BOM"), function () {
-				frappe.route_options = {
+				nts.route_options = {
 					bom: frm.doc.name,
 				};
-				frappe.set_route("Tree", "BOM");
+				nts.set_route("Tree", "BOM");
 			});
 		}
 
 		if (!frm.is_new() && !frm.doc.docstatus == 0) {
 			frm.add_custom_button(__("New Version"), function () {
-				let new_bom = frappe.model.copy_doc(frm.doc);
-				frappe.set_route("Form", "BOM", new_bom.name);
+				let new_bom = nts.model.copy_doc(frm.doc);
+				nts.set_route("Form", "BOM", new_bom.name);
 			});
 		}
 
@@ -176,7 +176,7 @@ frappe.ui.form.on("BOM", {
 			);
 
 			frm.$wrapper.find(".variants-intro").on("click", () => {
-				frappe.set_route("List", "Item", { variant_of: frm.doc.item });
+				nts.set_route("List", "Item", { variant_of: frm.doc.item });
 			});
 		}
 	},
@@ -186,7 +186,7 @@ frappe.ui.form.on("BOM", {
 			frm,
 			"Work Order",
 			(frm, item, data, variant_items, use_multi_level_bom) => {
-				frappe.call({
+				nts.call({
 					method: "prodman.manufacturing.doctype.work_order.work_order.make_work_order",
 					args: {
 						bom_no: frm.doc.name,
@@ -199,8 +199,8 @@ frappe.ui.form.on("BOM", {
 					freeze: true,
 					callback(r) {
 						if (r.message) {
-							let doc = frappe.model.sync(r.message)[0];
-							frappe.set_route("Form", doc.doctype, doc.name);
+							let doc = nts.model.sync(r.message)[0];
+							nts.set_route("Form", doc.doctype, doc.name);
 						}
 					},
 				});
@@ -213,7 +213,7 @@ frappe.ui.form.on("BOM", {
 			frm,
 			"Variant BOM",
 			(frm, item, data, variant_items) => {
-				frappe.call({
+				nts.call({
 					method: "prodman.manufacturing.doctype.bom.bom.make_variant_bom",
 					args: {
 						source_name: frm.doc.name,
@@ -224,8 +224,8 @@ frappe.ui.form.on("BOM", {
 					freeze: true,
 					callback(r) {
 						if (r.message) {
-							let doc = frappe.model.sync(r.message)[0];
-							frappe.set_route("Form", doc.doctype, doc.name);
+							let doc = nts.model.sync(r.message)[0];
+							nts.set_route("Form", doc.doctype, doc.name);
 						}
 					},
 				});
@@ -323,7 +323,7 @@ frappe.ui.form.on("BOM", {
 						reqd: 1,
 						get_query(data) {
 							if (!data.item_code) {
-								frappe.throw(__("Select template item"));
+								nts.throw(__("Select template item"));
 							}
 
 							return {
@@ -369,7 +369,7 @@ frappe.ui.form.on("BOM", {
 			});
 		}
 
-		let dialog = frappe.prompt(
+		let dialog = nts.prompt(
 			fields,
 			(data) => {
 				let item = data.item || frm.doc.item;
@@ -378,7 +378,7 @@ frappe.ui.form.on("BOM", {
 
 				variant_items.forEach((d) => {
 					if (!d.variant_item_code && !use_multi_level_bom) {
-						frappe.throw(__("Select variant item code for the template item {0}", [d.item_code]));
+						nts.throw(__("Select variant item code for the template item {0}", [d.item_code]));
 					}
 				});
 
@@ -404,14 +404,14 @@ frappe.ui.form.on("BOM", {
 	},
 
 	make_quality_inspection(frm) {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.stock.doctype.quality_inspection.quality_inspection.make_quality_inspection",
 			frm: frm,
 		});
 	},
 
 	update_cost(frm, save_doc = false) {
-		return frappe.call({
+		return nts.call({
 			doc: frm.doc,
 			method: "update_cost",
 			freeze: true,
@@ -435,7 +435,7 @@ frappe.ui.form.on("BOM", {
 
 	routing(frm) {
 		if (frm.doc.routing) {
-			frappe.call({
+			nts.call({
 				doc: frm.doc,
 				method: "get_routing",
 				freeze: true,
@@ -498,9 +498,9 @@ prodman.bom.BomController = class BomController extends prodman.TransactionContr
 	}
 
 	conversion_factor(doc, cdt, cdn) {
-		if (frappe.meta.get_docfield(cdt, "stock_qty", cdn)) {
-			var item = frappe.get_doc(cdt, cdn);
-			frappe.model.round_floats_in(item, ["qty", "conversion_factor"]);
+		if (nts.meta.get_docfield(cdt, "stock_qty", cdn)) {
+			var item = nts.get_doc(cdt, cdn);
+			nts.model.round_floats_in(item, ["qty", "conversion_factor"]);
 			item.stock_qty = flt(item.qty * item.conversion_factor, precision("stock_qty", item));
 			refresh_field("stock_qty", item.name, item.parentfield);
 			this.toggle_conversion_factor(item);
@@ -528,12 +528,12 @@ cur_frm.cscript.is_default = function (doc) {
 
 var get_bom_material_detail = function (doc, cdt, cdn, scrap_items) {
 	if (!doc.company) {
-		frappe.throw({ message: __("Please select a Company first."), title: __("Mandatory") });
+		nts.throw({ message: __("Please select a Company first."), title: __("Mandatory") });
 	}
 
 	var d = locals[cdt][cdn];
 	if (d.item_code) {
-		return frappe.call({
+		return nts.call({
 			doc: doc,
 			method: "get_bom_material_detail",
 			args: {
@@ -578,7 +578,7 @@ cur_frm.cscript.rate = function (doc, cdt, cdn) {
 	const is_scrap_item = cdt == "BOM Scrap Item";
 
 	if (d.bom_no) {
-		frappe.msgprint(__("You cannot change the rate if BOM is mentioned against any Item."));
+		nts.msgprint(__("You cannot change the rate if BOM is mentioned against any Item."));
 		get_bom_material_detail(doc, cdt, cdn, is_scrap_item);
 	} else {
 		prodman.bom.calculate_rm_cost(doc);
@@ -602,7 +602,7 @@ prodman.bom.calculate_op_cost = function (doc) {
 		doc.operations.forEach((item) => {
 			let operating_cost = flt((flt(item.hour_rate) * flt(item.time_in_mins)) / 60, 2);
 			let base_operating_cost = flt(operating_cost * doc.conversion_rate, 2);
-			frappe.model.set_value("BOM Operation", item.name, {
+			nts.model.set_value("BOM Operation", item.name, {
 				operating_cost: operating_cost,
 				base_operating_cost: base_operating_cost,
 			});
@@ -627,15 +627,15 @@ prodman.bom.calculate_rm_cost = function (doc) {
 		var amount = flt(rm[i].rate) * flt(rm[i].qty);
 		var base_amount = amount * flt(doc.conversion_rate);
 
-		frappe.model.set_value(
+		nts.model.set_value(
 			"BOM Item",
 			rm[i].name,
 			"base_rate",
 			flt(rm[i].rate) * flt(doc.conversion_rate)
 		);
-		frappe.model.set_value("BOM Item", rm[i].name, "amount", amount);
-		frappe.model.set_value("BOM Item", rm[i].name, "base_amount", base_amount);
-		frappe.model.set_value(
+		nts.model.set_value("BOM Item", rm[i].name, "amount", amount);
+		nts.model.set_value("BOM Item", rm[i].name, "base_amount", base_amount);
+		nts.model.set_value(
 			"BOM Item",
 			rm[i].name,
 			"qty_consumed_per_unit",
@@ -660,9 +660,9 @@ prodman.bom.calculate_scrap_materials_cost = function (doc) {
 		var amount = flt(sm[i].rate) * flt(sm[i].stock_qty);
 		var base_amount = amount * flt(doc.conversion_rate);
 
-		frappe.model.set_value("BOM Scrap Item", sm[i].name, "base_rate", base_rate);
-		frappe.model.set_value("BOM Scrap Item", sm[i].name, "amount", amount);
-		frappe.model.set_value("BOM Scrap Item", sm[i].name, "base_amount", base_amount);
+		nts.model.set_value("BOM Scrap Item", sm[i].name, "base_rate", base_rate);
+		nts.model.set_value("BOM Scrap Item", sm[i].name, "amount", amount);
+		nts.model.set_value("BOM Scrap Item", sm[i].name, "base_amount", base_amount);
 
 		total_sm_cost += amount;
 		base_total_sm_cost += base_amount;
@@ -686,40 +686,40 @@ cur_frm.cscript.validate = function (doc) {
 	prodman.bom.update_cost(doc);
 };
 
-frappe.ui.form.on("BOM Operation", "operation", function (frm, cdt, cdn) {
+nts.ui.form.on("BOM Operation", "operation", function (frm, cdt, cdn) {
 	var d = locals[cdt][cdn];
 
 	if (!d.operation) return;
 
-	frappe.call({
-		method: "frappe.client.get",
+	nts.call({
+		method: "nts.client.get",
 		args: {
 			doctype: "Operation",
 			name: d.operation,
 		},
 		callback: function (data) {
 			if (data.message.description) {
-				frappe.model.set_value(d.doctype, d.name, "description", data.message.description);
+				nts.model.set_value(d.doctype, d.name, "description", data.message.description);
 			}
 			if (data.message.workstation) {
-				frappe.model.set_value(d.doctype, d.name, "workstation", data.message.workstation);
+				nts.model.set_value(d.doctype, d.name, "workstation", data.message.workstation);
 			}
 		},
 	});
 });
 
-frappe.ui.form.on("BOM Operation", "workstation", function (frm, cdt, cdn) {
+nts.ui.form.on("BOM Operation", "workstation", function (frm, cdt, cdn) {
 	var d = locals[cdt][cdn];
 	if (!d.workstation) return;
-	frappe.call({
-		method: "frappe.client.get",
+	nts.call({
+		method: "nts.client.get",
 		args: {
 			doctype: "Workstation",
 			name: d.workstation,
 		},
 		callback: function (data) {
-			frappe.model.set_value(d.doctype, d.name, "base_hour_rate", data.message.hour_rate);
-			frappe.model.set_value(
+			nts.model.set_value(d.doctype, d.name, "base_hour_rate", data.message.hour_rate);
+			nts.model.set_value(
 				d.doctype,
 				d.name,
 				"hour_rate",
@@ -733,27 +733,27 @@ frappe.ui.form.on("BOM Operation", "workstation", function (frm, cdt, cdn) {
 	});
 });
 
-frappe.ui.form.on("BOM Item", {
+nts.ui.form.on("BOM Item", {
 	do_not_explode: function (frm, cdt, cdn) {
 		get_bom_material_detail(frm.doc, cdt, cdn, false);
 	},
 });
 
-frappe.ui.form.on("BOM Item", "qty", function (frm, cdt, cdn) {
+nts.ui.form.on("BOM Item", "qty", function (frm, cdt, cdn) {
 	var d = locals[cdt][cdn];
 	d.stock_qty = d.qty * d.conversion_factor;
 	refresh_field("stock_qty", d.name, d.parentfield);
 });
 
-frappe.ui.form.on("BOM Item", "item_code", function (frm, cdt, cdn) {
+nts.ui.form.on("BOM Item", "item_code", function (frm, cdt, cdn) {
 	var d = locals[cdt][cdn];
-	frappe.db.get_value("Item", { name: d.item_code }, "allow_alternative_item", (r) => {
+	nts.db.get_value("Item", { name: d.item_code }, "allow_alternative_item", (r) => {
 		d.allow_alternative_item = r.allow_alternative_item;
 	});
 	refresh_field("allow_alternative_item", d.name, d.parentfield);
 });
 
-frappe.ui.form.on("BOM Item", "sourced_by_supplier", function (frm, cdt, cdn) {
+nts.ui.form.on("BOM Item", "sourced_by_supplier", function (frm, cdt, cdn) {
 	var d = locals[cdt][cdn];
 	if (d.sourced_by_supplier) {
 		d.rate = 0;
@@ -761,7 +761,7 @@ frappe.ui.form.on("BOM Item", "sourced_by_supplier", function (frm, cdt, cdn) {
 	}
 });
 
-frappe.ui.form.on("BOM Item", "rate", function (frm, cdt, cdn) {
+nts.ui.form.on("BOM Item", "rate", function (frm, cdt, cdn) {
 	var d = locals[cdt][cdn];
 	if (d.sourced_by_supplier) {
 		d.rate = 0;
@@ -769,17 +769,17 @@ frappe.ui.form.on("BOM Item", "rate", function (frm, cdt, cdn) {
 	}
 });
 
-frappe.ui.form.on("BOM Operation", "operations_remove", function (frm) {
+nts.ui.form.on("BOM Operation", "operations_remove", function (frm) {
 	prodman.bom.calculate_op_cost(frm.doc);
 	prodman.bom.calculate_total(frm.doc);
 });
 
-frappe.ui.form.on("BOM Item", "items_remove", function (frm) {
+nts.ui.form.on("BOM Item", "items_remove", function (frm) {
 	prodman.bom.calculate_rm_cost(frm.doc);
 	prodman.bom.calculate_total(frm.doc);
 });
 
-frappe.tour["BOM"] = [
+nts.tour["BOM"] = [
 	{
 		fieldname: "item",
 		title: "Item",
@@ -806,14 +806,14 @@ frappe.tour["BOM"] = [
 	},
 ];
 
-frappe.ui.form.on("BOM Scrap Item", {
+nts.ui.form.on("BOM Scrap Item", {
 	item_code(frm, cdt, cdn) {
 		const { item_code } = locals[cdt][cdn];
 	},
 });
 
 function trigger_process_loss_qty_prompt(frm, cdt, cdn, item_code) {
-	frappe.prompt(
+	nts.prompt(
 		{
 			fieldname: "percent",
 			fieldtype: "Percent",

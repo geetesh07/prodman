@@ -639,7 +639,7 @@
    "doc_view": "List",
    "label": "Learn Sales Management",
    "type": "URL",
-   "url": "https://school.frappe.io/lms/courses/sales-management-course?utm_source=in_app"
+   "url": "https://school.nts.io/lms/courses/sales-management-course?utm_source=in_app"
   },
   {
    "label": "Point of Sale",
@@ -659,7 +659,7 @@
    "format": "{}  To Deliver",
    "label": "Sales Order",
    "link_to": "Sales Order",
-   "stats_filter": "{\n    \"company\": [\"like\", '%' + frappe.defaults.get_global_default(\"company\") + '%'],\n    \"status\":[\"in\", [\"To Deliver\", \"To Deliver and Bill\"]]\n}",
+   "stats_filter": "{\n    \"company\": [\"like\", '%' + nts.defaults.get_global_default(\"company\") + '%'],\n    \"status\":[\"in\", [\"To Deliver\", \"To Deliver and Bill\"]]\n}",
    "type": "DocType"
   },
   {

@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import flt
+import nts 
+from nts  import _
+from nts .utils import flt
 from pypika import Order
 
 import prodman
@@ -46,8 +46,8 @@ def _execute(filters=None, additional_table_columns=None):
 		for tax in tax_columns:
 			scrubbed_tax_fields.update(
 				{
-					tax + " Rate": frappe.scrub(tax + " Rate"),
-					tax + " Amount": frappe.scrub(tax + " Amount"),
+					tax + " Rate": nts .scrub(tax + " Rate"),
+					tax + " Amount": nts .scrub(tax + " Amount"),
 				}
 			)
 
@@ -310,11 +310,11 @@ def apply_conditions(query, pi, pii, filters):
 
 def get_items(filters, additional_table_columns):
 	doctype = "Purchase Invoice"
-	pi = frappe.qb.DocType(doctype)
-	pii = frappe.qb.DocType(f"{doctype} Item")
-	Item = frappe.qb.DocType("Item")
+	pi = nts .qb.DocType(doctype)
+	pii = nts .qb.DocType(f"{doctype} Item")
+	Item = nts .qb.DocType("Item")
 	query = (
-		frappe.qb.from_(pi)
+		nts .qb.from_(pi)
 		.join(pii)
 		.on(pi.name == pii.parent)
 		.left_join(Item)
@@ -359,14 +359,14 @@ def get_items(filters, additional_table_columns):
 	if additional_table_columns:
 		for column in additional_table_columns:
 			if column.get("_doctype"):
-				table = frappe.qb.DocType(column.get("_doctype"))
+				table = nts .qb.DocType(column.get("_doctype"))
 				query = query.select(table[column.get("fieldname")])
 			else:
 				query = query.select(pi[column.get("fieldname")])
 
 	query = apply_conditions(query, pi, pii, filters)
 
-	from frappe.desk.reportview import build_match_conditions
+	from nts .desk.reportview import build_match_conditions
 
 	query, params = query.walk()
 	match_conditions = build_match_conditions(doctype)
@@ -376,19 +376,19 @@ def get_items(filters, additional_table_columns):
 
 	query = apply_order_by_conditions(query, pi, pii, filters)
 
-	return frappe.db.sql(query, params, as_dict=True)
+	return nts .db.sql(query, params, as_dict=True)
 
 
 def get_aii_accounts():
-	return dict(frappe.db.sql("select name, stock_received_but_not_billed from tabCompany"))
+	return dict(nts .db.sql("select name, stock_received_but_not_billed from tabCompany"))
 
 
 def get_purchase_receipts_against_purchase_order(item_list):
-	po_pr_map = frappe._dict()
+	po_pr_map = nts ._dict()
 	po_item_rows = list(set(d.po_detail for d in item_list))
 
 	if po_item_rows:
-		purchase_receipts = frappe.db.sql(
+		purchase_receipts = nts .db.sql(
 			"""
 			select parent, purchase_order_item
 			from `tabPurchase Receipt Item`

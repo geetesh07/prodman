@@ -1,13 +1,13 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import datetime
 import unittest
 
-import frappe
-from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, add_months, today
+import nts 
+from nts .custom.doctype.custom_field.custom_field import create_custom_fields
+from nts .tests.utils import nts TestCase, change_settings
+from nts .utils import add_days, add_months, today
 
 from prodman.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from prodman.accounts.utils import get_fiscal_year
@@ -16,7 +16,7 @@ from prodman.buying.doctype.purchase_order.purchase_order import make_purchase_i
 test_dependencies = ["Supplier Group", "Customer Group"]
 
 
-class TestTaxWithholdingCategory(FrappeTestCase):
+class TestTaxWithholdingCategory(nts TestCase):
 	@classmethod
 	def setUpClass(self):
 		# create relevant supplier, etc
@@ -25,10 +25,10 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 		make_pan_no_field()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def test_cumulative_threshold_tds(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Supplier", "Test TDS Supplier", "tax_withholding_category", "Cumulative Threshold TDS"
 		)
 		invoices = []
@@ -62,7 +62,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 			d.cancel()
 
 	def test_tds_with_account_changed(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Supplier", "Test TDS Supplier", "tax_withholding_category", "Multi Account TDS Category"
 		)
 		invoices = []
@@ -85,7 +85,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 
 		# account changed
 
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Tax Withholding Account",
 			{"parent": "Multi Account TDS Category"},
 			"account",
@@ -106,7 +106,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 
 	def test_single_threshold_tds(self):
 		invoices = []
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Supplier", "Test TDS Supplier1", "tax_withholding_category", "Single Threshold TDS"
 		)
 		pi = create_purchase_invoice(supplier="Test TDS Supplier1", rate=20000)
@@ -117,7 +117,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 		self.assertEqual(pi.grand_total, 18000)
 
 		# check gl entry for the purchase invoice
-		gl_entries = frappe.db.get_all(
+		gl_entries = nts .db.get_all(
 			"GL Entry",
 			filters={"voucher_no": pi.name},
 			fields=["account", "sum(debit) as debit", "sum(credit) as credit"],
@@ -148,7 +148,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 
 	def test_tax_withholding_category_checks(self):
 		invoices = []
-		frappe.db.set_value("Supplier", "Test TDS Supplier3", "tax_withholding_category", "New TDS Category")
+		nts .db.set_value("Supplier", "Test TDS Supplier3", "tax_withholding_category", "New TDS Category")
 
 		# First Invoice with no tds check
 		pi = create_purchase_invoice(supplier="Test TDS Supplier3", rate=20000, do_not_save=True)
@@ -172,7 +172,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 
 	def test_cumulative_threshold_with_party_ledger_amount_on_net_total(self):
 		invoices = []
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Supplier", "Test TDS Supplier3", "tax_withholding_category", "Advance TDS Category"
 		)
 
@@ -212,7 +212,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 
 	def test_cumulative_threshold_with_tax_on_excess_amount(self):
 		invoices = []
-		frappe.db.set_value("Supplier", "Test TDS Supplier3", "tax_withholding_category", "New TDS Category")
+		nts .db.set_value("Supplier", "Test TDS Supplier3", "tax_withholding_category", "New TDS Category")
 
 		# Invoice with tax and without exceeding single and cumulative thresholds
 		for _ in range(2):
@@ -250,7 +250,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 			d.cancel()
 
 	def test_cumulative_threshold_tcs(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Customer", "Test TCS Customer", "tax_withholding_category", "Cumulative Threshold TCS"
 		)
 		invoices = []
@@ -285,7 +285,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 			d.cancel()
 
 	def test_tcs_on_unallocated_advance_payments(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Customer", "Test TCS Customer", "tax_withholding_category", "Cumulative Threshold TCS"
 		)
 		fiscal_year = get_fiscal_year(today(), company="_Test Company")
@@ -307,7 +307,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 		vouchers.append(si1)
 
 		# reconcile
-		pr = frappe.get_doc("Payment Reconciliation")
+		pr = nts .get_doc("Payment Reconciliation")
 		pr.company = "_Test Company"
 		pr.party_type = "Customer"
 		pr.party = "Test TCS Customer"
@@ -315,7 +315,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 		pr.get_unreconciled_entries()
 		invoices = [x.as_dict() for x in pr.get("invoices")]
 		payments = [x.as_dict() for x in pr.get("payments")]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 
 		# make another invoice
@@ -351,7 +351,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 			d.cancel()
 
 	def test_tcs_on_allocated_advance_payments(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Customer", "Test TCS Customer", "tax_withholding_category", "Cumulative Threshold TCS"
 		)
 
@@ -391,7 +391,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 			d.cancel()
 
 	def test_tds_calculation_on_net_total(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Supplier", "Test TDS Supplier4", "tax_withholding_category", "Cumulative Threshold TDS"
 		)
 		invoices = []
@@ -425,7 +425,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 			d.cancel()
 
 	def test_tds_calculation_on_net_total_partial_tds(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Supplier", "Test TDS Supplier4", "tax_withholding_category", "Cumulative Threshold TDS"
 		)
 		invoices = []
@@ -436,7 +436,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 			[
 				{
 					"doctype": "Purchase Invoice Item",
-					"item_code": frappe.db.get_value("Item", {"item_name": "TDS Item"}, "name"),
+					"item_code": nts .db.get_value("Item", {"item_name": "TDS Item"}, "name"),
 					"qty": 1,
 					"rate": 20000,
 					"cost_center": "Main - _TC",
@@ -445,7 +445,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 				},
 				{
 					"doctype": "Purchase Invoice Item",
-					"item_code": frappe.db.get_value("Item", {"item_name": "TDS Item"}, "name"),
+					"item_code": nts .db.get_value("Item", {"item_name": "TDS Item"}, "name"),
 					"qty": 1,
 					"rate": 35000,
 					"cost_center": "Main - _TC",
@@ -472,7 +472,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 			[
 				{
 					"doctype": "Purchase Order Item",
-					"item_code": frappe.db.get_value("Item", {"item_name": "TDS Item"}, "name"),
+					"item_code": nts .db.get_value("Item", {"item_name": "TDS Item"}, "name"),
 					"qty": 1,
 					"rate": 20000,
 					"cost_center": "Main - _TC",
@@ -481,7 +481,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 				},
 				{
 					"doctype": "Purchase Order Item",
-					"item_code": frappe.db.get_value("Item", {"item_name": "TDS Item"}, "name"),
+					"item_code": nts .db.get_value("Item", {"item_name": "TDS Item"}, "name"),
 					"qty": 1,
 					"rate": 35000,
 					"cost_center": "Main - _TC",
@@ -501,7 +501,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 			d.cancel()
 
 	def test_tds_deduction_for_po_via_payment_entry(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Supplier", "Test TDS Supplier8", "tax_withholding_category", "Cumulative Threshold TDS"
 		)
 		order = create_purchase_order(supplier="Test TDS Supplier8", rate=40000, do_not_save=True)
@@ -535,7 +535,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 		self.assertEqual(payment.taxes[0].tax_amount, 4000)
 
 	def test_multi_category_single_supplier(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Supplier", "Test TDS Supplier5", "tax_withholding_category", "Test Service Category"
 		)
 		invoices = []
@@ -560,7 +560,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 			d.cancel()
 
 	def test_tax_withholding_category_voucher_display(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Supplier", "Test TDS Supplier6", "tax_withholding_category", "Test Multi Invoice Category"
 		)
 		invoices = []
@@ -613,7 +613,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 			d.cancel()
 
 	def test_tax_withholding_via_payment_entry_for_advances(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Supplier", "Test TDS Supplier7", "tax_withholding_category", "Advance TDS Category"
 		)
 
@@ -645,7 +645,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 		pe3.cancel()
 
 	def test_lower_deduction_certificate_application(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Supplier",
 			"Test LDC Supplier",
 			{
@@ -679,7 +679,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 		pi3.cancel()
 
 	def test_ldc_at_0_rate(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Supplier",
 			"Test LDC Supplier",
 			{
@@ -733,13 +733,13 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 		# setup previous fiscal year
 		fiscal_year = get_fiscal_year(today(), company=test_company)
 		if prev_fiscal_year := get_fiscal_year(add_days(fiscal_year[1], -10)):
-			self.prev_fy = frappe.get_doc("Fiscal Year", prev_fiscal_year[0])
+			self.prev_fy = nts .get_doc("Fiscal Year", prev_fiscal_year[0])
 			add_company_to_fy(self.prev_fy, test_company)
 		else:
 			# make previous fiscal year
 			start = datetime.date(fiscal_year[1].year - 1, fiscal_year[1].month, fiscal_year[1].day)
 			end = datetime.date(fiscal_year[2].year - 1, fiscal_year[2].month, fiscal_year[2].day)
-			self.prev_fy = frappe.get_doc(
+			self.prev_fy = nts .get_doc(
 				{
 					"doctype": "Fiscal Year",
 					"year_start_date": start,
@@ -750,7 +750,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 			self.prev_fy.save()
 
 		# setup tax withholding category for previous fiscal year
-		cat = frappe.get_doc("Tax Withholding Category", category)
+		cat = nts .get_doc("Tax Withholding Category", category)
 		cat.append(
 			"rates",
 			{
@@ -773,7 +773,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 		supplier = "Test TDS Supplier"
 		# Cumulative threshold 30000 and tax rate 10%
 		category = "Cumulative Threshold TDS"
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Supplier",
 			supplier,
 			{
@@ -850,7 +850,7 @@ class TestTaxWithholdingCategory(FrappeTestCase):
 
 
 def cancel_invoices():
-	purchase_invoices = frappe.get_all(
+	purchase_invoices = nts .get_all(
 		"Purchase Invoice",
 		{
 			"supplier": ["in", ["Test TDS Supplier", "Test TDS Supplier1", "Test TDS Supplier2"]],
@@ -859,23 +859,23 @@ def cancel_invoices():
 		pluck="name",
 	)
 
-	sales_invoices = frappe.get_all(
+	sales_invoices = nts .get_all(
 		"Sales Invoice", {"customer": "Test TCS Customer", "docstatus": 1}, pluck="name"
 	)
 
 	for d in purchase_invoices:
-		frappe.get_doc("Purchase Invoice", d).cancel()
+		nts .get_doc("Purchase Invoice", d).cancel()
 
 	for d in sales_invoices:
-		frappe.get_doc("Sales Invoice", d).cancel()
+		nts .get_doc("Sales Invoice", d).cancel()
 
 
 def create_purchase_invoice(**args):
 	# return sales invoice doc object
-	item = frappe.db.get_value("Item", {"item_name": "TDS Item"}, "name")
+	item = nts .db.get_value("Item", {"item_name": "TDS Item"}, "name")
 
-	args = frappe._dict(args)
-	pi = frappe.get_doc(
+	args = nts ._dict(args)
+	pi = nts .get_doc(
 		{
 			"doctype": "Purchase Invoice",
 			"set_posting_time": args.set_posting_time or False,
@@ -906,10 +906,10 @@ def create_purchase_invoice(**args):
 
 def create_purchase_order(**args):
 	# return purchase order doc object
-	item = frappe.db.get_value("Item", {"item_name": "TDS Item"}, "name")
+	item = nts .db.get_value("Item", {"item_name": "TDS Item"}, "name")
 
-	args = frappe._dict(args)
-	po = frappe.get_doc(
+	args = nts ._dict(args)
+	po = nts .get_doc(
 		{
 			"doctype": "Purchase Order",
 			"transaction_date": today(),
@@ -939,10 +939,10 @@ def create_purchase_order(**args):
 
 def create_sales_invoice(**args):
 	# return sales invoice doc object
-	item = frappe.db.get_value("Item", {"item_name": "TCS Item"}, "name")
+	item = nts .db.get_value("Item", {"item_name": "TCS Item"}, "name")
 
-	args = frappe._dict(args)
-	si = frappe.get_doc(
+	args = nts ._dict(args)
+	si = nts .get_doc(
 		{
 			"doctype": "Sales Invoice",
 			"posting_date": today(),
@@ -972,8 +972,8 @@ def create_sales_invoice(**args):
 
 def create_payment_entry(**args):
 	# return payment entry doc object
-	args = frappe._dict(args)
-	pe = frappe.get_doc(
+	args = nts ._dict(args)
+	pe = nts .get_doc(
 		{
 			"doctype": "Payment Entry",
 			"posting_date": today(),
@@ -1010,10 +1010,10 @@ def create_records():
 		"Test TDS Supplier8",
 		"Test LDC Supplier",
 	]:
-		if frappe.db.exists("Supplier", name):
+		if nts .db.exists("Supplier", name):
 			continue
 
-		frappe.get_doc(
+		nts .get_doc(
 			{
 				"supplier_group": "_Test Supplier Group",
 				"supplier_name": name,
@@ -1022,16 +1022,16 @@ def create_records():
 		).insert()
 
 	for name in ["Test TCS Customer"]:
-		if frappe.db.exists("Customer", name):
+		if nts .db.exists("Customer", name):
 			continue
 
-		frappe.get_doc(
+		nts .get_doc(
 			{"customer_group": "_Test Customer Group", "customer_name": name, "doctype": "Customer"}
 		).insert()
 
 	# create item
-	if not frappe.db.exists("Item", "TDS Item"):
-		frappe.get_doc(
+	if not nts .db.exists("Item", "TDS Item"):
+		nts .get_doc(
 			{
 				"doctype": "Item",
 				"item_code": "TDS Item",
@@ -1041,8 +1041,8 @@ def create_records():
 			}
 		).insert()
 
-	if not frappe.db.exists("Item", "TCS Item"):
-		frappe.get_doc(
+	if not nts .db.exists("Item", "TCS Item"):
+		nts .get_doc(
 			{
 				"doctype": "Item",
 				"item_code": "TCS Item",
@@ -1053,8 +1053,8 @@ def create_records():
 		).insert()
 
 	# create tds account
-	if not frappe.db.exists("Account", "TDS - _TC"):
-		frappe.get_doc(
+	if not nts .db.exists("Account", "TDS - _TC"):
+		nts .get_doc(
 			{
 				"doctype": "Account",
 				"company": "_Test Company",
@@ -1066,8 +1066,8 @@ def create_records():
 		).insert()
 
 	# create tcs account
-	if not frappe.db.exists("Account", "TCS - _TC"):
-		frappe.get_doc(
+	if not nts .db.exists("Account", "TCS - _TC"):
+		nts .get_doc(
 			{
 				"doctype": "Account",
 				"company": "_Test Company",
@@ -1194,8 +1194,8 @@ def create_tax_withholding_category(
 	consider_party_ledger_amount=0,
 	tax_on_excess_amount=0,
 ):
-	if not frappe.db.exists("Tax Withholding Category", category_name):
-		frappe.get_doc(
+	if not nts .db.exists("Tax Withholding Category", category_name):
+		nts .get_doc(
 			{
 				"doctype": "Tax Withholding Category",
 				"name": category_name,
@@ -1221,8 +1221,8 @@ def create_lower_deduction_certificate(
 	supplier, tax_withholding_category, tax_rate, certificate_no, limit, valid_from=None, valid_upto=None
 ):
 	fiscal_year = get_fiscal_year(today(), company="_Test Company")
-	if not frappe.db.exists("Lower Deduction Certificate", certificate_no):
-		frappe.get_doc(
+	if not nts .db.exists("Lower Deduction Certificate", certificate_no):
+		nts .get_doc(
 			{
 				"doctype": "Lower Deduction Certificate",
 				"company": "_Test Company",

@@ -1,12 +1,12 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2020, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 from datetime import datetime
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
+import nts
+from nts import _
+from nts.model.document import Document
 
 
 class IncomingCallSettings(Document):
@@ -16,7 +16,7 @@ class IncomingCallSettings(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.telephony.doctype.incoming_call_handling_schedule.incoming_call_handling_schedule import (
 			IncomingCallHandlingSchedule,
@@ -51,7 +51,7 @@ class IncomingCallSettings(Document):
 				)
 
 		if errors:
-			frappe.throw("<br/>".join(errors))
+			nts.throw("<br/>".join(errors))
 
 	def validate_call_schedule_overlaps(self, schedule: list):
 		"""Check if any time slots are overlapped in a day schedule."""
@@ -69,7 +69,7 @@ class IncomingCallSettings(Document):
 
 			for i in range(1, len(timeslots)):
 				if self.check_timeslots_overlap(timeslots[i - 1], timeslots[i]):
-					frappe.throw(_("Please fix overlapping time slots for {0}.").format(day))
+					nts.throw(_("Please fix overlapping time slots for {0}.").format(day))
 
 	@staticmethod
 	def check_timeslots_overlap(ts1: tuple[int, int], ts2: tuple[int, int]) -> bool:

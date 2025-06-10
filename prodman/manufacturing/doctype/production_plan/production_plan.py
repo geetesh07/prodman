@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
@@ -6,11 +6,11 @@ import copy
 import json
 from collections import defaultdict
 
-import frappe
-from frappe import _, msgprint
-from frappe.model.document import Document
-from frappe.query_builder.functions import IfNull, Sum
-from frappe.utils import (
+import nts
+from nts import _, msgprint
+from nts.model.document import Document
+from nts.query_builder.functions import IfNull, Sum
+from nts.utils import (
 	add_days,
 	ceil,
 	cint,
@@ -21,7 +21,7 @@ from frappe.utils import (
 	now_datetime,
 	nowdate,
 )
-from frappe.utils.csvutils import build_csv_response
+from nts.utils.csvutils import build_csv_response
 from pypika.terms import ExistsCriterion
 
 from prodman.manufacturing.doctype.bom.bom import get_children as get_bom_children
@@ -40,7 +40,7 @@ class ProductionPlan(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.manufacturing.doctype.material_request_plan_item.material_request_plan_item import (
 			MaterialRequestPlanItem,
@@ -122,7 +122,7 @@ class ProductionPlan(Document):
 			if row.from_warehouse and row.material_request_type != "Material Transfer":
 				row.from_warehouse = ""
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def validate_sales_orders(self, sales_order=None):
 		sales_orders = []
 
@@ -140,13 +140,13 @@ class ProductionPlan(Document):
 				sales_orders = ", ".join(sales_orders)
 				msg = _("No items are available in sales orders {0} for production").format(sales_orders)
 
-			frappe.throw(msg, title=title)
+			nts.throw(msg, title=title)
 
 		data = [d[0] for d in data]
 
 		for sales_order in sales_orders:
 			if sales_order not in data:
-				frappe.throw(
+				nts.throw(
 					_("No items are available in the sales order {0} for production").format(sales_order),
 					title=title,
 				)
@@ -168,12 +168,12 @@ class ProductionPlan(Document):
 	def validate_data(self):
 		for d in self.get("po_items"):
 			if not d.bom_no:
-				frappe.throw(_("Please select BOM for Item in Row {0}").format(d.idx))
+				nts.throw(_("Please select BOM for Item in Row {0}").format(d.idx))
 			else:
 				validate_bom_no(d.item_code, d.bom_no)
 
 			if not flt(d.planned_qty):
-				frappe.throw(_("Please enter Planned Qty for Item {0} at row {1}").format(d.item_code, d.idx))
+				nts.throw(_("Please enter Planned Qty for Item {0} at row {1}").format(d.item_code, d.idx))
 
 	def _rename_temporary_references(self):
 		"""po_items and sub_assembly_items items are both constructed client side without saving.
@@ -187,7 +187,7 @@ class ProductionPlan(Document):
 			if sub_assy.production_plan_item not in actual_names:
 				sub_assy.production_plan_item = new_name_map.get(sub_assy.production_plan_item)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_open_sales_orders(self):
 		"""Pull sales orders  which are pending to deliver based on criteria selected"""
 		open_so = get_sales_orders(self)
@@ -195,7 +195,7 @@ class ProductionPlan(Document):
 		if open_so:
 			self.add_so_in_table(open_so)
 		else:
-			frappe.msgprint(_("Sales orders are not available for production"))
+			nts.msgprint(_("Sales orders are not available for production"))
 
 	def add_so_in_table(self, open_so):
 		"""Add sales orders in the table"""
@@ -212,16 +212,16 @@ class ProductionPlan(Document):
 				},
 			)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_pending_material_requests(self):
 		"""Pull Material Requests that are pending based on criteria selected"""
 
-		bom = frappe.qb.DocType("BOM")
-		mr = frappe.qb.DocType("Material Request")
-		mr_item = frappe.qb.DocType("Material Request Item")
+		bom = nts.qb.DocType("BOM")
+		mr = nts.qb.DocType("Material Request")
+		mr_item = nts.qb.DocType("Material Request Item")
 
 		pending_mr_query = (
-			frappe.qb.from_(mr)
+			nts.qb.from_(mr)
 			.from_(mr_item)
 			.select(mr.name, mr.transaction_date)
 			.distinct()
@@ -234,7 +234,7 @@ class ProductionPlan(Document):
 				& (mr_item.qty > IfNull(mr_item.ordered_qty, 0))
 				& (
 					ExistsCriterion(
-						frappe.qb.from_(bom)
+						nts.qb.from_(bom)
 						.select(bom.name)
 						.where((bom.item == mr_item.item_code) & (bom.is_active == 1))
 					)
@@ -268,13 +268,13 @@ class ProductionPlan(Document):
 				{"material_request": data.name, "material_request_date": data.transaction_date},
 			)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def combine_so_items(self):
 		if self.combine_items and self.po_items and len(self.po_items) > 0:
 			items = []
 			for row in self.po_items:
 				items.append(
-					frappe._dict(
+					nts._dict(
 						{
 							"parent": row.sales_order,
 							"item_code": row.item_code,
@@ -293,7 +293,7 @@ class ProductionPlan(Document):
 		else:
 			self.get_items()
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_items(self):
 		self.set("po_items", [])
 		if self.get_items_from == "Sales Order":
@@ -310,11 +310,11 @@ class ProductionPlan(Document):
 	def get_bom_item_condition(self):
 		"""Check if Item or if its Template has a BOM."""
 		bom_item_condition = None
-		has_bom = frappe.db.exists({"doctype": "BOM", "item": self.item_code, "docstatus": 1})
+		has_bom = nts.db.exists({"doctype": "BOM", "item": self.item_code, "docstatus": 1})
 
 		if not has_bom:
-			bom = frappe.qb.DocType("BOM")
-			template_item = frappe.db.get_value("Item", self.item_code, ["variant_of"])
+			bom = nts.qb.DocType("BOM")
+			template_item = nts.db.get_value("Item", self.item_code, ["variant_of"])
 			bom_item_condition = bom.item == template_item or None
 
 		return bom_item_condition
@@ -322,16 +322,16 @@ class ProductionPlan(Document):
 	def get_so_items(self):
 		# Check for empty table or empty rows
 		if not self.get("sales_orders") or not self.get_so_mr_list("sales_order", "sales_orders"):
-			frappe.throw(_("Please fill the Sales Orders table"), title=_("Sales Orders Required"))
+			nts.throw(_("Please fill the Sales Orders table"), title=_("Sales Orders Required"))
 
 		so_list = self.get_so_mr_list("sales_order", "sales_orders")
 
-		bom = frappe.qb.DocType("BOM")
-		so_item = frappe.qb.DocType("Sales Order Item")
+		bom = nts.qb.DocType("BOM")
+		so_item = nts.qb.DocType("Sales Order Item")
 
-		items_subquery = frappe.qb.from_(bom).select(bom.name).where(bom.is_active == 1)
+		items_subquery = nts.qb.from_(bom).select(bom.name).where(bom.is_active == 1)
 		items_query = (
-			frappe.qb.from_(so_item)
+			nts.qb.from_(so_item)
 			.select(
 				so_item.parent,
 				so_item.item_code,
@@ -352,7 +352,7 @@ class ProductionPlan(Document):
 			)
 		)
 
-		if self.item_code and frappe.db.exists("Item", self.item_code):
+		if self.item_code and nts.db.exists("Item", self.item_code):
 			items_query = items_query.where(so_item.item_code == self.item_code)
 			items_subquery = items_subquery.where(
 				self.get_bom_item_condition() or bom.item == so_item.item_code
@@ -367,10 +367,10 @@ class ProductionPlan(Document):
 				flt(item.qty) - max(item.work_order_qty, item.delivered_qty, 0)
 			) * item.conversion_factor
 
-		pi = frappe.qb.DocType("Packed Item")
+		pi = nts.qb.DocType("Packed Item")
 
 		packed_items_query = (
-			frappe.qb.from_(so_item)
+			nts.qb.from_(so_item)
 			.from_(pi)
 			.select(
 				pi.parent,
@@ -390,7 +390,7 @@ class ProductionPlan(Document):
 				& (so_item.qty > so_item.work_order_qty)
 				& (
 					ExistsCriterion(
-						frappe.qb.from_(bom)
+						nts.qb.from_(bom)
 						.select(bom.name)
 						.where((bom.item == pi.item_code) & (bom.is_active == 1))
 					)
@@ -411,15 +411,15 @@ class ProductionPlan(Document):
 		if not self.get("material_requests") or not self.get_so_mr_list(
 			"material_request", "material_requests"
 		):
-			frappe.throw(_("Please fill the Material Requests table"), title=_("Material Requests Required"))
+			nts.throw(_("Please fill the Material Requests table"), title=_("Material Requests Required"))
 
 		mr_list = self.get_so_mr_list("material_request", "material_requests")
 
-		bom = frappe.qb.DocType("BOM")
-		mr_item = frappe.qb.DocType("Material Request Item")
+		bom = nts.qb.DocType("BOM")
+		mr_item = nts.qb.DocType("Material Request Item")
 
 		items_query = (
-			frappe.qb.from_(mr_item)
+			nts.qb.from_(mr_item)
 			.select(
 				mr_item.parent,
 				mr_item.name,
@@ -436,7 +436,7 @@ class ProductionPlan(Document):
 				& (mr_item.qty > mr_item.ordered_qty)
 				& (
 					ExistsCriterion(
-						frappe.qb.from_(bom)
+						nts.qb.from_(bom)
 						.select(bom.name)
 						.where((bom.item == mr_item.item_code) & (bom.is_active == 1))
 					)
@@ -569,7 +569,7 @@ class ProductionPlan(Document):
 					continue
 
 				key = (row.sales_order, row.sales_order_item)
-				frappe.db.set_value(
+				nts.db.set_value(
 					"Sales Order Item",
 					row.sales_order_item,
 					"production_plan_qty",
@@ -578,8 +578,8 @@ class ProductionPlan(Document):
 
 	@staticmethod
 	def get_so_wise_planned_qty(sales_orders):
-		so_wise_planned_qty = frappe._dict()
-		data = frappe.get_all(
+		so_wise_planned_qty = nts._dict()
+		data = nts.get_all(
 			"Production Plan Item",
 			fields=["sales_order", "sales_order_item", "SUM(planned_qty) as qty"],
 			filters={
@@ -600,22 +600,22 @@ class ProductionPlan(Document):
 		for d in self.mr_items:
 			if d.warehouse:
 				bin_name = get_or_make_bin(d.item_code, d.warehouse)
-				bin = frappe.get_doc("Bin", bin_name, for_update=True)
+				bin = nts.get_doc("Bin", bin_name, for_update=True)
 				bin.update_reserved_qty_for_production_plan()
 
 		for d in self.sub_assembly_items:
 			if d.fg_warehouse and d.type_of_manufacturing == "In House":
 				bin_name = get_or_make_bin(d.production_item, d.fg_warehouse)
-				bin = frappe.get_doc("Bin", bin_name, for_update=True)
+				bin = nts.get_doc("Bin", bin_name, for_update=True)
 				bin.update_reserved_qty_for_for_sub_assembly()
 
 	def delete_draft_work_order(self):
-		for d in frappe.get_all(
+		for d in nts.get_all(
 			"Work Order", fields=["name"], filters={"docstatus": 0, "production_plan": ("=", self.name)}
 		):
-			frappe.delete_doc("Work Order", d.name)
+			nts.delete_doc("Work Order", d.name)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def set_status(self, close=None, update_bin=False):
 		self.status = {0: "Draft", 1: "Submitted", 2: "Cancelled"}.get(self.docstatus)
 
@@ -691,7 +691,7 @@ class ProductionPlan(Document):
 				key = (d.name, d.item_code, d.warehouse)
 
 			if not item_details["project"] and d.sales_order:
-				item_details["project"] = frappe.get_cached_value("Sales Order", d.sales_order, "project")
+				item_details["project"] = nts.get_cached_value("Sales Order", d.sales_order, "project")
 
 			if self.get_items_from == "Material Request":
 				item_details.update({"qty": d.planned_qty})
@@ -707,7 +707,7 @@ class ProductionPlan(Document):
 
 		return item_dict
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def make_work_order(self):
 		from prodman.manufacturing.doctype.work_order.work_order import get_default_warehouse
 
@@ -722,7 +722,7 @@ class ProductionPlan(Document):
 		self.show_list_created_message("Purchase Order", po_list)
 
 		if not wo_list:
-			frappe.msgprint(_("No Work Orders were created"))
+			nts.msgprint(_("No Work Orders were created"))
 
 	def make_work_order_for_finished_goods(self, wo_list, default_warehouses):
 		items_data = self.get_production_items()
@@ -784,7 +784,7 @@ class ProductionPlan(Document):
 			return
 
 		for supplier, po_list in subcontracted_po.items():
-			po = frappe.new_doc("Purchase Order")
+			po = nts.new_doc("Purchase Order")
 			po.company = self.company
 			po.supplier = supplier
 			po.schedule_date = getdate(po_list[0].schedule_date) if po_list[0].schedule_date else nowdate()
@@ -820,7 +820,7 @@ class ProductionPlan(Document):
 		if not doc_list:
 			return
 
-		frappe.flags.mute_messages = False
+		nts.flags.mute_messages = False
 		if doc_list:
 			doc_list = [get_link_to_form(doctype, p) for p in doc_list]
 			msgprint(_("{0} created").format(comma_and(doc_list)))
@@ -831,7 +831,7 @@ class ProductionPlan(Document):
 		if flt(item.get("qty")) <= 0:
 			return
 
-		wo = frappe.new_doc("Work Order")
+		wo = nts.new_doc("Work Order")
 		wo.update(item)
 		wo.planned_start_date = item.get("planned_start_date") or item.get("schedule_date")
 
@@ -849,14 +849,14 @@ class ProductionPlan(Document):
 		except OverProductionError:
 			pass
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def make_material_request(self):
 		"""Create Material Requests grouped by Sales Order and Material Request Type"""
 		material_request_list = []
 		material_request_map = {}
 
 		for item in self.mr_items:
-			item_doc = frappe.get_cached_doc("Item", item.item_code)
+			item_doc = nts.get_cached_doc("Item", item.item_code)
 
 			material_request_type = item.material_request_type or item_doc.default_material_request_type
 
@@ -866,7 +866,7 @@ class ProductionPlan(Document):
 
 			if key not in material_request_map:
 				# make a new MR for the combination
-				material_request_map[key] = frappe.new_doc("Material Request")
+				material_request_map[key] = nts.new_doc("Material Request")
 				material_request = material_request_map[key]
 				material_request.update(
 					{
@@ -895,7 +895,7 @@ class ProductionPlan(Document):
 					"sales_order": item.sales_order,
 					"production_plan": self.name,
 					"material_request_plan_item": item.name,
-					"project": frappe.db.get_value("Sales Order", item.sales_order, "project")
+					"project": nts.db.get_value("Sales Order", item.sales_order, "project")
 					if item.sales_order
 					else None,
 				},
@@ -910,7 +910,7 @@ class ProductionPlan(Document):
 			if self.get("submit_material_request"):
 				material_request.submit()
 
-		frappe.flags.mute_messages = False
+		nts.flags.mute_messages = False
 
 		if material_request_list:
 			material_request_list = [
@@ -920,22 +920,22 @@ class ProductionPlan(Document):
 		else:
 			msgprint(_("No material request created"))
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_sub_assembly_items(self, manufacturing_type=None):
 		"Fetch sub assembly items and optionally combine them."
 		self.sub_assembly_items = []
 		sub_assembly_items_store = []  # temporary store to process all subassembly items
-		bin_details = frappe._dict()
+		bin_details = nts._dict()
 
 		for row in self.po_items:
 			if self.skip_available_sub_assembly_item and not self.sub_assembly_warehouse:
-				frappe.throw(_("Row #{0}: Please select the Sub Assembly Warehouse").format(row.idx))
+				nts.throw(_("Row #{0}: Please select the Sub Assembly Warehouse").format(row.idx))
 
 			if not row.item_code:
-				frappe.throw(_("Row #{0}: Please select Item Code in Assembly Items").format(row.idx))
+				nts.throw(_("Row #{0}: Please select Item Code in Assembly Items").format(row.idx))
 
 			if not row.bom_no:
-				frappe.throw(_("Row #{0}: Please select the BOM No in Assembly Items").format(row.idx))
+				nts.throw(_("Row #{0}: Please select the BOM No in Assembly Items").format(row.idx))
 
 			bom_data = []
 
@@ -963,7 +963,7 @@ class ProductionPlan(Document):
 				"If you still want to proceed, please disable 'Skip Available Sub Assembly Items' checkbox."
 			)
 
-			frappe.msgprint(message, title=_("Note"))
+			nts.msgprint(message, title=_("Note"))
 
 		if self.combine_sub_items:
 			# Combine subassembly items
@@ -977,7 +977,7 @@ class ProductionPlan(Document):
 
 	def set_sub_assembly_items_based_on_level(self, row, bom_data, manufacturing_type=None):
 		"Modify bom_data, set additional details."
-		is_group_warehouse = frappe.db.get_value("Warehouse", self.sub_assembly_warehouse, "is_group")
+		is_group_warehouse = nts.db.get_value("Warehouse", self.sub_assembly_warehouse, "is_group")
 
 		for data in bom_data:
 			data.qty = data.stock_qty
@@ -998,8 +998,8 @@ class ProductionPlan(Document):
 		if not items:
 			return
 
-		default_supplier = frappe._dict(
-			frappe.get_all(
+		default_supplier = nts._dict(
+			nts.get_all(
 				"Item Default",
 				fields=["parent", "default_supplier"],
 				filters={"parent": ("in", items), "default_supplier": ("is", "set")},
@@ -1052,7 +1052,7 @@ class ProductionPlan(Document):
 		if not all_items_produced:
 			return False
 
-		wo_status = frappe.get_all(
+		wo_status = nts.get_all(
 			"Work Order",
 			filters={
 				"production_plan": self.name,
@@ -1066,10 +1066,10 @@ class ProductionPlan(Document):
 		return all_work_orders_completed
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def download_raw_materials(doc, warehouses=None):
 	if isinstance(doc, str):
-		doc = frappe._dict(json.loads(doc))
+		doc = nts._dict(json.loads(doc))
 
 	item_list = [
 		[
@@ -1090,10 +1090,10 @@ def download_raw_materials(doc, warehouses=None):
 	]
 
 	doc.warehouse = None
-	frappe.flags.show_qty_in_stock_uom = 1
+	nts.flags.show_qty_in_stock_uom = 1
 	items = get_items_for_material_requests(doc, warehouses=warehouses, get_parent_warehouse_data=True)
 
-	duplicate_item_wh_list = frappe._dict()
+	duplicate_item_wh_list = nts._dict()
 
 	for d in items:
 		key = (d.get("item_code"), d.get("warehouse"))
@@ -1145,14 +1145,14 @@ def download_raw_materials(doc, warehouses=None):
 
 
 def get_exploded_items(item_details, company, bom_no, include_non_stock_items, planned_qty=1, doc=None):
-	bei = frappe.qb.DocType("BOM Explosion Item")
-	bom = frappe.qb.DocType("BOM")
-	item = frappe.qb.DocType("Item")
-	item_default = frappe.qb.DocType("Item Default")
-	item_uom = frappe.qb.DocType("UOM Conversion Detail")
+	bei = nts.qb.DocType("BOM Explosion Item")
+	bom = nts.qb.DocType("BOM")
+	item = nts.qb.DocType("Item")
+	item_default = nts.qb.DocType("Item Default")
+	item_uom = nts.qb.DocType("UOM Conversion Detail")
 
 	data = (
-		frappe.qb.from_(bei)
+		nts.qb.from_(bei)
 		.join(bom)
 		.on(bom.name == bei.parent)
 		.join(item)
@@ -1193,7 +1193,7 @@ def get_exploded_items(item_details, company, bom_no, include_non_stock_items, p
 
 
 def get_uom_conversion_factor(item_code, uom):
-	return frappe.db.get_value(
+	return nts.db.get_value(
 		"UOM Conversion Detail", {"parent": item_code, "uom": uom}, "conversion_factor"
 	)
 
@@ -1209,14 +1209,14 @@ def get_subitems(
 	parent_qty,
 	planned_qty=1,
 ):
-	bom_item = frappe.qb.DocType("BOM Item")
-	bom = frappe.qb.DocType("BOM")
-	item = frappe.qb.DocType("Item")
-	item_default = frappe.qb.DocType("Item Default")
-	item_uom = frappe.qb.DocType("UOM Conversion Detail")
+	bom_item = nts.qb.DocType("BOM Item")
+	bom = nts.qb.DocType("BOM")
+	item = nts.qb.DocType("Item")
+	item_default = nts.qb.DocType("Item Default")
+	item_uom = nts.qb.DocType("UOM Conversion Detail")
 
 	items = (
-		frappe.qb.from_(bom_item)
+		nts.qb.from_(bom_item)
 		.join(bom)
 		.on(bom.name == bom_item.parent)
 		.join(item)
@@ -1306,8 +1306,8 @@ def get_material_request_items(
 		row["purchase_uom"] = row["stock_uom"]
 
 	if row["purchase_uom"] != row["stock_uom"]:
-		if not (row["conversion_factor"] or frappe.flags.show_qty_in_stock_uom):
-			frappe.throw(
+		if not (row["conversion_factor"] or nts.flags.show_qty_in_stock_uom):
+			nts.throw(
 				_("UOM Conversion factor ({0} -> {1}) not found for item: {2}").format(
 					row["purchase_uom"], row["stock_uom"], row.item_code
 				)
@@ -1315,13 +1315,13 @@ def get_material_request_items(
 
 			required_qty = required_qty / row["conversion_factor"]
 
-	if frappe.db.get_value("UOM", row["purchase_uom"], "must_be_whole_number"):
+	if nts.db.get_value("UOM", row["purchase_uom"], "must_be_whole_number"):
 		required_qty = ceil(required_qty)
 
 	if include_safety_stock:
 		required_qty += flt(row["safety_stock"])
 
-	item_details = frappe.get_cached_value("Item", row.item_code, ["purchase_uom", "stock_uom"], as_dict=1)
+	item_details = nts.get_cached_value("Item", row.item_code, ["purchase_uom", "stock_uom"], as_dict=1)
 
 	conversion_factor = 1.0
 	if (
@@ -1359,22 +1359,22 @@ def get_material_request_items(
 
 
 def get_sales_orders(self):
-	bom = frappe.qb.DocType("BOM")
-	pi = frappe.qb.DocType("Packed Item")
-	so = frappe.qb.DocType("Sales Order")
-	so_item = frappe.qb.DocType("Sales Order Item")
+	bom = nts.qb.DocType("BOM")
+	pi = nts.qb.DocType("Packed Item")
+	so = nts.qb.DocType("Sales Order")
+	so_item = nts.qb.DocType("Sales Order Item")
 
-	open_so_subquery1 = frappe.qb.from_(bom).select(bom.name).where(bom.is_active == 1)
+	open_so_subquery1 = nts.qb.from_(bom).select(bom.name).where(bom.is_active == 1)
 
 	open_so_subquery2 = (
-		frappe.qb.from_(pi)
+		nts.qb.from_(pi)
 		.select(pi.name)
 		.where(
 			(pi.parent == so.name)
 			& (pi.parent_item == so_item.item_code)
 			& (
 				ExistsCriterion(
-					frappe.qb.from_(bom)
+					nts.qb.from_(bom)
 					.select(bom.name)
 					.where((bom.item == pi.item_code) & (bom.is_active == 1))
 				)
@@ -1383,7 +1383,7 @@ def get_sales_orders(self):
 	)
 
 	open_so_query = (
-		frappe.qb.from_(so)
+		nts.qb.from_(so)
 		.from_(so_item)
 		.select(so.name, so.transaction_date, so.customer, so.base_grand_total)
 		.distinct()
@@ -1412,7 +1412,7 @@ def get_sales_orders(self):
 			so_field = "status" if field == "sales_order_status" else field
 			open_so_query = open_so_query.where(so[so_field] == self.get(field))
 
-	if self.item_code and frappe.db.exists("Item", self.item_code):
+	if self.item_code and nts.db.exists("Item", self.item_code):
 		open_so_query = open_so_query.where(so_item.item_code == self.item_code)
 		open_so_subquery1 = open_so_subquery1.where(
 			self.get_bom_item_condition() or bom.item == so_item.item_code
@@ -1427,26 +1427,26 @@ def get_sales_orders(self):
 	return open_so
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_bin_details(row, company, for_warehouse=None, all_warehouse=False):
 	if isinstance(row, str):
-		row = frappe._dict(json.loads(row))
+		row = nts._dict(json.loads(row))
 
-	bin = frappe.qb.DocType("Bin")
-	wh = frappe.qb.DocType("Warehouse")
+	bin = nts.qb.DocType("Bin")
+	wh = nts.qb.DocType("Warehouse")
 
-	subquery = frappe.qb.from_(wh).select(wh.name).where(wh.company == company)
+	subquery = nts.qb.from_(wh).select(wh.name).where(wh.company == company)
 
 	warehouse = ""
 	if not all_warehouse:
 		warehouse = for_warehouse or row.get("source_warehouse") or row.get("default_warehouse")
 
 	if warehouse:
-		lft, rgt = frappe.db.get_value("Warehouse", warehouse, ["lft", "rgt"])
+		lft, rgt = nts.db.get_value("Warehouse", warehouse, ["lft", "rgt"])
 		subquery = subquery.where((wh.lft >= lft) & (wh.rgt <= rgt) & (wh.name == bin.warehouse))
 
 	query = (
-		frappe.qb.from_(bin)
+		nts.qb.from_(bin)
 		.select(
 			bin.warehouse,
 			IfNull(Sum(bin.projected_qty), 0).as_("projected_qty"),
@@ -1462,9 +1462,9 @@ def get_bin_details(row, company, for_warehouse=None, all_warehouse=False):
 	return query.run(as_dict=True)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_so_details(sales_order):
-	return frappe.db.get_value(
+	return nts.db.get_value(
 		"Sales Order", sales_order, ["transaction_date", "customer", "grand_total"], as_dict=1
 	)
 
@@ -1476,7 +1476,7 @@ def get_warehouse_list(warehouses):
 		warehouses = json.loads(warehouses)
 
 	for row in warehouses:
-		child_warehouses = frappe.db.get_descendants("Warehouse", row.get("warehouse"))
+		child_warehouses = nts.db.get_descendants("Warehouse", row.get("warehouse"))
 		if child_warehouses:
 			warehouse_list.extend(child_warehouses)
 		else:
@@ -1485,10 +1485,10 @@ def get_warehouse_list(warehouses):
 	return warehouse_list
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_data=None):
 	if isinstance(doc, str):
-		doc = frappe._dict(json.loads(doc))
+		doc = nts._dict(json.loads(doc))
 
 	if warehouses:
 		warehouses = list(set(get_warehouse_list(warehouses)))
@@ -1506,10 +1506,10 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 
 	if doc.get("sub_assembly_items"):
 		for sa_row in doc.sub_assembly_items:
-			sa_row = frappe._dict(sa_row)
+			sa_row = nts._dict(sa_row)
 			if sa_row.type_of_manufacturing == "Material Request":
 				po_items.append(
-					frappe._dict(
+					nts._dict(
 						{
 							"item_code": sa_row.production_item,
 							"required_qty": sa_row.qty,
@@ -1520,7 +1520,7 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 
 	# Check for empty table or empty rows
 	if not po_items or not [row.get("item_code") for row in po_items if row.get("item_code")]:
-		frappe.throw(
+		nts.throw(
 			_("Items to Manufacture are required to pull the Raw Materials associated with it."),
 			title=_("Items Required"),
 		)
@@ -1529,7 +1529,7 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 	ignore_existing_ordered_qty = doc.get("ignore_existing_ordered_qty")
 	include_safety_stock = doc.get("include_safety_stock")
 
-	so_item_details = frappe._dict()
+	so_item_details = nts._dict()
 
 	sub_assembly_items = defaultdict(int)
 	if doc.get("skip_available_sub_assembly_item") and doc.get("sub_assembly_items"):
@@ -1556,7 +1556,7 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 				include_non_stock_items = doc.get("include_non_stock_items")
 
 			if not planned_qty:
-				frappe.throw(_("For row {0}: Enter Planned Qty").format(data.get("idx")))
+				nts.throw(_("For row {0}: Enter Planned Qty").format(data.get("idx")))
 
 			if bom_no:
 				if data.get("include_exploded_items") and doc.get("skip_available_sub_assembly_item"):
@@ -1595,13 +1595,13 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 						planned_qty=planned_qty,
 					)
 		elif data.get("item_code"):
-			item_master = frappe.get_doc("Item", data["item_code"]).as_dict()
+			item_master = nts.get_doc("Item", data["item_code"]).as_dict()
 			purchase_uom = item_master.purchase_uom or item_master.stock_uom
 			conversion_factor = (
 				get_uom_conversion_factor(item_master.name, purchase_uom) if item_master.purchase_uom else 1.0
 			)
 
-			item_details[item_master.name] = frappe._dict(
+			item_details[item_master.name] = nts._dict(
 				{
 					"item_name": item_master.item_name,
 					"default_bom": doc.bom,
@@ -1622,7 +1622,7 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 		sales_order = doc.get("sales_order")
 
 		for item_code, details in item_details.items():
-			so_item_details.setdefault(sales_order, frappe._dict())
+			so_item_details.setdefault(sales_order, nts._dict())
 			if item_code in so_item_details.get(sales_order, {}):
 				so_item_details[sales_order][item_code]["qty"] = so_item_details[sales_order][item_code].get(
 					"qty", 0
@@ -1659,8 +1659,8 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 		mr_items = new_mr_items
 
 	if not mr_items:
-		to_enable = frappe.bold(_("Ignore Existing Projected Quantity"))
-		warehouse = frappe.bold(doc.get("for_warehouse"))
+		to_enable = nts.bold(_("Ignore Existing Projected Quantity"))
+		warehouse = nts.bold(doc.get("for_warehouse"))
 		message = (
 			_(
 				"As there are sufficient raw materials, Material Request is not required for Warehouse {0}."
@@ -1669,7 +1669,7 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 		)
 		message += _("If you still want to proceed, please enable {0}.").format(to_enable)
 
-		frappe.msgprint(message, title=_("Note"))
+		nts.msgprint(message, title=_("Note"))
 
 	return mr_items
 
@@ -1677,7 +1677,7 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 def get_materials_from_other_locations(item, warehouses, new_mr_items, company):
 	from prodman.stock.doctype.pick_list.pick_list import get_available_item_locations
 
-	stock_uom, purchase_uom = frappe.db.get_value(
+	stock_uom, purchase_uom = nts.db.get_value(
 		"Item", item.get("item_code"), ["stock_uom", "purchase_uom"]
 	)
 
@@ -1717,11 +1717,11 @@ def get_materials_from_other_locations(item, warehouses, new_mr_items, company):
 
 	# raise purchase request for remaining qty
 
-	precision = frappe.get_precision("Material Request Plan Item", "quantity")
+	precision = nts.get_precision("Material Request Plan Item", "quantity")
 	if flt(required_qty, precision) > 0:
 		required_qty = required_qty
 
-		if frappe.db.get_value("UOM", purchase_uom, "must_be_whole_number"):
+		if nts.db.get_value("UOM", purchase_uom, "must_be_whole_number"):
 			required_qty = ceil(required_qty)
 
 		item["quantity"] = required_qty / item.get("conversion_factor")
@@ -1729,7 +1729,7 @@ def get_materials_from_other_locations(item, warehouses, new_mr_items, company):
 		new_mr_items.append(item)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_item_data(item_code):
 	item_details = get_item_details(item_code)
 
@@ -1754,7 +1754,7 @@ def get_sub_assembly_items(
 	data = get_bom_children(parent=bom_no)
 	for d in data:
 		if d.expandable:
-			parent_item_code = frappe.get_cached_value("BOM", bom_no, "item")
+			parent_item_code = nts.get_cached_value("BOM", bom_no, "item")
 			stock_qty = (d.stock_qty / d.parent_bom_qty) * flt(to_produce_qty)
 
 			if skip_available_sub_assembly_item and d.item_code not in sub_assembly_items:
@@ -1774,7 +1774,7 @@ def get_sub_assembly_items(
 
 			if stock_qty > 0:
 				bom_data.append(
-					frappe._dict(
+					nts._dict(
 						{
 							"actual_qty": bin_details[d.item_code][0].get("actual_qty", 0)
 							if bin_details.get(d.item_code)
@@ -1817,13 +1817,13 @@ def set_default_warehouses(row, default_warehouses):
 def get_reserved_qty_for_production_plan(item_code, warehouse):
 	from prodman.manufacturing.doctype.work_order.work_order import get_reserved_qty_for_production
 
-	table = frappe.qb.DocType("Production Plan")
-	child = frappe.qb.DocType("Material Request Plan Item")
+	table = nts.qb.DocType("Production Plan")
+	child = nts.qb.DocType("Material Request Plan Item")
 
 	non_completed_production_plans = get_non_completed_production_plans()
 
 	query = (
-		frappe.qb.from_(table)
+		nts.qb.from_(table)
 		.inner_join(child)
 		.on(table.name == child.parent)
 		.select(Sum(child.required_bom_qty))
@@ -1857,13 +1857,13 @@ def get_reserved_qty_for_production_plan(item_code, warehouse):
 	return reserved_qty_for_production_plan - reserved_qty_for_production
 
 
-@frappe.request_cache
+@nts.request_cache
 def get_non_completed_production_plans():
-	table = frappe.qb.DocType("Production Plan")
-	child = frappe.qb.DocType("Production Plan Item")
+	table = nts.qb.DocType("Production Plan")
+	child = nts.qb.DocType("Production Plan Item")
 
 	return (
-		frappe.qb.from_(table)
+		nts.qb.from_(table)
 		.inner_join(child)
 		.on(table.name == child.parent)
 		.select(table.name)
@@ -1885,14 +1885,14 @@ def get_raw_materials_of_sub_assembly_items(
 	sub_assembly_items,
 	planned_qty=1,
 ):
-	bei = frappe.qb.DocType("BOM Item")
-	bom = frappe.qb.DocType("BOM")
-	item = frappe.qb.DocType("Item")
-	item_default = frappe.qb.DocType("Item Default")
-	item_uom = frappe.qb.DocType("UOM Conversion Detail")
+	bei = nts.qb.DocType("BOM Item")
+	bom = nts.qb.DocType("BOM")
+	item = nts.qb.DocType("Item")
+	item_default = nts.qb.DocType("Item Default")
+	item_uom = nts.qb.DocType("UOM Conversion Detail")
 
 	items = (
-		frappe.qb.from_(bei)
+		nts.qb.from_(bei)
 		.join(bom)
 		.on(bom.name == bei.parent)
 		.join(item)
@@ -1953,18 +1953,18 @@ def get_raw_materials_of_sub_assembly_items(
 	return item_details
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def sales_order_query(doctype=None, txt=None, searchfield=None, start=None, page_len=None, filters=None):
-	frappe.has_permission("Production Plan", throw=True)
+	nts.has_permission("Production Plan", throw=True)
 
 	if not filters:
 		filters = {}
 
-	so_table = frappe.qb.DocType("Sales Order")
-	table = frappe.qb.DocType("Sales Order Item")
+	so_table = nts.qb.DocType("Sales Order")
+	table = nts.qb.DocType("Sales Order Item")
 
 	query = (
-		frappe.qb.from_(so_table)
+		nts.qb.from_(so_table)
 		.join(table)
 		.on(table.parent == so_table.name)
 		.select(table.parent)
@@ -1991,11 +1991,11 @@ def sales_order_query(doctype=None, txt=None, searchfield=None, start=None, page
 
 
 def get_reserved_qty_for_sub_assembly(item_code, warehouse):
-	table = frappe.qb.DocType("Production Plan")
-	child = frappe.qb.DocType("Production Plan Sub Assembly Item")
+	table = nts.qb.DocType("Production Plan")
+	child = nts.qb.DocType("Production Plan Sub Assembly Item")
 
 	query = (
-		frappe.qb.from_(table)
+		nts.qb.from_(table)
 		.inner_join(child)
 		.on(table.name == child.parent)
 		.select(Sum(child.qty - IfNull(child.wo_produced_qty, 0)))

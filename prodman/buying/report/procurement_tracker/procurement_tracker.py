@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import flt
+import nts
+from nts import _
+from nts.utils import flt
 
 
 def execute(filters=None):
@@ -188,11 +188,11 @@ def get_data(filters):
 
 def get_mapped_mr_details(filters):
 	mr_records = {}
-	parent = frappe.qb.DocType("Material Request")
-	child = frappe.qb.DocType("Material Request Item")
+	parent = nts.qb.DocType("Material Request")
+	child = nts.qb.DocType("Material Request Item")
 
 	query = (
-		frappe.qb.from_(parent)
+		nts.qb.from_(parent)
 		.from_(child)
 		.select(
 			parent.transaction_date,
@@ -217,7 +217,7 @@ def get_mapped_mr_details(filters):
 	procurement_record_against_mr = []
 	for record in mr_details:
 		if record.per_ordered:
-			mr_records.setdefault(record.name, []).append(frappe._dict(record))
+			mr_records.setdefault(record.name, []).append(nts._dict(record))
 		else:
 			procurement_record_details = dict(
 				material_request_date=record.transaction_date,
@@ -239,10 +239,10 @@ def get_mapped_mr_details(filters):
 
 
 def get_mapped_pi_records():
-	po = frappe.qb.DocType("Purchase Order")
-	pi_item = frappe.qb.DocType("Purchase Invoice Item")
+	po = nts.qb.DocType("Purchase Order")
+	pi_item = nts.qb.DocType("Purchase Invoice Item")
 	pi_records = (
-		frappe.qb.from_(pi_item)
+		nts.qb.from_(pi_item)
 		.inner_join(po)
 		.on(pi_item.purchase_order == po.name)
 		.select(pi_item.po_detail, pi_item.base_amount)
@@ -253,14 +253,14 @@ def get_mapped_pi_records():
 		)
 	).run()
 
-	return frappe._dict(pi_records)
+	return nts._dict(pi_records)
 
 
 def get_mapped_pr_records():
-	pr = frappe.qb.DocType("Purchase Receipt")
-	pr_item = frappe.qb.DocType("Purchase Receipt Item")
+	pr = nts.qb.DocType("Purchase Receipt")
+	pr_item = nts.qb.DocType("Purchase Receipt Item")
 	pr_records = (
-		frappe.qb.from_(pr)
+		nts.qb.from_(pr)
 		.from_(pr_item)
 		.select(pr_item.purchase_order_item, pr.posting_date)
 		.where(
@@ -271,15 +271,15 @@ def get_mapped_pr_records():
 		)
 	).run()
 
-	return frappe._dict(pr_records)
+	return nts._dict(pr_records)
 
 
 def get_po_entries(filters):
-	parent = frappe.qb.DocType("Purchase Order")
-	child = frappe.qb.DocType("Purchase Order Item")
+	parent = nts.qb.DocType("Purchase Order")
+	child = nts.qb.DocType("Purchase Order Item")
 
 	query = (
-		frappe.qb.from_(parent)
+		nts.qb.from_(parent)
 		.from_(child)
 		.select(
 			child.name,

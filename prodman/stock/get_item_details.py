@@ -1,16 +1,16 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 
-import frappe
-from frappe import _, throw
-from frappe.model import child_table_fields, default_fields
-from frappe.model.meta import get_field_precision
-from frappe.model.utils import get_fetch_values
-from frappe.query_builder.functions import IfNull, Sum
-from frappe.utils import add_days, add_months, cint, cstr, flt, getdate, parse_json
+import nts
+from nts import _, throw
+from nts.model import child_table_fields, default_fields
+from nts.model.meta import get_field_precision
+from nts.model.utils import get_fetch_values
+from nts.query_builder.functions import IfNull, Sum
+from nts.utils import add_days, add_months, cint, cstr, flt, getdate, parse_json
 
 from prodman import get_company_currency
 from prodman.accounts.doctype.pricing_rule.pricing_rule import (
@@ -34,7 +34,7 @@ purchase_doctypes = [
 ]
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_item_details(args, doc=None, for_validate=False, overwrite_warehouse=True):
 	"""
 	args = {
@@ -61,7 +61,7 @@ def get_item_details(args, doc=None, for_validate=False, overwrite_warehouse=Tru
 	args = process_args(args)
 	for_validate = process_string_args(for_validate)
 	overwrite_warehouse = process_string_args(overwrite_warehouse)
-	item = frappe.get_cached_doc("Item", args.item_code)
+	item = nts.get_cached_doc("Item", args.item_code)
 	validate_item_details(args, item)
 
 	if isinstance(doc, str):
@@ -116,7 +116,7 @@ def get_item_details(args, doc=None, for_validate=False, overwrite_warehouse=Tru
 	out.update(data)
 
 	if (
-		frappe.db.get_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward")
+		nts.db.get_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward")
 		and not args.get("serial_and_batch_bundle")
 		and (args.get("use_serial_batch_fields") or args.get("doctype") == "POS Invoice")
 	):
@@ -144,9 +144,9 @@ def remove_standard_fields(details):
 
 
 def set_valuation_rate(out, args):
-	if frappe.db.exists("Product Bundle", {"name": args.item_code, "disabled": 0}, cache=True):
+	if nts.db.exists("Product Bundle", {"name": args.item_code, "disabled": 0}, cache=True):
 		valuation_rate = 0.0
-		bundled_items = frappe.get_doc("Product Bundle", args.item_code)
+		bundled_items = nts.get_doc("Product Bundle", args.item_code)
 
 		for bundle_item in bundled_items.items:
 			valuation_rate += flt(
@@ -188,13 +188,13 @@ def update_stock(ctx, out, doc=None):
 		and out.stock_qty > 0
 	):
 		if doc and isinstance(doc, dict):
-			doc = frappe._dict(doc)
+			doc = nts._dict(doc)
 
-		kwargs = frappe._dict(
+		kwargs = nts._dict(
 			{
 				"item_code": ctx.item_code,
 				"warehouse": ctx.warehouse,
-				"based_on": frappe.db.get_single_value("Stock Settings", "pick_serial_and_batch_based_on"),
+				"based_on": nts.db.get_single_value("Stock Settings", "pick_serial_and_batch_based_on"),
 			}
 		)
 
@@ -276,7 +276,7 @@ def process_args(args):
 	if isinstance(args, str):
 		args = json.loads(args)
 
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
 	if not args.get("price_list"):
 		args.price_list = args.get("selling_price_list") or args.get("buying_price_list")
@@ -298,13 +298,13 @@ def process_string_args(args):
 
 def get_item_code(barcode=None, serial_no=None):
 	if barcode:
-		item_code = frappe.db.get_value("Item Barcode", {"barcode": barcode}, fieldname=["parent"])
+		item_code = nts.db.get_value("Item Barcode", {"barcode": barcode}, fieldname=["parent"])
 		if not item_code:
-			frappe.throw(_("No Item with Barcode {0}").format(barcode))
+			nts.throw(_("No Item with Barcode {0}").format(barcode))
 	elif serial_no:
-		item_code = frappe.db.get_value("Serial No", serial_no, "item_code")
+		item_code = nts.db.get_value("Serial No", serial_no, "item_code")
 		if not item_code:
-			frappe.throw(_("No Item with Serial No {0}").format(serial_no))
+			nts.throw(_("No Item with Serial No {0}").format(serial_no))
 
 	return item_code
 
@@ -367,20 +367,20 @@ def get_basic_details(args, item, overwrite_warehouse=True):
 	                against_blanket_order: 0/1
 	        }
 	:param item: `item_code` of Item object
-	:return: frappe._dict
+	:return: nts._dict
 	"""
 
 	if not item:
-		item = frappe.get_doc("Item", args.get("item_code"))
+		item = nts.get_doc("Item", args.get("item_code"))
 
-	if item.variant_of and not item.taxes and frappe.db.exists("Item Tax", {"parent": item.variant_of}):
+	if item.variant_of and not item.taxes and nts.db.exists("Item Tax", {"parent": item.variant_of}):
 		item.update_template_tables()
 
 	item_defaults = get_item_defaults(item.name, args.company)
 	item_group_defaults = get_item_group_defaults(item.name, args.company)
 	brand_defaults = get_brand_defaults(item.name, args.company)
 
-	defaults = frappe._dict(
+	defaults = nts._dict(
 		{
 			"item_defaults": item_defaults,
 			"item_group_defaults": item_group_defaults,
@@ -391,7 +391,7 @@ def get_basic_details(args, item, overwrite_warehouse=True):
 	warehouse = get_item_warehouse(item, args, overwrite_warehouse, defaults)
 
 	if args.get("doctype") == "Material Request" and not args.get("material_request_type"):
-		args["material_request_type"] = frappe.db.get_value(
+		args["material_request_type"] = nts.db.get_value(
 			"Material Request", args.get("name"), "material_request_type", cache=True
 		)
 
@@ -418,10 +418,10 @@ def get_basic_details(args, item, overwrite_warehouse=True):
 	# Set stock UOM in args, so that it can be used while fetching item price
 	args.stock_uom = item.stock_uom
 
-	if args.get("batch_no") and item.name != frappe.get_cached_value("Batch", args.get("batch_no"), "item"):
+	if args.get("batch_no") and item.name != nts.get_cached_value("Batch", args.get("batch_no"), "item"):
 		args["batch_no"] = ""
 
-	out = frappe._dict(
+	out = nts._dict(
 		{
 			"item_code": item.name,
 			"item_name": item.item_name,
@@ -495,7 +495,7 @@ def get_basic_details(args, item, overwrite_warehouse=True):
 	args.stock_qty = out.stock_qty
 
 	# calculate last purchase rate
-	if args.get("doctype") in purchase_doctypes and not frappe.db.get_single_value(
+	if args.get("doctype") in purchase_doctypes and not nts.db.get_single_value(
 		"Buying Settings", "disable_last_purchase_rate"
 	):
 		from prodman.buying.doctype.purchase_order.purchase_order import item_last_purchase_rate
@@ -512,7 +512,7 @@ def get_basic_details(args, item, overwrite_warehouse=True):
 		["Warehouse", "warehouse", ""],
 	]:
 		if not out[d[1]]:
-			out[d[1]] = frappe.get_cached_value("Company", args.company, d[2]) if d[2] else None
+			out[d[1]] = nts.get_cached_value("Company", args.company, d[2]) if d[2] else None
 
 	for fieldname in ("item_name", "item_group", "brand", "stock_uom"):
 		out[fieldname] = item.get(fieldname)
@@ -525,7 +525,7 @@ def get_basic_details(args, item, overwrite_warehouse=True):
 			out["manufacturer_part_no"] = None
 			out["manufacturer"] = None
 	else:
-		data = frappe.get_value(
+		data = nts.get_value(
 			"Item", item.name, ["default_item_manufacturer", "default_manufacturer_part_no"], as_dict=1
 		)
 
@@ -538,7 +538,7 @@ def get_basic_details(args, item, overwrite_warehouse=True):
 			)
 
 	child_doctype = args.doctype + " Item"
-	meta = frappe.get_meta(child_doctype)
+	meta = nts.get_meta(child_doctype)
 	if meta.get_field("barcode"):
 		update_barcode_value(out)
 
@@ -550,7 +550,7 @@ def get_basic_details(args, item, overwrite_warehouse=True):
 
 def get_item_warehouse(item, args, overwrite_warehouse, defaults=None):
 	if not defaults:
-		defaults = frappe._dict(
+		defaults = nts._dict(
 			{
 				"item_defaults": get_item_defaults(item.name, args.company),
 				"item_group_defaults": get_item_group_defaults(item.name, args.company),
@@ -568,8 +568,8 @@ def get_item_warehouse(item, args, overwrite_warehouse, defaults=None):
 		)
 
 		if not warehouse:
-			defaults = frappe.defaults.get_defaults() or {}
-			warehouse_exists = frappe.db.exists(
+			defaults = nts.defaults.get_defaults() or {}
+			warehouse_exists = nts.db.exists(
 				"Warehouse", {"name": defaults.default_warehouse, "company": args.company}
 			)
 			if defaults.get("default_warehouse") and warehouse_exists:
@@ -579,8 +579,8 @@ def get_item_warehouse(item, args, overwrite_warehouse, defaults=None):
 		warehouse = args.get("warehouse")
 
 	if not warehouse:
-		default_warehouse = frappe.db.get_single_value("Stock Settings", "default_warehouse")
-		if frappe.db.get_value("Warehouse", default_warehouse, "company") == args.company:
+		default_warehouse = nts.db.get_single_value("Stock Settings", "default_warehouse")
+		if nts.db.get_value("Warehouse", default_warehouse, "company") == args.company:
 			return default_warehouse
 
 	return warehouse
@@ -601,16 +601,16 @@ def get_barcode_data(items_list=None, item_code=None):
 
 	itemwise_barcode = {}
 	if not items_list and item_code:
-		_dict_item_code = frappe._dict(
+		_dict_item_code = nts._dict(
 			{
 				"item_code": item_code,
 			}
 		)
 
-		items_list = [frappe._dict(_dict_item_code)]
+		items_list = [nts._dict(_dict_item_code)]
 
 	for item in items_list:
-		barcodes = frappe.db.get_all("Item Barcode", filters={"parent": item.item_code}, fields="barcode")
+		barcodes = nts.db.get_all("Item Barcode", filters={"parent": item.item_code}, fields="barcode")
 
 		for barcode in barcodes:
 			if item.item_code not in itemwise_barcode:
@@ -620,7 +620,7 @@ def get_barcode_data(items_list=None, item_code=None):
 	return itemwise_barcode
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_item_tax_info(company, tax_category, item_codes, item_rates=None, item_tax_templates=None):
 	out = {}
 
@@ -644,7 +644,7 @@ def get_item_tax_info(company, tax_category, item_codes, item_rates=None, item_t
 			continue
 
 		out[item_code[1]] = {}
-		item = frappe.get_cached_doc("Item", item_code[0])
+		item = nts.get_cached_doc("Item", item_code[0])
 		args = {
 			"company": company,
 			"tax_category": tax_category,
@@ -676,7 +676,7 @@ def get_item_tax_template(args, item, out):
 	if not item_tax_template:
 		item_group = item.item_group
 		while item_group and not item_tax_template:
-			item_group_doc = frappe.get_cached_doc("Item Group", item_group)
+			item_group_doc = nts.get_cached_doc("Item Group", item_group)
 			item_tax_template = _get_item_tax_template(args, item_group_doc.taxes, out)
 			item_group = item_group_doc.parent_item_group
 
@@ -691,7 +691,7 @@ def _get_item_tax_template(args, taxes, out=None, for_validate=False):
 	taxes_with_no_validity = []
 
 	for tax in taxes:
-		tax_company = frappe.get_cached_value("Item Tax Template", tax.item_tax_template, "company")
+		tax_company = nts.get_cached_value("Item Tax Template", tax.item_tax_template, "company")
 		if tax_company == args["company"]:
 			if tax.valid_from or tax.maximum_net_rate:
 				# In purchase Invoice first preference will be given to supplier invoice date
@@ -747,23 +747,23 @@ def is_within_valid_range(args, tax):
 	return False
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_item_tax_map(company, item_tax_template, as_json=True):
 	item_tax_map = {}
 	if item_tax_template:
-		template = frappe.get_cached_doc("Item Tax Template", item_tax_template)
+		template = nts.get_cached_doc("Item Tax Template", item_tax_template)
 		for d in template.taxes:
-			if frappe.get_cached_value("Account", d.tax_type, "company") == company:
+			if nts.get_cached_value("Account", d.tax_type, "company") == company:
 				item_tax_map[d.tax_type] = d.tax_rate
 
 	return json.dumps(item_tax_map) if as_json else item_tax_map
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def calculate_service_end_date(args, item=None):
 	args = process_args(args)
 	if not item:
-		item = frappe.get_cached_doc("Item", args.item_code)
+		item = nts.get_cached_doc("Item", args.item_code)
 
 	doctype = args.get("parenttype") or args.get("doctype")
 	if doctype == "Sales Invoice":
@@ -823,13 +823,13 @@ def get_default_discount_account(args, item, item_group, brand):
 def get_default_deferred_account(args, item, fieldname=None):
 	if item.get("enable_deferred_revenue") or item.get("enable_deferred_expense"):
 		return (
-			frappe.get_cached_value(
+			nts.get_cached_value(
 				"Item Default",
 				{"parent": args.item_code, "company": args.get("company")},
 				fieldname,
 			)
 			or args.get(fieldname)
-			or frappe.get_cached_value("Company", args.company, "default_" + fieldname)
+			or nts.get_cached_value("Company", args.company, "default_" + fieldname)
 		)
 	else:
 		return None
@@ -842,7 +842,7 @@ def get_default_cost_center(args, item=None, item_group=None, brand=None, compan
 		company = args.get("company")
 
 	if args.get("project"):
-		cost_center = frappe.db.get_value("Project", args.get("project"), "cost_center", cache=True)
+		cost_center = nts.db.get_value("Project", args.get("project"), "cost_center", cache=True)
 
 	if not cost_center and (item and item_group and brand):
 		if args.get("customer"):
@@ -861,7 +861,7 @@ def get_default_cost_center(args, item=None, item_group=None, brand=None, compan
 	elif not cost_center and args.get("item_code") and company:
 		for method in ["get_item_defaults", "get_item_group_defaults", "get_brand_defaults"]:
 			path = f"prodman.stock.get_item_details.{method}"
-			data = frappe.get_attr(path)(args.get("item_code"), company)
+			data = nts.get_attr(path)(args.get("item_code"), company)
 
 			if data and (data.selling_cost_center or data.buying_cost_center):
 				if args.get("customer") and data.selling_cost_center:
@@ -875,11 +875,11 @@ def get_default_cost_center(args, item=None, item_group=None, brand=None, compan
 	if not cost_center and args.get("cost_center"):
 		cost_center = args.get("cost_center")
 
-	if company and cost_center and frappe.get_cached_value("Cost Center", cost_center, "company") != company:
+	if company and cost_center and nts.get_cached_value("Cost Center", cost_center, "company") != company:
 		return None
 
 	if not cost_center and company:
-		cost_center = frappe.get_cached_value("Company", company, "cost_center")
+		cost_center = nts.get_cached_value("Company", company, "cost_center")
 
 	return cost_center
 
@@ -890,9 +890,9 @@ def get_default_supplier(args, item, item_group, brand):
 
 def get_price_list_rate(args, item_doc, out=None):
 	if out is None:
-		out = frappe._dict()
+		out = nts._dict()
 
-	meta = frappe.get_meta(args.parenttype or args.doctype)
+	meta = nts.get_meta(args.parenttype or args.doctype)
 
 	if meta.get_field("currency") or args.get("currency"):
 		if not args.get("price_list_currency") or not args.get("plc_conversion_rate"):
@@ -911,7 +911,7 @@ def get_price_list_rate(args, item_doc, out=None):
 			price_list_rate = get_price_list_rate_for(args, item_doc.variant_of)
 
 		# insert in database
-		if price_list_rate is None or frappe.get_cached_value(
+		if price_list_rate is None or nts.get_cached_value(
 			"Stock Settings", "Stock Settings", "update_existing_price_list_rate"
 		):
 			insert_item_price(args)
@@ -921,7 +921,7 @@ def get_price_list_rate(args, item_doc, out=None):
 
 		out.price_list_rate = flt(price_list_rate) * flt(args.plc_conversion_rate) / flt(args.conversion_rate)
 
-		if frappe.db.get_single_value("Buying Settings", "disable_last_purchase_rate"):
+		if nts.db.get_single_value("Buying Settings", "disable_last_purchase_rate"):
 			return out
 
 		if (
@@ -946,16 +946,16 @@ def insert_item_price(args):
 	):
 		return
 
-	stock_settings = frappe.get_cached_doc("Stock Settings")
+	stock_settings = nts.get_cached_doc("Stock Settings")
 
 	if (
-		not frappe.db.get_value("Price List", args.price_list, "currency", cache=True) == args.currency
+		not nts.db.get_value("Price List", args.price_list, "currency", cache=True) == args.currency
 		or not stock_settings.auto_insert_price_list_rate_if_missing
-		or not frappe.has_permission("Item Price", "write")
+		or not nts.has_permission("Item Price", "write")
 	):
 		return
 
-	item_price = frappe.db.get_value(
+	item_price = nts.db.get_value(
 		"Item Price",
 		{
 			"item_code": args.item_code,
@@ -979,8 +979,8 @@ def insert_item_price(args):
 		if not price_list_rate or item_price.price_list_rate == price_list_rate:
 			return
 
-		frappe.db.set_value("Item Price", item_price.name, "price_list_rate", price_list_rate)
-		frappe.msgprint(
+		nts.db.set_value("Item Price", item_price.name, "price_list_rate", price_list_rate)
+		nts.msgprint(
 			_("Item Price updated for {0} in Price List {1}").format(args.item_code, args.price_list),
 			alert=True,
 		)
@@ -992,7 +992,7 @@ def insert_item_price(args):
 		)
 		price_list_rate = _get_stock_uom_rate(rate_to_consider, args)
 
-		item_price = frappe.get_doc(
+		item_price = nts.get_doc(
 			{
 				"doctype": "Item Price",
 				"price_list": args.price_list,
@@ -1003,7 +1003,7 @@ def insert_item_price(args):
 			}
 		)
 		item_price.insert()
-		frappe.msgprint(
+		nts.msgprint(
 			_("Item Price added for {0} in Price List {1}").format(args.item_code, args.price_list),
 			alert=True,
 		)
@@ -1017,23 +1017,23 @@ def get_item_price(args, item_code, ignore_party=False, force_batch_no=False) ->
 	"""
 	Get name, price_list_rate from Item Price based on conditions
 	        Check if the desired qty is within the increment of the packing list.
-	:param args: dict (or frappe._dict) with mandatory fields price_list, uom
+	:param args: dict (or nts._dict) with mandatory fields price_list, uom
 	        optional fields transaction_date, customer, supplier
 	:param item_code: str, Item Doctype field item_code
 	"""
 
-	ip = frappe.qb.DocType("Item Price")
+	ip = nts.qb.DocType("Item Price")
 	query = (
-		frappe.qb.from_(ip)
+		nts.qb.from_(ip)
 		.select(ip.name, ip.price_list_rate, ip.uom)
 		.where(
 			(ip.item_code == item_code)
 			& (ip.price_list == args.get("price_list"))
 			& (IfNull(ip.uom, "").isin(["", args.get("uom")]))
 		)
-		.orderby(ip.valid_from, order=frappe.qb.desc)
-		.orderby(IfNull(ip.batch_no, ""), order=frappe.qb.desc)
-		.orderby(ip.uom, order=frappe.qb.desc)
+		.orderby(ip.valid_from, order=nts.qb.desc)
+		.orderby(IfNull(ip.batch_no, ""), order=nts.qb.desc)
+		.orderby(ip.uom, order=nts.qb.desc)
 	)
 
 	if force_batch_no:
@@ -1058,7 +1058,7 @@ def get_item_price(args, item_code, ignore_party=False, force_batch_no=False) ->
 	return query.run()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_batch_based_item_price(params, item_code) -> float:
 	if isinstance(params, str):
 		params = parse_json(params)
@@ -1139,7 +1139,7 @@ def check_packing_list(price_list_rate_name, desired_qty, item_code):
 	"""
 
 	flag = True
-	item_price = frappe.get_doc("Item Price", price_list_rate_name)
+	item_price = nts.get_doc("Item Price", price_list_rate_name)
 	if item_price.packing_unit:
 		packing_increment = desired_qty % item_price.packing_unit
 
@@ -1152,7 +1152,7 @@ def check_packing_list(price_list_rate_name, desired_qty, item_code):
 def validate_conversion_rate(args, meta):
 	from prodman.controllers.accounts_controller import validate_conversion_rate
 
-	company_currency = frappe.get_cached_value("Company", args.company, "default_currency")
+	company_currency = nts.get_cached_value("Company", args.company, "default_currency")
 	if not args.conversion_rate and args.currency == company_currency:
 		args.conversion_rate = 1.0
 
@@ -1168,11 +1168,11 @@ def validate_conversion_rate(args, meta):
 
 	args.conversion_rate = flt(
 		args.conversion_rate,
-		get_field_precision(meta.get_field("conversion_rate"), frappe._dict({"fields": args})),
+		get_field_precision(meta.get_field("conversion_rate"), nts._dict({"fields": args})),
 	)
 
 	if args.price_list:
-		if not args.plc_conversion_rate and args.price_list_currency == frappe.db.get_value(
+		if not args.plc_conversion_rate and args.price_list_currency == nts.db.get_value(
 			"Price List", args.price_list, "currency", cache=True
 		):
 			args.plc_conversion_rate = 1.0
@@ -1192,7 +1192,7 @@ def validate_conversion_rate(args, meta):
 				args.plc_conversion_rate = flt(
 					args.plc_conversion_rate,
 					get_field_precision(
-						meta.get_field("plc_conversion_rate"), frappe._dict({"fields": args})
+						meta.get_field("plc_conversion_rate"), nts._dict({"fields": args})
 					),
 				)
 
@@ -1209,7 +1209,7 @@ def get_party_item_code(args, item_doc, out):
 		if customer_item_code:
 			out.customer_item_code = customer_item_code[0].ref_code
 		else:
-			customer_group = frappe.get_cached_value("Customer", args.customer, "customer_group")
+			customer_group = nts.get_cached_value("Customer", args.customer, "customer_group")
 			customer_group_item_code = item_doc.get("customer_items", {"customer_group": customer_group})
 			if customer_group_item_code and not customer_group_item_code[0].customer_name:
 				out.customer_item_code = customer_group_item_code[0].ref_code
@@ -1220,10 +1220,10 @@ def get_party_item_code(args, item_doc, out):
 
 
 def get_pos_profile_item_details(company, args, pos_profile=None, update_data=False):
-	res = frappe._dict()
+	res = nts._dict()
 
-	if not frappe.flags.pos_profile and not pos_profile:
-		pos_profile = frappe.flags.pos_profile = get_pos_profile(company, args.get("pos_profile"))
+	if not nts.flags.pos_profile and not pos_profile:
+		pos_profile = nts.flags.pos_profile = get_pos_profile(company, args.get("pos_profile"))
 
 	if pos_profile:
 		for fieldname in ("income_account", "cost_center", "warehouse", "expense_account"):
@@ -1238,19 +1238,19 @@ def get_pos_profile_item_details(company, args, pos_profile=None, update_data=Fa
 	return res
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_pos_profile(company, pos_profile=None, user=None):
 	if pos_profile:
-		return frappe.get_cached_doc("POS Profile", pos_profile)
+		return nts.get_cached_doc("POS Profile", pos_profile)
 
 	if not user:
-		user = frappe.session["user"]
+		user = nts.session["user"]
 
-	pf = frappe.qb.DocType("POS Profile")
-	pfu = frappe.qb.DocType("POS Profile User")
+	pf = nts.qb.DocType("POS Profile")
+	pfu = nts.qb.DocType("POS Profile User")
 
 	query = (
-		frappe.qb.from_(pf)
+		nts.qb.from_(pf)
 		.left_join(pfu)
 		.on(pf.name == pfu.parent)
 		.select(pf.star)
@@ -1264,7 +1264,7 @@ def get_pos_profile(company, pos_profile=None, user=None):
 
 	if not pos_profile and company:
 		pos_profile = (
-			frappe.qb.from_(pf)
+			nts.qb.from_(pf)
 			.left_join(pfu)
 			.on(pf.name == pfu.parent)
 			.select(pf.star)
@@ -1274,44 +1274,44 @@ def get_pos_profile(company, pos_profile=None, user=None):
 	return pos_profile and pos_profile[0] or None
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_conversion_factor(item_code, uom):
-	variant_of = frappe.db.get_value("Item", item_code, "variant_of", cache=True)
+	variant_of = nts.db.get_value("Item", item_code, "variant_of", cache=True)
 	filters = {"parent": item_code, "uom": uom}
 
 	if variant_of:
 		filters["parent"] = ("in", (item_code, variant_of))
-	conversion_factor = frappe.db.get_value("UOM Conversion Detail", filters, "conversion_factor")
+	conversion_factor = nts.db.get_value("UOM Conversion Detail", filters, "conversion_factor")
 	if not conversion_factor:
-		stock_uom = frappe.db.get_value("Item", item_code, "stock_uom")
+		stock_uom = nts.db.get_value("Item", item_code, "stock_uom")
 		conversion_factor = get_uom_conv_factor(uom, stock_uom)
 
 	return {"conversion_factor": conversion_factor or 1.0}
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_projected_qty(item_code, warehouse):
 	return {
-		"projected_qty": frappe.db.get_value(
+		"projected_qty": nts.db.get_value(
 			"Bin", {"item_code": item_code, "warehouse": warehouse}, "projected_qty"
 		)
 	}
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_bin_details(item_code, warehouse, company=None, include_child_warehouses=False):
 	bin_details = {"projected_qty": 0, "actual_qty": 0, "reserved_qty": 0}
 
 	if warehouse:
-		from frappe.query_builder.functions import Coalesce, Sum
+		from nts.query_builder.functions import Coalesce, Sum
 
 		from prodman.stock.doctype.warehouse.warehouse import get_child_warehouses
 
 		warehouses = get_child_warehouses(warehouse) if include_child_warehouses else [warehouse]
 
-		bin = frappe.qb.DocType("Bin")
+		bin = nts.qb.DocType("Bin")
 		bin_details = (
-			frappe.qb.from_(bin)
+			nts.qb.from_(bin)
 			.select(
 				Coalesce(Sum(bin.projected_qty), 0).as_("projected_qty"),
 				Coalesce(Sum(bin.actual_qty), 0).as_("actual_qty"),
@@ -1327,11 +1327,11 @@ def get_bin_details(item_code, warehouse, company=None, include_child_warehouses
 
 
 def get_company_total_stock(item_code, company):
-	bin = frappe.qb.DocType("Bin")
-	wh = frappe.qb.DocType("Warehouse")
+	bin = nts.qb.DocType("Bin")
+	wh = nts.qb.DocType("Warehouse")
 
 	return (
-		frappe.qb.from_(bin)
+		nts.qb.from_(bin)
 		.inner_join(wh)
 		.on(bin.warehouse == wh.name)
 		.select(Sum(bin.actual_qty))
@@ -1339,7 +1339,7 @@ def get_company_total_stock(item_code, company):
 	).run()[0][0]
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_batch_qty(batch_no, warehouse, item_code):
 	from prodman.stock.doctype.batch import batch
 
@@ -1347,7 +1347,7 @@ def get_batch_qty(batch_no, warehouse, item_code):
 		return {"actual_batch_qty": batch.get_batch_qty(batch_no, warehouse)}
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def apply_price_list(args, as_doc=False, doc=None):
 	"""Apply pricelist on a document-like dict object and return as
 	{'parent': dict, 'children': list}
@@ -1385,7 +1385,7 @@ def apply_price_list(args, as_doc=False, doc=None):
 		args.update(parent)
 
 		for item in item_list:
-			args_copy = frappe._dict(args.copy())
+			args_copy = nts._dict(args.copy())
 			args_copy.update(item)
 			item_details = apply_price_list_on_item(args_copy, doc=doc)
 			children.append(item_details)
@@ -1406,7 +1406,7 @@ def apply_price_list(args, as_doc=False, doc=None):
 
 
 def apply_price_list_on_item(args, doc=None):
-	item_doc = frappe.db.get_value("Item", args.item_code, ["name", "variant_of"], as_dict=1)
+	item_doc = nts.db.get_value("Item", args.item_code, ["name", "variant_of"], as_dict=1)
 	item_details = get_price_list_rate(args, item_doc)
 	item_details.update(get_pricing_rule_for_item(args, doc=doc))
 
@@ -1441,7 +1441,7 @@ def get_price_list_currency_and_exchange_rate(args):
 			or plc_conversion_rate
 		)
 
-	return frappe._dict(
+	return nts._dict(
 		{
 			"price_list_currency": price_list_currency,
 			"price_list_uom_dependant": price_list_uom_dependant,
@@ -1450,10 +1450,10 @@ def get_price_list_currency_and_exchange_rate(args):
 	)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_default_bom(item_code=None):
 	def _get_bom(item):
-		bom = frappe.get_all("BOM", dict(item=item, is_active=True, is_default=True, docstatus=1), limit=1)
+		bom = nts.get_all("BOM", dict(item=item, is_active=True, is_default=True, docstatus=1), limit=1)
 		return bom[0].name if bom else None
 
 	if not item_code:
@@ -1461,22 +1461,22 @@ def get_default_bom(item_code=None):
 
 	bom_name = _get_bom(item_code)
 
-	template_item = frappe.db.get_value("Item", item_code, "variant_of")
+	template_item = nts.db.get_value("Item", item_code, "variant_of")
 	if not bom_name and template_item:
 		bom_name = _get_bom(template_item)
 
 	return bom_name
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_valuation_rate(item_code, company, warehouse=None):
-	if frappe.get_cached_value("Warehouse", warehouse, "is_group"):
+	if nts.get_cached_value("Warehouse", warehouse, "is_group"):
 		return {"valuation_rate": 0.0}
 
 	item = get_item_defaults(item_code, company)
 	item_group = get_item_group_defaults(item_code, company)
 	brand = get_brand_defaults(item_code, company)
-	# item = frappe.get_doc("Item", item_code)
+	# item = nts.get_doc("Item", item_code)
 	if item.get("is_stock_item"):
 		if not warehouse:
 			warehouse = (
@@ -1485,14 +1485,14 @@ def get_valuation_rate(item_code, company, warehouse=None):
 				or brand.get("default_warehouse")
 			)
 
-		return frappe.db.get_value(
+		return nts.db.get_value(
 			"Bin", {"item_code": item_code, "warehouse": warehouse}, ["valuation_rate"], as_dict=True
 		) or {"valuation_rate": 0}
 
 	elif not item.get("is_stock_item"):
-		pi_item = frappe.qb.DocType("Purchase Invoice Item")
+		pi_item = nts.qb.DocType("Purchase Invoice Item")
 		valuation_rate = (
-			frappe.qb.from_(pi_item)
+			nts.qb.from_(pi_item)
 			.select(Sum(pi_item.base_net_amount) / Sum(pi_item.qty * pi_item.conversion_factor))
 			.where((pi_item.docstatus == 1) & (pi_item.item_code == item_code))
 		).run()
@@ -1510,7 +1510,7 @@ def get_gross_profit(out):
 	return out
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_serial_no(args, serial_nos=None, sales_order=None):
 	serial_nos = serial_nos or []
 	return serial_nos
@@ -1523,19 +1523,19 @@ def update_party_blanket_order(args, out):
 			out.update(blanket_order_details)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_blanket_order_details(args):
 	if isinstance(args, str):
-		args = frappe._dict(json.loads(args))
+		args = nts._dict(json.loads(args))
 
 	blanket_order_details = None
 
 	if args.item_code:
-		bo = frappe.qb.DocType("Blanket Order")
-		bo_item = frappe.qb.DocType("Blanket Order Item")
+		bo = nts.qb.DocType("Blanket Order")
+		bo_item = nts.qb.DocType("Blanket Order Item")
 
 		query = (
-			frappe.qb.from_(bo)
+			nts.qb.from_(bo)
 			.from_(bo_item)
 			.select(bo_item.rate.as_("blanket_order_rate"), bo.name.as_("blanket_order"))
 			.where(

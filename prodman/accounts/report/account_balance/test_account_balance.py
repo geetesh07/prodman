@@ -1,7 +1,7 @@
 import unittest
 
-import frappe
-from frappe.utils import getdate
+import nts 
+from nts .utils import getdate
 
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
 from prodman.accounts.report.account_balance.account_balance import execute
@@ -9,8 +9,8 @@ from prodman.accounts.report.account_balance.account_balance import execute
 
 class TestAccountBalance(unittest.TestCase):
 	def test_account_balance(self):
-		frappe.db.sql("delete from `tabSales Invoice` where company='_Test Company 2'")
-		frappe.db.sql("delete from `tabGL Entry` where company='_Test Company 2'")
+		nts .db.sql("delete from `tabSales Invoice` where company='_Test Company 2'")
+		nts .db.sql("delete from `tabGL Entry` where company='_Test Company 2'")
 
 		filters = {
 			"company": "_Test Company 2",
@@ -54,7 +54,7 @@ class TestAccountBalance(unittest.TestCase):
 
 
 def make_sales_invoice():
-	frappe.set_user("Administrator")
+	nts .set_user("Administrator")
 
 	create_sales_invoice(
 		company="_Test Company 2",

@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import getdate
+import nts
+from nts import _
+from nts.utils import getdate
 
 from prodman.stock.report.stock_analytics.stock_analytics import get_period, get_period_date_ranges
 
@@ -44,7 +44,7 @@ def get_data(filters):
 		if filters.get(field):
 			query_filters[field] = filters.get(field)
 
-	data = frappe.get_all("Job Card", fields=fields, filters=query_filters)
+	data = nts.get_all("Job Card", fields=fields, filters=query_filters)
 
 	if not data:
 		return []
@@ -57,7 +57,7 @@ def get_data(filters):
 	}
 
 	job_card_time_details = {}
-	for job_card_data in frappe.get_all(
+	for job_card_data in nts.get_all(
 		"Job Card Time Log",
 		fields=["min(from_time) as from_time", "max(to_time) as to_time", "parent"],
 		filters=job_card_time_filter,

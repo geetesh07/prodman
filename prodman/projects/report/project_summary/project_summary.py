@@ -1,16 +1,16 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
 	columns = get_columns()
 	data = []
 
-	data = frappe.db.get_all(
+	data = nts.db.get_all(
 		"Project",
 		filters=filters,
 		fields=[
@@ -26,11 +26,11 @@ def execute(filters=None):
 	)
 
 	for project in data:
-		project["total_tasks"] = frappe.db.count("Task", filters={"project": project.name})
-		project["completed_tasks"] = frappe.db.count(
+		project["total_tasks"] = nts.db.count("Task", filters={"project": project.name})
+		project["completed_tasks"] = nts.db.count(
 			"Task", filters={"project": project.name, "status": "Completed"}
 		)
-		project["overdue_tasks"] = frappe.db.count(
+		project["overdue_tasks"] = nts.db.count(
 			"Task", filters={"project": project.name, "status": "Overdue"}
 		)
 

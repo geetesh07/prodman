@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.views.calendar["Task"] = {
+nts.views.calendar["Task"] = {
 	field_map: {
 		start: "exp_start_date",
 		end: "exp_end_date",
@@ -19,5 +19,5 @@ frappe.views.calendar["Task"] = {
 			label: __("Project"),
 		},
 	],
-	get_events_method: "frappe.desk.calendar.get_events",
+	get_events_method: "nts.desk.calendar.get_events",
 };

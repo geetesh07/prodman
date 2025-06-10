@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.utils import flt
+import nts
+from nts.utils import flt
 
 
 def execute(filters=None):
@@ -55,7 +55,7 @@ def get_columns():
 
 def get_item_details():
 	item_map = {}
-	for item in frappe.db.sql(
+	for item in nts.db.sql(
 		"""SELECT name, item_name, description, stock_uom
 								from `tabItem`""",
 		as_dict=1,
@@ -87,7 +87,7 @@ def get_item_warehouse_quantity_map():
 											AND bi.warehouse = b.name)) AS r
 			   GROUP BY parent, warehouse
 			   HAVING MIN(qty) != 0"""
-	result = frappe.db.sql(query, as_dict=1)
+	result = nts.db.sql(query, as_dict=1)
 	last_sbom = ""
 	sbom_map = {}
 	for line in result:

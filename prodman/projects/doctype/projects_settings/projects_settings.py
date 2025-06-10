@@ -1,8 +1,8 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-from frappe.model.document import Document
+from nts.model.document import Document
 
 
 class ProjectsSettings(Document):
@@ -12,7 +12,7 @@ class ProjectsSettings(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		fetch_timesheet_in_sales_invoice: DF.Check
 		ignore_employee_time_overlap: DF.Check

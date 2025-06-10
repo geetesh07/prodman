@@ -1,9 +1,9 @@
 import click
-import frappe
+import nts
 
 
 def execute():
-	if "hrms" in frappe.get_installed_apps():
+	if "hrms" in nts.get_installed_apps():
 		return
 
 	click.secho(
@@ -11,6 +11,6 @@ def execute():
 		" and will be removed from prodman in Version 14."
 		" Please install the HRMS app when upgrading to Version 14"
 		" to continue using the HR and Payroll modules:\n"
-		"https://github.com/frappe/hrms",
+		"https://github.com/nts/hrms",
 		fg="yellow",
 	)

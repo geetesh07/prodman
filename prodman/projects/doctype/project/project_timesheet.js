@@ -5,11 +5,11 @@ QUnit.test("test project", function (assert) {
 
 	// To create a timesheet with different tasks and costs
 	let timesheet = (title, start_time, end_time, bill_rate, cost_rate) => {
-		return frappe.run_serially([
-			() => frappe.db.get_value("Task", { subject: title }, "name"),
+		return nts.run_serially([
+			() => nts.db.get_value("Task", { subject: title }, "name"),
 			(task) => {
 				// Creating timesheet for a project
-				return frappe.tests.make("Timesheet", [
+				return nts.tests.make("Timesheet", [
 					{
 						time_logs: [
 							[
@@ -62,10 +62,10 @@ QUnit.test("test project", function (assert) {
 			},
 		]);
 	};
-	frappe.run_serially([
+	nts.run_serially([
 		() => {
 			// Creating project with task
-			return frappe.tests.make("Project", [
+			return nts.tests.make("Project", [
 				{ project_name: "Test App" },
 				{ expected_start_date: "2017-07-22" },
 				{ expected_end_date: "2017-09-22" },

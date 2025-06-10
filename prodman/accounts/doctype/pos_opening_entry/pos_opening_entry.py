@@ -1,10 +1,10 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2020, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import cint, get_link_to_form
+import nts 
+from nts  import _
+from nts .utils import cint, get_link_to_form
 
 from prodman.controllers.status_updater import StatusUpdater
 
@@ -16,7 +16,7 @@ class POSOpeningEntry(StatusUpdater):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.pos_opening_entry_detail.pos_opening_entry_detail import (
 			POSOpeningEntryDetail,
@@ -41,19 +41,19 @@ class POSOpeningEntry(StatusUpdater):
 		self.set_status()
 
 	def validate_pos_profile_and_cashier(self):
-		if self.company != frappe.db.get_value("POS Profile", self.pos_profile, "company"):
-			frappe.throw(
+		if self.company != nts .db.get_value("POS Profile", self.pos_profile, "company"):
+			nts .throw(
 				_("POS Profile {} does not belongs to company {}").format(self.pos_profile, self.company)
 			)
 
-		if not cint(frappe.db.get_value("User", self.user, "enabled")):
-			frappe.throw(_("User {} is disabled. Please select valid user/cashier").format(self.user))
+		if not cint(nts .db.get_value("User", self.user, "enabled")):
+			nts .throw(_("User {} is disabled. Please select valid user/cashier").format(self.user))
 
 	def validate_payment_method_account(self):
 		invalid_modes = []
 		for d in self.balance_details:
 			if d.mode_of_payment:
-				account = frappe.db.get_value(
+				account = nts .db.get_value(
 					"Mode of Payment Account",
 					{"parent": d.mode_of_payment, "company": self.company},
 					"default_account",
@@ -66,7 +66,7 @@ class POSOpeningEntry(StatusUpdater):
 				msg = _("Please set default Cash or Bank account in Mode of Payment {}")
 			else:
 				msg = _("Please set default Cash or Bank account in Mode of Payments {}")
-			frappe.throw(msg.format(", ".join(invalid_modes)), title=_("Missing Account"))
+			nts .throw(msg.format(", ".join(invalid_modes)), title=_("Missing Account"))
 
 	def on_submit(self):
 		self.set_status(update=True)

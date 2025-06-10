@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import getdate, nowdate
+import nts 
+from nts  import _
+from nts .utils import getdate, nowdate
 
 
 def execute(filters=None):
@@ -63,9 +63,9 @@ def get_entries(filters):
 	entries = []
 
 	# get entries from all the apps
-	for method_name in frappe.get_hooks("get_entries_for_bank_clearance_summary"):
+	for method_name in nts .get_hooks("get_entries_for_bank_clearance_summary"):
 		entries += (
-			frappe.get_attr(method_name)(
+			nts .get_attr(method_name)(
 				filters,
 			)
 			or []
@@ -82,7 +82,7 @@ def get_entries_for_bank_clearance_summary(filters):
 
 	conditions = get_conditions(filters)
 
-	journal_entries = frappe.db.sql(
+	journal_entries = nts .db.sql(
 		f"""SELECT
 			"Journal Entry", jv.name, jv.posting_date, jv.cheque_no,
 			jv.clearance_date, jvd.against_account, jvd.debit - jvd.credit
@@ -95,7 +95,7 @@ def get_entries_for_bank_clearance_summary(filters):
 		as_list=1,
 	)
 
-	payment_entries = frappe.db.sql(
+	payment_entries = nts .db.sql(
 		f"""SELECT
 			"Payment Entry", name, posting_date, reference_no, clearance_date, party,
 			if(paid_from=%(account)s, ((paid_amount * -1) - total_taxes_and_charges) , received_amount)

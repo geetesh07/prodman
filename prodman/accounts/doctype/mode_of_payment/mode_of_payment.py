@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
+import nts 
+from nts  import _
+from nts .model.document import Document
 
 
 class ModeofPayment(Document):
@@ -14,7 +14,7 @@ class ModeofPayment(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.mode_of_payment_account.mode_of_payment_account import (
 			ModeofPaymentAccount,
@@ -38,13 +38,13 @@ class ModeofPayment(Document):
 			accounts_list.append(entry.company)
 
 		if len(accounts_list) != len(set(accounts_list)):
-			frappe.throw(_("Same Company is entered more than once"))
+			nts .throw(_("Same Company is entered more than once"))
 
 	def validate_accounts(self):
 		for entry in self.accounts:
 			"""Error when Company of Ledger account doesn't match with Company Selected"""
-			if frappe.get_cached_value("Account", entry.default_account, "company") != entry.company:
-				frappe.throw(
+			if nts .get_cached_value("Account", entry.default_account, "company") != entry.company:
+				nts .throw(
 					_("Account {0} does not match with Company {1} in Mode of Account: {2}").format(
 						entry.default_account, entry.company, self.name
 					)
@@ -52,7 +52,7 @@ class ModeofPayment(Document):
 
 	def validate_pos_mode_of_payment(self):
 		if not self.enabled:
-			pos_profiles = frappe.db.sql(
+			pos_profiles = nts .db.sql(
 				"""SELECT sip.parent FROM `tabSales Invoice Payment` sip
 				WHERE sip.parenttype = 'POS Profile' and sip.mode_of_payment = %s""",
 				(self.name),
@@ -62,5 +62,5 @@ class ModeofPayment(Document):
 			if pos_profiles:
 				message = _(
 					"POS Profile {} contains Mode of Payment {}. Please remove them to disable this mode."
-				).format(frappe.bold(", ".join(pos_profiles)), frappe.bold(str(self.name)))
-				frappe.throw(message, title=_("Not Allowed"))
+				).format(nts .bold(", ".join(pos_profiles)), nts .bold(str(self.name)))
+				nts .throw(message, title=_("Not Allowed"))

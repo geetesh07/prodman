@@ -1,21 +1,21 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Sales Partner Target Variance based on Item Group"] = {
+nts.query_reports["Sales Partner Target Variance based on Item Group"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 		},
 		{
 			fieldname: "fiscal_year",
 			label: __("Fiscal Year"),
 			fieldtype: "Link",
 			options: "Fiscal Year",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today()),
+			default: prodman.utils.get_fiscal_year(nts.datetime.get_today()),
 		},
 		{
 			fieldname: "doctype",

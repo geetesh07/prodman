@@ -445,7 +445,7 @@
    "format": "{} Assigned",
    "label": "Opportunity",
    "link_to": "Opportunity",
-   "stats_filter": "{\"_assign\": [\"like\", '%' + frappe.session.user + '%']}",
+   "stats_filter": "{\"_assign\": [\"like\", '%' + nts.session.user + '%']}",
    "type": "DocType"
   },
   {

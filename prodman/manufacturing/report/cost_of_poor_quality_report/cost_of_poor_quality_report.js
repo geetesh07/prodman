@@ -1,29 +1,29 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Cost of Poor Quality Report"] = {
+nts.query_reports["Cost of Poor Quality Report"] = {
 	filters: [
 		{
 			label: __("Company"),
 			fieldname: "company",
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
 			label: __("From Date"),
 			fieldname: "from_date",
 			fieldtype: "Datetime",
-			default: frappe.datetime.convert_to_system_tz(
-				frappe.datetime.add_months(frappe.datetime.now_datetime(), -1)
+			default: nts.datetime.convert_to_system_tz(
+				nts.datetime.add_months(nts.datetime.now_datetime(), -1)
 			),
 		},
 		{
 			label: __("To Date"),
 			fieldname: "to_date",
 			fieldtype: "Datetime",
-			default: frappe.datetime.now_datetime(),
+			default: nts.datetime.now_datetime(),
 		},
 		{
 			label: __("Job Card"),
@@ -77,7 +77,7 @@ frappe.query_reports["Cost of Poor Quality Report"] = {
 			options: "Serial No",
 			depends_on: "eval: doc.production_item",
 			get_query: function () {
-				var item_code = frappe.query_report.get_filter_value("production_item");
+				var item_code = nts.query_report.get_filter_value("production_item");
 				return {
 					filters: {
 						item_code: item_code,
@@ -92,7 +92,7 @@ frappe.query_reports["Cost of Poor Quality Report"] = {
 			options: "Batch No",
 			depends_on: "eval: doc.production_item",
 			get_query: function () {
-				var item_code = frappe.query_report.get_filter_value("production_item");
+				var item_code = nts.query_report.get_filter_value("production_item");
 				return {
 					filters: {
 						item: item_code,

@@ -1,24 +1,24 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _, throw
-from frappe.utils import add_to_date, cint, cstr, pretty_date
-from frappe.utils.nestedset import NestedSet, get_ancestors_of, get_descendants_of
+import nts 
+from nts  import _, throw
+from nts .utils import add_to_date, cint, cstr, pretty_date
+from nts .utils.nestedset import NestedSet, get_ancestors_of, get_descendants_of
 
 import prodman
 
 
-class RootNotEditable(frappe.ValidationError):
+class RootNotEditable(nts .ValidationError):
 	pass
 
 
-class BalanceMismatchError(frappe.ValidationError):
+class BalanceMismatchError(nts .ValidationError):
 	pass
 
 
-class InvalidAccountMergeError(frappe.ValidationError):
+class InvalidAccountMergeError(nts .ValidationError):
 	pass
 
 
@@ -29,7 +29,7 @@ class Account(NestedSet):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		account_currency: DF.Link | None
 		account_name: DF.Data
@@ -86,16 +86,16 @@ class Account(NestedSet):
 	nsm_parent_field = "parent_account"
 
 	def on_update(self):
-		if frappe.local.flags.ignore_update_nsm:
+		if nts .local.flags.ignore_update_nsm:
 			return
 		else:
 			super().on_update()
 
 	def onload(self):
-		frozen_accounts_modifier = frappe.db.get_value(
+		frozen_accounts_modifier = nts .db.get_value(
 			"Accounts Settings", "Accounts Settings", "frozen_accounts_modifier"
 		)
-		if not frozen_accounts_modifier or frozen_accounts_modifier in frappe.get_roles():
+		if not frozen_accounts_modifier or frozen_accounts_modifier in nts .get_roles():
 			self.set_onload("can_freeze_account", True)
 
 	def autoname(self):
@@ -104,7 +104,7 @@ class Account(NestedSet):
 		self.name = get_autoname_with_number(self.account_number, self.account_name, self.company)
 
 	def validate(self):
-		if frappe.local.flags.allow_unverified_charts:
+		if nts .local.flags.allow_unverified_charts:
 			return
 		self.validate_parent()
 		self.validate_parent_child_account_type()
@@ -129,14 +129,14 @@ class Account(NestedSet):
 				"Direct Expense",
 				"Indirect Expense",
 			]:
-				parent_account_type = frappe.db.get_value("Account", self.parent_account, ["account_type"])
+				parent_account_type = nts .db.get_value("Account", self.parent_account, ["account_type"])
 				if parent_account_type == self.account_type:
 					throw(_("Only Parent can be of type {0}").format(self.account_type))
 
 	def validate_parent(self):
 		"""Fetch Parent Details and validate parent account"""
 		if self.parent_account:
-			par = frappe.get_cached_value(
+			par = nts .get_cached_value(
 				"Account", self.parent_account, ["name", "is_group", "company"], as_dict=1
 			)
 			if not par:
@@ -160,7 +160,7 @@ class Account(NestedSet):
 
 	def set_root_and_report_type(self):
 		if self.parent_account:
-			par = frappe.get_cached_value(
+			par = nts .get_cached_value(
 				"Account", self.parent_account, ["report_type", "root_type"], as_dict=1
 			)
 
@@ -173,12 +173,12 @@ class Account(NestedSet):
 			db_value = self.get_doc_before_save()
 			if db_value:
 				if self.report_type != db_value.report_type:
-					frappe.db.sql(
+					nts .db.sql(
 						"update `tabAccount` set report_type=%s where lft > %s and rgt < %s",
 						(self.report_type, self.lft, self.rgt),
 					)
 				if self.root_type != db_value.root_type:
-					frappe.db.sql(
+					nts .db.sql(
 						"update `tabAccount` set root_type=%s where lft > %s and rgt < %s",
 						(self.root_type, self.lft, self.rgt),
 					)
@@ -197,13 +197,13 @@ class Account(NestedSet):
 			and doc_before_save.account_type != self.account_type
 		):
 			# check for ledger entries
-			if frappe.db.get_all("GL Entry", filters={"account": self.name, "is_cancelled": 0}, limit=1):
+			if nts .db.get_all("GL Entry", filters={"account": self.name, "is_cancelled": 0}, limit=1):
 				msg = _(
 					"There are ledger entries against this account. Changing {0} to non-{1} in live system will cause incorrect output in 'Accounts {2}' report"
 				).format(
-					frappe.bold(_("Account Type")), doc_before_save.account_type, doc_before_save.account_type
+					nts .bold(_("Account Type")), doc_before_save.account_type, doc_before_save.account_type
 				)
-				frappe.msgprint(msg)
+				nts .msgprint(msg)
 				self.add_comment("Comment", msg)
 
 	def validate_root_details(self):
@@ -213,28 +213,28 @@ class Account(NestedSet):
 			throw(_("Root cannot be edited."), RootNotEditable)
 
 		if not self.parent_account and not self.is_group:
-			throw(_("The root account {0} must be a group").format(frappe.bold(self.name)))
+			throw(_("The root account {0} must be a group").format(nts .bold(self.name)))
 
 	def validate_root_company_and_sync_account_to_children(self):
 		# ignore validation while creating new compnay or while syncing to child companies
-		if frappe.local.flags.ignore_root_company_validation or self.flags.ignore_root_company_validation:
+		if nts .local.flags.ignore_root_company_validation or self.flags.ignore_root_company_validation:
 			return
 		ancestors = get_root_company(self.company)
 		if ancestors:
-			if frappe.get_cached_value(
+			if nts .get_cached_value(
 				"Company", self.company, "allow_account_creation_against_child_company"
 			):
 				return
-			if not frappe.db.get_value(
+			if not nts .db.get_value(
 				"Account", {"account_name": self.account_name, "company": ancestors[0]}, "name"
 			):
-				frappe.throw(_("Please add the account to root level Company - {}").format(ancestors[0]))
+				nts .throw(_("Please add the account to root level Company - {}").format(ancestors[0]))
 		elif self.parent_account:
 			descendants = get_descendants_of("Company", self.company)
 			if not descendants:
 				return
 			parent_acc_name_map = {}
-			parent_acc_name, parent_acc_number = frappe.get_cached_value(
+			parent_acc_name, parent_acc_number = nts .get_cached_value(
 				"Account", self.parent_account, ["account_name", "account_number"]
 			)
 			filters = {
@@ -244,7 +244,7 @@ class Account(NestedSet):
 			if parent_acc_number:
 				filters["account_number"] = parent_acc_number
 
-			for d in frappe.db.get_values(
+			for d in nts .db.get_values(
 				"Account", filters=filters, fieldname=["company", "name"], as_dict=True
 			):
 				parent_acc_name_map[d["company"]] = d["name"]
@@ -272,10 +272,10 @@ class Account(NestedSet):
 		if not doc_before_save or doc_before_save.freeze_account == self.freeze_account:
 			return
 
-		frozen_accounts_modifier = frappe.get_cached_value(
+		frozen_accounts_modifier = nts .get_cached_value(
 			"Accounts Settings", "Accounts Settings", "frozen_accounts_modifier"
 		)
-		if not frozen_accounts_modifier or frozen_accounts_modifier not in frappe.get_roles():
+		if not frozen_accounts_modifier or frozen_accounts_modifier not in nts .get_roles():
 			throw(_("You are not authorized to set Frozen value"))
 
 	def validate_balance_must_be_debit_or_credit(self):
@@ -285,13 +285,13 @@ class Account(NestedSet):
 			account_balance = get_balance_on(self.name)
 
 			if account_balance > 0 and self.balance_must_be == "Credit":
-				frappe.throw(
+				nts .throw(
 					_(
 						"Account balance already in Debit, you are not allowed to set 'Balance Must Be' as 'Credit'"
 					)
 				)
 			elif account_balance < 0 and self.balance_must_be == "Debit":
-				frappe.throw(
+				nts .throw(
 					_(
 						"Account balance already in Credit, you are not allowed to set 'Balance Must Be' as 'Debit'"
 					)
@@ -301,26 +301,26 @@ class Account(NestedSet):
 		self.currency_explicitly_specified = True
 
 		if not self.account_currency:
-			self.account_currency = frappe.get_cached_value("Company", self.company, "default_currency")
+			self.account_currency = nts .get_cached_value("Company", self.company, "default_currency")
 			self.currency_explicitly_specified = False
 
-		gl_currency = frappe.db.get_value("GL Entry", {"account": self.name}, "account_currency")
+		gl_currency = nts .db.get_value("GL Entry", {"account": self.name}, "account_currency")
 
 		if gl_currency and self.account_currency != gl_currency:
-			if frappe.db.get_value("GL Entry", {"account": self.name}):
-				frappe.throw(_("Currency can not be changed after making entries using some other currency"))
+			if nts .db.get_value("GL Entry", {"account": self.name}):
+				nts .throw(_("Currency can not be changed after making entries using some other currency"))
 
 	def validate_account_number(self, account_number=None):
 		if not account_number:
 			account_number = self.account_number
 
 		if account_number:
-			account_with_same_number = frappe.db.get_value(
+			account_with_same_number = nts .db.get_value(
 				"Account",
 				{"account_number": account_number, "company": self.company, "name": ["!=", self.name]},
 			)
 			if account_with_same_number:
-				frappe.throw(
+				nts .throw(
 					_("Account Number {0} already used in account {1}").format(
 						account_number, account_with_same_number
 					)
@@ -328,10 +328,10 @@ class Account(NestedSet):
 
 	def create_account_for_child_company(self, parent_acc_name_map, descendants, parent_acc_name):
 		for company in descendants:
-			company_bold = frappe.bold(company)
-			parent_acc_name_bold = frappe.bold(parent_acc_name)
+			company_bold = nts .bold(company)
+			parent_acc_name_bold = nts .bold(parent_acc_name)
 			if not parent_acc_name_map.get(company):
-				frappe.throw(
+				nts .throw(
 					_(
 						"While creating account for Child Company {0}, parent account {1} not found. Please create the parent account in corresponding COA"
 					).format(company_bold, parent_acc_name_bold),
@@ -339,9 +339,9 @@ class Account(NestedSet):
 				)
 
 			# validate if parent of child company account to be added is a group
-			if frappe.get_cached_value(
+			if nts .get_cached_value(
 				"Account", self.parent_account, "is_group"
-			) and not frappe.get_cached_value("Account", parent_acc_name_map[company], "is_group"):
+			) and not nts .get_cached_value("Account", parent_acc_name_map[company], "is_group"):
 				msg = _(
 					"While creating account for Child Company {0}, parent account {1} found as a ledger account."
 				).format(company_bold, parent_acc_name_bold)
@@ -349,16 +349,16 @@ class Account(NestedSet):
 				msg += _(
 					"Please convert the parent account in corresponding child company to a group account."
 				)
-				frappe.throw(msg, title=_("Invalid Parent Account"))
+				nts .throw(msg, title=_("Invalid Parent Account"))
 
 			filters = {"account_name": self.account_name, "company": company}
 
 			if self.account_number:
 				filters["account_number"] = self.account_number
 
-			child_account = frappe.db.get_value("Account", filters, "name")
+			child_account = nts .db.get_value("Account", filters, "name")
 			if not child_account:
-				doc = frappe.copy_doc(self)
+				doc = nts .copy_doc(self)
 				doc.flags.ignore_root_company_validation = True
 				doc.update(
 					{
@@ -373,10 +373,10 @@ class Account(NestedSet):
 				)
 
 				doc.save()
-				frappe.msgprint(_("Account {0} is added in the child company {1}").format(doc.name, company))
+				nts .msgprint(_("Account {0} is added in the child company {1}").format(doc.name, company))
 			elif child_account:
 				# update the parent company's value in child companies
-				doc = frappe.get_doc("Account", child_account)
+				doc = nts .get_doc("Account", child_account)
 				parent_value_changed = False
 				for field in ["account_type", "freeze_account", "balance_must_be"]:
 					if doc.get(field) != self.get(field):
@@ -386,7 +386,7 @@ class Account(NestedSet):
 				if parent_value_changed:
 					doc.save()
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def convert_group_to_ledger(self):
 		if self.check_if_child_exists():
 			throw(_("Account with child nodes cannot be converted to ledger"))
@@ -397,7 +397,7 @@ class Account(NestedSet):
 			self.save()
 			return 1
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def convert_ledger_to_group(self):
 		if self.check_gle_exists():
 			throw(_("Account with existing transaction can not be converted to group."))
@@ -410,10 +410,10 @@ class Account(NestedSet):
 
 	# Check if any previous balance exists
 	def check_gle_exists(self):
-		return frappe.db.get_value("GL Entry", {"account": self.name})
+		return nts .db.get_value("GL Entry", {"account": self.name})
 
 	def check_if_child_exists(self):
-		return frappe.db.sql(
+		return nts .db.sql(
 			"""select name from `tabAccount` where parent_account = %s
 			and docstatus != 2""",
 			self.name,
@@ -434,10 +434,10 @@ class Account(NestedSet):
 		super().on_trash(True)
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts .whitelist()
+@nts .validate_and_sanitize_search_inputs
 def get_parent_account(doctype, txt, searchfield, start, page_len, filters):
-	return frappe.db.sql(
+	return nts .db.sql(
 		"""select name from tabAccount
 		where is_group = 1 and docstatus != 2 and company = {}
 		and {} like {} order by name limit {} offset {}""".format("%s", searchfield, "%s", "%s", "%s"),
@@ -452,26 +452,26 @@ def get_account_currency(account):
 		return
 
 	def generator():
-		account_currency, company = frappe.get_cached_value(
+		account_currency, company = nts .get_cached_value(
 			"Account", account, ["account_currency", "company"]
 		)
 		if not account_currency:
-			account_currency = frappe.get_cached_value("Company", company, "default_currency")
+			account_currency = nts .get_cached_value("Company", company, "default_currency")
 
 		return account_currency
 
-	return frappe.local_cache("account_currency", account, generator)
+	return nts .local_cache("account_currency", account, generator)
 
 
 def on_doctype_update():
-	frappe.db.add_index("Account", ["lft", "rgt"])
+	nts .db.add_index("Account", ["lft", "rgt"])
 
 
 def get_account_autoname(account_number, account_name, company):
 	# first validate if company exists
-	company = frappe.get_cached_value("Company", company, ["abbr", "name"], as_dict=True)
+	company = nts .get_cached_value("Company", company, ["abbr", "name"], as_dict=True)
 	if not company:
-		frappe.throw(_("Company {0} does not exist").format(company))
+		nts .throw(_("Company {0} does not exist").format(company))
 
 	parts = [account_name.strip(), company.abbr]
 	if cstr(account_number).strip():
@@ -479,10 +479,10 @@ def get_account_autoname(account_number, account_name, company):
 	return " - ".join(parts)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def update_account_number(name, account_name, account_number=None, from_descendant=False):
 	_ensure_idle_system()
-	account = frappe.get_cached_doc("Account", name)
+	account = nts .get_cached_doc("Account", name)
 	if not account:
 		return
 
@@ -490,13 +490,13 @@ def update_account_number(name, account_name, account_number=None, from_descenda
 
 	# check if account exists in parent company
 	ancestors = get_ancestors_of("Company", account.company)
-	allow_independent_account_creation = frappe.get_cached_value(
+	allow_independent_account_creation = nts .get_cached_value(
 		"Company", account.company, "allow_account_creation_against_child_company"
 	)
 
 	if ancestors and not allow_independent_account_creation:
 		for ancestor in ancestors:
-			old_name = frappe.db.get_value(
+			old_name = nts .db.get_value(
 				"Account",
 				{"account_number": old_acc_number, "account_name": old_acc_name, "company": ancestor},
 				"name",
@@ -507,25 +507,25 @@ def update_account_number(name, account_name, account_number=None, from_descenda
 				allow_child_account_creation = _("Allow Account Creation Against Child Company")
 
 				message = _("Account {0} exists in parent company {1}.").format(
-					frappe.bold(old_acc_name), frappe.bold(ancestor)
+					nts .bold(old_acc_name), nts .bold(ancestor)
 				)
 				message += "<br>"
 				message += _("Renaming it is only allowed via parent company {0}, to avoid mismatch.").format(
-					frappe.bold(ancestor)
+					nts .bold(ancestor)
 				)
 				message += "<br><br>"
 				message += _("To overrule this, enable '{0}' in company {1}").format(
-					allow_child_account_creation, frappe.bold(account.company)
+					allow_child_account_creation, nts .bold(account.company)
 				)
 
-				frappe.throw(message, title=_("Rename Not Allowed"))
+				nts .throw(message, title=_("Rename Not Allowed"))
 
 	account.validate_account_number(account_number)
 	if account_number:
-		frappe.db.set_value("Account", name, "account_number", account_number.strip())
+		nts .db.set_value("Account", name, "account_number", account_number.strip())
 	else:
-		frappe.db.set_value("Account", name, "account_number", "")
-	frappe.db.set_value("Account", name, "account_name", account_name.strip())
+		nts .db.set_value("Account", name, "account_number", "")
+	nts .db.set_value("Account", name, "account_name", account_name.strip())
 
 	if not from_descendant:
 		# Update and rename in child company accounts as well
@@ -537,16 +537,16 @@ def update_account_number(name, account_name, account_number=None, from_descenda
 
 	new_name = get_account_autoname(account_number, account_name, account.company)
 	if name != new_name:
-		frappe.rename_doc("Account", name, new_name, force=1)
+		nts .rename_doc("Account", name, new_name, force=1)
 		return new_name
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def merge_account(old, new):
 	_ensure_idle_system()
 	# Validate properties before merging
-	new_account = frappe.get_cached_doc("Account", new)
-	old_account = frappe.get_cached_doc("Account", old)
+	new_account = nts .get_cached_doc("Account", new)
+	old_account = nts .get_cached_doc("Account", old)
 
 	if not new_account:
 		throw(_("Account {0} does not exist").format(new))
@@ -571,14 +571,14 @@ def merge_account(old, new):
 		)
 
 	if old_account.is_group and new_account.parent_account == old:
-		new_account.db_set("parent_account", frappe.get_cached_value("Account", old, "parent_account"))
+		new_account.db_set("parent_account", nts .get_cached_value("Account", old, "parent_account"))
 
-	frappe.rename_doc("Account", old, new, merge=1, force=1)
+	nts .rename_doc("Account", old, new, merge=1, force=1)
 
 	return new
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_root_company(company):
 	# return the topmost company in the hierarchy
 	ancestors = get_ancestors_of("Company", company, "lft asc")
@@ -595,7 +595,7 @@ def sync_update_account_number_in_child(
 	if old_acc_number:
 		filters["account_number"] = old_acc_number
 
-	for d in frappe.db.get_values("Account", filters=filters, fieldname=["company", "name"], as_dict=True):
+	for d in nts .db.get_values("Account", filters=filters, fieldname=["company", "name"], as_dict=True):
 		update_account_number(d["name"], account_name, account_number, from_descendant=True)
 
 
@@ -604,14 +604,14 @@ def _ensure_idle_system():
 	# 1. Correctness: It's next to impossible to ensure that renamed account is not being used *right now*.
 	# 2. Performance: Renaming requires locking out many tables entirely and severely degrades performance.
 
-	if frappe.flags.in_test:
+	if nts .flags.in_test:
 		return
 
 	last_gl_update = None
 	try:
 		# We also lock inserts to GL entry table with for_update here.
-		last_gl_update = frappe.db.get_value("GL Entry", {}, "modified", for_update=True, wait=False)
-	except frappe.QueryTimeoutError:
+		last_gl_update = nts .db.get_value("GL Entry", {}, "modified", for_update=True, wait=False)
+	except nts .QueryTimeoutError:
 		# wait=False fails immediately if there's an active transaction.
 		last_gl_update = add_to_date(None, seconds=-1)
 
@@ -619,7 +619,7 @@ def _ensure_idle_system():
 		return
 
 	if last_gl_update > add_to_date(None, minutes=-5):
-		frappe.throw(
+		nts .throw(
 			_(
 				"Last GL Entry update was done {}. This operation is not allowed while system is actively being used. Please wait for 5 minutes before retrying."
 			).format(pretty_date(last_gl_update)),

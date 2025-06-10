@@ -1,11 +1,11 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import cstr, flt, formatdate, get_link_to_form, getdate
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .utils import cstr, flt, formatdate, get_link_to_form, getdate
 
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_checks_for_pl_and_bs_accounts,
@@ -25,7 +25,7 @@ class AssetValueAdjustment(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		amended_from: DF.Link | None
 		asset: DF.Link
@@ -58,7 +58,7 @@ class AssetValueAdjustment(Document):
 		)
 
 	def on_cancel(self):
-		frappe.get_doc("Journal Entry", self.journal_entry).cancel()
+		nts .get_doc("Journal Entry", self.journal_entry).cancel()
 		self.update_asset()
 		add_asset_activity(
 			self.asset,
@@ -68,9 +68,9 @@ class AssetValueAdjustment(Document):
 		)
 
 	def validate_date(self):
-		asset_purchase_date = frappe.db.get_value("Asset", self.asset, "purchase_date")
+		asset_purchase_date = nts .db.get_value("Asset", self.asset, "purchase_date")
 		if getdate(self.date) < getdate(asset_purchase_date):
-			frappe.throw(
+			nts .throw(
 				_("Asset Value Adjustment cannot be posted before Asset's purchase date <b>{0}</b>.").format(
 					formatdate(asset_purchase_date)
 				),
@@ -81,25 +81,25 @@ class AssetValueAdjustment(Document):
 		self.difference_amount = flt(self.new_asset_value - self.current_asset_value)
 
 	def set_value_after_depreciation(self):
-		frappe.db.set_value("Asset", self.asset, "value_after_depreciation", self.new_asset_value)
+		nts .db.set_value("Asset", self.asset, "value_after_depreciation", self.new_asset_value)
 
 	def set_current_asset_value(self):
 		if not self.current_asset_value and self.asset:
 			self.current_asset_value = get_asset_value_after_depreciation(self.asset, self.finance_book)
 
 	def make_depreciation_entry(self):
-		asset = frappe.get_doc("Asset", self.asset)
+		asset = nts .get_doc("Asset", self.asset)
 		(
 			fixed_asset_account,
 			accumulated_depreciation_account,
 			depreciation_expense_account,
 		) = get_depreciation_accounts(asset.asset_category, asset.company)
 
-		depreciation_cost_center, depreciation_series = frappe.get_cached_value(
+		depreciation_cost_center, depreciation_series = nts .get_cached_value(
 			"Company", asset.company, ["depreciation_cost_center", "series_for_depreciation_entry"]
 		)
 
-		je = frappe.new_doc("Journal Entry")
+		je = nts .new_doc("Journal Entry")
 		je.voucher_type = "Journal Entry"
 		je.naming_series = depreciation_series
 		je.posting_date = self.date
@@ -164,7 +164,7 @@ class AssetValueAdjustment(Document):
 		self.db_set("journal_entry", je.name)
 
 	def update_asset(self, asset_value=None):
-		asset = frappe.get_doc("Asset", self.asset)
+		asset = nts .get_doc("Asset", self.asset)
 
 		if not asset.calculate_depreciation:
 			asset.value_after_depreciation = asset_value
@@ -208,7 +208,7 @@ class AssetValueAdjustment(Document):
 		asset.save()
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_value_of_accounting_dimensions(asset_name):
-	dimension_fields = [*frappe.get_list("Accounting Dimension", pluck="fieldname"), "cost_center"]
-	return frappe.db.get_value("Asset", asset_name, fieldname=dimension_fields, as_dict=True)
+	dimension_fields = [*nts .get_list("Accounting Dimension", pluck="fieldname"), "cost_center"]
+	return nts .db.get_value("Asset", asset_name, fieldname=dimension_fields, as_dict=True)

@@ -1,9 +1,9 @@
 from typing import Any
 
-import frappe
-from frappe import _dict
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import today
+import nts
+from nts import _dict
+from nts.tests.utils import ntsTestCase
+from nts.utils import today
 
 from prodman.stock.doctype.item.test_item import make_item
 from prodman.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
@@ -15,7 +15,7 @@ def stock_balance(filters):
 	return [_dict(row) for row in execute(filters)[1]]
 
 
-class TestStockBalance(FrappeTestCase):
+class TestStockBalance(ntsTestCase):
 	# ----------- utils
 
 	def setUp(self):
@@ -30,7 +30,7 @@ class TestStockBalance(FrappeTestCase):
 		)
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def assertPartialDictEq(self, expected: dict[str, Any], actual: dict[str, Any]):
 		for k, v in expected.items():
@@ -43,7 +43,7 @@ class TestStockBalance(FrappeTestCase):
 			make_stock_entry(item_code=item_code, **movement)
 
 	def assertInvariants(self, rows):
-		last_balance = frappe.db.sql(
+		last_balance = nts.db.sql(
 			"""
 			WITH last_balances AS (
 				SELECT item_code, warehouse,

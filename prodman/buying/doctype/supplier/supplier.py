@@ -1,15 +1,15 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-import frappe.defaults
-from frappe import _, msgprint
-from frappe.contacts.address_and_contact import (
+import nts
+import nts.defaults
+from nts import _, msgprint
+from nts.contacts.address_and_contact import (
 	delete_contact_and_address,
 	load_address_and_contact,
 )
-from frappe.model.naming import set_name_by_naming_series, set_name_from_naming_options
+from nts.model.naming import set_name_by_naming_series, set_name_from_naming_options
 
 from prodman.accounts.party import (
 	get_dashboard_info,
@@ -26,7 +26,7 @@ class Supplier(TransactionBase):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.accounts.doctype.allowed_to_transact_with.allowed_to_transact_with import (
 			AllowedToTransactWith,
@@ -91,13 +91,13 @@ class Supplier(TransactionBase):
 		self.set_onload("dashboard_info", info)
 
 	def autoname(self):
-		supp_master_name = frappe.defaults.get_global_default("supp_master_name")
+		supp_master_name = nts.defaults.get_global_default("supp_master_name")
 		if supp_master_name == "Supplier Name":
 			self.name = self.supplier_name
 		elif supp_master_name == "Naming Series":
 			set_name_by_naming_series(self)
 		else:
-			set_name_from_naming_options(frappe.get_meta(self.doctype).autoname, self)
+			set_name_from_naming_options(nts.get_meta(self.doctype).autoname, self)
 
 	def on_update(self):
 		self.create_primary_contact()
@@ -111,27 +111,27 @@ class Supplier(TransactionBase):
 		if not portal_user.is_new():
 			return
 
-		user_doc = frappe.get_doc("User", portal_user.user)
+		user_doc = nts.get_doc("User", portal_user.user)
 		roles = {r.role for r in user_doc.roles}
 
 		if "Supplier" in roles:
 			return
 
-		if "System Manager" not in frappe.get_roles():
-			frappe.msgprint(
+		if "System Manager" not in nts.get_roles():
+			nts.msgprint(
 				_("Please add 'Supplier' role to user {0}.").format(portal_user.user),
 				alert=True,
 			)
 			return
 
 		user_doc.add_roles("Supplier")
-		frappe.msgprint(_("Added Supplier Role to User {0}.").format(frappe.bold(user_doc.name)), alert=True)
+		nts.msgprint(_("Added Supplier Role to User {0}.").format(nts.bold(user_doc.name)), alert=True)
 
 	def validate(self):
 		self.flags.is_new_doc = self.is_new()
 
 		# validation for Naming Series mandatory field...
-		if frappe.defaults.get_global_default("supp_master_name") == "Naming Series":
+		if nts.defaults.get_global_default("supp_master_name") == "Naming Series":
 			if not self.naming_series:
 				msgprint(_("Series is mandatory"), raise_exception=1)
 
@@ -140,9 +140,9 @@ class Supplier(TransactionBase):
 		self.add_role_for_user()
 		self.validate_currency_for_receivable_payable_and_advance_account()
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_supplier_group_details(self):
-		doc = frappe.get_doc("Supplier Group", self.supplier_group)
+		doc = nts.get_doc("Supplier Group", self.supplier_group)
 		self.payment_terms = ""
 		self.accounts = []
 
@@ -161,7 +161,7 @@ class Supplier(TransactionBase):
 		if not self.is_internal_supplier:
 			self.represents_company = ""
 
-		internal_supplier = frappe.db.get_value(
+		internal_supplier = nts.db.get_value(
 			"Supplier",
 			{
 				"is_internal_supplier": 1,
@@ -172,9 +172,9 @@ class Supplier(TransactionBase):
 		)
 
 		if internal_supplier:
-			frappe.throw(
+			nts.throw(
 				_("Internal Supplier for company {0} already exists").format(
-					frappe.bold(self.represents_company)
+					nts.bold(self.represents_company)
 				)
 			)
 
@@ -189,7 +189,7 @@ class Supplier(TransactionBase):
 				self.db_set("email_id", self.email_id)
 
 	def create_primary_address(self):
-		from frappe.contacts.doctype.address.address import get_address_display
+		from nts.contacts.doctype.address.address import get_address_display
 
 		from prodman.selling.doctype.customer.customer import make_address
 
@@ -209,19 +209,19 @@ class Supplier(TransactionBase):
 		delete_contact_and_address("Supplier", self.name)
 
 	def after_rename(self, olddn, newdn, merge=False):
-		if frappe.defaults.get_global_default("supp_master_name") == "Supplier Name":
+		if nts.defaults.get_global_default("supp_master_name") == "Supplier Name":
 			self.db_set("supplier_name", newdn)
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def get_supplier_primary_contact(doctype, txt, searchfield, start, page_len, filters):
 	supplier = filters.get("supplier")
-	contact = frappe.qb.DocType("Contact")
-	dynamic_link = frappe.qb.DocType("Dynamic Link")
+	contact = nts.qb.DocType("Contact")
+	dynamic_link = nts.qb.DocType("Dynamic Link")
 
 	return (
-		frappe.qb.from_(contact)
+		nts.qb.from_(contact)
 		.join(dynamic_link)
 		.on(contact.name == dynamic_link.parent)
 		.select(contact.name, contact.email_id)

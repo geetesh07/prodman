@@ -1,5 +1,5 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.db.set_single_value("Homepage", "hero_section_based_on", "Default")
+	nts.db.set_single_value("Homepage", "hero_section_based_on", "Default")

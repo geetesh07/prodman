@@ -1,4 +1,4 @@
-frappe.treeview_settings["Department"] = {
+nts.treeview_settings["Department"] = {
 	ignore_fields: ["parent_department"],
 	get_tree_nodes: "prodman.setup.doctype.department.department.get_children",
 	add_tree_node: "prodman.setup.doctype.department.department.add_node",
@@ -17,9 +17,9 @@ frappe.treeview_settings["Department"] = {
 		{
 			label: __("New Department"),
 			action: function () {
-				frappe.new_doc("Department", true);
+				nts.new_doc("Department", true);
 			},
-			condition: 'frappe.boot.user.can_create.indexOf("Department") !== -1',
+			condition: 'nts.boot.user.can_create.indexOf("Department") !== -1',
 		},
 	],
 	onload: function (treeview) {

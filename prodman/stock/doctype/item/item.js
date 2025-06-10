@@ -1,12 +1,12 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.item");
+nts.provide("prodman.item");
 
 const SALES_DOCTYPES = ["Quotation", "Sales Order", "Delivery Note", "Sales Invoice"];
 const PURCHASE_DOCTYPES = ["Purchase Order", "Purchase Receipt", "Purchase Invoice"];
 
-frappe.ui.form.on("Item", {
+nts.ui.form.on("Item", {
 	valuation_method(frm) {
 		if (!frm.is_new() && frm.doc.valuation_method === "Moving Average") {
 			let stock_exists = frm.doc.__onload && frm.doc.__onload.stock_exists ? 1 : 0;
@@ -23,7 +23,7 @@ frappe.ui.form.on("Item", {
 				msg += "<br>";
 				msg += __("Do you want to change valuation method?");
 
-				frappe.confirm(
+				nts.confirm(
 					msg,
 					() => {
 						frm.set_value("valuation_method", "Moving Average");
@@ -89,30 +89,30 @@ frappe.ui.form.on("Item", {
 			frm.add_custom_button(
 				__("Stock Balance"),
 				function () {
-					frappe.route_options = {
+					nts.route_options = {
 						item_code: frm.doc.name,
 					};
-					frappe.set_route("query-report", "Stock Balance");
+					nts.set_route("query-report", "Stock Balance");
 				},
 				__("View")
 			);
 			frm.add_custom_button(
 				__("Stock Ledger"),
 				function () {
-					frappe.route_options = {
+					nts.route_options = {
 						item_code: frm.doc.name,
 					};
-					frappe.set_route("query-report", "Stock Ledger");
+					nts.set_route("query-report", "Stock Ledger");
 				},
 				__("View")
 			);
 			frm.add_custom_button(
 				__("Stock Projected Qty"),
 				function () {
-					frappe.route_options = {
+					nts.route_options = {
 						item_code: frm.doc.name,
 					};
-					frappe.set_route("query-report", "Stock Projected Qty");
+					nts.set_route("query-report", "Stock Projected Qty");
 				},
 				__("View")
 			);
@@ -137,7 +137,7 @@ frappe.ui.form.on("Item", {
 			frm.add_custom_button(
 				__("Show Variants"),
 				function () {
-					frappe.set_route("List", "Item", { variant_of: frm.doc.name });
+					nts.set_route("List", "Item", { variant_of: frm.doc.name });
 				},
 				__("View")
 			);
@@ -145,7 +145,7 @@ frappe.ui.form.on("Item", {
 			frm.add_custom_button(
 				__("Item Variant Settings"),
 				function () {
-					frappe.set_route("Form", "Item Variant Settings");
+					nts.set_route("Form", "Item Variant Settings");
 				},
 				__("View")
 			);
@@ -153,7 +153,7 @@ frappe.ui.form.on("Item", {
 			frm.add_custom_button(
 				__("Variant Details Report"),
 				function () {
-					frappe.set_route("query-report", "Item Variant Details", { item: frm.doc.name });
+					nts.set_route("query-report", "Item Variant Details", { item: frm.doc.name });
 				},
 				__("View")
 			);
@@ -194,7 +194,7 @@ frappe.ui.form.on("Item", {
 			);
 		}
 
-		if (frappe.defaults.get_default("item_naming_by") != "Naming Series" || frm.doc.variant_of) {
+		if (nts.defaults.get_default("item_naming_by") != "Naming Series" || frm.doc.variant_of) {
 			frm.toggle_display("naming_series", false);
 		} else {
 			prodman.toggle_naming_series();
@@ -208,7 +208,7 @@ frappe.ui.form.on("Item", {
 		}
 
 		frm.add_custom_button(__("Duplicate"), function () {
-			var new_item = frappe.model.copy_doc(frm.doc);
+			var new_item = nts.model.copy_doc(frm.doc);
 			// Duplicate item could have different name, causing "copy paste" error.
 			if (new_item.item_name === new_item.item_code) {
 				new_item.item_name = null;
@@ -216,7 +216,7 @@ frappe.ui.form.on("Item", {
 			if (new_item.item_code === new_item.description || new_item.item_code === new_item.description) {
 				new_item.description = null;
 			}
-			frappe.set_route("Form", "Item", new_item.name);
+			nts.set_route("Form", "Item", new_item.name);
 		});
 
 		const stock_exists = frm.doc.__onload && frm.doc.__onload.stock_exists ? 1 : 0;
@@ -246,7 +246,7 @@ frappe.ui.form.on("Item", {
 		frm.set_value("has_batch_no", 0);
 		frm.toggle_enable(["has_serial_no", "serial_no_series"], !frm.doc.is_fixed_asset);
 
-		frappe.call({
+		nts.call({
 			method: "prodman.stock.doctype.item.item.get_asset_naming_series",
 			callback: function (r) {
 				frm.set_value("is_stock_item", frm.doc.is_fixed_asset ? 0 : 1);
@@ -270,7 +270,7 @@ frappe.ui.form.on("Item", {
 		frm.toggle_display(["asset_naming_series"], frm.doc.auto_create_assets);
 	},
 
-	page_name: frappe.utils.warn_page_name_change,
+	page_name: nts.utils.warn_page_name_change,
 
 	item_code: function (frm) {
 		if (!frm.doc.item_name) frm.set_value("item_name", frm.doc.item_code);
@@ -289,37 +289,37 @@ frappe.ui.form.on("Item", {
 	},
 });
 
-frappe.ui.form.on("Item Reorder", {
+nts.ui.form.on("Item Reorder", {
 	reorder_levels_add: function (frm, cdt, cdn) {
-		var row = frappe.get_doc(cdt, cdn);
+		var row = nts.get_doc(cdt, cdn);
 		var type = frm.doc.default_material_request_type;
 		row.material_request_type = type == "Material Transfer" ? "Transfer" : type;
 	},
 });
 
-frappe.ui.form.on("Item Customer Detail", {
+nts.ui.form.on("Item Customer Detail", {
 	customer_items_add: function (frm, cdt, cdn) {
-		frappe.model.set_value(cdt, cdn, "customer_group", "");
+		nts.model.set_value(cdt, cdn, "customer_group", "");
 	},
 	customer_name: function (frm, cdt, cdn) {
 		set_customer_group(frm, cdt, cdn);
 	},
 	customer_group: function (frm, cdt, cdn) {
 		if (set_customer_group(frm, cdt, cdn)) {
-			frappe.msgprint(__("Changing Customer Group for the selected Customer is not allowed."));
+			nts.msgprint(__("Changing Customer Group for the selected Customer is not allowed."));
 		}
 	},
 });
 
 var set_customer_group = function (frm, cdt, cdn) {
-	var row = frappe.get_doc(cdt, cdn);
+	var row = nts.get_doc(cdt, cdn);
 
 	if (!row.customer_name) {
 		return false;
 	}
 
-	frappe.model.with_doc("Customer", row.customer_name, function () {
-		var customer = frappe.model.get_doc("Customer", row.customer_name);
+	nts.model.with_doc("Customer", row.customer_name, function () {
+		var customer = nts.model.get_doc("Customer", row.customer_name);
 		row.customer_group = customer.customer_group;
 		refresh_field("customer_group", cdn, "customer_items");
 	});
@@ -495,7 +495,7 @@ $.extend(prodman.item, {
 
 		// Show Stock Levels only if is_stock_item
 		if (frm.doc.is_stock_item) {
-			frappe.require("item-dashboard.bundle.js", function () {
+			nts.require("item-dashboard.bundle.js", function () {
 				const section = frm.dashboard.add_section("", __("Stock Levels"));
 				prodman.item.item_dashboard = new prodman.stock.ItemDashboard({
 					parent: section,
@@ -513,7 +513,7 @@ $.extend(prodman.item, {
 		frm.add_custom_button(
 			__("Add / Edit Prices"),
 			function () {
-				frappe.set_route("List", "Item Price", { item_code: frm.doc.name });
+				nts.set_route("List", "Item Price", { item_code: frm.doc.name });
 			},
 			__("Actions")
 		);
@@ -521,7 +521,7 @@ $.extend(prodman.item, {
 
 	weight_to_validate: function (frm) {
 		if (frm.doc.weight_per_unit && !frm.doc.weight_uom) {
-			frappe.msgprint({
+			nts.msgprint({
 				message: __("Please mention 'Weight UOM' along with Weight."),
 				title: __("Note"),
 			});
@@ -529,7 +529,7 @@ $.extend(prodman.item, {
 	},
 
 	show_modal_for_manufacturers: function (frm) {
-		var dialog = new frappe.ui.Dialog({
+		var dialog = new nts.ui.Dialog({
 			fields: [
 				{
 					fieldtype: "Link",
@@ -552,13 +552,13 @@ $.extend(prodman.item, {
 
 			// call the server to make the variant
 			data.template = frm.doc.name;
-			frappe.call({
+			nts.call({
 				method: "prodman.controllers.item_variant.get_variant",
 				args: data,
 				callback: function (r) {
-					var doclist = frappe.model.sync(r.message);
+					var doclist = nts.model.sync(r.message);
 					dialog.hide();
-					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+					nts.set_route("Form", doclist[0].doctype, doclist[0].name);
 				},
 			});
 		});
@@ -613,7 +613,7 @@ $.extend(prodman.item, {
 		}
 
 		function make_and_show_dialog(fields) {
-			me.multiple_variant_dialog = new frappe.ui.Dialog({
+			me.multiple_variant_dialog = new nts.ui.Dialog({
 				title: __("Select Attribute Values"),
 				fields: [
 					frm.doc.image
@@ -641,7 +641,7 @@ $.extend(prodman.item, {
 				let use_template_image = me.multiple_variant_dialog.get_value("use_template_image");
 
 				me.multiple_variant_dialog.hide();
-				frappe.call({
+				nts.call({
 					method: "prodman.controllers.item_variant.enqueue_multiple_variant_creation",
 					args: {
 						item: frm.doc.name,
@@ -650,12 +650,12 @@ $.extend(prodman.item, {
 					},
 					callback: function (r) {
 						if (r.message === "queued") {
-							frappe.show_alert({
+							nts.show_alert({
 								message: __("Variant creation has been queued."),
 								indicator: "orange",
 							});
 						} else {
-							frappe.show_alert({
+							nts.show_alert({
 								message: __("{0} variants created.", [r.message]),
 								indicator: "green",
 							});
@@ -664,7 +664,7 @@ $.extend(prodman.item, {
 				});
 			});
 
-			$($(me.multiple_variant_dialog.$wrapper.find(".form-column")).find(".frappe-control")).css(
+			$($(me.multiple_variant_dialog.$wrapper.find(".form-column")).find(".nts-control")).css(
 				"margin-bottom",
 				"0px"
 			);
@@ -695,9 +695,9 @@ $.extend(prodman.item, {
 			if (!d.disabled) {
 				let p = new Promise((resolve) => {
 					if (!d.numeric_values) {
-						frappe
+						nts
 							.call({
-								method: "frappe.client.get_list",
+								method: "nts.client.get_list",
 								args: {
 									doctype: "Item Attribute Value",
 									filters: [["parent", "=", d.attribute]],
@@ -775,7 +775,7 @@ $.extend(prodman.item, {
 			});
 		}
 
-		var d = new frappe.ui.Dialog({
+		var d = new nts.ui.Dialog({
 			title: __("Create Variant"),
 			fields: fields,
 		});
@@ -783,7 +783,7 @@ $.extend(prodman.item, {
 		d.set_primary_action(__("Create"), function () {
 			var args = d.get_values();
 			if (!args) return;
-			frappe.call({
+			nts.call({
 				method: "prodman.controllers.item_variant.get_variant",
 				btn: d.get_primary_btn(),
 				args: {
@@ -794,7 +794,7 @@ $.extend(prodman.item, {
 					// returns variant item
 					if (r.message) {
 						var variant = r.message;
-						frappe.msgprint_dialog = frappe.msgprint(
+						nts.msgprint_dialog = nts.msgprint(
 							__("Item Variant {0} already exists with same attributes", [
 								repl(
 									'<a href="/app/item/%(item_encoded)s" class="strong variant-click">%(item)s</a>',
@@ -805,13 +805,13 @@ $.extend(prodman.item, {
 								),
 							])
 						);
-						frappe.msgprint_dialog.hide_on_page_refresh = true;
-						frappe.msgprint_dialog.$wrapper.find(".variant-click").on("click", function () {
+						nts.msgprint_dialog.hide_on_page_refresh = true;
+						nts.msgprint_dialog.$wrapper.find(".variant-click").on("click", function () {
 							d.hide();
 						});
 					} else {
 						d.hide();
-						frappe.call({
+						nts.call({
 							method: "prodman.controllers.item_variant.create_variant",
 							args: {
 								item: frm.doc.name,
@@ -819,8 +819,8 @@ $.extend(prodman.item, {
 								use_template_image: args.use_template_image,
 							},
 							callback: function (r) {
-								var doclist = frappe.model.sync(r.message);
-								frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+								var doclist = nts.model.sync(r.message);
+								nts.set_route("Form", doclist[0].doctype, doclist[0].name);
 							},
 						});
 					}
@@ -849,7 +849,7 @@ $.extend(prodman.item, {
 			field.$input
 				.on("input", function (e) {
 					var term = e.target.value;
-					frappe.call({
+					nts.call({
 						method: "prodman.stock.doctype.item.item.get_item_attribute",
 						args: {
 							parent: i,
@@ -914,11 +914,11 @@ $.extend(prodman.item, {
 	},
 });
 
-frappe.ui.form.on("UOM Conversion Detail", {
+nts.ui.form.on("UOM Conversion Detail", {
 	uom: function (frm, cdt, cdn) {
 		var row = locals[cdt][cdn];
 		if (row.uom) {
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.doctype.item.item.get_uom_conv_factor",
 				args: {
 					uom: row.uom,
@@ -926,7 +926,7 @@ frappe.ui.form.on("UOM Conversion Detail", {
 				},
 				callback: function (r) {
 					if (!r.exc && r.message) {
-						frappe.model.set_value(cdt, cdn, "conversion_factor", r.message);
+						nts.model.set_value(cdt, cdn, "conversion_factor", r.message);
 					}
 				},
 			});
@@ -934,7 +934,7 @@ frappe.ui.form.on("UOM Conversion Detail", {
 	},
 });
 
-frappe.tour["Item"] = [
+nts.tour["Item"] = [
 	{
 		fieldname: "item_code",
 		title: "Item Code",
@@ -990,10 +990,10 @@ frappe.tour["Item"] = [
 ];
 
 function open_form(frm, doctype, child_doctype, parentfield) {
-	frappe.model.with_doctype(doctype, () => {
-		let new_doc = frappe.model.get_new_doc(doctype);
+	nts.model.with_doctype(doctype, () => {
+		let new_doc = nts.model.get_new_doc(doctype);
 
-		let new_child_doc = frappe.model.add_child(new_doc, child_doctype, parentfield);
+		let new_child_doc = nts.model.add_child(new_doc, child_doctype, parentfield);
 		new_child_doc.item_code = frm.doc.name;
 		new_child_doc.item_name = frm.doc.item_name;
 		if (in_list(SALES_DOCTYPES, doctype) && frm.doc.sales_uom) {
@@ -1008,11 +1008,11 @@ function open_form(frm, doctype, child_doctype, parentfield) {
 			new_child_doc.qty = 1.0;
 		}
 
-		frappe.run_serially([
-			() => frappe.ui.form.make_quick_entry(doctype, null, null, new_doc),
+		nts.run_serially([
+			() => nts.ui.form.make_quick_entry(doctype, null, null, new_doc),
 			() => {
-				frappe.flags.ignore_company_party_validation = true;
-				frappe.model.trigger("item_code", frm.doc.name, new_child_doc);
+				nts.flags.ignore_company_party_validation = true;
+				nts.model.trigger("item_code", frm.doc.name, new_child_doc);
 			},
 		]);
 	});

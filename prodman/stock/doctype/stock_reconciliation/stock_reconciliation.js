@@ -1,10 +1,10 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.stock");
-frappe.provide("prodman.accounts.dimensions");
+nts.provide("prodman.stock");
+nts.provide("prodman.accounts.dimensions");
 
-frappe.ui.form.on("Stock Reconciliation", {
+nts.ui.form.on("Stock Reconciliation", {
 	setup(frm) {
 		frm.ignore_doctypes_on_cancel_all = ["Serial and Batch Bundle"];
 	},
@@ -86,10 +86,10 @@ frappe.ui.form.on("Stock Reconciliation", {
 	},
 
 	set_fields_onload_for_line_item(frm) {
-		if (frm.is_new() && frm.doc?.items && cint(frappe.user_defaults?.use_serial_batch_fields) === 1) {
+		if (frm.is_new() && frm.doc?.items && cint(nts.user_defaults?.use_serial_batch_fields) === 1) {
 			frm.doc.items.forEach((item) => {
 				if (!item.serial_and_batch_bundle) {
-					frappe.model.set_value(item.doctype, item.name, "use_serial_batch_fields", 1);
+					nts.model.set_value(item.doctype, item.name, "use_serial_batch_fields", 1);
 				}
 			});
 		}
@@ -102,7 +102,7 @@ frappe.ui.form.on("Stock Reconciliation", {
 
 	scan_mode: function (frm) {
 		if (frm.doc.scan_mode) {
-			frappe.show_alert({
+			nts.show_alert({
 				message: __("Scan mode enabled, existing quantity will not be fetched."),
 				indicator: "green",
 			});
@@ -143,10 +143,10 @@ frappe.ui.form.on("Stock Reconciliation", {
 			},
 		];
 
-		frappe.prompt(
+		nts.prompt(
 			fields,
 			function (data) {
-				frappe.call({
+				nts.call({
 					method: "prodman.stock.doctype.stock_reconciliation.stock_reconciliation.get_items",
 					args: {
 						warehouse: data.warehouse,
@@ -168,7 +168,7 @@ frappe.ui.form.on("Stock Reconciliation", {
 							item.qty = item.qty || 0;
 							item.valuation_rate = item.valuation_rate || 0;
 							item.use_serial_batch_fields = cint(
-								frappe.user_defaults?.use_serial_batch_fields
+								nts.user_defaults?.use_serial_batch_fields
 							);
 						});
 						frm.refresh_field("items");
@@ -195,10 +195,10 @@ frappe.ui.form.on("Stock Reconciliation", {
 	},
 
 	set_valuation_rate_and_qty: function (frm, cdt, cdn) {
-		var d = frappe.model.get_doc(cdt, cdn);
+		var d = nts.model.get_doc(cdt, cdn);
 
 		if (d.item_code && d.warehouse) {
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.doctype.stock_reconciliation.stock_reconciliation.get_stock_balance_for",
 				args: {
 					item_code: d.item_code,
@@ -210,17 +210,17 @@ frappe.ui.form.on("Stock Reconciliation", {
 					company: frm.doc.company,
 				},
 				callback: function (r) {
-					const row = frappe.model.get_doc(cdt, cdn);
+					const row = nts.model.get_doc(cdt, cdn);
 					if (!frm.doc.scan_mode) {
-						frappe.model.set_value(cdt, cdn, "qty", r.message.qty);
+						nts.model.set_value(cdt, cdn, "qty", r.message.qty);
 					}
-					frappe.model.set_value(cdt, cdn, "valuation_rate", r.message.rate);
-					frappe.model.set_value(cdt, cdn, "current_qty", r.message.qty);
-					frappe.model.set_value(cdt, cdn, "current_valuation_rate", r.message.rate);
-					frappe.model.set_value(cdt, cdn, "current_amount", r.message.rate * r.message.qty);
-					frappe.model.set_value(cdt, cdn, "amount", row.qty * row.valuation_rate);
-					frappe.model.set_value(cdt, cdn, "current_serial_no", r.message.serial_nos);
-					frappe.model.set_value(
+					nts.model.set_value(cdt, cdn, "valuation_rate", r.message.rate);
+					nts.model.set_value(cdt, cdn, "current_qty", r.message.qty);
+					nts.model.set_value(cdt, cdn, "current_valuation_rate", r.message.rate);
+					nts.model.set_value(cdt, cdn, "current_amount", r.message.rate * r.message.qty);
+					nts.model.set_value(cdt, cdn, "amount", row.qty * row.valuation_rate);
+					nts.model.set_value(cdt, cdn, "current_serial_no", r.message.serial_nos);
+					nts.model.set_value(
 						cdt,
 						cdn,
 						"use_serial_batch_fields",
@@ -228,7 +228,7 @@ frappe.ui.form.on("Stock Reconciliation", {
 					);
 
 					if (frm.doc.purpose == "Stock Reconciliation" && !frm.doc.scan_mode) {
-						frappe.model.set_value(cdt, cdn, "serial_no", r.message.serial_nos);
+						nts.model.set_value(cdt, cdn, "serial_no", r.message.serial_nos);
 					}
 				},
 			});
@@ -236,11 +236,11 @@ frappe.ui.form.on("Stock Reconciliation", {
 	},
 
 	set_amount_quantity: function (doc, cdt, cdn) {
-		var d = frappe.model.get_doc(cdt, cdn);
+		var d = nts.model.get_doc(cdt, cdn);
 		if (d.qty && d.valuation_rate) {
-			frappe.model.set_value(cdt, cdn, "amount", flt(d.qty) * flt(d.valuation_rate));
-			frappe.model.set_value(cdt, cdn, "quantity_difference", flt(d.qty) - flt(d.current_qty));
-			frappe.model.set_value(cdt, cdn, "amount_difference", flt(d.amount) - flt(d.current_amount));
+			nts.model.set_value(cdt, cdn, "amount", flt(d.qty) * flt(d.valuation_rate));
+			nts.model.set_value(cdt, cdn, "quantity_difference", flt(d.qty) - flt(d.current_qty));
+			nts.model.set_value(cdt, cdn, "amount_difference", flt(d.amount) - flt(d.current_amount));
 		}
 	},
 	toggle_display_account_head: function (frm) {
@@ -270,11 +270,11 @@ frappe.ui.form.on("Stock Reconciliation", {
 	},
 });
 
-frappe.ui.form.on("Stock Reconciliation Item", {
+nts.ui.form.on("Stock Reconciliation Item", {
 	warehouse: function (frm, cdt, cdn) {
 		var child = locals[cdt][cdn];
 		if (child.batch_no && !frm.doc.scan_mode) {
-			frappe.model.set_value(child.cdt, child.cdn, "batch_no", "");
+			nts.model.set_value(child.cdt, child.cdn, "batch_no", "");
 		}
 
 		frm.events.set_valuation_rate_and_qty(frm, cdt, cdn);
@@ -283,7 +283,7 @@ frappe.ui.form.on("Stock Reconciliation Item", {
 	item_code: function (frm, cdt, cdn) {
 		var child = locals[cdt][cdn];
 		if (child.batch_no && !frm.doc.scan_mode) {
-			frappe.model.set_value(cdt, cdn, "batch_no", "");
+			nts.model.set_value(cdt, cdn, "batch_no", "");
 		}
 
 		frm.events.set_valuation_rate_and_qty(frm, cdt, cdn);
@@ -292,7 +292,7 @@ frappe.ui.form.on("Stock Reconciliation Item", {
 	batch_no(frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
 		if (row.batch_no) {
-			frappe.model.set_value(cdt, cdn, {
+			nts.model.set_value(cdt, cdn, {
 				use_serial_batch_fields: 1,
 				serial_and_batch_bundle: "",
 			});
@@ -306,7 +306,7 @@ frappe.ui.form.on("Stock Reconciliation Item", {
 
 		let row = locals[cdt][cdn];
 		if (row.use_serial_batch_fields && !row.qty && row.serial_no) {
-			frappe.model.set_value(cdt, cdn, "serial_no", "");
+			nts.model.set_value(cdt, cdn, "serial_no", "");
 		}
 	},
 
@@ -318,24 +318,24 @@ frappe.ui.form.on("Stock Reconciliation Item", {
 		var child = locals[cdt][cdn];
 
 		if (child.serial_no) {
-			frappe.model.set_value(cdt, cdn, {
+			nts.model.set_value(cdt, cdn, {
 				use_serial_batch_fields: 1,
 				serial_and_batch_bundle: "",
 			});
 
 			const serial_nos = child.serial_no.trim().split("\n");
-			frappe.model.set_value(cdt, cdn, "qty", serial_nos.length);
+			nts.model.set_value(cdt, cdn, "qty", serial_nos.length);
 		}
 	},
 
 	items_add: function (frm, cdt, cdn) {
-		var item = frappe.get_doc(cdt, cdn);
+		var item = nts.get_doc(cdt, cdn);
 		if (!item.warehouse && frm.doc.set_warehouse) {
-			frappe.model.set_value(cdt, cdn, "warehouse", frm.doc.set_warehouse);
+			nts.model.set_value(cdt, cdn, "warehouse", frm.doc.set_warehouse);
 		}
 
-		if (item.docstatus === 0 && cint(frappe.user_defaults?.use_serial_batch_fields) === 1) {
-			frappe.model.set_value(item.doctype, item.name, "use_serial_batch_fields", 1);
+		if (item.docstatus === 0 && cint(nts.user_defaults?.use_serial_batch_fields) === 1) {
+			nts.model.set_value(item.doctype, item.name, "use_serial_batch_fields", 1);
 		}
 	},
 

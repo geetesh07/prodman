@@ -1,12 +1,12 @@
-# Copyright (c) 2021, Frappe and Contributors
+# Copyright (c) 2021, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("manufacturing", "doctype", "production_plan")
-	frappe.db.sql(
+	nts.reload_doc("manufacturing", "doctype", "production_plan")
+	nts.db.sql(
 		"""
 		UPDATE `tabProduction Plan` ppl
 		SET status = "Completed"

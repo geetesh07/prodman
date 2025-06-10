@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Purchase Analytics"] = {
+nts.query_reports["Purchase Analytics"] = {
 	filters: [
 		{
 			fieldname: "tree_type",
@@ -34,14 +34,14 @@ frappe.query_reports["Purchase Analytics"] = {
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[1],
+			default: prodman.utils.get_fiscal_year(nts.datetime.get_today(), true)[1],
 			reqd: 1,
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[2],
+			default: prodman.utils.get_fiscal_year(nts.datetime.get_today(), true)[2],
 			reqd: 1,
 		},
 		{
@@ -49,7 +49,7 @@ frappe.query_reports["Purchase Analytics"] = {
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -74,7 +74,7 @@ frappe.query_reports["Purchase Analytics"] = {
 					if (!data) return;
 
 					const data_doctype = $(data[2].html)[0].attributes.getNamedItem("data-doctype").value;
-					const tree_type = frappe.query_report.filters[0].value;
+					const tree_type = nts.query_report.filters[0].value;
 					if (data_doctype != tree_type) return;
 
 					let row_name = data[2].content;
@@ -100,7 +100,7 @@ frappe.query_reports["Purchase Analytics"] = {
 						values: row_values,
 					};
 
-					let raw_data = frappe.query_report.chart.data;
+					let raw_data = nts.query_report.chart.data;
 					let new_datasets = raw_data.datasets;
 
 					let element_found = new_datasets.some((element, index, array) => {
@@ -118,12 +118,12 @@ frappe.query_reports["Purchase Analytics"] = {
 						labels: raw_data.labels,
 						datasets: new_datasets,
 					};
-					const new_options = Object.assign({}, frappe.query_report.chart_options, {
+					const new_options = Object.assign({}, nts.query_report.chart_options, {
 						data: new_data,
 					});
-					frappe.query_report.render_chart(new_options);
+					nts.query_report.render_chart(new_options);
 
-					frappe.query_report.raw_chart_data = new_data;
+					nts.query_report.raw_chart_data = new_data;
 				},
 			},
 		});

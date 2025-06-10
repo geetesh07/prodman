@@ -1,4 +1,4 @@
-import frappe
+import nts
 
 
 def execute():
@@ -11,8 +11,8 @@ def execute():
 	- Address
 	"""
 
-	frappe.reload_doc("core", "doctype", "docfield")
-	frappe.reload_doc("custom", "doctype", "custom_field")
+	nts.reload_doc("core", "doctype", "docfield")
+	nts.reload_doc("custom", "doctype", "custom_field")
 
 	enable_for_fields = [
 		["Customer", "customer_name"],
@@ -26,7 +26,7 @@ def execute():
 	]
 
 	for f in enable_for_fields:
-		frappe.get_doc(
+		nts.get_doc(
 			{
 				"doctype": "Property Setter",
 				"doc_type": f[0],

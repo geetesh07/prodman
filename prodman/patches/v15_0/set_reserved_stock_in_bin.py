@@ -1,11 +1,11 @@
-import frappe
-from frappe.query_builder.functions import Sum
+import nts
+from nts.query_builder.functions import Sum
 
 
 def execute():
-	sre = frappe.qb.DocType("Stock Reservation Entry")
+	sre = nts.qb.DocType("Stock Reservation Entry")
 	query = (
-		frappe.qb.from_(sre)
+		nts.qb.from_(sre)
 		.select(
 			sre.item_code,
 			sre.warehouse,
@@ -16,7 +16,7 @@ def execute():
 	)
 
 	for d in query.run(as_dict=True):
-		frappe.db.set_value(
+		nts.db.set_value(
 			"Bin",
 			{"item_code": d.item_code, "warehouse": d.warehouse},
 			"reserved_stock",

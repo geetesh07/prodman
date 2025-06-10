@@ -1,5 +1,5 @@
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 install_docs = [
 	{"doctype": "Role", "role_name": "Stock Manager", "name": "Stock Manager"},
@@ -17,20 +17,20 @@ install_docs = [
 
 
 def get_warehouse_account_map(company=None):
-	company_warehouse_account_map = company and frappe.flags.setdefault("warehouse_account_map", {}).get(
+	company_warehouse_account_map = company and nts.flags.setdefault("warehouse_account_map", {}).get(
 		company
 	)
-	warehouse_account_map = frappe.flags.warehouse_account_map
+	warehouse_account_map = nts.flags.warehouse_account_map
 
-	if not warehouse_account_map or not company_warehouse_account_map or frappe.flags.in_test:
-		warehouse_account = frappe._dict()
+	if not warehouse_account_map or not company_warehouse_account_map or nts.flags.in_test:
+		warehouse_account = nts._dict()
 
 		filters = {}
 		if company:
 			filters["company"] = company
-			frappe.flags.setdefault("warehouse_account_map", {}).setdefault(company, {})
+			nts.flags.setdefault("warehouse_account_map", {}).setdefault(company, {})
 
-		for d in frappe.get_all(
+		for d in nts.get_all(
 			"Warehouse",
 			fields=["name", "account", "parent_warehouse", "company", "is_group"],
 			filters=filters,
@@ -40,14 +40,14 @@ def get_warehouse_account_map(company=None):
 				d.account = get_warehouse_account(d, warehouse_account)
 
 			if d.account:
-				d.account_currency = frappe.db.get_value("Account", d.account, "account_currency", cache=True)
+				d.account_currency = nts.db.get_value("Account", d.account, "account_currency", cache=True)
 				warehouse_account.setdefault(d.name, d)
 		if company:
-			frappe.flags.warehouse_account_map[company] = warehouse_account
+			nts.flags.warehouse_account_map[company] = warehouse_account
 		else:
-			frappe.flags.warehouse_account_map = warehouse_account
+			nts.flags.warehouse_account_map = warehouse_account
 
-	return frappe.flags.warehouse_account_map.get(company) or frappe.flags.warehouse_account_map
+	return nts.flags.warehouse_account_map.get(company) or nts.flags.warehouse_account_map
 
 
 def get_warehouse_account(warehouse, warehouse_account=None):
@@ -57,11 +57,11 @@ def get_warehouse_account(warehouse, warehouse_account=None):
 			if warehouse_account.get(warehouse.parent_warehouse):
 				account = warehouse_account.get(warehouse.parent_warehouse).account
 			else:
-				from frappe.utils.nestedset import rebuild_tree
+				from nts.utils.nestedset import rebuild_tree
 
 				rebuild_tree("Warehouse", "parent_warehouse")
 		else:
-			account = frappe.db.sql(
+			account = nts.db.sql(
 				"""
 				select
 					account from `tabWarehouse`
@@ -79,12 +79,12 @@ def get_warehouse_account(warehouse, warehouse_account=None):
 		account = get_company_default_inventory_account(warehouse.company)
 
 	if not account and warehouse.company:
-		account = frappe.db.get_value(
+		account = nts.db.get_value(
 			"Account", {"account_type": "Stock", "is_group": 0, "company": warehouse.company}, "name"
 		)
 
 	if not account and warehouse.company and not warehouse.is_group:
-		frappe.throw(
+		nts.throw(
 			_("Please set Account in Warehouse {0} or Default Inventory Account in Company {1}").format(
 				warehouse.name, warehouse.company
 			)
@@ -93,4 +93,4 @@ def get_warehouse_account(warehouse, warehouse_account=None):
 
 
 def get_company_default_inventory_account(company):
-	return frappe.get_cached_value("Company", company, "default_inventory_account")
+	return nts.get_cached_value("Company", company, "default_inventory_account")

@@ -1,10 +1,10 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe.utils import random_string
+import nts
+from nts.utils import random_string
 
 from prodman.crm.doctype.lead.lead import add_lead_to_prospect
 from prodman.crm.doctype.lead.test_lead import make_lead
@@ -30,9 +30,9 @@ class TestProspect(unittest.TestCase):
 	def test_make_customer_from_prospect(self):
 		from prodman.crm.doctype.prospect.prospect import make_customer as make_customer_from_prospect
 
-		frappe.delete_doc_if_exists("Customer", "_Test Prospect")
+		nts.delete_doc_if_exists("Customer", "_Test Prospect")
 
-		prospect = frappe.get_doc(
+		prospect = nts.get_doc(
 			{
 				"doctype": "Prospect",
 				"company_name": "_Test Prospect",
@@ -52,9 +52,9 @@ class TestProspect(unittest.TestCase):
 
 
 def make_prospect(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
-	prospect_doc = frappe.get_doc(
+	prospect_doc = nts.get_doc(
 		{
 			"doctype": "Prospect",
 			"company_name": args.company_name or f"_Test Company {random_string(3)}",
@@ -65,9 +65,9 @@ def make_prospect(**args):
 
 
 def make_address(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
-	address_doc = frappe.get_doc(
+	address_doc = nts.get_doc(
 		{
 			"doctype": "Address",
 			"address_title": args.address_title or "Address Title",

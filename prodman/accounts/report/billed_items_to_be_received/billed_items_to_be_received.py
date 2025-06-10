@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts 
+from nts  import _
 
 
 def execute(filters=None):
@@ -17,7 +17,7 @@ def get_data(report_filters):
 	filters = get_report_filters(report_filters)
 	fields = get_report_fields()
 
-	return frappe.get_all("Purchase Invoice", fields=fields, filters=filters)
+	return nts .get_all("Purchase Invoice", fields=fields, filters=filters)
 
 
 def get_report_filters(report_filters):

@@ -1,15 +1,15 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2020, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import json
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.query_builder.custom import ConstantColumn
-from frappe.query_builder.functions import Sum
-from frappe.utils import cint, flt
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .query_builder.custom import ConstantColumn
+from nts .query_builder.functions import Sum
+from nts .utils import cint, flt
 
 from prodman import get_default_cost_center
 from prodman.accounts.doctype.bank_transaction.bank_transaction import get_total_allocated_amount
@@ -29,7 +29,7 @@ class BankReconciliationTool(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		account_currency: DF.Link | None
 		account_opening_balance: DF.Currency
@@ -46,7 +46,7 @@ class BankReconciliationTool(Document):
 	pass
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_bank_transactions(bank_account, from_date=None, to_date=None):
 	# returns bank transactions for a bank account
 	filters = []
@@ -57,7 +57,7 @@ def get_bank_transactions(bank_account, from_date=None, to_date=None):
 		filters.append(["date", "<=", to_date])
 	if from_date:
 		filters.append(["date", ">=", from_date])
-	transactions = frappe.get_all(
+	transactions = nts .get_all(
 		"Bank Transaction",
 		fields=[
 			"date",
@@ -79,11 +79,11 @@ def get_bank_transactions(bank_account, from_date=None, to_date=None):
 	return transactions
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_account_balance(bank_account, till_date, company):
 	# returns account balance till the specified date
-	account = frappe.db.get_value("Bank Account", bank_account, "account")
-	filters = frappe._dict(
+	account = nts .db.get_value("Bank Account", bank_account, "account")
+	filters = nts ._dict(
 		{
 			"account": account,
 			"report_date": till_date,
@@ -105,15 +105,15 @@ def get_account_balance(bank_account, till_date, company):
 	return flt(balance_as_per_system) - flt(total_debit) + flt(total_credit) + amounts_not_reflected_in_system
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def update_bank_transaction(bank_transaction_name, reference_number, party_type=None, party=None):
 	# updates bank transaction based on the new parameters provided by the user from Vouchers
-	bank_transaction = frappe.get_doc("Bank Transaction", bank_transaction_name)
+	bank_transaction = nts .get_doc("Bank Transaction", bank_transaction_name)
 	bank_transaction.reference_number = reference_number
 	bank_transaction.party_type = party_type
 	bank_transaction.party = party
 	bank_transaction.save()
-	return frappe.db.get_all(
+	return nts .db.get_all(
 		"Bank Transaction",
 		filters={"name": bank_transaction_name},
 		fields=[
@@ -133,7 +133,7 @@ def update_bank_transaction(bank_transaction_name, reference_number, party_type=
 	)[0]
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def create_journal_entry_bts(
 	bank_transaction_name,
 	reference_number=None,
@@ -147,26 +147,26 @@ def create_journal_entry_bts(
 	allow_edit=None,
 ):
 	# Create a new journal entry based on the bank transaction
-	bank_transaction = frappe.db.get_values(
+	bank_transaction = nts .db.get_values(
 		"Bank Transaction",
 		bank_transaction_name,
 		fieldname=["name", "deposit", "withdrawal", "bank_account", "currency"],
 		as_dict=True,
 	)[0]
-	company_account = frappe.get_value("Bank Account", bank_transaction.bank_account, "account")
-	account_type = frappe.db.get_value("Account", second_account, "account_type")
+	company_account = nts .get_value("Bank Account", bank_transaction.bank_account, "account")
+	account_type = nts .db.get_value("Account", second_account, "account_type")
 	if account_type in ["Receivable", "Payable"]:
 		if not (party_type and party):
-			frappe.throw(
+			nts .throw(
 				_("Party Type and Party is required for Receivable / Payable account {0}").format(
 					second_account
 				)
 			)
 
-	company = frappe.get_value("Account", company_account, "company")
-	company_default_currency = frappe.get_cached_value("Company", company, "default_currency")
-	company_account_currency = frappe.get_cached_value("Account", company_account, "account_currency")
-	second_account_currency = frappe.get_cached_value("Account", second_account, "account_currency")
+	company = nts .get_value("Account", company_account, "company")
+	company_default_currency = nts .get_cached_value("Company", company, "default_currency")
+	company_account_currency = nts .get_cached_value("Account", company_account, "account_currency")
+	second_account_currency = nts .get_cached_value("Account", second_account, "account_currency")
 
 	# determine if multi-currency Journal or not
 	is_multi_currency = (
@@ -264,7 +264,7 @@ def create_journal_entry_bts(
 	if is_multi_currency:
 		journal_entry_dict.update({"multi_currency": True})
 
-	journal_entry = frappe.new_doc("Journal Entry")
+	journal_entry = nts .new_doc("Journal Entry")
 	journal_entry.update(journal_entry_dict)
 	journal_entry.set("accounts", accounts)
 
@@ -292,7 +292,7 @@ def create_journal_entry_bts(
 	return reconcile_vouchers(bank_transaction_name, vouchers)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def create_payment_entry_bts(
 	bank_transaction_name,
 	reference_number=None,
@@ -306,7 +306,7 @@ def create_payment_entry_bts(
 	allow_edit=None,
 ):
 	# Create a new payment entry based on the bank transaction
-	bank_transaction = frappe.db.get_values(
+	bank_transaction = nts .db.get_values(
 		"Bank Transaction",
 		bank_transaction_name,
 		fieldname=["name", "unallocated_amount", "deposit", "bank_account", "currency"],
@@ -315,19 +315,19 @@ def create_payment_entry_bts(
 
 	payment_type = "Receive" if bank_transaction.deposit > 0.0 else "Pay"
 
-	bank_account = frappe.get_cached_value("Bank Account", bank_transaction.bank_account, "account")
-	company = frappe.get_cached_value("Account", bank_account, "company")
+	bank_account = nts .get_cached_value("Bank Account", bank_transaction.bank_account, "account")
+	company = nts .get_cached_value("Account", bank_account, "company")
 	party_account = get_party_account(party_type, party, company)
 
 	bank_currency = bank_transaction.currency
-	party_currency = frappe.get_cached_value("Account", party_account, "account_currency")
+	party_currency = nts .get_cached_value("Account", party_account, "account_currency")
 
 	exc_rate = get_exchange_rate(bank_currency, party_currency, posting_date)
 
 	amt_in_bank_acc_currency = bank_transaction.unallocated_amount
 	amount_in_party_currency = bank_transaction.unallocated_amount * exc_rate
 
-	pe = frappe.new_doc("Payment Entry")
+	pe = nts .new_doc("Payment Entry")
 	pe.payment_type = payment_type
 	pe.company = company
 	pe.reference_no = reference_number
@@ -365,7 +365,7 @@ def create_payment_entry_bts(
 	return reconcile_vouchers(bank_transaction_name, vouchers)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def auto_reconcile_vouchers(
 	bank_account,
 	from_date=None,
@@ -377,7 +377,7 @@ def auto_reconcile_vouchers(
 	bank_transactions = get_bank_transactions(bank_account)
 
 	if len(bank_transactions) > 10:
-		frappe.enqueue(
+		nts .enqueue(
 			method="prodman.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool.start_auto_reconcile",
 			queue="long",
 			bank_transactions=bank_transactions,
@@ -387,7 +387,7 @@ def auto_reconcile_vouchers(
 			from_reference_date=from_reference_date,
 			to_reference_date=to_reference_date,
 		)
-		frappe.msgprint(_("Auto Reconciliation has started in the background"))
+		nts .msgprint(_("Auto Reconciliation has started in the background"))
 	else:
 		start_auto_reconcile(
 			bank_transactions,
@@ -402,7 +402,7 @@ def auto_reconcile_vouchers(
 def start_auto_reconcile(
 	bank_transactions, from_date, to_date, filter_by_reference_date, from_reference_date, to_reference_date
 ):
-	frappe.flags.auto_reconcile_vouchers = True
+	nts .flags.auto_reconcile_vouchers = True
 
 	reconciled, partially_reconciled = set(), set()
 	for transaction in bank_transactions:
@@ -439,9 +439,9 @@ def start_auto_reconcile(
 			partially_reconciled.add(updated_transaction.name)
 
 	alert_message, indicator = get_auto_reconcile_message(partially_reconciled, reconciled)
-	frappe.msgprint(title=_("Auto Reconciliation"), msg=alert_message, indicator=indicator)
+	nts .msgprint(title=_("Auto Reconciliation"), msg=alert_message, indicator=indicator)
 
-	frappe.flags.auto_reconcile_vouchers = False
+	nts .flags.auto_reconcile_vouchers = False
 
 
 def get_auto_reconcile_message(partially_reconciled, reconciled):
@@ -465,11 +465,11 @@ def get_auto_reconcile_message(partially_reconciled, reconciled):
 	return alert_message, indicator
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def reconcile_vouchers(bank_transaction_name, vouchers):
 	# updated clear date of all the vouchers based on the bank transaction
 	vouchers = json.loads(vouchers)
-	transaction = frappe.get_doc("Bank Transaction", bank_transaction_name)
+	transaction = nts .get_doc("Bank Transaction", bank_transaction_name)
 	transaction.add_payment_entries(vouchers)
 	transaction.validate_duplicate_references()
 	transaction.allocate_payment_entries()
@@ -480,7 +480,7 @@ def reconcile_vouchers(bank_transaction_name, vouchers):
 	return transaction
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_linked_payments(
 	bank_transaction_name,
 	document_types=None,
@@ -491,8 +491,8 @@ def get_linked_payments(
 	to_reference_date=None,
 ):
 	# get all matching payments for a bank transaction
-	transaction = frappe.get_doc("Bank Transaction", bank_transaction_name)
-	bank_account = frappe.db.get_values(
+	transaction = nts .get_doc("Bank Transaction", bank_transaction_name)
+	bank_account = nts .db.get_values(
 		"Bank Account", transaction.bank_account, ["account", "company"], as_dict=True
 	)[0]
 	(gl_account, company) = (bank_account.account, bank_account.company)
@@ -548,7 +548,7 @@ def check_matching(
 ):
 	exact_match = True if "exact_match" in document_types else False
 
-	common_filters = frappe._dict(
+	common_filters = nts ._dict(
 		{
 			"amount": transaction.unallocated_amount,
 			"payment_type": "Receive" if transaction.deposit > 0.0 else "Pay",
@@ -598,9 +598,9 @@ def get_queries(
 	queries = []
 
 	# get matching queries from all the apps
-	for method_name in frappe.get_hooks("get_matching_queries"):
+	for method_name in nts .get_hooks("get_matching_queries"):
 		queries.extend(
-			frappe.get_attr(method_name)(
+			nts .get_attr(method_name)(
 				bank_account,
 				company,
 				transaction,
@@ -684,25 +684,25 @@ def get_bt_matching_query(exact_match, transaction):
 	# get matching bank transaction query
 	# find bank transactions in the same bank account with opposite sign
 	# same bank account must have same company and currency
-	bt = frappe.qb.DocType("Bank Transaction")
+	bt = nts .qb.DocType("Bank Transaction")
 
 	field = "deposit" if transaction.withdrawal > 0.0 else "withdrawal"
 	amount_equality = getattr(bt, field) == transaction.unallocated_amount
-	amount_rank = frappe.qb.terms.Case().when(amount_equality, 1).else_(0)
+	amount_rank = nts .qb.terms.Case().when(amount_equality, 1).else_(0)
 	amount_condition = amount_equality if exact_match else getattr(bt, field) > 0.0
 
-	ref_rank = frappe.qb.terms.Case().when(bt.reference_number == transaction.reference_number, 1).else_(0)
+	ref_rank = nts .qb.terms.Case().when(bt.reference_number == transaction.reference_number, 1).else_(0)
 	unallocated_rank = (
-		frappe.qb.terms.Case().when(bt.unallocated_amount == transaction.unallocated_amount, 1).else_(0)
+		nts .qb.terms.Case().when(bt.unallocated_amount == transaction.unallocated_amount, 1).else_(0)
 	)
 
 	party_condition = (
 		(bt.party_type == transaction.party_type) & (bt.party == transaction.party) & bt.party.isnotnull()
 	)
-	party_rank = frappe.qb.terms.Case().when(party_condition, 1).else_(0)
+	party_rank = nts .qb.terms.Case().when(party_condition, 1).else_(0)
 
 	query = (
-		frappe.qb.from_(bt)
+		nts .qb.from_(bt)
 		.select(
 			(ref_rank + amount_rank + party_rank + unallocated_rank + 1).as_("rank"),
 			ConstantColumn("Bank Transaction").as_("doctype"),
@@ -739,26 +739,26 @@ def get_pe_matching_query(
 	to_from = "to" if transaction.deposit > 0.0 else "from"
 	currency_field = f"paid_{to_from}_account_currency"
 	payment_type = "Receive" if transaction.deposit > 0.0 else "Pay"
-	pe = frappe.qb.DocType("Payment Entry")
+	pe = nts .qb.DocType("Payment Entry")
 
 	ref_condition = pe.reference_no == transaction.reference_number
-	ref_rank = frappe.qb.terms.Case().when(ref_condition, 1).else_(0)
+	ref_rank = nts .qb.terms.Case().when(ref_condition, 1).else_(0)
 
 	amount_equality = pe.paid_amount == transaction.unallocated_amount
-	amount_rank = frappe.qb.terms.Case().when(amount_equality, 1).else_(0)
+	amount_rank = nts .qb.terms.Case().when(amount_equality, 1).else_(0)
 	amount_condition = amount_equality if exact_match else pe.paid_amount > 0.0
 
 	party_condition = (
 		(pe.party_type == transaction.party_type) & (pe.party == transaction.party) & pe.party.isnotnull()
 	)
-	party_rank = frappe.qb.terms.Case().when(party_condition, 1).else_(0)
+	party_rank = nts .qb.terms.Case().when(party_condition, 1).else_(0)
 
 	filter_by_date = pe.posting_date.between(from_date, to_date)
 	if cint(filter_by_reference_date):
 		filter_by_date = pe.reference_date.between(from_reference_date, to_reference_date)
 
 	query = (
-		frappe.qb.from_(pe)
+		nts .qb.from_(pe)
 		.select(
 			(ref_rank + amount_rank + party_rank + 1).as_("rank"),
 			ConstantColumn("Payment Entry").as_("doctype"),
@@ -780,7 +780,7 @@ def get_pe_matching_query(
 		.orderby(pe.reference_date if cint(filter_by_reference_date) else pe.posting_date)
 	)
 
-	if frappe.flags.auto_reconcile_vouchers is True:
+	if nts .flags.auto_reconcile_vouchers is True:
 		query = query.where(ref_condition)
 
 	return query
@@ -801,8 +801,8 @@ def get_je_matching_query(
 	# So one bank could have both types of bank accounts like asset and liability
 	# So cr_or_dr should be judged only on basis of withdrawal and deposit and not account type
 	cr_or_dr = "credit" if transaction.withdrawal > 0.0 else "debit"
-	je = frappe.qb.DocType("Journal Entry")
-	jea = frappe.qb.DocType("Journal Entry Account")
+	je = nts .qb.DocType("Journal Entry")
+	jea = nts .qb.DocType("Journal Entry Account")
 
 	amount_field = f"{cr_or_dr}_in_account_currency"
 
@@ -811,7 +811,7 @@ def get_je_matching_query(
 		filter_by_date = je.cheque_date.between(from_reference_date, to_reference_date)
 
 	subquery = (
-		frappe.qb.from_(jea)
+		nts .qb.from_(jea)
 		.join(je)
 		.on(jea.parent == je.name)
 		.select(
@@ -834,15 +834,15 @@ def get_je_matching_query(
 		.orderby(je.cheque_date if cint(filter_by_reference_date) else je.posting_date)
 	)
 
-	if frappe.flags.auto_reconcile_vouchers is True:
+	if nts .flags.auto_reconcile_vouchers is True:
 		subquery = subquery.where(je.cheque_no == transaction.reference_number)
 
-	ref_rank = frappe.qb.terms.Case().when(subquery.reference_no == transaction.reference_number, 1).else_(0)
+	ref_rank = nts .qb.terms.Case().when(subquery.reference_no == transaction.reference_number, 1).else_(0)
 	amount_equality = subquery.paid_amount == transaction.unallocated_amount
-	amount_rank = frappe.qb.terms.Case().when(amount_equality, 1).else_(0)
+	amount_rank = nts .qb.terms.Case().when(amount_equality, 1).else_(0)
 
 	query = (
-		frappe.qb.from_(subquery)
+		nts .qb.from_(subquery)
 		.select(
 			"*",
 			(ref_rank + amount_rank + 1).as_("rank"),
@@ -855,18 +855,18 @@ def get_je_matching_query(
 
 def get_si_matching_query(exact_match, currency, common_filters):
 	# get matching sales invoice query
-	si = frappe.qb.DocType("Sales Invoice")
-	sip = frappe.qb.DocType("Sales Invoice Payment")
+	si = nts .qb.DocType("Sales Invoice")
+	sip = nts .qb.DocType("Sales Invoice Payment")
 
 	amount_equality = sip.amount == common_filters.amount
-	amount_rank = frappe.qb.terms.Case().when(amount_equality, 1).else_(0)
+	amount_rank = nts .qb.terms.Case().when(amount_equality, 1).else_(0)
 	amount_condition = amount_equality if exact_match else sip.amount > 0.0
 
 	party_condition = si.customer == common_filters.party
-	party_rank = frappe.qb.terms.Case().when(party_condition, 1).else_(0)
+	party_rank = nts .qb.terms.Case().when(party_condition, 1).else_(0)
 
 	query = (
-		frappe.qb.from_(sip)
+		nts .qb.from_(sip)
 		.join(si)
 		.on(sip.parent == si.name)
 		.select(
@@ -893,17 +893,17 @@ def get_si_matching_query(exact_match, currency, common_filters):
 
 def get_pi_matching_query(exact_match, currency, common_filters):
 	# get matching purchase invoice query when they are also used as payment entries (is_paid)
-	purchase_invoice = frappe.qb.DocType("Purchase Invoice")
+	purchase_invoice = nts .qb.DocType("Purchase Invoice")
 
 	amount_equality = purchase_invoice.paid_amount == common_filters.amount
-	amount_rank = frappe.qb.terms.Case().when(amount_equality, 1).else_(0)
+	amount_rank = nts .qb.terms.Case().when(amount_equality, 1).else_(0)
 	amount_condition = amount_equality if exact_match else purchase_invoice.paid_amount > 0.0
 
 	party_condition = purchase_invoice.supplier == common_filters.party
-	party_rank = frappe.qb.terms.Case().when(party_condition, 1).else_(0)
+	party_rank = nts .qb.terms.Case().when(party_condition, 1).else_(0)
 
 	query = (
-		frappe.qb.from_(purchase_invoice)
+		nts .qb.from_(purchase_invoice)
 		.select(
 			(party_rank + amount_rank + 1).as_("rank"),
 			ConstantColumn("Purchase Invoice").as_("doctype"),

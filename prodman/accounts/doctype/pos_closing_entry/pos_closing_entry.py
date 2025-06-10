@@ -1,10 +1,10 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import flt, get_datetime
+import nts 
+from nts  import _
+from nts .utils import flt, get_datetime
 
 from prodman.accounts.doctype.pos_invoice_merge_log.pos_invoice_merge_log import (
 	consolidate_pos_invoices,
@@ -20,7 +20,7 @@ class POSClosingEntry(StatusUpdater):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.pos_closing_entry_detail.pos_closing_entry_detail import (
 			POSClosingEntryDetail,
@@ -52,11 +52,11 @@ class POSClosingEntry(StatusUpdater):
 	# end: auto-generated types
 
 	def validate(self):
-		self.posting_date = self.posting_date or frappe.utils.nowdate()
-		self.posting_time = self.posting_time or frappe.utils.nowtime()
+		self.posting_date = self.posting_date or nts .utils.nowdate()
+		self.posting_time = self.posting_time or nts .utils.nowtime()
 
-		if frappe.db.get_value("POS Opening Entry", self.pos_opening_entry, "status") != "Open":
-			frappe.throw(_("Selected POS Opening Entry should be open."), title=_("Invalid Opening Entry"))
+		if nts .db.get_value("POS Opening Entry", self.pos_opening_entry, "status") != "Open":
+			nts .throw(_("Selected POS Opening Entry should be open."), title=_("Invalid Opening Entry"))
 
 		self.validate_duplicate_pos_invoices()
 		self.validate_pos_invoices()
@@ -70,17 +70,17 @@ class POSClosingEntry(StatusUpdater):
 		for key, value in pos_occurences.items():
 			if len(value) > 1:
 				error_list.append(
-					_("{0} is added multiple times on rows: {1}").format(frappe.bold(key), frappe.bold(value))
+					_("{0} is added multiple times on rows: {1}").format(nts .bold(key), nts .bold(value))
 				)
 
 		if error_list:
-			frappe.throw(error_list, title=_("Duplicate POS Invoices found"), as_list=True)
+			nts .throw(error_list, title=_("Duplicate POS Invoices found"), as_list=True)
 
 	def validate_pos_invoices(self):
 		invalid_rows = []
 		for d in self.pos_transactions:
 			invalid_row = {"idx": d.idx}
-			pos_invoice = frappe.db.get_values(
+			pos_invoice = nts .db.get_values(
 				"POS Invoice",
 				d.pos_invoice,
 				["consolidated_invoice", "pos_profile", "docstatus", "owner"],
@@ -92,13 +92,13 @@ class POSClosingEntry(StatusUpdater):
 				continue
 			if pos_invoice.pos_profile != self.pos_profile:
 				invalid_row.setdefault("msg", []).append(
-					_("POS Profile doesn't match {}").format(frappe.bold(self.pos_profile))
+					_("POS Profile doesn't match {}").format(nts .bold(self.pos_profile))
 				)
 			if pos_invoice.docstatus != 1:
 				invalid_row.setdefault("msg", []).append(_("POS Invoice is not submitted"))
 			if pos_invoice.owner != self.user:
 				invalid_row.setdefault("msg", []).append(
-					_("POS Invoice isn't created by user {}").format(frappe.bold(self.owner))
+					_("POS Invoice isn't created by user {}").format(nts .bold(self.owner))
 				)
 
 			if invalid_row.get("msg"):
@@ -112,19 +112,19 @@ class POSClosingEntry(StatusUpdater):
 			for msg in row.get("msg"):
 				error_list.append(_("Row #{}: {}").format(row.get("idx"), msg))
 
-		frappe.throw(error_list, title=_("Invalid POS Invoices"), as_list=True)
+		nts .throw(error_list, title=_("Invalid POS Invoices"), as_list=True)
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def get_payment_reconciliation_details(self):
-		currency = frappe.get_cached_value("Company", self.company, "default_currency")
-		return frappe.render_template(
+		currency = nts .get_cached_value("Company", self.company, "default_currency")
+		return nts .render_template(
 			"prodman/accounts/doctype/pos_closing_entry/closing_voucher_details.html",
 			{"data": self, "currency": currency},
 		)
 
 	def on_submit(self):
 		consolidate_pos_invoices(closing_entry=self)
-		frappe.publish_realtime(
+		nts .publish_realtime(
 			f"poe_{self.pos_opening_entry}_closed",
 			self,
 			docname=f"POS Opening Entry/{self.pos_opening_entry}",
@@ -133,27 +133,27 @@ class POSClosingEntry(StatusUpdater):
 	def on_cancel(self):
 		unconsolidate_pos_invoices(closing_entry=self)
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def retry(self):
 		consolidate_pos_invoices(closing_entry=self)
 
 	def update_opening_entry(self, for_cancel=False):
-		opening_entry = frappe.get_doc("POS Opening Entry", self.pos_opening_entry)
+		opening_entry = nts .get_doc("POS Opening Entry", self.pos_opening_entry)
 		opening_entry.pos_closing_entry = self.name if not for_cancel else None
 		opening_entry.set_status()
 		opening_entry.save()
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts .whitelist()
+@nts .validate_and_sanitize_search_inputs
 def get_cashiers(doctype, txt, searchfield, start, page_len, filters):
-	cashiers_list = frappe.get_all("POS Profile User", filters=filters, fields=["user"], as_list=1)
+	cashiers_list = nts .get_all("POS Profile User", filters=filters, fields=["user"], as_list=1)
 	return [c for c in cashiers_list]
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_pos_invoices(start, end, pos_profile, user):
-	data = frappe.db.sql(
+	data = nts .db.sql(
 		"""
 	select
 		name, timestamp(posting_date, posting_time) as "timestamp"
@@ -168,16 +168,16 @@ def get_pos_invoices(start, end, pos_profile, user):
 
 	data = list(filter(lambda d: get_datetime(start) <= get_datetime(d.timestamp) <= get_datetime(end), data))
 	# need to get taxes and payments so can't avoid get_doc
-	data = [frappe.get_doc("POS Invoice", d.name).as_dict() for d in data]
+	data = [nts .get_doc("POS Invoice", d.name).as_dict() for d in data]
 
 	return data
 
 
 def make_closing_entry_from_opening(opening_entry):
-	closing_entry = frappe.new_doc("POS Closing Entry")
+	closing_entry = nts .new_doc("POS Closing Entry")
 	closing_entry.pos_opening_entry = opening_entry.name
 	closing_entry.period_start_date = opening_entry.period_start_date
-	closing_entry.period_end_date = frappe.utils.get_datetime()
+	closing_entry.period_end_date = nts .utils.get_datetime()
 	closing_entry.pos_profile = opening_entry.pos_profile
 	closing_entry.user = opening_entry.user
 	closing_entry.company = opening_entry.company
@@ -197,7 +197,7 @@ def make_closing_entry_from_opening(opening_entry):
 	payments = []
 	for detail in opening_entry.balance_details:
 		payments.append(
-			frappe._dict(
+			nts ._dict(
 				{
 					"mode_of_payment": detail.mode_of_payment,
 					"opening_amount": detail.opening_amount,
@@ -208,7 +208,7 @@ def make_closing_entry_from_opening(opening_entry):
 
 	for d in invoices:
 		pos_transactions.append(
-			frappe._dict(
+			nts ._dict(
 				{
 					"pos_invoice": d.name,
 					"posting_date": d.posting_date,
@@ -227,7 +227,7 @@ def make_closing_entry_from_opening(opening_entry):
 				existing_tax[0].amount += flt(t.tax_amount)
 			else:
 				taxes.append(
-					frappe._dict({"account_head": t.account_head, "rate": t.rate, "amount": t.tax_amount})
+					nts ._dict({"account_head": t.account_head, "rate": t.rate, "amount": t.tax_amount})
 				)
 
 		for p in d.payments:
@@ -236,7 +236,7 @@ def make_closing_entry_from_opening(opening_entry):
 				existing_pay[0].expected_amount += flt(p.amount)
 			else:
 				payments.append(
-					frappe._dict(
+					nts ._dict(
 						{
 							"mode_of_payment": p.mode_of_payment,
 							"opening_amount": 0,

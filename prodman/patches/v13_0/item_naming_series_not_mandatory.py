@@ -1,10 +1,10 @@
-import frappe
+import nts
 
 from prodman.utilities.naming import set_by_naming_series
 
 
 def execute():
-	stock_settings = frappe.get_doc("Stock Settings")
+	stock_settings = nts.get_doc("Stock Settings")
 
 	set_by_naming_series(
 		"Item",

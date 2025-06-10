@@ -1,10 +1,10 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2020, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import Concat_ws, Date
+import nts
+from nts import _
+from nts.query_builder.functions import Concat_ws, Date
 
 
 def execute(filters=None):
@@ -71,12 +71,12 @@ def get_columns():
 
 
 def get_data(filters):
-	lead = frappe.qb.DocType("Lead")
-	address = frappe.qb.DocType("Address")
-	dynamic_link = frappe.qb.DocType("Dynamic Link")
+	lead = nts.qb.DocType("Lead")
+	address = nts.qb.DocType("Address")
+	dynamic_link = nts.qb.DocType("Dynamic Link")
 
 	query = (
-		frappe.qb.from_(lead)
+		nts.qb.from_(lead)
 		.left_join(dynamic_link)
 		.on((lead.name == dynamic_link.link_name) & (dynamic_link.parenttype == "Address"))
 		.left_join(address)

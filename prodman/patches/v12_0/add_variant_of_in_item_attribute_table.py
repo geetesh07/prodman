@@ -1,9 +1,9 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("stock", "doctype", "item_variant_attribute")
-	frappe.db.sql(
+	nts.reload_doc("stock", "doctype", "item_variant_attribute")
+	nts.db.sql(
 		"""
 		UPDATE `tabItem Variant Attribute` t1
 		INNER JOIN `tabItem` t2 ON t2.name = t1.parent

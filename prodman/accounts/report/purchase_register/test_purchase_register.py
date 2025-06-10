@@ -1,24 +1,24 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts  Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_months, today
+import nts 
+from nts .tests.utils import nts TestCase
+from nts .utils import add_months, today
 
 from prodman.accounts.report.purchase_register.purchase_register import execute
 
 
-class TestPurchaseRegister(FrappeTestCase):
+class TestPurchaseRegister(nts TestCase):
 	def test_purchase_register(self):
-		frappe.db.sql("delete from `tabPurchase Invoice` where company='_Test Company 6'")
-		frappe.db.sql("delete from `tabGL Entry` where company='_Test Company 6'")
+		nts .db.sql("delete from `tabPurchase Invoice` where company='_Test Company 6'")
+		nts .db.sql("delete from `tabGL Entry` where company='_Test Company 6'")
 
-		filters = frappe._dict(company="_Test Company 6", from_date=add_months(today(), -1), to_date=today())
+		filters = nts ._dict(company="_Test Company 6", from_date=add_months(today(), -1), to_date=today())
 
 		pi = make_purchase_invoice()
 
 		report_results = execute(filters)
-		first_row = frappe._dict(report_results[1][0])
+		first_row = nts ._dict(report_results[1][0])
 		self.assertEqual(first_row.voucher_type, "Purchase Invoice")
 		self.assertEqual(first_row.voucher_no, pi.name)
 		self.assertEqual(first_row.payable_account, "Creditors - _TC6")
@@ -27,10 +27,10 @@ class TestPurchaseRegister(FrappeTestCase):
 		self.assertEqual(first_row.grand_total, 1100)
 
 	def test_purchase_register_ledger_view(self):
-		frappe.db.sql("delete from `tabPurchase Invoice` where company='_Test Company 6'")
-		frappe.db.sql("delete from `tabGL Entry` where company='_Test Company 6'")
+		nts .db.sql("delete from `tabPurchase Invoice` where company='_Test Company 6'")
+		nts .db.sql("delete from `tabGL Entry` where company='_Test Company 6'")
 
-		filters = frappe._dict(
+		filters = nts ._dict(
 			company="_Test Company 6",
 			from_date=add_months(today(), -1),
 			to_date=today(),
@@ -42,7 +42,7 @@ class TestPurchaseRegister(FrappeTestCase):
 		pe = make_payment_entry()
 
 		report_results = execute(filters)
-		first_row = frappe._dict(report_results[1][2])
+		first_row = nts ._dict(report_results[1][2])
 		self.assertEqual(first_row.voucher_type, "Payment Entry")
 		self.assertEqual(first_row.voucher_no, pe.name)
 		self.assertEqual(first_row.payable_account, "Creditors - _TC6")
@@ -71,7 +71,7 @@ def make_purchase_invoice():
 
 
 def create_purchase_invoice_with_taxes():
-	return frappe.get_doc(
+	return nts .get_doc(
 		{
 			"doctype": "Purchase Invoice",
 			"posting_date": today(),
@@ -110,7 +110,7 @@ def create_purchase_invoice_with_taxes():
 
 
 def make_payment_entry():
-	frappe.set_user("Administrator")
+	nts .set_user("Administrator")
 	from prodman.accounts.doctype.payment_entry.test_payment_entry import create_payment_entry
 
 	return create_payment_entry(

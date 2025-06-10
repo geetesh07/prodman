@@ -1,14 +1,14 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Issue Summary"] = {
+nts.query_reports["Issue Summary"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -23,14 +23,14 @@ frappe.query_reports["Issue Summary"] = {
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: frappe.defaults.get_global_default("year_start_date"),
+			default: nts.defaults.get_global_default("year_start_date"),
 			reqd: 1,
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: frappe.defaults.get_global_default("year_end_date"),
+			default: nts.defaults.get_global_default("year_end_date"),
 			reqd: 1,
 		},
 		{

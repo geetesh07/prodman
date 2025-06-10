@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import cstr
+import nts 
+from nts  import _
+from nts .utils import cstr
 
 from prodman.accounts.report.financial_statements import (
 	get_columns,
@@ -58,7 +58,7 @@ def execute(filters=None):
 
 	data = []
 	summary_data = {}
-	company_currency = frappe.get_cached_value("Company", filters.company, "default_currency")
+	company_currency = nts .get_cached_value("Company", filters.company, "default_currency")
 
 	for cash_flow_section in cash_flow_sections:
 		section_data = []
@@ -88,7 +88,7 @@ def execute(filters=None):
 			row_data = get_account_type_based_data(
 				filters.company, row["account_type"], period_list, filters.accumulated_values, filters
 			)
-			accounts = frappe.get_all(
+			accounts = nts .get_all(
 				"Account",
 				filters={
 					"account_type": row["account_type"],
@@ -185,25 +185,25 @@ def get_account_type_based_data(company, account_type, period_list, accumulated_
 
 def get_account_type_based_gl_data(company, filters=None):
 	cond = ""
-	filters = frappe._dict(filters or {})
+	filters = nts ._dict(filters or {})
 
 	if filters.include_default_book_entries:
-		company_fb = frappe.get_cached_value("Company", company, "default_finance_book")
+		company_fb = nts .get_cached_value("Company", company, "default_finance_book")
 		cond = """ AND (finance_book in ({}, {}, '') OR finance_book IS NULL)
 			""".format(
-			frappe.db.escape(filters.finance_book),
-			frappe.db.escape(company_fb),
+			nts .db.escape(filters.finance_book),
+			nts .db.escape(company_fb),
 		)
 	else:
 		cond = " AND (finance_book in (%s, '') OR finance_book IS NULL)" % (
-			frappe.db.escape(cstr(filters.finance_book))
+			nts .db.escape(cstr(filters.finance_book))
 		)
 
 	if filters.get("cost_center"):
 		filters.cost_center = get_cost_centers_with_children(filters.cost_center)
 		cond += " and cost_center in %(cost_center)s"
 
-	gl_sum = frappe.db.sql_list(
+	gl_sum = nts .db.sql_list(
 		f"""
 		select sum(credit) - sum(debit)
 		from `tabGL Entry`

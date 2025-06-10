@@ -1,8 +1,8 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe.model.document import Document
+import nts 
+from nts .model.document import Document
 
 
 class PaymentEntryReference(Document):
@@ -12,7 +12,7 @@ class PaymentEntryReference(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		account: DF.Link | None
 		account_type: DF.Data | None
@@ -41,4 +41,4 @@ class PaymentEntryReference(Document):
 		if not self.payment_request:
 			return
 
-		return frappe.db.get_value("Payment Request", self.payment_request, "outstanding_amount")
+		return nts .db.get_value("Payment Request", self.payment_request, "outstanding_amount")

@@ -1,16 +1,16 @@
-# Copyright (c) 2019, Frappe and Contributors
+# Copyright (c) 2019, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("accounts", "doctype", "pos_payment_method")
-	pos_profiles = frappe.get_all("POS Profile")
+	nts.reload_doc("accounts", "doctype", "pos_payment_method")
+	pos_profiles = nts.get_all("POS Profile")
 
 	for pos_profile in pos_profiles:
-		payments = frappe.db.sql(
+		payments = nts.db.sql(
 			"""
 			select idx, parentfield, parenttype, parent, mode_of_payment, `default` from `tabSales Invoice Payment` where parent=%s
 		""",
@@ -19,7 +19,7 @@ def execute():
 		)
 		if payments:
 			for payment_mode in payments:
-				pos_payment_method = frappe.new_doc("POS Payment Method")
+				pos_payment_method = nts.new_doc("POS Payment Method")
 				pos_payment_method.idx = payment_mode.idx
 				pos_payment_method.default = payment_mode.default
 				pos_payment_method.mode_of_payment = payment_mode.mode_of_payment
@@ -28,4 +28,4 @@ def execute():
 				pos_payment_method.parenttype = payment_mode.parenttype
 				pos_payment_method.db_insert()
 
-		frappe.db.sql("""delete from `tabSales Invoice Payment` where parent=%s""", pos_profile.name)
+		nts.db.sql("""delete from `tabSales Invoice Payment` where parent=%s""", pos_profile.name)

@@ -1,7 +1,7 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("POS Closing Entry", {
+nts .ui.form.on("POS Closing Entry", {
 	onload: function (frm) {
 		frm.ignore_doctypes_on_cancel_all = ["POS Invoice Merge Log"];
 		frm.set_query("pos_profile", function (doc) {
@@ -22,12 +22,12 @@ frappe.ui.form.on("POS Closing Entry", {
 		});
 
 		if (frm.doc.docstatus === 0 && !frm.doc.amended_from)
-			frm.set_value("period_end_date", frappe.datetime.now_datetime());
+			frm.set_value("period_end_date", nts .datetime.now_datetime());
 
-		frappe.realtime.on("closing_process_complete", async function (data) {
+		nts .realtime.on("closing_process_complete", async function (data) {
 			await frm.reload_doc();
 			if (frm.doc.status == "Failed" && frm.doc.error_message) {
-				frappe.msgprint({
+				nts .msgprint({
 					title: __("POS Closing Failed"),
 					message: frm.doc.error_message,
 					indicator: "orange",
@@ -40,10 +40,10 @@ frappe.ui.form.on("POS Closing Entry", {
 
 		if (frm.doc.docstatus == 1) {
 			if (!frm.doc.posting_date) {
-				frm.set_value("posting_date", frappe.datetime.nowdate());
+				frm.set_value("posting_date", nts .datetime.nowdate());
 			}
 			if (!frm.doc.posting_time) {
-				frm.set_value("posting_time", frappe.datetime.now_time());
+				frm.set_value("posting_time", nts .datetime.now_time());
 			}
 		}
 	},
@@ -60,7 +60,7 @@ frappe.ui.form.on("POS Closing Entry", {
 
 			$("#jump_to_error").on("click", (e) => {
 				e.preventDefault();
-				frappe.utils.scroll_to(cur_frm.get_field("error_message").$wrapper, true, 30);
+				nts .utils.scroll_to(cur_frm.get_field("error_message").$wrapper, true, 30);
 			});
 
 			frm.add_custom_button(__("Retry"), function () {
@@ -79,17 +79,17 @@ frappe.ui.form.on("POS Closing Entry", {
 			frm.doc.user
 		) {
 			reset_values(frm);
-			frappe.run_serially([
-				() => frappe.dom.freeze(__("Loading Invoices! Please Wait...")),
+			nts .run_serially([
+				() => nts .dom.freeze(__("Loading Invoices! Please Wait...")),
 				() => frm.trigger("set_opening_amounts"),
 				() => frm.trigger("get_pos_invoices"),
-				() => frappe.dom.unfreeze(),
+				() => nts .dom.unfreeze(),
 			]);
 		}
 	},
 
 	set_opening_amounts(frm) {
-		return frappe.db
+		return nts .db
 			.get_doc("POS Opening Entry", frm.doc.pos_opening_entry)
 			.then(({ balance_details }) => {
 				balance_details.forEach((detail) => {
@@ -103,11 +103,11 @@ frappe.ui.form.on("POS Closing Entry", {
 	},
 
 	get_pos_invoices(frm) {
-		return frappe.call({
+		return nts .call({
 			method: "prodman.accounts.doctype.pos_closing_entry.pos_closing_entry.get_pos_invoices",
 			args: {
-				start: frappe.datetime.get_datetime_as_string(frm.doc.period_start_date),
-				end: frappe.datetime.get_datetime_as_string(frm.doc.period_end_date),
+				start: nts .datetime.get_datetime_as_string(frm.doc.period_start_date),
+				end: nts .datetime.get_datetime_as_string(frm.doc.period_end_date),
 				pos_profile: frm.doc.pos_profile,
 				user: frm.doc.user,
 			},
@@ -121,7 +121,7 @@ frappe.ui.form.on("POS Closing Entry", {
 	},
 
 	before_save: async function (frm) {
-		frappe.dom.freeze(__("Processing Sales! Please Wait..."));
+		nts .dom.freeze(__("Processing Sales! Please Wait..."));
 
 		frm.set_value("grand_total", 0);
 		frm.set_value("net_total", 0);
@@ -133,11 +133,11 @@ frappe.ui.form.on("POS Closing Entry", {
 		}
 
 		await Promise.all([
-			frappe.call({
+			nts .call({
 				method: "prodman.accounts.doctype.pos_closing_entry.pos_closing_entry.get_pos_invoices",
 				args: {
-					start: frappe.datetime.get_datetime_as_string(frm.doc.period_start_date),
-					end: frappe.datetime.get_datetime_as_string(frm.doc.period_end_date),
+					start: nts .datetime.get_datetime_as_string(frm.doc.period_start_date),
+					end: nts .datetime.get_datetime_as_string(frm.doc.period_end_date),
 					pos_profile: frm.doc.pos_profile,
 					user: frm.doc.user,
 				},
@@ -155,14 +155,14 @@ frappe.ui.form.on("POS Closing Entry", {
 				},
 			}),
 		]);
-		frappe.dom.unfreeze();
+		nts .dom.unfreeze();
 	},
 });
 
-frappe.ui.form.on("POS Closing Entry Detail", {
+nts .ui.form.on("POS Closing Entry Detail", {
 	closing_amount: (frm, cdt, cdn) => {
 		const row = locals[cdt][cdn];
-		frappe.model.set_value(cdt, cdn, "difference", flt(row.closing_amount - row.expected_amount));
+		nts .model.set_value(cdt, cdn, "difference", flt(row.closing_amount - row.expected_amount));
 	},
 });
 
@@ -244,7 +244,7 @@ function refresh_fields(frm) {
 
 function set_html_data(frm) {
 	if (frm.doc.docstatus === 1 && frm.doc.status == "Submitted") {
-		frappe.call({
+		nts .call({
 			method: "get_payment_reconciliation_details",
 			doc: frm.doc,
 			callback: (r) => {

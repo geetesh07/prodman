@@ -1,14 +1,14 @@
 import unittest
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 from prodman.crm.report.sales_pipeline_analytics.sales_pipeline_analytics import execute
 
 
-class TestSalesPipelineAnalytics(FrappeTestCase):
+class TestSalesPipelineAnalytics(ntsTestCase):
 	def setUp(self):
-		frappe.db.delete("Opportunity")
+		nts.db.delete("Opportunity")
 		create_company()
 		create_customer()
 		create_opportunity()
@@ -183,28 +183,28 @@ class TestSalesPipelineAnalytics(FrappeTestCase):
 
 
 def create_company():
-	doc = frappe.db.exists("Company", "Best Test")
+	doc = nts.db.exists("Company", "Best Test")
 	if not doc:
-		doc = frappe.new_doc("Company")
+		doc = nts.new_doc("Company")
 		doc.company_name = "Best Test"
 		doc.default_currency = "INR"
 		doc.insert()
 
 
 def create_customer():
-	doc = frappe.db.exists("Customer", "_Test NC")
+	doc = nts.db.exists("Customer", "_Test NC")
 	if not doc:
-		doc = frappe.new_doc("Customer")
+		doc = nts.new_doc("Customer")
 		doc.customer_name = "_Test NC"
 		doc.insert()
 
 
 def create_opportunity():
-	doc = frappe.db.exists({"doctype": "Opportunity", "party_name": "_Test NC"})
+	doc = nts.db.exists({"doctype": "Opportunity", "party_name": "_Test NC"})
 	if not doc:
-		doc = frappe.new_doc("Opportunity")
+		doc = nts.new_doc("Opportunity")
 		doc.opportunity_from = "Customer"
-		customer_name = frappe.db.get_value("Customer", {"customer_name": "_Test NC"}, ["customer_name"])
+		customer_name = nts.db.get_value("Customer", {"customer_name": "_Test NC"}, ["customer_name"])
 		doc.party_name = customer_name
 		doc.opportunity_amount = 150000
 		doc.source = "Cold Calling"

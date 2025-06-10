@@ -1,10 +1,10 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("manufacturing", "doctype", "workstation")
+	nts.reload_doc("manufacturing", "doctype", "workstation")
 
-	frappe.db.sql(
+	nts.db.sql(
 		""" UPDATE `tabWorkstation`
         SET production_capacity = 1 """
 	)

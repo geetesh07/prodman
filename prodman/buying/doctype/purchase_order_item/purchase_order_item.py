@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.model.document import Document
+import nts
+from nts.model.document import Document
 
 
 class PurchaseOrderItem(Document):
@@ -13,7 +13,7 @@ class PurchaseOrderItem(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		actual_qty: DF.Float
 		against_blanket_order: DF.Check
@@ -100,4 +100,4 @@ class PurchaseOrderItem(Document):
 
 
 def on_doctype_update():
-	frappe.db.add_index("Purchase Order Item", ["item_code", "warehouse"])
+	nts.db.add_index("Purchase Order Item", ["item_code", "warehouse"])

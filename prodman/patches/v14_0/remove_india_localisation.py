@@ -1,15 +1,15 @@
 import click
-import frappe
+import nts
 
 
 def execute():
-	if "india_compliance" in frappe.get_installed_apps():
+	if "india_compliance" in nts.get_installed_apps():
 		return
 
 	delete_docs()
 	unlink_custom_fields()
 
-	if not frappe.db.exists("Company", {"country": "India"}):
+	if not nts.db.exists("Company", {"country": "India"}):
 		return
 
 	click.secho(
@@ -54,7 +54,7 @@ def delete_docs():
 	}
 
 	for doctype, names in to_delete.items():
-		frappe.delete_doc(
+		nts.delete_doc(
 			doctype,
 			names,
 			force=True,
@@ -64,7 +64,7 @@ def delete_docs():
 
 
 def unlink_custom_fields():
-	frappe.db.set_value(
+	nts.db.set_value(
 		"Custom Field",
 		{"dt": "Item", "fieldname": "gst_hsn_code"},
 		{"fieldtype": "Data", "options": ""},

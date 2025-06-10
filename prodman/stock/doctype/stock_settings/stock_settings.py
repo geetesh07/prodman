@@ -1,15 +1,15 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.custom.doctype.property_setter.property_setter import make_property_setter
-from frappe.model.document import Document
-from frappe.utils import cint
-from frappe.utils.html_utils import clean_html
+import nts
+from nts import _
+from nts.custom.doctype.property_setter.property_setter import make_property_setter
+from nts.model.document import Document
+from nts.utils import cint
+from nts.utils.html_utils import clean_html
 
 from prodman.stock.utils import check_pending_reposting
 
@@ -21,7 +21,7 @@ class StockSettings(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		action_if_quality_inspection_is_not_submitted: DF.Literal["Stop", "Warn"]
 		action_if_quality_inspection_is_rejected: DF.Literal["Stop", "Warn"]
@@ -81,7 +81,7 @@ class StockSettings(Document):
 			"use_serial_batch_fields",
 			"set_serial_and_batch_bundle_naming_based_on_naming_series",
 		]:
-			frappe.db.set_default(key, self.get(key, ""))
+			nts.db.set_default(key, self.get(key, ""))
 
 		from prodman.utilities.naming import set_by_naming_series
 
@@ -95,7 +95,7 @@ class StockSettings(Document):
 
 		# show/hide barcode field
 		for name in ["barcode", "barcodes", "scan_barcode"]:
-			frappe.make_property_setter(
+			nts.make_property_setter(
 				{"fieldname": name, "property": "hidden", "value": 0 if self.show_barcode_field else 1},
 				validate_fields_for_doctype=False,
 			)
@@ -111,11 +111,11 @@ class StockSettings(Document):
 	def validate_warehouses(self):
 		warehouse_fields = ["default_warehouse", "sample_retention_warehouse"]
 		for field in warehouse_fields:
-			if frappe.db.get_value("Warehouse", self.get(field), "is_group"):
-				frappe.throw(
+			if nts.db.get_value("Warehouse", self.get(field), "is_group"):
+				nts.throw(
 					_(
 						"Group Warehouses cannot be used in transactions. Please change the value of {0}"
-					).format(frappe.bold(self.meta.get_field(field).label)),
+					).format(nts.bold(self.meta.get_field(field).label)),
 					title=_("Incorrect Warehouse"),
 				)
 
@@ -125,7 +125,7 @@ class StockSettings(Document):
 		if previous_valuation_method and previous_valuation_method != self.valuation_method:
 			# check if there are any stock ledger entries against items
 			# which does not have it's own valuation method
-			sle = frappe.db.sql(
+			sle = nts.db.sql(
 				"""select name from `tabStock Ledger Entry` sle
 				where exists(select name from tabItem
 					where name=sle.item_code and (valuation_method is null or valuation_method='')) limit 1
@@ -133,7 +133,7 @@ class StockSettings(Document):
 			)
 
 			if sle:
-				frappe.throw(
+				nts.throw(
 					_(
 						"Can't change the valuation method, as there are transactions against some items which do not have its own valuation method"
 					)
@@ -142,9 +142,9 @@ class StockSettings(Document):
 	def validate_clean_description_html(self):
 		if int(self.clean_description_html or 0) and not int(self.db_get("clean_description_html") or 0):
 			# changed to text
-			frappe.enqueue(
+			nts.enqueue(
 				"prodman.stock.doctype.stock_settings.stock_settings.clean_all_descriptions",
-				now=frappe.flags.in_test,
+				now=nts.flags.in_test,
 				enqueue_after_commit=True,
 			)
 
@@ -156,16 +156,16 @@ class StockSettings(Document):
 		"""Raises an exception if the user tries to enable/disable `Stock Reservation` with `Negative Stock` or `Open Stock Reservation Entries`."""
 
 		# Skip validation for tests
-		if frappe.flags.in_test:
+		if nts.flags.in_test:
 			return
 
 		# Change in value of `Allow Negative Stock`
 		if self.has_value_changed("allow_negative_stock"):
 			# Disable -> Enable: Don't allow if `Stock Reservation` is enabled
 			if self.allow_negative_stock and self.enable_stock_reservation:
-				frappe.throw(
+				nts.throw(
 					_("As {0} is enabled, you can not enable {1}.").format(
-						frappe.bold(_("Stock Reservation")), frappe.bold(_("Allow Negative Stock"))
+						nts.bold(_("Stock Reservation")), nts.bold(_("Allow Negative Stock"))
 					)
 				)
 
@@ -175,43 +175,43 @@ class StockSettings(Document):
 			if self.enable_stock_reservation:
 				# Don't allow if `Allow Negative Stock` is enabled
 				if self.allow_negative_stock:
-					frappe.throw(
+					nts.throw(
 						_("As {0} is enabled, you can not enable {1}.").format(
-							frappe.bold(_("Allow Negative Stock")), frappe.bold(_("Stock Reservation"))
+							nts.bold(_("Allow Negative Stock")), nts.bold(_("Stock Reservation"))
 						)
 					)
 
 				else:
 					# Don't allow if there are negative stock
-					from frappe.query_builder.functions import Round
+					from nts.query_builder.functions import Round
 
-					precision = frappe.db.get_single_value("System Settings", "float_precision") or 3
-					bin = frappe.qb.DocType("Bin")
+					precision = nts.db.get_single_value("System Settings", "float_precision") or 3
+					bin = nts.qb.DocType("Bin")
 					bin_with_negative_stock = (
-						frappe.qb.from_(bin)
+						nts.qb.from_(bin)
 						.select(bin.name)
 						.where(Round(bin.actual_qty, precision) < 0)
 						.limit(1)
 					).run()
 
 					if bin_with_negative_stock:
-						frappe.throw(
+						nts.throw(
 							_("As there are negative stock, you can not enable {0}.").format(
-								frappe.bold(_("Stock Reservation"))
+								nts.bold(_("Stock Reservation"))
 							)
 						)
 
 			# Enable -> Disable
 			else:
 				# Don't allow if there are open Stock Reservation Entries
-				has_reserved_stock = frappe.db.exists(
+				has_reserved_stock = nts.db.exists(
 					"Stock Reservation Entry", {"docstatus": 1, "status": ["!=", "Delivered"]}
 				)
 
 				if has_reserved_stock:
-					frappe.throw(
+					nts.throw(
 						_("As there are reserved stock, you cannot disable {0}.").format(
-							frappe.bold(_("Stock Reservation"))
+							nts.bold(_("Stock Reservation"))
 						)
 					)
 
@@ -252,11 +252,11 @@ class StockSettings(Document):
 	@staticmethod
 	def make_property_setter_for_precision(doctypes):
 		for doctype in doctypes:
-			if property_name := frappe.db.exists(
+			if property_name := nts.db.exists(
 				"Property Setter",
 				{"doc_type": doctype, "field_name": "conversion_factor", "property": "precision"},
 			):
-				frappe.db.set_value("Property Setter", property_name, "value", 9)
+				nts.db.set_value("Property Setter", property_name, "value", 9)
 				continue
 
 			make_property_setter(
@@ -304,16 +304,16 @@ class StockSettings(Document):
 
 
 def clean_all_descriptions():
-	for item in frappe.get_all("Item", ["name", "description"]):
+	for item in nts.get_all("Item", ["name", "description"]):
 		if item.description:
 			clean_description = clean_html(item.description)
 		if item.description != clean_description:
-			frappe.db.set_value("Item", item.name, "description", clean_description)
+			nts.db.set_value("Item", item.name, "description", clean_description)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_enable_stock_uom_editing():
-	return frappe.get_cached_value(
+	return nts.get_cached_value(
 		"Stock Settings",
 		None,
 		["allow_to_edit_stock_uom_qty_for_sales", "allow_to_edit_stock_uom_qty_for_purchase"],

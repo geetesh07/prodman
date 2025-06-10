@@ -1,4 +1,4 @@
-frappe.treeview_settings["Cost Center"] = {
+nts .treeview_settings["Cost Center"] = {
 	breadcrumb: "Accounts",
 	get_tree_root: false,
 	filters: [
@@ -17,9 +17,9 @@ frappe.treeview_settings["Cost Center"] = {
 		{
 			label: __("New Company"),
 			action: function () {
-				frappe.new_doc("Company", true);
+				nts .new_doc("Company", true);
 			},
-			condition: 'frappe.boot.user.can_create.indexOf("Company") !== -1',
+			condition: 'nts .boot.user.can_create.indexOf("Company") !== -1',
 		},
 	],
 	fields: [
@@ -51,7 +51,7 @@ frappe.treeview_settings["Cost Center"] = {
 		treeview.page.add_inner_button(
 			__("Chart of Accounts"),
 			function () {
-				frappe.set_route("Tree", "Account", { company: get_company() });
+				nts .set_route("Tree", "Account", { company: get_company() });
 			},
 			__("View")
 		);
@@ -60,7 +60,7 @@ frappe.treeview_settings["Cost Center"] = {
 		treeview.page.add_inner_button(
 			__("Budget List"),
 			function () {
-				frappe.set_route("List", "Budget", { company: get_company() });
+				nts .set_route("List", "Budget", { company: get_company() });
 			},
 			__("Budget")
 		);
@@ -68,7 +68,7 @@ frappe.treeview_settings["Cost Center"] = {
 		treeview.page.add_inner_button(
 			__("Monthly Distribution"),
 			function () {
-				frappe.set_route("List", "Monthly Distribution", { company: get_company() });
+				nts .set_route("List", "Monthly Distribution", { company: get_company() });
 			},
 			__("Budget")
 		);
@@ -76,7 +76,7 @@ frappe.treeview_settings["Cost Center"] = {
 		treeview.page.add_inner_button(
 			__("Budget Variance Report"),
 			function () {
-				frappe.set_route("query-report", "Budget Variance Report", { company: get_company() });
+				nts .set_route("query-report", "Budget Variance Report", { company: get_company() });
 			},
 			__("Budget")
 		);

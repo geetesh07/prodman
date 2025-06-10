@@ -1,14 +1,14 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 
-import frappe
-from frappe import _, scrub
-from frappe.model.document import Document
-from frappe.utils import cint, flt, round_based_on_smallest_currency_fraction
-from frappe.utils.deprecations import deprecated
+import nts
+from nts import _, scrub
+from nts.model.document import Document
+from nts.utils import cint, flt, round_based_on_smallest_currency_fraction
+from nts.utils.deprecations import deprecated
 
 import prodman
 from prodman.accounts.doctype.journal_entry.journal_entry import get_exchange_rate
@@ -25,19 +25,19 @@ from prodman.utilities.regional import temporary_flag
 class calculate_taxes_and_totals:
 	def __init__(self, doc: Document):
 		self.doc = doc
-		frappe.flags.round_off_applicable_accounts = []
-		frappe.flags.round_row_wise_tax = frappe.db.get_single_value(
+		nts.flags.round_off_applicable_accounts = []
+		nts.flags.round_row_wise_tax = nts.db.get_single_value(
 			"Accounts Settings", "round_row_wise_tax"
 		)
 
 		if doc.get("round_off_applicable_accounts_for_tax_withholding"):
-			frappe.flags.round_off_applicable_accounts.append(
+			nts.flags.round_off_applicable_accounts.append(
 				doc.round_off_applicable_accounts_for_tax_withholding
 			)
 
 		self._items = self.filter_rows() if self.doc.doctype == "Quotation" else self.doc.get("items")
 
-		get_round_off_applicable_accounts(self.doc.company, frappe.flags.round_off_applicable_accounts)
+		get_round_off_applicable_accounts(self.doc.company, nts.flags.round_off_applicable_accounts)
 		self.calculate()
 
 	def filter_rows(self):
@@ -104,7 +104,7 @@ class calculate_taxes_and_totals:
 
 		for item in self.doc.items:
 			if item.item_code and item.get("item_tax_template"):
-				item_doc = frappe.get_cached_doc("Item", item.item_code)
+				item_doc = nts.get_cached_doc("Item", item.item_code)
 				args = {
 					"net_rate": item.net_rate or item.rate,
 					"base_net_rate": item.base_net_rate or item.base_rate,
@@ -119,7 +119,7 @@ class calculate_taxes_and_totals:
 				item_group_taxes = []
 
 				while item_group:
-					item_group_doc = frappe.get_cached_doc("Item Group", item_group)
+					item_group_doc = nts.get_cached_doc("Item Group", item_group)
 					item_group_taxes += item_group_doc.taxes or []
 					item_group = item_group_doc.parent_item_group
 
@@ -134,9 +134,9 @@ class calculate_taxes_and_totals:
 				if taxes:
 					if item.item_tax_template not in taxes:
 						item.item_tax_template = taxes[0]
-						frappe.msgprint(
+						nts.msgprint(
 							_("Row {0}: Item Tax template updated as per validity and rate applied").format(
-								item.idx, frappe.bold(item.item_code)
+								item.idx, nts.bold(item.item_code)
 							)
 						)
 
@@ -371,7 +371,7 @@ class calculate_taxes_and_totals:
 			return
 
 		if hasattr(self.doc, "shipping_rule") and self.doc.shipping_rule:
-			shipping_rule = frappe.get_doc("Shipping Rule", self.doc.shipping_rule)
+			shipping_rule = nts.get_doc("Shipping Rule", self.doc.shipping_rule)
 			shipping_rule.apply(self.doc)
 
 			self._calculate()
@@ -395,7 +395,7 @@ class calculate_taxes_and_totals:
 			for i, tax in enumerate(doc.taxes):
 				# tax_amount represents the amount of tax for the current step
 				current_tax_amount = self.get_current_tax_amount(item, tax, item_tax_map)
-				if frappe.flags.round_row_wise_tax:
+				if nts.flags.round_row_wise_tax:
 					current_tax_amount = flt(current_tax_amount, tax.precision("tax_amount"))
 
 				# Adjust divisional loss to the last item
@@ -524,7 +524,7 @@ class calculate_taxes_and_totals:
 		# store tax breakup for each item
 		key = item.item_code or item.item_name
 		item_wise_tax_amount = current_tax_amount * self.doc.conversion_rate
-		if frappe.flags.round_row_wise_tax:
+		if nts.flags.round_row_wise_tax:
 			item_wise_tax_amount = flt(item_wise_tax_amount, tax.precision("tax_amount"))
 			if tax.item_wise_tax_detail.get(key):
 				item_wise_tax_amount += flt(tax.item_wise_tax_detail[key][1], tax.precision("tax_amount"))
@@ -539,7 +539,7 @@ class calculate_taxes_and_totals:
 			tax.item_wise_tax_detail[key] = [tax_rate, flt(item_wise_tax_amount)]
 
 	def round_off_totals(self, tax):
-		if tax.account_head in frappe.flags.round_off_applicable_accounts:
+		if tax.account_head in nts.flags.round_off_applicable_accounts:
 			tax.tax_amount = round(tax.tax_amount, 0)
 			tax.tax_amount_after_discount_amount = round(tax.tax_amount_after_discount_amount, 0)
 
@@ -550,7 +550,7 @@ class calculate_taxes_and_totals:
 
 	def round_off_base_values(self, tax):
 		# Round off to nearest integer based on regional settings
-		if tax.account_head in frappe.flags.round_off_applicable_accounts:
+		if tax.account_head in nts.flags.round_off_applicable_accounts:
 			tax.base_tax_amount = round(tax.base_tax_amount, 0)
 			tax.base_tax_amount_after_discount_amount = round(tax.base_tax_amount_after_discount_amount, 0)
 
@@ -685,7 +685,7 @@ class calculate_taxes_and_totals:
 	def apply_discount_amount(self):
 		if self.doc.discount_amount:
 			if not self.doc.apply_discount_on:
-				frappe.throw(_("Please select Apply Discount On"))
+				nts.throw(_("Please select Apply Discount On"))
 
 			self.doc.base_discount_amount = flt(
 				self.doc.discount_amount * self.doc.conversion_rate,
@@ -808,7 +808,7 @@ class calculate_taxes_and_totals:
 				)
 
 			if invoice_total > 0 and self.doc.total_advance > invoice_total:
-				frappe.throw(
+				nts.throw(
 					_("Advance amount cannot be greater than {0} {1}").format(
 						self.doc.party_account_currency, invoice_total
 					)
@@ -899,7 +899,7 @@ class calculate_taxes_and_totals:
 				and self.doc.get("is_consolidated")
 			):
 				write_off_limit = flt(
-					frappe.db.get_value("POS Profile", self.doc.pos_profile, "write_off_limit")
+					nts.db.get_value("POS Profile", self.doc.pos_profile, "write_off_limit")
 				)
 				if write_off_limit and abs(self.doc.outstanding_amount) <= write_off_limit:
 					self.doc.write_off_outstanding_amount_automatically = 1
@@ -971,7 +971,7 @@ class calculate_taxes_and_totals:
 			if item.pricing_rules and not self.doc.ignore_pricing_rule:
 				has_margin = False
 				for d in get_applied_pricing_rules(item.pricing_rules):
-					pricing_rule = frappe.get_cached_doc("Pricing Rule", d)
+					pricing_rule = nts.get_cached_doc("Pricing Rule", d)
 
 					if pricing_rule.margin_rate_or_amount and (
 						(
@@ -1021,7 +1021,7 @@ class calculate_taxes_and_totals:
 		pending_amount = total_amount_to_pay - total_paid_amount
 
 		if pending_amount > 0:
-			default_mode_of_payment = frappe.db.get_value(
+			default_mode_of_payment = nts.db.get_value(
 				"POS Payment Method",
 				{"parent": self.doc.pos_profile, "default": 1},
 				["mode_of_payment"],
@@ -1058,7 +1058,7 @@ def get_itemised_tax_breakup_html(doc):
 		get_rounded_tax_amount(itemised_tax_data, doc.precision("tax_amount", "taxes"))
 		update_itemised_tax_data(doc)
 
-	return frappe.render_template(
+	return nts.render_template(
 		"templates/includes/itemised_tax_breakup.html",
 		dict(
 			headers=headers,
@@ -1069,7 +1069,7 @@ def get_itemised_tax_breakup_html(doc):
 	)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_round_off_applicable_accounts(company, account_list):
 	# required to set correct region
 	with temporary_flag("company", company):
@@ -1101,7 +1101,7 @@ def get_itemised_tax_breakup_data(doc):
 	itemised_tax_data = []
 	for item_code, taxes in itemised_tax.items():
 		itemised_tax_data.append(
-			frappe._dict(
+			nts._dict(
 				{"item": item_code, "taxable_amount": itemised_taxable_amount.get(item_code, 0), **taxes}
 			)
 		)
@@ -1118,7 +1118,7 @@ def get_itemised_tax(taxes, with_tax_account=False):
 		item_tax_map = json.loads(tax.item_wise_tax_detail) if tax.item_wise_tax_detail else {}
 		if item_tax_map:
 			for item_code, tax_data in item_tax_map.items():
-				itemised_tax.setdefault(item_code, frappe._dict())
+				itemised_tax.setdefault(item_code, nts._dict())
 
 				tax_rate = 0.0
 				tax_amount = 0.0
@@ -1129,7 +1129,7 @@ def get_itemised_tax(taxes, with_tax_account=False):
 				else:
 					tax_rate = flt(tax_data)
 
-				itemised_tax[item_code][tax.description] = frappe._dict(
+				itemised_tax[item_code][tax.description] = nts._dict(
 					dict(tax_rate=tax_rate, tax_amount=tax_amount)
 				)
 
@@ -1140,7 +1140,7 @@ def get_itemised_tax(taxes, with_tax_account=False):
 
 
 def get_itemised_taxable_amount(items):
-	itemised_taxable_amount = frappe._dict()
+	itemised_taxable_amount = nts._dict()
 	for item in items:
 		item_code = item.item_code or item.item_name
 		itemised_taxable_amount.setdefault(item_code, 0)
@@ -1157,9 +1157,9 @@ def get_rounded_tax_amount(itemised_tax, precision):
 				row["tax_amount"] = flt(row["tax_amount"], precision)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_rounding_tax_settings():
-	return frappe.db.get_single_value("Accounts Settings", "round_row_wise_tax")
+	return nts.db.get_single_value("Accounts Settings", "round_row_wise_tax")
 
 
 class init_landed_taxes_and_totals:
@@ -1174,7 +1174,7 @@ class init_landed_taxes_and_totals:
 		company_currency = prodman.get_company_currency(self.doc.company)
 		for d in self.doc.get(self.tax_field):
 			if not d.account_currency:
-				account_currency = frappe.get_cached_value("Account", d.expense_account, "account_currency")
+				account_currency = nts.get_cached_value("Account", d.expense_account, "account_currency")
 				d.account_currency = account_currency or company_currency
 
 	def set_exchange_rate(self):
@@ -1191,7 +1191,7 @@ class init_landed_taxes_and_totals:
 				)
 
 			if not d.exchange_rate:
-				frappe.throw(_("Row {0}: Exchange Rate is mandatory").format(d.idx))
+				nts.throw(_("Row {0}: Exchange Rate is mandatory").format(d.idx))
 
 	def set_amounts_in_company_currency(self):
 		for d in self.doc.get(self.tax_field):

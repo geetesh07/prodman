@@ -1,13 +1,13 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, flt, getdate, nowdate
-from frappe.utils.data import today
+import nts
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import add_days, flt, getdate, nowdate
+from nts.utils.data import today
 
 from prodman.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from prodman.accounts.party import get_due_date_from_template
@@ -28,7 +28,7 @@ from prodman.stock.doctype.purchase_receipt.purchase_receipt import (
 )
 
 
-class TestPurchaseOrder(FrappeTestCase):
+class TestPurchaseOrder(ntsTestCase):
 	def test_purchase_order_qty(self):
 		po = create_purchase_order(qty=1, do_not_save=True)
 
@@ -41,7 +41,7 @@ class TestPurchaseOrder(FrappeTestCase):
 				"rate": 10,
 			},
 		)
-		self.assertRaises(frappe.NonNegativeError, po.save)
+		self.assertRaises(nts.NonNegativeError, po.save)
 
 		# InvalidQtyError with qty=0
 		po.items[1].qty = 0
@@ -61,7 +61,7 @@ class TestPurchaseOrder(FrappeTestCase):
 
 	def test_make_purchase_receipt(self):
 		po = create_purchase_order(do_not_submit=True)
-		self.assertRaises(frappe.ValidationError, make_purchase_receipt, po.name)
+		self.assertRaises(nts.ValidationError, make_purchase_receipt, po.name)
 		po.submit()
 
 		pr = create_pr_against_po(po.name)
@@ -71,7 +71,7 @@ class TestPurchaseOrder(FrappeTestCase):
 		existing_ordered_qty = get_ordered_qty()
 
 		po = create_purchase_order(do_not_submit=True)
-		self.assertRaises(frappe.ValidationError, make_purchase_receipt, po.name)
+		self.assertRaises(nts.ValidationError, make_purchase_receipt, po.name)
 
 		po.submit()
 		self.assertEqual(get_ordered_qty(), existing_ordered_qty + 10)
@@ -82,7 +82,7 @@ class TestPurchaseOrder(FrappeTestCase):
 		po.load_from_db()
 		self.assertEqual(po.get("items")[0].received_qty, 4)
 
-		frappe.db.set_value("Item", "_Test Item", "over_delivery_receipt_allowance", 50)
+		nts.db.set_value("Item", "_Test Item", "over_delivery_receipt_allowance", 50)
 
 		pr = create_pr_against_po(po.name, received_qty=8)
 		self.assertEqual(get_ordered_qty(), existing_ordered_qty)
@@ -102,8 +102,8 @@ class TestPurchaseOrder(FrappeTestCase):
 
 		self.assertEqual(get_ordered_qty(), existing_ordered_qty + 10)
 
-		frappe.db.set_value("Item", "_Test Item", "over_delivery_receipt_allowance", 50)
-		frappe.db.set_value("Item", "_Test Item", "over_billing_allowance", 20)
+		nts.db.set_value("Item", "_Test Item", "over_delivery_receipt_allowance", 50)
+		nts.db.set_value("Item", "_Test Item", "over_billing_allowance", 20)
 
 		pi = make_pi_from_po(po.name)
 		pi.update_stock = 1
@@ -122,9 +122,9 @@ class TestPurchaseOrder(FrappeTestCase):
 		po.load_from_db()
 		self.assertEqual(po.get("items")[0].received_qty, 0)
 
-		frappe.db.set_value("Item", "_Test Item", "over_delivery_receipt_allowance", 0)
-		frappe.db.set_value("Item", "_Test Item", "over_billing_allowance", 0)
-		frappe.db.set_single_value("Accounts Settings", "over_billing_allowance", 0)
+		nts.db.set_value("Item", "_Test Item", "over_delivery_receipt_allowance", 0)
+		nts.db.set_value("Item", "_Test Item", "over_billing_allowance", 0)
+		nts.db.set_single_value("Accounts Settings", "over_billing_allowance", 0)
 
 	def test_update_remove_child_linked_to_mr(self):
 		"""Test impact on linked PO and MR on deleting/updating row."""
@@ -266,7 +266,7 @@ class TestPurchaseOrder(FrappeTestCase):
 			[{"item_code": "_Test Item", "rate": 200, "qty": 7, "docname": po.get("items")[1].name}]
 		)
 		self.assertRaises(
-			frappe.ValidationError, update_child_qty_rate, "Purchase Order", trans_item, po.name
+			nts.ValidationError, update_child_qty_rate, "Purchase Order", trans_item, po.name
 		)
 
 		first_item_of_po = po.get("items")[0]
@@ -293,24 +293,24 @@ class TestPurchaseOrder(FrappeTestCase):
 		po = create_purchase_order(item_code="_Test Item", qty=4)
 
 		user = "test@example.com"
-		test_user = frappe.get_doc("User", user)
+		test_user = nts.get_doc("User", user)
 		test_user.add_roles("Accounts User")
-		frappe.set_user(user)
+		nts.set_user(user)
 
 		# update qty
 		trans_item = json.dumps(
 			[{"item_code": "_Test Item", "rate": 200, "qty": 7, "docname": po.items[0].name}]
 		)
 		self.assertRaises(
-			frappe.ValidationError, update_child_qty_rate, "Purchase Order", trans_item, po.name
+			nts.ValidationError, update_child_qty_rate, "Purchase Order", trans_item, po.name
 		)
 
 		# add new item
 		trans_item = json.dumps([{"item_code": "_Test Item", "rate": 100, "qty": 2}])
 		self.assertRaises(
-			frappe.ValidationError, update_child_qty_rate, "Purchase Order", trans_item, po.name
+			nts.ValidationError, update_child_qty_rate, "Purchase Order", trans_item, po.name
 		)
-		frappe.set_user("Administrator")
+		nts.set_user("Administrator")
 
 	def test_update_child_with_tax_template(self):
 		"""
@@ -318,7 +318,7 @@ class TestPurchaseOrder(FrappeTestCase):
 		Add the same item + new item with tax template via Update Items.
 		Expected result: First Item's tax row is updated. New tax row is added for second Item.
 		"""
-		if not frappe.db.exists("Item", "Test Item with Tax"):
+		if not nts.db.exists("Item", "Test Item with Tax"):
 			make_item(
 				"Test Item with Tax",
 				{
@@ -326,8 +326,8 @@ class TestPurchaseOrder(FrappeTestCase):
 				},
 			)
 
-		if not frappe.db.exists("Item Tax Template", {"title": "Test Update Items Template"}):
-			frappe.get_doc(
+		if not nts.db.exists("Item Tax Template", {"title": "Test Update Items Template"}):
+			nts.get_doc(
 				{
 					"doctype": "Item Tax Template",
 					"title": "Test Update Items Template",
@@ -341,9 +341,9 @@ class TestPurchaseOrder(FrappeTestCase):
 				}
 			).insert()
 
-		new_item_with_tax = frappe.get_doc("Item", "Test Item with Tax")
+		new_item_with_tax = nts.get_doc("Item", "Test Item with Tax")
 
-		if not frappe.db.exists(
+		if not nts.db.exists(
 			"Item Tax",
 			{"item_tax_template": "Test Update Items Template - _TC", "parent": "Test Item with Tax"},
 		):
@@ -354,13 +354,13 @@ class TestPurchaseOrder(FrappeTestCase):
 
 		tax_template = "_Test Account Excise Duty @ 10 - _TC"
 		item = "_Test Item Home Desktop 100"
-		if not frappe.db.exists("Item Tax", {"parent": item, "item_tax_template": tax_template}):
-			item_doc = frappe.get_doc("Item", item)
+		if not nts.db.exists("Item Tax", {"parent": item, "item_tax_template": tax_template}):
+			item_doc = nts.get_doc("Item", item)
 			item_doc.append("taxes", {"item_tax_template": tax_template, "valid_from": nowdate()})
 			item_doc.save()
 		else:
 			# update valid from
-			frappe.db.sql(
+			nts.db.sql(
 				"""UPDATE `tabItem Tax` set valid_from = CURRENT_DATE
 				where parent = %(item)s and item_tax_template = %(tax)s""",
 				{"item": item, "tax": tax_template},
@@ -410,7 +410,7 @@ class TestPurchaseOrder(FrappeTestCase):
 		self.assertEqual(po.taxes[1].total, 840)
 
 		# teardown
-		frappe.db.sql(
+		nts.db.sql(
 			"""UPDATE `tabItem Tax` set valid_from = NULL
 			where parent = %(item)s and item_tax_template = %(tax)s""",
 			{"item": item, "tax": tax_template},
@@ -418,7 +418,7 @@ class TestPurchaseOrder(FrappeTestCase):
 		po.cancel()
 		po.delete()
 		new_item_with_tax.delete()
-		frappe.get_doc("Item Tax Template", "Test Update Items Template - _TC").delete()
+		nts.get_doc("Item Tax Template", "Test Update Items Template - _TC").delete()
 
 	def test_update_qty(self):
 		po = create_purchase_order()
@@ -525,7 +525,7 @@ class TestPurchaseOrder(FrappeTestCase):
 	def test_make_purchase_invoice(self):
 		po = create_purchase_order(do_not_submit=True)
 
-		self.assertRaises(frappe.ValidationError, make_pi_from_po, po.name)
+		self.assertRaises(nts.ValidationError, make_pi_from_po, po.name)
 
 		po.submit()
 		pi = make_pi_from_po(po.name)
@@ -538,8 +538,8 @@ class TestPurchaseOrder(FrappeTestCase):
 		po.db_set("Status", "On Hold")
 		pi = make_pi_from_po(po.name)
 		pr = make_purchase_receipt(po.name)
-		self.assertRaises(frappe.ValidationError, pr.submit)
-		self.assertRaises(frappe.ValidationError, pi.submit)
+		self.assertRaises(nts.ValidationError, pr.submit)
+		self.assertRaises(nts.ValidationError, pi.submit)
 
 	def test_make_purchase_invoice_with_terms(self):
 		from prodman.selling.doctype.sales_order.test_sales_order import (
@@ -549,7 +549,7 @@ class TestPurchaseOrder(FrappeTestCase):
 		automatically_fetch_payment_terms()
 		po = create_purchase_order(do_not_save=True)
 
-		self.assertRaises(frappe.ValidationError, make_pi_from_po, po.name)
+		self.assertRaises(nts.ValidationError, make_pi_from_po, po.name)
 
 		po.update({"payment_terms_template": "_Test Payment Term Template"})
 
@@ -585,7 +585,7 @@ class TestPurchaseOrder(FrappeTestCase):
 		self.assertRaises(UOMMustBeIntegerError, po.insert)
 
 	def test_ordered_qty_for_closing_po(self):
-		bin = frappe.get_all(
+		bin = nts.get_all(
 			"Bin",
 			filters={"item_code": "_Test Item", "warehouse": "_Test Warehouse - _TC"},
 			fields=["ordered_qty"],
@@ -607,15 +607,15 @@ class TestPurchaseOrder(FrappeTestCase):
 		)
 
 	def test_group_same_items(self):
-		frappe.db.set_single_value("Buying Settings", "allow_multiple_items", 1)
-		frappe.get_doc(
+		nts.db.set_single_value("Buying Settings", "allow_multiple_items", 1)
+		nts.get_doc(
 			{
 				"doctype": "Purchase Order",
 				"company": "_Test Company",
 				"supplier": "_Test Supplier",
 				"is_subcontracted": 0,
 				"schedule_date": add_days(nowdate(), 1),
-				"currency": frappe.get_cached_value("Company", "_Test Company", "default_currency"),
+				"currency": nts.get_cached_value("Company", "_Test Company", "default_currency"),
 				"conversion_factor": 1,
 				"items": get_same_items(),
 				"group_same_items": 1,
@@ -632,29 +632,29 @@ class TestPurchaseOrder(FrappeTestCase):
 		self.assertTrue(po.get("payment_schedule"))
 
 	def test_po_for_blocked_supplier_all(self):
-		supplier = frappe.get_doc("Supplier", "_Test Supplier")
+		supplier = nts.get_doc("Supplier", "_Test Supplier")
 		supplier.on_hold = 1
 		supplier.save()
 
 		self.assertEqual(supplier.hold_type, "All")
-		self.assertRaises(frappe.ValidationError, create_purchase_order)
+		self.assertRaises(nts.ValidationError, create_purchase_order)
 
 		supplier.on_hold = 0
 		supplier.save()
 
 	def test_po_for_blocked_supplier_invoices(self):
-		supplier = frappe.get_doc("Supplier", "_Test Supplier")
+		supplier = nts.get_doc("Supplier", "_Test Supplier")
 		supplier.on_hold = 1
 		supplier.hold_type = "Invoices"
 		supplier.save()
 
-		self.assertRaises(frappe.ValidationError, create_purchase_order)
+		self.assertRaises(nts.ValidationError, create_purchase_order)
 
 		supplier.on_hold = 0
 		supplier.save()
 
 	def test_po_for_blocked_supplier_payments(self):
-		supplier = frappe.get_doc("Supplier", "_Test Supplier")
+		supplier = nts.get_doc("Supplier", "_Test Supplier")
 		supplier.on_hold = 1
 		supplier.hold_type = "Payments"
 		supplier.save()
@@ -662,7 +662,7 @@ class TestPurchaseOrder(FrappeTestCase):
 		po = create_purchase_order()
 
 		self.assertRaises(
-			frappe.ValidationError,
+			nts.ValidationError,
 			get_payment_entry,
 			dt="Purchase Order",
 			dn=po.name,
@@ -673,7 +673,7 @@ class TestPurchaseOrder(FrappeTestCase):
 		supplier.save()
 
 	def test_po_for_blocked_supplier_payments_with_today_date(self):
-		supplier = frappe.get_doc("Supplier", "_Test Supplier")
+		supplier = nts.get_doc("Supplier", "_Test Supplier")
 		supplier.on_hold = 1
 		supplier.release_date = nowdate()
 		supplier.hold_type = "Payments"
@@ -682,7 +682,7 @@ class TestPurchaseOrder(FrappeTestCase):
 		po = create_purchase_order()
 
 		self.assertRaises(
-			frappe.ValidationError,
+			nts.ValidationError,
 			get_payment_entry,
 			dt="Purchase Order",
 			dn=po.name,
@@ -696,7 +696,7 @@ class TestPurchaseOrder(FrappeTestCase):
 		# this test is meant to fail only if something fails in the try block
 		with self.assertRaises(Exception):
 			try:
-				supplier = frappe.get_doc("Supplier", "_Test Supplier")
+				supplier = nts.get_doc("Supplier", "_Test Supplier")
 				supplier.on_hold = 1
 				supplier.hold_type = "Payments"
 				supplier.release_date = "2018-03-01"
@@ -724,12 +724,12 @@ class TestPurchaseOrder(FrappeTestCase):
 		po.save()
 		po.submit()
 
-		frappe.db.set_value("Company", "_Test Company", "payment_terms", "_Test Payment Term Template 1")
+		nts.db.set_value("Company", "_Test Company", "payment_terms", "_Test Payment Term Template 1")
 		pi = make_pi_from_po(po.name)
 		pi.save()
 
 		self.assertEqual(pi.get("payment_terms_template"), "_Test Payment Term Template 1")
-		frappe.db.set_value("Company", "_Test Company", "payment_terms", "")
+		nts.db.set_value("Company", "_Test Company", "payment_terms", "")
 
 	def test_terms_copied(self):
 		po = create_purchase_order(do_not_save=1)
@@ -759,15 +759,15 @@ class TestPurchaseOrder(FrappeTestCase):
 		pe.save(ignore_permissions=True)
 		pe.submit()
 
-		po_doc = frappe.get_doc("Purchase Order", po_doc.name)
+		po_doc = nts.get_doc("Purchase Order", po_doc.name)
 		po_doc.cancel()
 
-		pe_doc = frappe.get_doc("Payment Entry", pe.name)
+		pe_doc = nts.get_doc("Payment Entry", pe.name)
 		pe_doc.cancel()
 
 	def create_account(self, account_name, company, currency, parent):
-		if not frappe.db.get_value("Account", filters={"account_name": account_name, "company": company}):
-			account = frappe.get_doc(
+		if not nts.db.get_value("Account", filters={"account_name": account_name, "company": company}):
+			account = nts.get_doc(
 				{
 					"doctype": "Account",
 					"account_name": account_name,
@@ -779,7 +779,7 @@ class TestPurchaseOrder(FrappeTestCase):
 				}
 			).insert()
 		else:
-			account = frappe.get_doc("Account", {"account_name": account_name, "company": company})
+			account = nts.get_doc("Account", {"account_name": account_name, "company": company})
 
 		return account
 
@@ -793,7 +793,7 @@ class TestPurchaseOrder(FrappeTestCase):
 
 		# Setup default 'Advance Paid' account
 		account = self.create_account("Advance Paid", company, "INR", "Application of Funds (Assets) - _TC")
-		company_doc = frappe.get_doc("Company", company)
+		company_doc = nts.get_doc("Company", company)
 		company_doc.book_advance_payments_in_separate_party_account = True
 		company_doc.default_advance_paid_account = account.name
 		company_doc.save()
@@ -820,7 +820,7 @@ class TestPurchaseOrder(FrappeTestCase):
 
 		# Setup default USD payable account for Supplier
 		account = self.create_account("Creditors USD", company, "USD", "Accounts Payable - _TC")
-		supplier_doc = frappe.get_doc("Supplier", supplier)
+		supplier_doc = nts.get_doc("Supplier", supplier)
 		if not [x for x in supplier_doc.accounts if x.company == company]:
 			supplier_doc.append("accounts", {"company": company, "account": account.name})
 			supplier_doc.save()
@@ -842,7 +842,7 @@ class TestPurchaseOrder(FrappeTestCase):
 		self.assertEqual(po_doc.advance_paid, po_doc.grand_total)
 		self.assertEqual(po_doc.party_account_currency, "USD")
 
-		pe_doc = frappe.get_doc("Payment Entry", pe.name)
+		pe_doc = nts.get_doc("Payment Entry", pe.name)
 		pe_doc.cancel()
 
 		po_doc.reload()
@@ -872,12 +872,12 @@ class TestPurchaseOrder(FrappeTestCase):
 		make_blanket_order(blanket_order_type="Purchasing", quantity=10, rate=10)
 
 		po = create_purchase_order(item_code="_Test Item", qty=5, against_blanket_order=1)
-		po_doc = frappe.get_doc("Purchase Order", po.get("name"))
+		po_doc = nts.get_doc("Purchase Order", po.get("name"))
 		# To test if the PO has a Blanket Order
 		self.assertTrue(po_doc.items[0].blanket_order)
 
 		po = create_purchase_order(item_code="_Test Item", qty=5, against_blanket_order=0)
-		po_doc = frappe.get_doc("Purchase Order", po.get("name"))
+		po_doc = nts.get_doc("Purchase Order", po.get("name"))
 		# To test if the PO does NOT have a Blanket Order
 		self.assertEqual(po_doc.items[0].blanket_order, None)
 
@@ -943,8 +943,8 @@ class TestPurchaseOrder(FrappeTestCase):
 		)
 		from prodman.stock.doctype.delivery_note.delivery_note import make_inter_company_purchase_receipt
 
-		frappe.db.set_single_value("Selling Settings", "maintain_same_sales_rate", 1)
-		frappe.db.set_single_value("Buying Settings", "maintain_same_rate", 1)
+		nts.db.set_single_value("Selling Settings", "maintain_same_sales_rate", 1)
+		nts.db.set_single_value("Buying Settings", "maintain_same_rate", 1)
 
 		prepare_data_for_internal_transfer()
 		supplier = "_Test Internal Supplier 2"
@@ -1014,7 +1014,7 @@ class TestPurchaseOrder(FrappeTestCase):
 	def test_variant_item_po(self):
 		po = create_purchase_order(item_code="_Test Variant Item", qty=1, rate=100, do_not_save=1)
 
-		self.assertRaises(frappe.ValidationError, po.save)
+		self.assertRaises(nts.ValidationError, po.save)
 
 	def test_update_items_for_subcontracting_purchase_order(self):
 		from prodman.controllers.tests.test_subcontracting_controller import (
@@ -1068,7 +1068,7 @@ class TestPurchaseOrder(FrappeTestCase):
 		sco = get_subcontracting_order(po_name=po.name, warehouse="_Test Warehouse - _TC")
 
 		# Test - 2: ValidationError should be raised as there is Subcontracting Order against PO
-		self.assertRaises(frappe.ValidationError, update_items, po=po, qty=30)
+		self.assertRaises(nts.ValidationError, update_items, po=po, qty=30)
 
 		sco.reload()
 		sco.cancel()
@@ -1117,7 +1117,7 @@ class TestPurchaseOrder(FrappeTestCase):
 		sco.items[0].qty = 6
 
 		# Test - 6: Saving document should not be allowed if Quantity exceeds available Subcontracting Quantity of any Purchase Order Item
-		self.assertRaises(frappe.ValidationError, sco.save)
+		self.assertRaises(nts.ValidationError, sco.save)
 
 		sco.items[0].qty = 5
 		sco.items.pop()
@@ -1146,7 +1146,7 @@ class TestPurchaseOrder(FrappeTestCase):
 		sco.submit()
 
 		# Test - 8: Since this PO is now fully subcontracted, creating a new SCO from it should throw error
-		self.assertRaises(frappe.ValidationError, make_subcontracting_order, po.name)
+		self.assertRaises(nts.ValidationError, make_subcontracting_order, po.name)
 
 	@change_settings("Buying Settings", {"auto_create_subcontracting_order": 1})
 	def test_auto_create_subcontracting_order(self):
@@ -1178,7 +1178,7 @@ class TestPurchaseOrder(FrappeTestCase):
 			supplier_warehouse="_Test Warehouse 1 - _TC",
 		)
 
-		self.assertTrue(frappe.db.get_value("Subcontracting Order", {"purchase_order": po.name}))
+		self.assertTrue(nts.db.get_value("Subcontracting Order", {"purchase_order": po.name}))
 
 	def test_po_billed_amount_against_return_entry(self):
 		from prodman.accounts.doctype.purchase_invoice.purchase_invoice import make_debit_note
@@ -1360,10 +1360,10 @@ def prepare_data_for_internal_transfer():
 
 	make_purchase_receipt(company=company, warehouse=warehouse, qty=2, rate=100)
 
-	if not frappe.db.get_value("Company", company, "unrealized_profit_loss_account"):
+	if not nts.db.get_value("Company", company, "unrealized_profit_loss_account"):
 		account = "Unrealized Profit and Loss - TCP1"
-		if not frappe.db.exists("Account", account):
-			frappe.get_doc(
+		if not nts.db.exists("Account", account):
+			nts.get_doc(
 				{
 					"doctype": "Account",
 					"account_name": "Unrealized Profit and Loss",
@@ -1374,7 +1374,7 @@ def prepare_data_for_internal_transfer():
 				}
 			).insert()
 
-		frappe.db.set_value("Company", company, "unrealized_profit_loss_account", account)
+		nts.db.set_value("Company", company, "unrealized_profit_loss_account", account)
 
 
 def make_pr_against_po(po, received_qty=0):
@@ -1405,8 +1405,8 @@ def get_same_items():
 
 
 def create_purchase_order(**args):
-	po = frappe.new_doc("Purchase Order")
-	args = frappe._dict(args)
+	po = nts.new_doc("Purchase Order")
+	args = nts._dict(args)
 	if args.transaction_date:
 		po.transaction_date = args.transaction_date
 
@@ -1414,7 +1414,7 @@ def create_purchase_order(**args):
 	po.company = args.company or "_Test Company"
 	po.supplier = args.supplier or "_Test Supplier"
 	po.is_subcontracted = args.is_subcontracted or 0
-	po.currency = args.currency or frappe.get_cached_value("Company", po.company, "default_currency")
+	po.currency = args.currency or nts.get_cached_value("Company", po.company, "default_currency")
 	po.conversion_factor = args.conversion_factor or 1
 	po.supplier_warehouse = args.supplier_warehouse or None
 
@@ -1462,13 +1462,13 @@ def create_pr_against_po(po, received_qty=4):
 
 
 def get_ordered_qty(item_code="_Test Item", warehouse="_Test Warehouse - _TC"):
-	return flt(frappe.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse}, "ordered_qty"))
+	return flt(nts.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse}, "ordered_qty"))
 
 
 def get_requested_qty(item_code="_Test Item", warehouse="_Test Warehouse - _TC"):
-	return flt(frappe.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse}, "indented_qty"))
+	return flt(nts.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse}, "indented_qty"))
 
 
 test_dependencies = ["BOM", "Item Price"]
 
-test_records = frappe.get_test_records("Purchase Order")
+test_records = nts.get_test_records("Purchase Order")

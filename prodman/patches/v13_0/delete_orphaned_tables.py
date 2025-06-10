@@ -1,35 +1,35 @@
-# Copyright (c) 2019, Frappe and Contributors
+# Copyright (c) 2019, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.utils import getdate
+import nts
+from nts.utils import getdate
 
 
 def execute():
-	frappe.reload_doc("setup", "doctype", "transaction_deletion_record")
+	nts.reload_doc("setup", "doctype", "transaction_deletion_record")
 
 	if has_deleted_company_transactions():
 		child_doctypes = get_child_doctypes_whose_parent_doctypes_were_affected()
 
 		for doctype in child_doctypes:
-			docs = frappe.get_all(doctype, fields=["name", "parent", "parenttype", "creation"])
+			docs = nts.get_all(doctype, fields=["name", "parent", "parenttype", "creation"])
 
 			for doc in docs:
-				if not frappe.db.exists(doc["parenttype"], doc["parent"]):
-					frappe.db.delete(doctype, {"name": doc["name"]})
+				if not nts.db.exists(doc["parenttype"], doc["parent"]):
+					nts.db.delete(doctype, {"name": doc["name"]})
 
 				elif check_for_new_doc_with_same_name_as_deleted_parent(doc):
-					frappe.db.delete(doctype, {"name": doc["name"]})
+					nts.db.delete(doctype, {"name": doc["name"]})
 
 
 def has_deleted_company_transactions():
-	return frappe.get_all("Transaction Deletion Record")
+	return nts.get_all("Transaction Deletion Record")
 
 
 def get_child_doctypes_whose_parent_doctypes_were_affected():
 	parent_doctypes = get_affected_doctypes()
-	child_doctypes = frappe.get_all(
+	child_doctypes = nts.get_all(
 		"DocField", filters={"fieldtype": "Table", "parent": ["in", parent_doctypes]}, pluck="options"
 	)
 
@@ -38,10 +38,10 @@ def get_child_doctypes_whose_parent_doctypes_were_affected():
 
 def get_affected_doctypes():
 	affected_doctypes = []
-	tdr_docs = frappe.get_all("Transaction Deletion Record", pluck="name")
+	tdr_docs = nts.get_all("Transaction Deletion Record", pluck="name")
 
 	for tdr in tdr_docs:
-		tdr_doc = frappe.get_doc("Transaction Deletion Record", tdr)
+		tdr_doc = nts.get_doc("Transaction Deletion Record", tdr)
 
 		for doctype in tdr_doc.doctypes:
 			if is_not_child_table(doctype.doctype_name):
@@ -52,7 +52,7 @@ def get_affected_doctypes():
 
 
 def is_not_child_table(doctype):
-	return not bool(frappe.get_value("DocType", doctype, "istable"))
+	return not bool(nts.get_value("DocType", doctype, "istable"))
 
 
 def remove_duplicate_items(affected_doctypes):
@@ -66,7 +66,7 @@ def check_for_new_doc_with_same_name_as_deleted_parent(doc):
 	it allows the creation of new docs with the same names as the deleted ones.
 	"""
 
-	parent_creation_time = frappe.db.get_value(doc["parenttype"], doc["parent"], "creation")
+	parent_creation_time = nts.db.get_value(doc["parenttype"], doc["parent"], "creation")
 	child_creation_time = doc["creation"]
 
 	return getdate(parent_creation_time) > getdate(child_creation_time)

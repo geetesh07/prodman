@@ -1,17 +1,17 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 
-import frappe
-from frappe import _
-from frappe.contacts.address_and_contact import load_address_and_contact
-from frappe.email.inbox import link_communication_to_document
-from frappe.model.mapper import get_mapped_doc
-from frappe.query_builder import DocType, Interval
-from frappe.query_builder.functions import Now
-from frappe.utils import flt, get_fullname
+import nts
+from nts import _
+from nts.contacts.address_and_contact import load_address_and_contact
+from nts.email.inbox import link_communication_to_document
+from nts.model.mapper import get_mapped_doc
+from nts.query_builder import DocType, Interval
+from nts.query_builder.functions import Now
+from nts.utils import flt, get_fullname
 
 from prodman.crm.utils import (
 	CRMNote,
@@ -31,7 +31,7 @@ class Opportunity(TransactionBase, CRMNote):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.crm.doctype.competitor_detail.competitor_detail import CompetitorDetail
 		from prodman.crm.doctype.crm_note.crm_note import CRMNote
@@ -92,7 +92,7 @@ class Opportunity(TransactionBase, CRMNote):
 	# end: auto-generated types
 
 	def onload(self):
-		ref_doc = frappe.get_doc(self.opportunity_from, self.party_name)
+		ref_doc = nts.get_doc(self.opportunity_from, self.party_name)
 
 		load_address_and_contact(ref_doc)
 		load_address_and_contact(self)
@@ -117,11 +117,11 @@ class Opportunity(TransactionBase, CRMNote):
 
 	def after_insert(self):
 		if self.opportunity_from == "Lead":
-			frappe.get_doc("Lead", self.party_name).set_status(update=True)
+			nts.get_doc("Lead", self.party_name).set_status(update=True)
 
 			link_open_tasks(self.opportunity_from, self.party_name, self)
 			link_open_events(self.opportunity_from, self.party_name, self)
-			if frappe.db.get_single_value("CRM Settings", "carry_forward_communication_and_comments"):
+			if nts.db.get_single_value("CRM Settings", "carry_forward_communication_and_comments"):
 				copy_comments(self.opportunity_from, self.party_name, self)
 				link_communications(self.opportunity_from, self.party_name, self)
 
@@ -143,15 +143,15 @@ class Opportunity(TransactionBase, CRMNote):
 
 	def map_fields(self):
 		for field in self.meta.get_valid_columns():
-			if not self.get(field) and frappe.db.field_exists(self.opportunity_from, field):
+			if not self.get(field) and nts.db.field_exists(self.opportunity_from, field):
 				try:
-					value = frappe.db.get_value(self.opportunity_from, self.party_name, field)
+					value = nts.db.get_value(self.opportunity_from, self.party_name, field)
 					self.set(field, value)
 				except Exception:
 					continue
 
 	def set_exchange_rate(self):
-		company_currency = frappe.get_cached_value("Company", self.company, "default_currency")
+		company_currency = nts.get_cached_value("Company", self.company, "default_currency")
 		if self.currency == company_currency:
 			self.conversion_rate = 1.0
 			return
@@ -176,10 +176,10 @@ class Opportunity(TransactionBase, CRMNote):
 		if self.opportunity_from == "Prospect" and self.party_name:
 			prospect_name = self.party_name
 		elif self.opportunity_from == "Lead":
-			prospect_name = frappe.db.get_value("Prospect Lead", {"lead": self.party_name}, "parent")
+			prospect_name = nts.db.get_value("Prospect Lead", {"lead": self.party_name}, "parent")
 
 		if prospect_name:
-			prospect = frappe.get_doc("Prospect", prospect_name)
+			prospect = nts.get_doc("Prospect", prospect_name)
 
 			opportunity_values = {
 				"opportunity": self.name,
@@ -211,7 +211,7 @@ class Opportunity(TransactionBase, CRMNote):
 			# check if customer is already created agains the self.contact_email
 			dynamic_link, contact = DocType("Dynamic Link"), DocType("Contact")
 			customer = (
-				frappe.qb.from_(dynamic_link)
+				nts.qb.from_(dynamic_link)
 				.join(contact)
 				.on(
 					(contact.name == dynamic_link.parent)
@@ -228,7 +228,7 @@ class Opportunity(TransactionBase, CRMNote):
 				self.opportunity_from = "Customer"
 				return
 
-			lead_name = frappe.db.get_value("Lead", {"email_id": self.contact_email})
+			lead_name = nts.db.get_value("Lead", {"email_id": self.contact_email})
 			if not lead_name:
 				sender_name = get_fullname(self.contact_email)
 				if sender_name == self.contact_email:
@@ -242,7 +242,7 @@ class Opportunity(TransactionBase, CRMNote):
 					for s in email_split:
 						sender_name += s.capitalize() + " "
 
-				lead = frappe.get_doc(
+				lead = nts.get_doc(
 					{"doctype": "Lead", "email_id": self.contact_email, "lead_name": sender_name or "Unknown"}
 				)
 
@@ -253,7 +253,7 @@ class Opportunity(TransactionBase, CRMNote):
 			self.opportunity_from = "Lead"
 			self.party_name = lead_name
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def declare_enquiry_lost(self, lost_reasons_list, competitors, detailed_reason=None):
 		if not self.has_active_quotation():
 			self.status = "Lost"
@@ -272,17 +272,17 @@ class Opportunity(TransactionBase, CRMNote):
 			self.save()
 
 		else:
-			frappe.throw(_("Cannot declare as lost, because Quotation has been made."))
+			nts.throw(_("Cannot declare as lost, because Quotation has been made."))
 
 	def has_active_quotation(self):
 		if not self.get("items", []):
-			return frappe.get_all(
+			return nts.get_all(
 				"Quotation",
 				{"opportunity": self.name, "status": ("not in", ["Lost", "Closed"]), "docstatus": 1},
 				"name",
 			)
 		else:
-			return frappe.db.sql(
+			return nts.db.sql(
 				"""
 				select q.name
 				from `tabQuotation` q, `tabQuotation Item` qi
@@ -293,11 +293,11 @@ class Opportunity(TransactionBase, CRMNote):
 
 	def has_ordered_quotation(self):
 		if not self.get("items", []):
-			return frappe.get_all(
+			return nts.get_all(
 				"Quotation", {"opportunity": self.name, "status": "Ordered", "docstatus": 1}, "name"
 			)
 		else:
-			return frappe.db.sql(
+			return nts.db.sql(
 				"""
 				select q.name
 				from `tabQuotation` q, `tabQuotation Item` qi
@@ -307,7 +307,7 @@ class Opportunity(TransactionBase, CRMNote):
 			)
 
 	def has_lost_quotation(self):
-		lost_quotation = frappe.db.sql(
+		lost_quotation = nts.db.sql(
 			"""
 			select name
 			from `tabQuotation`
@@ -324,11 +324,11 @@ class Opportunity(TransactionBase, CRMNote):
 	def validate_cust_name(self):
 		if self.party_name:
 			if self.opportunity_from == "Customer":
-				self.customer_name = frappe.db.get_value("Customer", self.party_name, "customer_name")
+				self.customer_name = nts.db.get_value("Customer", self.party_name, "customer_name")
 			elif self.opportunity_from == "Lead":
-				customer_name = frappe.db.get_value("Prospect Lead", {"lead": self.party_name}, "parent")
+				customer_name = nts.db.get_value("Prospect Lead", {"lead": self.party_name}, "parent")
 				if not customer_name:
-					lead_name, company_name = frappe.db.get_value(
+					lead_name, company_name = nts.db.get_value(
 						"Lead", self.party_name, ["lead_name", "company_name"]
 					)
 					customer_name = company_name or lead_name
@@ -348,15 +348,15 @@ class Opportunity(TransactionBase, CRMNote):
 			if not d.item_code:
 				continue
 
-			item = frappe.db.get_value("Item", d.item_code, item_fields, as_dict=True)
+			item = nts.db.get_value("Item", d.item_code, item_fields, as_dict=True)
 			for key in item_fields:
 				if not d.get(key):
 					d.set(key, item.get(key))
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_item_details(item_code):
-	item = frappe.db.sql(
+	item = nts.db.sql(
 		"""select item_name, stock_uom, image, description, item_group, brand
 		from `tabItem` where name = %s""",
 		item_code,
@@ -372,14 +372,14 @@ def get_item_details(item_code):
 	}
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_quotation(source_name, target_doc=None):
 	def set_missing_values(source, target):
 		from prodman.controllers.accounts_controller import get_default_taxes_and_charges
 
-		quotation = frappe.get_doc(target)
+		quotation = nts.get_doc(target)
 
-		company_currency = frappe.get_cached_value("Company", quotation.company, "default_currency")
+		company_currency = nts.get_cached_value("Company", quotation.company, "default_currency")
 
 		if company_currency == quotation.currency:
 			exchange_rate = 1
@@ -425,7 +425,7 @@ def make_quotation(source_name, target_doc=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_request_for_quotation(source_name, target_doc=None):
 	def update_item(obj, target, source_parent):
 		target.conversion_factor = 1.0
@@ -447,7 +447,7 @@ def make_request_for_quotation(source_name, target_doc=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_customer(source_name, target_doc=None):
 	def set_missing_values(source, target):
 		target.opportunity_name = source.name
@@ -471,7 +471,7 @@ def make_customer(source_name, target_doc=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_supplier_quotation(source_name, target_doc=None):
 	doclist = get_mapped_doc(
 		"Opportunity",
@@ -486,22 +486,22 @@ def make_supplier_quotation(source_name, target_doc=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def set_multiple_status(names, status):
 	names = json.loads(names)
 	for name in names:
-		opp = frappe.get_doc("Opportunity", name)
+		opp = nts.get_doc("Opportunity", name)
 		opp.status = status
 		opp.save()
 
 
 def auto_close_opportunity():
 	"""auto close the `Replied` Opportunities after 7 days"""
-	auto_close_after_days = frappe.db.get_single_value("CRM Settings", "close_opportunity_after_days") or 15
+	auto_close_after_days = nts.db.get_single_value("CRM Settings", "close_opportunity_after_days") or 15
 
-	table = frappe.qb.DocType("Opportunity")
+	table = nts.qb.DocType("Opportunity")
 	opportunities = (
-		frappe.qb.from_(table)
+		nts.qb.from_(table)
 		.select(table.name)
 		.where(
 			(table.modified < (Now() - Interval(days=auto_close_after_days))) & (table.status == "Replied")
@@ -509,18 +509,18 @@ def auto_close_opportunity():
 	).run(pluck=True)
 
 	for opportunity in opportunities:
-		doc = frappe.get_doc("Opportunity", opportunity)
+		doc = nts.get_doc("Opportunity", opportunity)
 		doc.status = "Closed"
 		doc.flags.ignore_permissions = True
 		doc.flags.ignore_mandatory = True
 		doc.save()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_opportunity_from_communication(communication, company, ignore_communication_links=False):
 	from prodman.crm.doctype.lead.lead import make_lead_from_communication
 
-	doc = frappe.get_doc("Communication", communication)
+	doc = nts.get_doc("Communication", communication)
 
 	lead = doc.reference_name if doc.reference_doctype == "Lead" else None
 	if not lead:
@@ -528,7 +528,7 @@ def make_opportunity_from_communication(communication, company, ignore_communica
 
 	opportunity_from = "Lead"
 
-	opportunity = frappe.get_doc(
+	opportunity = nts.get_doc(
 		{
 			"doctype": "Opportunity",
 			"company": company,

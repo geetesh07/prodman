@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe.utils import now_datetime, nowdate
+import nts 
+from nts .utils import now_datetime, nowdate
 
 from prodman.accounts.doctype.budget.budget import BudgetError, get_actual_expense
 from prodman.accounts.doctype.journal_entry.test_journal_entry import make_journal_entry
@@ -30,7 +30,7 @@ class TestBudget(unittest.TestCase):
 		)
 
 		self.assertTrue(
-			frappe.db.get_value("GL Entry", {"voucher_type": "Journal Entry", "voucher_no": jv.name})
+			nts .db.get_value("GL Entry", {"voucher_type": "Journal Entry", "voucher_no": jv.name})
 		)
 
 		budget.cancel()
@@ -41,7 +41,7 @@ class TestBudget(unittest.TestCase):
 
 		budget = make_budget(budget_against="Cost Center")
 
-		frappe.db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
+		nts .db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
 
 		jv = make_journal_entry(
 			"_Test Account Cost for Goods Sold - _TC",
@@ -61,7 +61,7 @@ class TestBudget(unittest.TestCase):
 
 		budget = make_budget(budget_against="Cost Center")
 
-		frappe.db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
+		nts .db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
 
 		jv = make_journal_entry(
 			"_Test Account Cost for Goods Sold - _TC",
@@ -73,13 +73,13 @@ class TestBudget(unittest.TestCase):
 
 		self.assertRaises(BudgetError, jv.submit)
 
-		frappe.db.set_value("Company", budget.company, "exception_budget_approver_role", "Accounts User")
+		nts .db.set_value("Company", budget.company, "exception_budget_approver_role", "Accounts User")
 
 		jv.submit()
-		self.assertEqual(frappe.db.get_value("Journal Entry", jv.name, "docstatus"), 1)
+		self.assertEqual(nts .db.get_value("Journal Entry", jv.name, "docstatus"), 1)
 		jv.cancel()
 
-		frappe.db.set_value("Company", budget.company, "exception_budget_approver_role", "")
+		nts .db.set_value("Company", budget.company, "exception_budget_approver_role", "")
 
 		budget.load_from_db()
 		budget.cancel()
@@ -93,10 +93,10 @@ class TestBudget(unittest.TestCase):
 		)
 
 		fiscal_year = get_fiscal_year(nowdate())[0]
-		frappe.db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
-		frappe.db.set_value("Budget", budget.name, "fiscal_year", fiscal_year)
+		nts .db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
+		nts .db.set_value("Budget", budget.name, "fiscal_year", fiscal_year)
 
-		mr = frappe.get_doc(
+		mr = nts .get_doc(
 			{
 				"doctype": "Material Request",
 				"material_request_type": "Purchase",
@@ -132,8 +132,8 @@ class TestBudget(unittest.TestCase):
 		)
 
 		fiscal_year = get_fiscal_year(nowdate())[0]
-		frappe.db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
-		frappe.db.set_value("Budget", budget.name, "fiscal_year", fiscal_year)
+		nts .db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
+		nts .db.set_value("Budget", budget.name, "fiscal_year", fiscal_year)
 
 		po = create_purchase_order(transaction_date=nowdate(), do_not_submit=True)
 
@@ -150,9 +150,9 @@ class TestBudget(unittest.TestCase):
 
 		budget = make_budget(budget_against="Project")
 
-		frappe.db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
+		nts .db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
 
-		project = frappe.get_value("Project", {"project_name": "_Test Project"})
+		project = nts .get_value("Project", {"project_name": "_Test Project"})
 
 		jv = make_journal_entry(
 			"_Test Account Cost for Goods Sold - _TC",
@@ -190,7 +190,7 @@ class TestBudget(unittest.TestCase):
 
 		budget = make_budget(budget_against="Project")
 
-		project = frappe.get_value("Project", {"project_name": "_Test Project"})
+		project = nts .get_value("Project", {"project_name": "_Test Project"})
 
 		jv = make_journal_entry(
 			"_Test Account Cost for Goods Sold - _TC",
@@ -224,10 +224,10 @@ class TestBudget(unittest.TestCase):
 			)
 
 			self.assertTrue(
-				frappe.db.get_value("GL Entry", {"voucher_type": "Journal Entry", "voucher_no": jv.name})
+				nts .db.get_value("GL Entry", {"voucher_type": "Journal Entry", "voucher_no": jv.name})
 			)
 
-		frappe.db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
+		nts .db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
 
 		self.assertRaises(BudgetError, jv.cancel)
 
@@ -242,7 +242,7 @@ class TestBudget(unittest.TestCase):
 		if month > 9:
 			month = 9
 
-		project = frappe.get_value("Project", {"project_name": "_Test Project"})
+		project = nts .get_value("Project", {"project_name": "_Test Project"})
 		for _i in range(month + 1):
 			jv = make_journal_entry(
 				"_Test Account Cost for Goods Sold - _TC",
@@ -255,10 +255,10 @@ class TestBudget(unittest.TestCase):
 			)
 
 			self.assertTrue(
-				frappe.db.get_value("GL Entry", {"voucher_type": "Journal Entry", "voucher_no": jv.name})
+				nts .db.get_value("GL Entry", {"voucher_type": "Journal Entry", "voucher_no": jv.name})
 			)
 
-		frappe.db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
+		nts .db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
 
 		self.assertRaises(BudgetError, jv.cancel)
 
@@ -270,7 +270,7 @@ class TestBudget(unittest.TestCase):
 		set_total_expense_zero(nowdate(), "cost_center", "_Test Cost Center 2 - _TC")
 
 		budget = make_budget(budget_against="Cost Center", cost_center="_Test Company - _TC")
-		frappe.db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
+		nts .db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
 
 		jv = make_journal_entry(
 			"_Test Account Cost for Goods Sold - _TC",
@@ -288,8 +288,8 @@ class TestBudget(unittest.TestCase):
 	def test_monthly_budget_against_parent_group_cost_center(self):
 		cost_center = "_Test Cost Center 3 - _TC"
 
-		if not frappe.db.exists("Cost Center", cost_center):
-			frappe.get_doc(
+		if not nts .db.exists("Cost Center", cost_center):
+			nts .get_doc(
 				{
 					"doctype": "Cost Center",
 					"cost_center_name": "_Test Cost Center 3",
@@ -300,7 +300,7 @@ class TestBudget(unittest.TestCase):
 			).insert(ignore_permissions=True)
 
 		budget = make_budget(budget_against="Cost Center", cost_center=cost_center)
-		frappe.db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
+		nts .db.set_value("Budget", budget.name, "action_if_accumulated_monthly_budget_exceeded", "Stop")
 
 		jv = make_journal_entry(
 			"_Test Account Cost for Goods Sold - _TC",
@@ -352,13 +352,13 @@ class TestBudget(unittest.TestCase):
 
 def set_total_expense_zero(posting_date, budget_against_field=None, budget_against_CC=None):
 	if budget_against_field == "project":
-		budget_against = frappe.db.get_value("Project", {"project_name": "_Test Project"})
+		budget_against = nts .db.get_value("Project", {"project_name": "_Test Project"})
 	else:
 		budget_against = budget_against_CC or "_Test Cost Center - _TC"
 
 	fiscal_year = get_fiscal_year(nowdate())[0]
 
-	args = frappe._dict(
+	args = nts ._dict(
 		{
 			"account": "_Test Account Cost for Goods Sold - _TC",
 			"cost_center": "_Test Cost Center - _TC",
@@ -397,7 +397,7 @@ def set_total_expense_zero(posting_date, budget_against_field=None, budget_again
 
 
 def make_budget(**args):
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 
 	budget_against = args.budget_against
 	cost_center = args.cost_center
@@ -406,22 +406,22 @@ def make_budget(**args):
 
 	if budget_against == "Project":
 		project_name = "{}%".format("_Test Project/" + fiscal_year)
-		budget_list = frappe.get_all("Budget", fields=["name"], filters={"name": ("like", project_name)})
+		budget_list = nts .get_all("Budget", fields=["name"], filters={"name": ("like", project_name)})
 	else:
 		cost_center_name = "{}%".format(cost_center or "_Test Cost Center - _TC/" + fiscal_year)
-		budget_list = frappe.get_all("Budget", fields=["name"], filters={"name": ("like", cost_center_name)})
+		budget_list = nts .get_all("Budget", fields=["name"], filters={"name": ("like", cost_center_name)})
 	for d in budget_list:
-		frappe.db.sql("delete from `tabBudget` where name = %(name)s", d)
-		frappe.db.sql("delete from `tabBudget Account` where parent = %(name)s", d)
+		nts .db.sql("delete from `tabBudget` where name = %(name)s", d)
+		nts .db.sql("delete from `tabBudget Account` where parent = %(name)s", d)
 
-	budget = frappe.new_doc("Budget")
+	budget = nts .new_doc("Budget")
 
 	if budget_against == "Project":
-		budget.project = frappe.get_value("Project", {"project_name": "_Test Project"})
+		budget.project = nts .get_value("Project", {"project_name": "_Test Project"})
 	else:
 		budget.cost_center = cost_center or "_Test Cost Center - _TC"
 
-	monthly_distribution = frappe.get_doc("Monthly Distribution", "_Test Distribution")
+	monthly_distribution = nts .get_doc("Monthly Distribution", "_Test Distribution")
 	monthly_distribution.fiscal_year = fiscal_year
 
 	budget.fiscal_year = fiscal_year

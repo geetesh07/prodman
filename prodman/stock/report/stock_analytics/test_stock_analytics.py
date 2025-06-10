@@ -1,9 +1,9 @@
 import datetime
 
-import frappe
-from frappe import _dict
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils.data import add_to_date, getdate
+import nts
+from nts import _dict
+from nts.tests.utils import ntsTestCase
+from nts.utils.data import add_to_date, getdate
 
 from prodman.accounts.utils import get_fiscal_year
 from prodman.stock.doctype.item.test_item import make_item
@@ -16,7 +16,7 @@ def stock_analytics(filters):
 	return col, data
 
 
-class TestStockAnalyticsReport(FrappeTestCase):
+class TestStockAnalyticsReport(ntsTestCase):
 	def setUp(self) -> None:
 		self.item = make_item().name
 		self.warehouse = "_Test Warehouse - _TC"
@@ -35,7 +35,7 @@ class TestStockAnalyticsReport(FrappeTestCase):
 		cols, data = stock_analytics(filters)
 
 		self.assertEqual(len(data), 1)
-		row = frappe._dict(data[0])
+		row = nts._dict(data[0])
 		self.assertEqual(row.name, self.item)
 		self.compare_analytics_row(row, cols, expected_buckets)
 

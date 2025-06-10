@@ -1,12 +1,12 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import json
 
-import frappe
-from frappe import _, scrub
-from frappe.utils import flt
+import nts
+from nts import _, scrub
+from nts.utils import flt
 
 
 def execute(filters=None):
@@ -15,7 +15,7 @@ def execute(filters=None):
 
 class IssueSummary:
 	def __init__(self, filters=None):
-		self.filters = frappe._dict(filters or {})
+		self.filters = nts._dict(filters or {})
 
 	def run(self):
 		self.get_columns()
@@ -118,7 +118,7 @@ class IssueSummary:
 			"Assigned To": "_assign",
 		}
 
-		self.entries = frappe.db.get_all(
+		self.entries = nts.db.get_all(
 			"Issue",
 			fields=[
 				self.field_map.get(self.filters.based_on),
@@ -179,7 +179,7 @@ class IssueSummary:
 			self.data.append(row)
 
 	def get_summary_data(self):
-		self.issue_summary_data = frappe._dict()
+		self.issue_summary_data = nts._dict()
 
 		for d in self.entries:
 			status = d.status
@@ -188,11 +188,11 @@ class IssueSummary:
 			if self.filters.based_on == "Assigned To":
 				if d._assign:
 					for entry in json.loads(d._assign):
-						self.issue_summary_data.setdefault(entry, frappe._dict()).setdefault(status, 0.0)
-						self.issue_summary_data.setdefault(entry, frappe._dict()).setdefault(
+						self.issue_summary_data.setdefault(entry, nts._dict()).setdefault(status, 0.0)
+						self.issue_summary_data.setdefault(entry, nts._dict()).setdefault(
 							agreement_status, 0.0
 						)
-						self.issue_summary_data.setdefault(entry, frappe._dict()).setdefault(
+						self.issue_summary_data.setdefault(entry, nts._dict()).setdefault(
 							"total_issues", 0.0
 						)
 						self.issue_summary_data[entry][status] += 1
@@ -205,9 +205,9 @@ class IssueSummary:
 				if not value:
 					value = _("Not Specified")
 
-				self.issue_summary_data.setdefault(value, frappe._dict()).setdefault(status, 0.0)
-				self.issue_summary_data.setdefault(value, frappe._dict()).setdefault(agreement_status, 0.0)
-				self.issue_summary_data.setdefault(value, frappe._dict()).setdefault("total_issues", 0.0)
+				self.issue_summary_data.setdefault(value, nts._dict()).setdefault(status, 0.0)
+				self.issue_summary_data.setdefault(value, nts._dict()).setdefault(agreement_status, 0.0)
+				self.issue_summary_data.setdefault(value, nts._dict()).setdefault("total_issues", 0.0)
 				self.issue_summary_data[value][status] += 1
 				self.issue_summary_data[value][agreement_status] += 1
 				self.issue_summary_data[value]["total_issues"] += 1
@@ -232,12 +232,12 @@ class IssueSummary:
 
 		if issues:
 			if self.filters.based_on == "Assigned To":
-				assignment_map = frappe._dict()
+				assignment_map = nts._dict()
 				for d in self.entries:
 					if d._assign:
 						for entry in json.loads(d._assign):
 							for metric in metrics_list:
-								self.issue_summary_data.setdefault(entry, frappe._dict()).setdefault(
+								self.issue_summary_data.setdefault(entry, nts._dict()).setdefault(
 									metric, 0.0
 								)
 
@@ -264,7 +264,7 @@ class IssueSummary:
 						self.issue_summary_data[entry][metric] /= flt(assignment_map.get(entry))
 
 			else:
-				data = frappe.db.sql(
+				data = nts.db.sql(
 					f"""
 					SELECT
 						{field}, AVG(first_response_time) as avg_frt,
@@ -287,7 +287,7 @@ class IssueSummary:
 						value = _("Not Specified")
 
 					for metric in metrics_list:
-						self.issue_summary_data.setdefault(value, frappe._dict()).setdefault(metric, 0.0)
+						self.issue_summary_data.setdefault(value, nts._dict()).setdefault(metric, 0.0)
 
 					self.issue_summary_data[value]["avg_response_time"] = entry.get("avg_resp_time") or 0.0
 					self.issue_summary_data[value]["avg_first_response_time"] = entry.get("avg_frt") or 0.0

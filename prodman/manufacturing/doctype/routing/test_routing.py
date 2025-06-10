@@ -1,22 +1,22 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
-import frappe
-from frappe.test_runner import make_test_records
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.test_runner import make_test_records
+from nts.tests.utils import ntsTestCase
 
 from prodman.manufacturing.doctype.job_card.job_card import OperationSequenceError
 from prodman.manufacturing.doctype.work_order.test_work_order import make_wo_order_test_record
 from prodman.stock.doctype.item.test_item import make_item
 
 
-class TestRouting(FrappeTestCase):
+class TestRouting(ntsTestCase):
 	@classmethod
 	def setUpClass(cls):
 		cls.item_code = "Test Routing Item - A"
 
 	@classmethod
 	def tearDownClass(cls):
-		frappe.db.sql("delete from tabBOM where item=%s", cls.item_code)
+		nts.db.sql("delete from tabBOM where item=%s", cls.item_code)
 
 	def test_sequence_id(self):
 		operations = [
@@ -34,10 +34,10 @@ class TestRouting(FrappeTestCase):
 		for row in routing_doc.operations:
 			self.assertEqual(row.sequence_id, row.idx)
 
-		for data in frappe.get_all(
+		for data in nts.get_all(
 			"Job Card", filters={"work_order": wo_doc.name}, order_by="sequence_id desc"
 		):
-			job_card_doc = frappe.get_doc("Job Card", data.name)
+			job_card_doc = nts.get_doc("Job Card", data.name)
 			for row in job_card_doc.scheduled_time_logs:
 				job_card_doc.append(
 					"time_logs",
@@ -105,16 +105,16 @@ def setup_operations(rows):
 
 
 def create_routing(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
-	doc = frappe.new_doc("Routing")
+	doc = nts.new_doc("Routing")
 	doc.update(args)
 
 	if not args.do_not_save:
 		try:
 			doc.insert()
-		except frappe.DuplicateEntryError:
-			doc = frappe.get_doc("Routing", args.routing_name)
+		except nts.DuplicateEntryError:
+			doc = nts.get_doc("Routing", args.routing_name)
 			doc.delete_key("operations")
 			for operation in args.operations:
 				doc.append("operations", operation)
@@ -127,13 +127,13 @@ def create_routing(**args):
 def setup_bom(**args):
 	from prodman.manufacturing.doctype.production_plan.test_production_plan import make_bom
 
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
-	if not frappe.db.exists("Item", args.item_code):
+	if not nts.db.exists("Item", args.item_code):
 		make_item(args.item_code, {"is_stock_item": 1})
 
 	if not args.raw_materials:
-		if not frappe.db.exists("Item", "Test Extra Item N-1"):
+		if not nts.db.exists("Item", "Test Extra Item N-1"):
 			make_item(
 				"Test Extra Item N-1",
 				{
@@ -143,7 +143,7 @@ def setup_bom(**args):
 
 		args.raw_materials = ["Test Extra Item N-1"]
 
-	name = frappe.db.get_value("BOM", {"item": args.item_code}, "name")
+	name = nts.db.get_value("BOM", {"item": args.item_code}, "name")
 	if not name:
 		bom_doc = make_bom(
 			item=args.item_code,
@@ -154,6 +154,6 @@ def setup_bom(**args):
 			source_warehouse=args.source_warehouse,
 		)
 	else:
-		bom_doc = frappe.get_doc("BOM", name)
+		bom_doc = nts.get_doc("BOM", name)
 
 	return bom_doc

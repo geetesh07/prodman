@@ -1,12 +1,12 @@
-// Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2019, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Buying Settings", {
+nts.ui.form.on("Buying Settings", {
 	// refresh: function(frm) {
 	// }
 });
 
-frappe.tour["Buying Settings"] = [
+nts.tour["Buying Settings"] = [
 	{
 		fieldname: "supp_master_name",
 		title: "Supplier Naming By",

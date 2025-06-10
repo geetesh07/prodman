@@ -1,8 +1,8 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -50,7 +50,7 @@ def get_columns():
 
 
 def get_project_details():
-	return frappe.db.sql(
+	return nts.db.sql(
 		""" select name, project_name, status, company, customer, estimated_costing,
 		expected_start_date, expected_end_date from tabProject where docstatus < 2""",
 		as_dict=1,
@@ -58,7 +58,7 @@ def get_project_details():
 
 
 def get_purchased_items_cost():
-	pr_items = frappe.db.sql(
+	pr_items = nts.db.sql(
 		"""select project, sum(base_net_amount) as amount
 		from `tabPurchase Receipt Item` where ifnull(project, '') != ''
 		and docstatus = 1 group by project""",
@@ -73,7 +73,7 @@ def get_purchased_items_cost():
 
 
 def get_issued_items_cost():
-	se_items = frappe.db.sql(
+	se_items = nts.db.sql(
 		"""select se.project, sum(se_item.amount) as amount
 		from `tabStock Entry` se, `tabStock Entry Detail` se_item
 		where se.name = se_item.parent and se.docstatus = 1 and ifnull(se_item.t_warehouse, '') = ''
@@ -89,7 +89,7 @@ def get_issued_items_cost():
 
 
 def get_delivered_items_cost():
-	dn_items = frappe.db.sql(
+	dn_items = nts.db.sql(
 		"""select dn.project, sum(dn_item.base_net_amount) as amount
 		from `tabDelivery Note` dn, `tabDelivery Note Item` dn_item
 		where dn.name = dn_item.parent and dn.docstatus = 1 and ifnull(dn.project, '') != ''
@@ -97,7 +97,7 @@ def get_delivered_items_cost():
 		as_dict=1,
 	)
 
-	si_items = frappe.db.sql(
+	si_items = nts.db.sql(
 		"""select si.project, sum(si_item.base_net_amount) as amount
 		from `tabSales Invoice` si, `tabSales Invoice Item` si_item
 		where si.name = si_item.parent and si.docstatus = 1 and si.update_stock = 1

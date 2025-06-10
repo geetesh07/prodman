@@ -1,12 +1,12 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import copy
 from collections import defaultdict
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import flt
+import nts
+from nts.tests.utils import ntsTestCase
+from nts.utils import flt
 
 from prodman.buying.doctype.purchase_order.purchase_order import get_mapped_subcontracting_order
 from prodman.controllers.subcontracting_controller import (
@@ -33,7 +33,7 @@ from prodman.subcontracting.doctype.subcontracting_order.subcontracting_order im
 )
 
 
-class TestSubcontractingOrder(FrappeTestCase):
+class TestSubcontractingOrder(ntsTestCase):
 	def setUp(self):
 		make_subcontracted_items()
 		make_raw_materials()
@@ -94,7 +94,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 		self.assertEqual(sco.status, "Closed")
 		scr = make_subcontracting_receipt(sco.name)
 		scr.save()
-		self.assertRaises(frappe.exceptions.ValidationError, scr.submit)
+		self.assertRaises(nts.exceptions.ValidationError, scr.submit)
 		sco.update_status()
 		self.assertEqual(sco.status, "Partially Received")
 		scr.cancel()
@@ -224,7 +224,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 			target="_Test Warehouse - _TC", item_code="_Test Item Home Desktop 100", qty=20, basic_rate=100
 		)
 
-		bin_before_sco = frappe.db.get_value(
+		bin_before_sco = nts.db.get_value(
 			"Bin",
 			filters={"warehouse": "_Test Warehouse - _TC", "item_code": "_Test Item"},
 			fieldname=["reserved_qty_for_sub_contract", "projected_qty", "modified"],
@@ -244,7 +244,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 		]
 		sco = get_subcontracting_order(service_items=service_items)
 
-		bin_after_sco = frappe.db.get_value(
+		bin_after_sco = nts.db.get_value(
 			"Bin",
 			filters={"warehouse": "_Test Warehouse - _TC", "item_code": "_Test Item"},
 			fieldname=["reserved_qty_for_sub_contract", "projected_qty", "modified"],
@@ -284,12 +284,12 @@ class TestSubcontractingOrder(FrappeTestCase):
 				"stock_uom": "Nos",
 			},
 		]
-		ste = frappe.get_doc(make_rm_stock_entry(sco.name, rm_items))
+		ste = nts.get_doc(make_rm_stock_entry(sco.name, rm_items))
 		ste.to_warehouse = "_Test Warehouse 1 - _TC"
 		ste.save()
 		ste.submit()
 
-		bin_after_rm_transfer = frappe.db.get_value(
+		bin_after_rm_transfer = nts.db.get_value(
 			"Bin",
 			filters={"warehouse": "_Test Warehouse - _TC", "item_code": "_Test Item"},
 			fieldname="reserved_qty_for_sub_contract",
@@ -304,7 +304,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 
 		# Cancel Stock Entry(Send to Subcontractor)
 		ste.cancel()
-		bin_after_cancel_ste = frappe.db.get_value(
+		bin_after_cancel_ste = nts.db.get_value(
 			"Bin",
 			filters={"warehouse": "_Test Warehouse - _TC", "item_code": "_Test Item"},
 			fieldname="reserved_qty_for_sub_contract",
@@ -320,7 +320,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 		# Cancel SCO
 		sco.reload()
 		sco.cancel()
-		bin_after_cancel_sco = frappe.db.get_value(
+		bin_after_cancel_sco = nts.db.get_value(
 			"Bin",
 			filters={"warehouse": "_Test Warehouse - _TC", "item_code": "_Test Item"},
 			fieldname="reserved_qty_for_sub_contract",
@@ -352,8 +352,8 @@ class TestSubcontractingOrder(FrappeTestCase):
 		]
 
 		sco1 = get_subcontracting_order(service_items=service_items, include_exploded_items=1)
-		item_name = frappe.db.get_value("BOM", {"item": item_code}, "name")
-		bom = frappe.get_doc("BOM", item_name)
+		item_name = nts.db.get_value("BOM", {"item": item_code}, "name")
+		bom = nts.get_doc("BOM", item_name)
 		exploded_items = sorted([item.item_code for item in bom.exploded_items])
 		supplied_items = sorted([item.rm_item_code for item in sco1.supplied_items])
 		self.assertEqual(exploded_items, supplied_items)
@@ -435,7 +435,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 			},
 		]
 
-		ste = frappe.get_doc(make_rm_stock_entry(sco.name, rm_items))
+		ste = nts.get_doc(make_rm_stock_entry(sco.name, rm_items))
 		ste.submit()
 
 		scr = make_subcontracting_receipt(sco.name)
@@ -454,7 +454,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 		self.assertEqual(transferred_items, issued_items)
 		self.assertEqual(scr.get_supplied_items_cost(scr.get("items")[0].name), 2000)
 
-		transferred_rm_map = frappe._dict()
+		transferred_rm_map = nts._dict()
 		for item in rm_items:
 			transferred_rm_map[item.get("rm_item_code")] = item
 
@@ -519,7 +519,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 		]
 
 		# Raw Materials transfer entry from stores to supplier's warehouse
-		ste = frappe.get_doc(make_rm_stock_entry(sco.name, rm_items))
+		ste = nts.get_doc(make_rm_stock_entry(sco.name, rm_items))
 		ste.submit()
 
 		# Test sco_rm_detail field has value or not
@@ -573,7 +573,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 			},
 		]
 
-		ordered_qty = frappe.db.get_value(
+		ordered_qty = nts.db.get_value(
 			"Bin",
 			filters={"warehouse": "_Test Warehouse - _TC", "item_code": "Subcontracted Item SA8"},
 			fieldname="ordered_qty",
@@ -583,7 +583,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 		sco = get_subcontracting_order(service_items=service_items)
 		sco.reload()
 
-		new_ordered_qty = frappe.db.get_value(
+		new_ordered_qty = nts.db.get_value(
 			"Bin",
 			filters={"warehouse": "_Test Warehouse - _TC", "item_code": "Subcontracted Item SA8"},
 			fieldname="ordered_qty",
@@ -603,7 +603,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 		scr = make_subcontracting_receipt(sco.name)
 		scr.submit()
 
-		new_ordered_qty = frappe.db.get_value(
+		new_ordered_qty = nts.db.get_value(
 			"Bin",
 			filters={"warehouse": "_Test Warehouse - _TC", "item_code": "Subcontracted Item SA8"},
 			fieldname="ordered_qty",
@@ -614,7 +614,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 		scr.reload()
 		scr.cancel()
 
-		new_ordered_qty = frappe.db.get_value(
+		new_ordered_qty = nts.db.get_value(
 			"Bin",
 			filters={"warehouse": "_Test Warehouse - _TC", "item_code": "Subcontracted Item SA8"},
 			fieldname="ordered_qty",
@@ -626,7 +626,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 		from prodman.stock.doctype.material_request.material_request import make_purchase_order
 		from prodman.stock.doctype.material_request.test_material_request import make_material_request
 
-		requested_qty = frappe.db.get_value(
+		requested_qty = nts.db.get_value(
 			"Bin",
 			filters={"warehouse": "_Test Warehouse - _TC", "item_code": "Subcontracted Item SA8"},
 			fieldname="indented_qty",
@@ -641,7 +641,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 
 		self.assertTrue(mr.docstatus == 1)
 
-		new_requested_qty = frappe.db.get_value(
+		new_requested_qty = nts.db.get_value(
 			"Bin",
 			filters={"warehouse": "_Test Warehouse - _TC", "item_code": "Subcontracted Item SA8"},
 			fieldname="indented_qty",
@@ -669,7 +669,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 		self.assertTrue(sco.items[0].material_request)
 		self.assertTrue(sco.items[0].material_request_item)
 
-		new_requested_qty = frappe.db.get_value(
+		new_requested_qty = nts.db.get_value(
 			"Bin",
 			filters={"warehouse": "_Test Warehouse - _TC", "item_code": "Subcontracted Item SA8"},
 			fieldname="indented_qty",
@@ -681,7 +681,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 	def test_subcontracting_order_rm_required_items_for_precision(self):
 		item_code = "Subcontracted Item SA9"
 		raw_materials = ["Subcontracted SRM Item 9"]
-		if not frappe.db.exists("BOM", {"item": item_code}):
+		if not nts.db.exists("BOM", {"item": item_code}):
 			make_bom(item=item_code, raw_materials=raw_materials, rate=100, rm_qty=1.04)
 
 		service_items = [
@@ -702,7 +702,7 @@ class TestSubcontractingOrder(FrappeTestCase):
 
 
 def create_subcontracting_order(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 	sco = get_mapped_subcontracting_order(source_name=args.po_name)
 
 	for item in sco.items:
@@ -712,12 +712,12 @@ def create_subcontracting_order(**args):
 		for item in sco.items:
 			item.warehouse = args.warehouse
 	else:
-		warehouse = frappe.get_value("Purchase Order", args.po_name, "set_warehouse")
+		warehouse = nts.get_value("Purchase Order", args.po_name, "set_warehouse")
 		if warehouse:
 			for item in sco.items:
 				item.warehouse = warehouse
 		else:
-			po = frappe.get_doc("Purchase Order", args.po_name)
+			po = nts.get_doc("Purchase Order", args.po_name)
 			warehouses = []
 			for item in po.items:
 				warehouses.append(item.warehouse)

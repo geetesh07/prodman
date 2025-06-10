@@ -1,9 +1,9 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.utils import add_days, flt
+import nts 
+from nts  import _
+from nts .utils import add_days, flt
 
 from prodman.accounts.report.financial_statements import get_data, get_period_list
 from prodman.accounts.utils import get_balance_on, get_fiscal_year
@@ -126,7 +126,7 @@ def get_gl_data(filters, period_list, years):
 		["Income", "Credit"],
 		["Expense", "Debit"],
 	]:
-		data[frappe.scrub(d[0])] = get_data(
+		data[nts .scrub(d[0])] = get_data(
 			filters.company,
 			d[0],
 			d[1],
@@ -146,7 +146,7 @@ def get_gl_data(filters, period_list, years):
 
 
 def add_liquidity_ratios(data, years, current_asset, current_liability, quick_asset):
-	precision = frappe.db.get_single_value("System Settings", "float_precision")
+	precision = nts .db.get_single_value("System Settings", "float_precision")
 	data.append({"ratio": "Liquidity Ratios"})
 
 	ratio_data = [["Current Ratio", current_asset], ["Quick Ratio", quick_asset]]
@@ -164,7 +164,7 @@ def add_liquidity_ratios(data, years, current_asset, current_liability, quick_as
 def add_solvency_ratios(
 	data, years, total_asset, total_liability, net_sales, cogs, total_income, total_expense
 ):
-	precision = frappe.db.get_single_value("System Settings", "float_precision")
+	precision = nts .db.get_single_value("System Settings", "float_precision")
 	data.append({"ratio": "Solvency Ratios"})
 
 	debt_equity_ratio = {"ratio": "Debt Equity Ratio"}
@@ -194,12 +194,12 @@ def add_solvency_ratios(
 
 
 def add_turnover_ratios(data, years, period_list, filters, total_asset, net_sales, cogs, direct_expense):
-	precision = frappe.db.get_single_value("System Settings", "float_precision")
+	precision = nts .db.get_single_value("System Settings", "float_precision")
 	data.append({"ratio": "Turnover Ratios"})
 
 	avg_data = {}
 	for d in ["Receivable", "Payable", "Stock"]:
-		avg_data[frappe.scrub(d)] = avg_ratio_balance("Receivable", period_list, precision, filters)
+		avg_data[nts .scrub(d)] = avg_ratio_balance("Receivable", period_list, precision, filters)
 
 	avg_debtors, avg_creditors, avg_stock = (
 		avg_data.get("receivable"),

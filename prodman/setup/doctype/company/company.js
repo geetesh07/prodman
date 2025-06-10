@@ -1,12 +1,12 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.company");
+nts.provide("prodman.company");
 
-frappe.ui.form.on("Company", {
+nts.ui.form.on("Company", {
 	onload: function (frm) {
 		if (frm.doc.__islocal && frm.doc.parent_company) {
-			frappe.db.get_value("Company", frm.doc.parent_company, "is_group", (r) => {
+			nts.db.get_value("Company", frm.doc.parent_company, "is_group", (r) => {
 				if (!r.is_group) {
 					frm.set_value("parent_company", "");
 				}
@@ -72,7 +72,7 @@ frappe.ui.form.on("Company", {
 
 	date_of_commencement: function (frm) {
 		if (frm.doc.date_of_commencement < frm.doc.date_of_incorporation) {
-			frappe.throw(__("Date of Commencement should be greater than Date of Incorporation"));
+			nts.throw(__("Date of Commencement should be greater than Date of Incorporation"));
 		}
 		if (!frm.doc.date_of_commencement) {
 			frm.doc.date_of_incorporation = "";
@@ -87,33 +87,33 @@ frappe.ui.form.on("Company", {
 		if (!frm.is_new()) {
 			frm.doc.abbr && frm.set_df_property("abbr", "read_only", 1);
 			disbale_coa_fields(frm);
-			frappe.contacts.render_address_and_contact(frm);
+			nts.contacts.render_address_and_contact(frm);
 
-			if (frappe.perm.has_perm("Cost Center", 0, "read")) {
+			if (nts.perm.has_perm("Cost Center", 0, "read")) {
 				frm.add_custom_button(
 					__("Cost Centers"),
 					function () {
-						frappe.set_route("Tree", "Cost Center", { company: frm.doc.name });
+						nts.set_route("Tree", "Cost Center", { company: frm.doc.name });
 					},
 					__("View")
 				);
 			}
 
-			if (frappe.perm.has_perm("Account", 0, "read")) {
+			if (nts.perm.has_perm("Account", 0, "read")) {
 				frm.add_custom_button(
 					__("Chart of Accounts"),
 					function () {
-						frappe.set_route("Tree", "Account", { company: frm.doc.name });
+						nts.set_route("Tree", "Account", { company: frm.doc.name });
 					},
 					__("View")
 				);
 			}
 
-			if (frappe.perm.has_perm("Sales Taxes and Charges Template", 0, "read")) {
+			if (nts.perm.has_perm("Sales Taxes and Charges Template", 0, "read")) {
 				frm.add_custom_button(
 					__("Sales Tax Template"),
 					function () {
-						frappe.set_route("List", "Sales Taxes and Charges Template", {
+						nts.set_route("List", "Sales Taxes and Charges Template", {
 							company: frm.doc.name,
 						});
 					},
@@ -121,11 +121,11 @@ frappe.ui.form.on("Company", {
 				);
 			}
 
-			if (frappe.perm.has_perm("Purchase Taxes and Charges Template", 0, "read")) {
+			if (nts.perm.has_perm("Purchase Taxes and Charges Template", 0, "read")) {
 				frm.add_custom_button(
 					__("Purchase Tax Template"),
 					function () {
-						frappe.set_route("List", "Purchase Taxes and Charges Template", {
+						nts.set_route("List", "Purchase Taxes and Charges Template", {
 							company: frm.doc.name,
 						});
 					},
@@ -143,7 +143,7 @@ frappe.ui.form.on("Company", {
 				);
 			}
 
-			if (frappe.user.has_role("System Manager")) {
+			if (nts.user.has_role("System Manager")) {
 				if (frm.has_perm("write")) {
 					frm.add_custom_button(
 						__("Delete Transactions"),
@@ -165,7 +165,7 @@ frappe.ui.form.on("Company", {
 			doc: frm.doc,
 			freeze: true,
 			callback: function () {
-				frappe.msgprint(__("Default tax templates for sales, purchase and items are created."));
+				nts.msgprint(__("Default tax templates for sales, purchase and items are created."));
 			},
 		});
 	},
@@ -175,7 +175,7 @@ frappe.ui.form.on("Company", {
 	},
 
 	delete_company_transactions: function (frm) {
-		frappe.call({
+		nts.call({
 			method: "prodman.setup.doctype.transaction_deletion_record.transaction_deletion_record.is_deletion_doc_running",
 			args: {
 				company: frm.doc.name,
@@ -183,8 +183,8 @@ frappe.ui.form.on("Company", {
 			freeze: true,
 			callback: function (r) {
 				if (!r.exc) {
-					frappe.verify_password(function () {
-						var d = frappe.prompt(
+					nts.verify_password(function () {
+						var d = nts.prompt(
 							{
 								fieldtype: "Data",
 								fieldname: "company_name",
@@ -196,10 +196,10 @@ frappe.ui.form.on("Company", {
 							},
 							function (data) {
 								if (data.company_name !== frm.doc.name) {
-									frappe.msgprint(__("Company name not same"));
+									nts.msgprint(__("Company name not same"));
 									return;
 								}
-								frappe.call({
+								nts.call({
 									method: "prodman.setup.doctype.company.company.create_transaction_deletion_request",
 									args: {
 										company: data.company_name,
@@ -207,7 +207,7 @@ frappe.ui.form.on("Company", {
 									freeze: true,
 									callback: function (r, rt) {},
 									onerror: function () {
-										frappe.msgprint(__("Wrong Password"));
+										nts.msgprint(__("Wrong Password"));
 									},
 								});
 							},
@@ -225,7 +225,7 @@ frappe.ui.form.on("Company", {
 prodman.company.set_chart_of_accounts_options = function (doc) {
 	var selected_value = doc.chart_of_accounts;
 	if (doc.country) {
-		return frappe.call({
+		return nts.call({
 			method: "prodman.accounts.doctype.account.chart_of_accounts.chart_of_accounts.get_charts_for_country",
 			args: {
 				country: doc.country,

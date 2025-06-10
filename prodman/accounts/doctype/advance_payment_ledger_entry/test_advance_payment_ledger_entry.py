@@ -1,9 +1,9 @@
-# Copyright (c) 2024, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2024, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import nowdate, today
+import nts 
+from nts .tests.utils import nts TestCase
+from nts .utils import nowdate, today
 
 from prodman.accounts.doctype.payment_entry.test_payment_entry import get_payment_entry
 from prodman.accounts.test.accounts_mixin import AccountsTestMixin
@@ -11,7 +11,7 @@ from prodman.buying.doctype.purchase_order.test_purchase_order import create_pur
 from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
 
 
-class TestAdvancePaymentLedgerEntry(AccountsTestMixin, FrappeTestCase):
+class TestAdvancePaymentLedgerEntry(AccountsTestMixin, nts TestCase):
 	"""
 	Integration tests for AdvancePaymentLedgerEntry.
 	Use this class for testing interactions between multiple components.
@@ -25,7 +25,7 @@ class TestAdvancePaymentLedgerEntry(AccountsTestMixin, FrappeTestCase):
 		self.clear_old_entries()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def create_sales_order(self, qty=1, rate=100, currency="INR", do_not_submit=False):
 		"""
@@ -100,7 +100,7 @@ class TestAdvancePaymentLedgerEntry(AccountsTestMixin, FrappeTestCase):
 		so.submit()
 
 		je_exchange_rate = 85
-		je = frappe.get_doc(
+		je = nts .get_doc(
 			{
 				"doctype": "Journal Entry",
 				"company": self.company,
@@ -181,7 +181,7 @@ class TestAdvancePaymentLedgerEntry(AccountsTestMixin, FrappeTestCase):
 		po.submit()
 
 		je_exchange_rate = 85
-		je = frappe.get_doc(
+		je = nts .get_doc(
 			{
 				"doctype": "Journal Entry",
 				"company": self.company,

@@ -1,11 +1,11 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe.exceptions import ValidationError
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import floor
+import nts
+from nts.exceptions import ValidationError
+from nts.tests.utils import ntsTestCase
+from nts.utils import floor
 
 from prodman.manufacturing.doctype.production_plan.test_production_plan import make_bom
 from prodman.manufacturing.report.bom_stock_report.bom_stock_report import (
@@ -15,7 +15,7 @@ from prodman.stock.doctype.item.test_item import make_item
 from prodman.stock.doctype.stock_entry.test_stock_entry import make_stock_entry
 
 
-class TestBomStockReport(FrappeTestCase):
+class TestBomStockReport(ntsTestCase):
 	def setUp(self):
 		self.warehouse = "_Test Warehouse - _TC"
 		self.fg_item, self.rm_items = create_items()
@@ -25,7 +25,7 @@ class TestBomStockReport(FrappeTestCase):
 
 	def test_bom_stock_report(self):
 		# Test 1: When `qty_to_produce` is 0.
-		filters = frappe._dict(
+		filters = nts._dict(
 			{
 				"bom": self.bom.name,
 				"warehouse": "Stores - _TC",
@@ -36,7 +36,7 @@ class TestBomStockReport(FrappeTestCase):
 
 		# Test 2: When stock is not available.
 		data = bom_stock_report(
-			frappe._dict(
+			nts._dict(
 				{
 					"bom": self.bom.name,
 					"warehouse": "Stores - _TC",
@@ -49,7 +49,7 @@ class TestBomStockReport(FrappeTestCase):
 
 		# Test 3: When stock is available.
 		data = bom_stock_report(
-			frappe._dict(
+			nts._dict(
 				{
 					"bom": self.bom.name,
 					"warehouse": self.warehouse,
@@ -87,7 +87,7 @@ def get_expected_data(bom, warehouse, qty_to_produce, show_exploded_view=False):
 	expected_data = []
 
 	for item in bom.get("exploded_items") if show_exploded_view else bom.get("items"):
-		in_stock_qty = frappe.get_cached_value(
+		in_stock_qty = nts.get_cached_value(
 			"Bin", {"item_code": item.item_code, "warehouse": warehouse}, "actual_qty"
 		)
 

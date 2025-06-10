@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import datetime
 
-import frappe
-from frappe import _
-from frappe.utils import flt, formatdate
+import nts 
+from nts  import _
+from nts .utils import flt, formatdate
 
 from prodman.controllers.trends import get_period_date_ranges, get_period_month_ranges
 
@@ -102,7 +102,7 @@ def get_columns(filters):
 				]
 				for label in labels:
 					columns.append(
-						{"label": label, "fieldtype": "Float", "fieldname": frappe.scrub(label), "width": 150}
+						{"label": label, "fieldtype": "Float", "fieldname": nts .scrub(label), "width": 150}
 					)
 			else:
 				for label in [
@@ -120,13 +120,13 @@ def get_columns(filters):
 						label = label % formatdate(from_date, format_string="MMM")
 
 					columns.append(
-						{"label": label, "fieldtype": "Float", "fieldname": frappe.scrub(label), "width": 150}
+						{"label": label, "fieldtype": "Float", "fieldname": nts .scrub(label), "width": 150}
 					)
 
 	if filters["period"] != "Yearly":
 		for label in [_("Total Budget"), _("Total Actual"), _("Total Variance")]:
 			columns.append(
-				{"label": label, "fieldtype": "Float", "fieldname": frappe.scrub(label), "width": 150}
+				{"label": label, "fieldtype": "Float", "fieldname": nts .scrub(label), "width": 150}
 			)
 
 		return columns
@@ -140,7 +140,7 @@ def get_cost_centers(filters):
 		order_by = "order by lft"
 
 	if filters.get("budget_against") in ["Cost Center", "Project"]:
-		return frappe.db.sql_list(
+		return nts .db.sql_list(
 			"""
 				select
 					name
@@ -153,7 +153,7 @@ def get_cost_centers(filters):
 			filters.get("company"),
 		)
 	else:
-		return frappe.db.sql_list(
+		return nts .db.sql_list(
 			"""
 				select
 					name
@@ -165,14 +165,14 @@ def get_cost_centers(filters):
 
 # Get dimension & target details
 def get_dimension_target_details(filters):
-	budget_against = frappe.scrub(filters.get("budget_against"))
+	budget_against = nts .scrub(filters.get("budget_against"))
 	cond = ""
 	if filters.get("budget_against_filter"):
 		cond += f""" and b.{budget_against} in (%s)""" % ", ".join(
 			["%s"] * len(filters.get("budget_against_filter"))
 		)
 
-	return frappe.db.sql(
+	return nts .db.sql(
 		f"""
 			select
 				b.{budget_against} as budget_against,
@@ -209,7 +209,7 @@ def get_dimension_target_details(filters):
 # Get target distribution details of accounts of cost center
 def get_target_distribution_details(filters):
 	target_details = {}
-	for d in frappe.db.sql(
+	for d in nts .db.sql(
 		"""
 			select
 				md.name,
@@ -234,17 +234,17 @@ def get_target_distribution_details(filters):
 
 # Get actual details from gl entry
 def get_actual_details(name, filters):
-	budget_against = frappe.scrub(filters.get("budget_against"))
+	budget_against = nts .scrub(filters.get("budget_against"))
 	cond = ""
 
 	if filters.get("budget_against") == "Cost Center":
-		cc_lft, cc_rgt = frappe.db.get_value("Cost Center", name, ["lft", "rgt"])
+		cc_lft, cc_rgt = nts .db.get_value("Cost Center", name, ["lft", "rgt"])
 		cond = f"""
 				and lft >= "{cc_lft}"
 				and rgt <= "{cc_rgt}"
 			"""
 
-	ac_details = frappe.db.sql(
+	ac_details = nts .db.sql(
 		f"""
 			select
 				gl.account,
@@ -302,7 +302,7 @@ def get_dimension_account_month_map(filters):
 			month = datetime.date(2013, month_id, 1).strftime("%B")
 			cam_map.setdefault(ccd.budget_against, {}).setdefault(ccd.account, {}).setdefault(
 				ccd.fiscal_year, {}
-			).setdefault(month, frappe._dict({"target": 0.0, "actual": 0.0}))
+			).setdefault(month, nts ._dict({"target": 0.0, "actual": 0.0}))
 
 			tav_dict = cam_map[ccd.budget_against][ccd.account][ccd.fiscal_year][month]
 			month_percentage = (
@@ -321,7 +321,7 @@ def get_dimension_account_month_map(filters):
 
 
 def get_fiscal_years(filters):
-	fiscal_year = frappe.db.sql(
+	fiscal_year = nts .db.sql(
 		"""
 			select
 				name

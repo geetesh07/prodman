@@ -28,7 +28,7 @@ prodman.PointOfSale.NumberPad = class {
 							fieldnames && fieldnames[number]
 								? fieldnames[number]
 								: typeof number === "string"
-								? frappe.scrub(number)
+								? nts.scrub(number)
 								: number;
 
 						return (

@@ -1,10 +1,10 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("manufacturing", "doctype", "work_order")
+	nts.reload_doc("manufacturing", "doctype", "work_order")
 
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		UPDATE
 			`tabWork Order` wo
@@ -13,4 +13,4 @@ def execute():
 			wo.item_name = item.item_name
 	"""
 	)
-	frappe.db.commit()
+	nts.db.commit()

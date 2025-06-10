@@ -1,8 +1,8 @@
 import json
 import unittest
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -317,7 +317,7 @@ class TestLIFOValuation(unittest.TestCase):
 			self.assertTotalValue(total_value)
 
 
-class TestLIFOValuationSLE(FrappeTestCase):
+class TestLIFOValuationSLE(ntsTestCase):
 	ITEM_CODE = "_Test LIFO item"
 	WAREHOUSE = "_Test Warehouse - _TC"
 
@@ -336,10 +336,10 @@ class TestLIFOValuationSLE(FrappeTestCase):
 		return make_stock_entry(**kwargs)
 
 	def assertStockQueue(self, se, expected_queue):
-		sle_name = frappe.db.get_value(
+		sle_name = nts.db.get_value(
 			"Stock Ledger Entry", {"voucher_no": se.name, "is_cancelled": 0, "voucher_type": "Stock Entry"}
 		)
-		sle = frappe.get_doc("Stock Ledger Entry", sle_name)
+		sle = nts.get_doc("Stock Ledger Entry", sle_name)
 
 		stock_queue = json.loads(sle.stock_queue)
 

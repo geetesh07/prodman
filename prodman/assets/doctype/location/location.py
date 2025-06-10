@@ -1,13 +1,13 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import json
 import math
 
-import frappe
-from frappe.utils import flt
-from frappe.utils.nestedset import NestedSet, update_nsm
+import nts 
+from nts .utils import flt
+from nts .utils.nestedset import NestedSet, update_nsm
 
 EARTH_RADIUS = 6378137
 
@@ -19,7 +19,7 @@ class Location(NestedSet):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		area: DF.Float
 		area_uom: DF.Link | None
@@ -83,7 +83,7 @@ class Location(NestedSet):
 		self_features = set(self.add_child_property())
 
 		for ancestor in self.get_ancestors():
-			ancestor_doc = frappe.get_doc("Location", ancestor)
+			ancestor_doc = nts .get_doc("Location", ancestor)
 			child_features, ancestor_features = ancestor_doc.feature_seperator(child_feature=self.name)
 
 			ancestor_features = list(set(ancestor_features))
@@ -109,7 +109,7 @@ class Location(NestedSet):
 
 	def remove_ancestor_location_features(self):
 		for ancestor in self.get_ancestors():
-			ancestor_doc = frappe.get_doc("Location", ancestor)
+			ancestor_doc = nts .get_doc("Location", ancestor)
 			child_features, ancestor_features = ancestor_doc.feature_seperator(child_feature=self.name)
 
 			for index, feature in enumerate(ancestor_features):
@@ -210,12 +210,12 @@ def _ring_area(coords):
 	return area
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_children(doctype, parent=None, location=None, is_root=False):
 	if parent is None or parent == "All Locations":
 		parent = ""
 
-	return frappe.db.sql(
+	return nts .db.sql(
 		f"""
 		select
 			name as value,
@@ -223,24 +223,24 @@ def get_children(doctype, parent=None, location=None, is_root=False):
 		from
 			`tabLocation` comp
 		where
-			ifnull(parent_location, "")={frappe.db.escape(parent)}
+			ifnull(parent_location, "")={nts .db.escape(parent)}
 		""",
 		as_dict=1,
 	)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def add_node():
-	from frappe.desk.treeview import make_tree_args
+	from nts .desk.treeview import make_tree_args
 
-	args = frappe.form_dict
+	args = nts .form_dict
 	args = make_tree_args(**args)
 
 	if args.parent_location == "All Locations":
 		args.parent_location = None
 
-	frappe.get_doc(args).insert()
+	nts .get_doc(args).insert()
 
 
 def on_doctype_update():
-	frappe.db.add_index("Location", ["lft", "rgt"])
+	nts .db.add_index("Location", ["lft", "rgt"])

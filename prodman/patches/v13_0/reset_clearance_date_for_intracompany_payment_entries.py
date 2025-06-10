@@ -1,8 +1,8 @@
-# Copyright (c) 2019, Frappe and Contributors
+# Copyright (c) 2019, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
@@ -16,11 +16,11 @@ def execute():
 
 	for payment_entry in reconciled_bank_transactions:
 		if len(reconciled_bank_transactions[payment_entry]) == 1:
-			frappe.db.set_value("Payment Entry", payment_entry, "clearance_date", None)
+			nts.db.set_value("Payment Entry", payment_entry, "clearance_date", None)
 
 
 def get_intra_company_payment_entries_with_clearance_dates():
-	return frappe.get_all(
+	return nts.get_all(
 		"Payment Entry",
 		filters={"payment_type": "Internal Transfer", "clearance_date": ["not in", None]},
 		pluck="name",
@@ -33,7 +33,7 @@ def get_reconciled_bank_transactions(intra_company_pe):
 	reconciled_bank_transactions = {}
 
 	for payment_entry in intra_company_pe:
-		reconciled_bank_transactions[payment_entry] = frappe.get_all(
+		reconciled_bank_transactions[payment_entry] = nts.get_all(
 			"Bank Transaction Payments", filters={"payment_entry": payment_entry}, pluck="parent"
 		)
 

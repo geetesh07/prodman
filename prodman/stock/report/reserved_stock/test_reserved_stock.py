@@ -1,9 +1,9 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 from random import randint
 
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils.data import today
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils.data import today
 
 from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
 from prodman.stock.doctype.stock_reservation_entry.test_stock_reservation_entry import (
@@ -14,7 +14,7 @@ from prodman.stock.doctype.stock_reservation_entry.test_stock_reservation_entry 
 from prodman.stock.report.reserved_stock.reserved_stock import get_data as reserved_stock_report
 
 
-class TestReservedStock(FrappeTestCase):
+class TestReservedStock(ntsTestCase):
 	def setUp(self) -> None:
 		super().setUp()
 		self.stock_qty = 100

@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import date_diff, nowdate
+import nts
+from nts import _
+from nts.utils import date_diff, nowdate
 
 
 def execute(filters=None):
@@ -17,7 +17,7 @@ def execute(filters=None):
 
 def get_data(filters):
 	conditions = get_conditions(filters)
-	tasks = frappe.get_all(
+	tasks = nts.get_all(
 		"Task",
 		filters=conditions,
 		fields=[
@@ -55,7 +55,7 @@ def get_data(filters):
 
 
 def get_conditions(filters):
-	conditions = frappe._dict()
+	conditions = nts._dict()
 	keys = ["priority", "status"]
 	for key in keys:
 		if filters.get(key):

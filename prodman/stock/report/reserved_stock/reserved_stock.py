@@ -1,9 +1,9 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import Date
+import nts
+from nts import _
+from nts.query_builder.functions import Date
 
 
 def execute(filters=None):
@@ -19,20 +19,20 @@ def execute(filters=None):
 
 def validate_filters(filters):
 	if not filters:
-		frappe.throw(_("Please set filters"))
+		nts.throw(_("Please set filters"))
 
 	for field in ["company", "from_date", "to_date"]:
 		if not filters.get(field):
-			frappe.throw(_("Please set {0}").format(field))
+			nts.throw(_("Please set {0}").format(field))
 
 	if filters.get("from_date") > filters.get("to_date"):
-		frappe.throw(_("From Date cannot be greater than To Date"))
+		nts.throw(_("From Date cannot be greater than To Date"))
 
 
 def get_data(filters):
-	sre = frappe.qb.DocType("Stock Reservation Entry")
+	sre = nts.qb.DocType("Stock Reservation Entry")
 	query = (
-		frappe.qb.from_(sre)
+		nts.qb.from_(sre)
 		.select(
 			sre.creation,
 			sre.warehouse,

@@ -1,8 +1,8 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2017, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_to_date, flt, getdate, now_datetime, nowdate
+import nts
+from nts.tests.utils import ntsTestCase
+from nts.utils import add_to_date, flt, getdate, now_datetime, nowdate
 
 from prodman.controllers.item_variant import create_variant
 from prodman.manufacturing.doctype.production_plan.production_plan import (
@@ -22,7 +22,7 @@ from prodman.stock.doctype.stock_reconciliation.test_stock_reconciliation import
 )
 
 
-class TestProductionPlan(FrappeTestCase):
+class TestProductionPlan(ntsTestCase):
 	def setUp(self):
 		for item in [
 			"Test Production Item 1",
@@ -32,11 +32,11 @@ class TestProductionPlan(FrappeTestCase):
 		]:
 			create_item(item, valuation_rate=100)
 
-			sr = frappe.db.get_value(
+			sr = nts.db.get_value(
 				"Stock Reconciliation Item", {"item_code": item, "docstatus": 1}, "parent"
 			)
 			if sr:
-				sr_doc = frappe.get_doc("Stock Reconciliation", sr)
+				sr_doc = nts.get_doc("Stock Reconciliation", sr)
 				sr_doc.cancel()
 
 		create_item("Test Non Stock Raw Material", is_stock_item=0)
@@ -48,11 +48,11 @@ class TestProductionPlan(FrappeTestCase):
 				"Test Non Stock Raw Material",
 			],
 		}.items():
-			if not frappe.db.get_value("BOM", {"item": item}):
+			if not nts.db.get_value("BOM", {"item": item}):
 				make_bom(item=item, raw_materials=raw_materials)
 
 	def tearDown(self) -> None:
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def test_production_plan_mr_creation(self):
 		"Test if MRs are created for unavailable raw materials."
@@ -66,7 +66,7 @@ class TestProductionPlan(FrappeTestCase):
 		pln.reload()
 		self.assertTrue(pln.status, "Material Requested")
 
-		material_requests = frappe.get_all(
+		material_requests = nts.get_all(
 			"Material Request Item",
 			fields=["distinct parent"],
 			filters={"production_plan": pln.name},
@@ -76,19 +76,19 @@ class TestProductionPlan(FrappeTestCase):
 		self.assertTrue(len(material_requests), 2)
 
 		for row in material_requests:
-			mr_schedule_date = getdate(frappe.db.get_value("Material Request", row[0], "schedule_date"))
+			mr_schedule_date = getdate(nts.db.get_value("Material Request", row[0], "schedule_date"))
 
 			expected_date = getdate(add_to_date(nowdate(), days=10))
 
 			self.assertEqual(mr_schedule_date, expected_date)
 
 		pln.make_work_order()
-		work_orders = frappe.get_all(
+		work_orders = nts.get_all(
 			"Work Order", fields=["name"], filters={"production_plan": pln.name}, as_list=1
 		)
 
 		pln.make_work_order()
-		nwork_orders = frappe.get_all(
+		nwork_orders = nts.get_all(
 			"Work Order", fields=["name"], filters={"production_plan": pln.name}, as_list=1
 		)
 
@@ -97,14 +97,14 @@ class TestProductionPlan(FrappeTestCase):
 		self.assertTrue(len(work_orders), len(pln.po_items))
 
 		for name in material_requests:
-			mr = frappe.get_doc("Material Request", name[0])
+			mr = nts.get_doc("Material Request", name[0])
 			if mr.docstatus != 0:
 				mr.cancel()
 
 		for name in work_orders:
-			mr = frappe.delete_doc("Work Order", name[0])
+			mr = nts.delete_doc("Work Order", name[0])
 
-		pln = frappe.get_doc("Production Plan", pln.name)
+		pln = nts.get_doc("Production Plan", pln.name)
 		pln.cancel()
 
 	def test_production_plan_start_date(self):
@@ -113,14 +113,14 @@ class TestProductionPlan(FrappeTestCase):
 		plan = create_production_plan(item_code="Test Production Item 1", planned_start_date=planned_date)
 		plan.make_work_order()
 
-		work_orders = frappe.get_all(
+		work_orders = nts.get_all(
 			"Work Order", fields=["name", "planned_start_date"], filters={"production_plan": plan.name}
 		)
 
 		self.assertEqual(work_orders[0].planned_start_date, planned_date)
 
 		for wo in work_orders:
-			frappe.delete_doc("Work Order", wo.name)
+			nts.delete_doc("Work Order", wo.name)
 
 		plan.reload()
 		plan.cancel()
@@ -186,7 +186,7 @@ class TestProductionPlan(FrappeTestCase):
 		sales_order = so.name
 		sales_order_item = so.items[0].name
 
-		pln = frappe.new_doc("Production Plan")
+		pln = nts.new_doc("Production Plan")
 		pln.company = so.company
 		pln.get_items_from = "Sales Order"
 
@@ -204,20 +204,20 @@ class TestProductionPlan(FrappeTestCase):
 		pln.submit()
 		pln.make_work_order()
 
-		work_order = frappe.db.get_value(
+		work_order = nts.db.get_value(
 			"Work Order",
 			{"sales_order": sales_order, "production_plan": pln.name, "sales_order_item": sales_order_item},
 			"name",
 		)
 
-		wo_doc = frappe.get_doc("Work Order", work_order)
+		wo_doc = nts.get_doc("Work Order", work_order)
 		wo_doc.update({"wip_warehouse": "Work In Progress - _TC", "fg_warehouse": "Finished Goods - _TC"})
 		wo_doc.submit()
 
-		so_wo_qty = frappe.db.get_value("Sales Order Item", sales_order_item, "work_order_qty")
+		so_wo_qty = nts.db.get_value("Sales Order Item", sales_order_item, "work_order_qty")
 		self.assertTrue(so_wo_qty, 5)
 
-		pln = frappe.new_doc("Production Plan")
+		pln = nts.new_doc("Production Plan")
 		pln.update(
 			{
 				"from_date": so.transaction_date,
@@ -239,11 +239,11 @@ class TestProductionPlan(FrappeTestCase):
 		raw_material = "Test SO RM Production Item 1"
 		create_item(raw_material)
 
-		if not frappe.db.get_value("BOM", {"item": item}):
+		if not nts.db.get_value("BOM", {"item": item}):
 			make_bom(item=item, raw_materials=[raw_material])
 
 		so = make_sales_order(item_code=item, qty=4)
-		pln = frappe.new_doc("Production Plan")
+		pln = nts.new_doc("Production Plan")
 		pln.company = so.company
 		pln.get_items_from = "Sales Order"
 
@@ -260,7 +260,7 @@ class TestProductionPlan(FrappeTestCase):
 		pln.get_so_items()
 		pln.submit()
 
-		pln = frappe.new_doc("Production Plan")
+		pln = nts.new_doc("Production Plan")
 		pln.company = so.company
 		pln.get_items_from = "Sales Order"
 
@@ -275,7 +275,7 @@ class TestProductionPlan(FrappeTestCase):
 		)
 
 		pln.get_so_items()
-		self.assertRaises(frappe.ValidationError, pln.save)
+		self.assertRaises(nts.ValidationError, pln.save)
 
 	def test_so_based_bill_of_material(self):
 		item = "Test SO Production Item 1"
@@ -292,7 +292,7 @@ class TestProductionPlan(FrappeTestCase):
 		bom2 = make_bom(item=item, raw_materials=[raw_material])
 		so2 = make_sales_order(item_code=item, qty=4)
 
-		pln1 = frappe.new_doc("Production Plan")
+		pln1 = nts.new_doc("Production Plan")
 		pln1.company = so.company
 		pln1.get_items_from = "Sales Order"
 
@@ -310,7 +310,7 @@ class TestProductionPlan(FrappeTestCase):
 
 		self.assertEqual(pln1.po_items[0].bom_no, bom1.name)
 
-		pln2 = frappe.new_doc("Production Plan")
+		pln2 = nts.new_doc("Production Plan")
 		pln2.company = so2.company
 		pln2.get_items_from = "Sales Order"
 
@@ -333,7 +333,7 @@ class TestProductionPlan(FrappeTestCase):
 
 		so1 = make_sales_order(item_code=item, qty=1)
 
-		pln = frappe.new_doc("Production Plan")
+		pln = nts.new_doc("Production Plan")
 		pln.company = so1.company
 		pln.get_items_from = "Sales Order"
 		pln.append(
@@ -355,7 +355,7 @@ class TestProductionPlan(FrappeTestCase):
 		item = "Test Production Item 1"
 		so1 = make_sales_order(item_code=item, qty=1)
 
-		pln = frappe.new_doc("Production Plan")
+		pln = nts.new_doc("Production Plan")
 		pln.company = so1.company
 		pln.get_items_from = "Sales Order"
 		pln.append(
@@ -384,13 +384,13 @@ class TestProductionPlan(FrappeTestCase):
 		self.assertTrue(pln.po_items[0].planned_qty, 3)
 
 		pln.make_work_order()
-		work_order = frappe.db.get_value(
+		work_order = nts.db.get_value(
 			"Work Order",
 			{"production_plan_item": pln.po_items[0].name, "production_plan": pln.name},
 			"name",
 		)
 
-		wo_doc = frappe.get_doc("Work Order", work_order)
+		wo_doc = nts.get_doc("Work Order", work_order)
 		wo_doc.update(
 			{
 				"wip_warehouse": "Work In Progress - _TC",
@@ -401,14 +401,14 @@ class TestProductionPlan(FrappeTestCase):
 		so_items = []
 		for plan_reference in pln.prod_plan_references:
 			so_items.append(plan_reference.sales_order_item)
-			so_wo_qty = frappe.db.get_value(
+			so_wo_qty = nts.db.get_value(
 				"Sales Order Item", plan_reference.sales_order_item, "work_order_qty"
 			)
 			self.assertEqual(so_wo_qty, plan_reference.qty)
 
 		wo_doc.cancel()
 		for so_item in so_items:
-			so_wo_qty = frappe.db.get_value("Sales Order Item", so_item, "work_order_qty")
+			so_wo_qty = nts.db.get_value("Sales Order Item", so_item, "work_order_qty")
 			self.assertEqual(so_wo_qty, 0.0)
 
 		pln.reload()
@@ -420,7 +420,7 @@ class TestProductionPlan(FrappeTestCase):
 		bom_tree_1 = {"Test Laptop": {"Test Motherboard": {"Test Motherboard Wires": {}}}}
 		create_nested_bom(bom_tree_1, prefix="")
 
-		item_doc = frappe.get_doc("Item", "Test Motherboard")
+		item_doc = nts.get_doc("Item", "Test Motherboard")
 		company = "_Test Company"
 
 		item_doc.is_sub_contracted_item = 1
@@ -449,7 +449,7 @@ class TestProductionPlan(FrappeTestCase):
 		bom_tree_1 = {"Test Laptop 1": {fg_item: {"Test Motherboard Wires 1": {}}}}
 		create_nested_bom(bom_tree_1, prefix="")
 
-		item_doc = frappe.get_doc("Item", fg_item)
+		item_doc = nts.get_doc("Item", fg_item)
 		company = "_Test Company"
 
 		item_doc.is_sub_contracted_item = 1
@@ -478,8 +478,8 @@ class TestProductionPlan(FrappeTestCase):
 		self.assertEqual(plan.sub_assembly_items[0].supplier, "_Test Supplier")
 		plan.make_work_order()
 
-		po = frappe.db.get_value("Purchase Order Item", {"production_plan": plan.name}, "parent")
-		po_doc = frappe.get_doc("Purchase Order", po)
+		po = nts.db.get_value("Purchase Order Item", {"production_plan": plan.name}, "parent")
+		po_doc = nts.get_doc("Purchase Order", po)
 		self.assertEqual(po_doc.supplier, "_Test Supplier")
 		self.assertEqual(po_doc.items[0].qty, 10.0)
 		self.assertEqual(po_doc.items[0].fg_item_qty, 10.0)
@@ -503,7 +503,7 @@ class TestProductionPlan(FrappeTestCase):
 
 		# make sure both boms use same subassembly bom
 		subassembly_bom = parent_bom_1.items[0].bom_no
-		frappe.db.set_value("BOM Item", parent_bom_2.items[0].name, "bom_no", subassembly_bom)
+		nts.db.set_value("BOM Item", parent_bom_2.items[0].name, "bom_no", subassembly_bom)
 
 		plan = create_production_plan(item_code="Red-Car", use_multi_level_bom=1, do_not_save=True)
 		plan.append(
@@ -511,7 +511,7 @@ class TestProductionPlan(FrappeTestCase):
 			{  # Add Green-Car to Prod Plan
 				"use_multi_level_bom": 1,
 				"item_code": "Green-Car",
-				"bom_no": frappe.db.get_value("Item", "Green-Car", "default_bom"),
+				"bom_no": nts.db.get_value("Item", "Green-Car", "default_bom"),
 				"planned_qty": 1,
 				"planned_start_date": now_datetime(),
 			},
@@ -537,17 +537,17 @@ class TestProductionPlan(FrappeTestCase):
 		create_item("Production Item CUST")
 
 		for item, raw_materials in {"Production Item CUST": ["Raw Material Item 1", "CUST-0987"]}.items():
-			if not frappe.db.get_value("BOM", {"item": item}):
+			if not nts.db.get_value("BOM", {"item": item}):
 				make_bom(item=item, raw_materials=raw_materials)
 		production_plan = create_production_plan(item_code="Production Item CUST")
 		production_plan.make_material_request()
 
-		material_request = frappe.db.get_value(
+		material_request = nts.db.get_value(
 			"Material Request Item",
 			{"production_plan": production_plan.name, "item_code": "CUST-0987"},
 			"parent",
 		)
-		mr = frappe.get_doc("Material Request", material_request)
+		mr = nts.get_doc("Material Request", material_request)
 
 		self.assertTrue(mr.material_request_type, "Customer Provided")
 		self.assertTrue(mr.customer, "_Test Customer")
@@ -564,23 +564,23 @@ class TestProductionPlan(FrappeTestCase):
 			create_item(item_code, is_stock_item=1)
 
 		# created bom upto 3 level
-		if not frappe.db.get_value("BOM", {"item": "Test BOM 3"}):
+		if not nts.db.get_value("BOM", {"item": "Test BOM 3"}):
 			make_bom(item="Test BOM 3", raw_materials=["Test RM BOM 1"], rm_qty=3)
 
-		if not frappe.db.get_value("BOM", {"item": "Test BOM 2"}):
+		if not nts.db.get_value("BOM", {"item": "Test BOM 2"}):
 			make_bom(item="Test BOM 2", raw_materials=["Test BOM 3"], rm_qty=3)
 
-		if not frappe.db.get_value("BOM", {"item": "Test BOM 1"}):
+		if not nts.db.get_value("BOM", {"item": "Test BOM 1"}):
 			make_bom(item="Test BOM 1", raw_materials=["Test BOM 2"], rm_qty=2)
 
 		item_code = "Test BOM 1"
-		pln = frappe.new_doc("Production Plan")
+		pln = nts.new_doc("Production Plan")
 		pln.company = "_Test Company"
 		pln.append(
 			"po_items",
 			{
 				"item_code": item_code,
-				"bom_no": frappe.db.get_value("BOM", {"item": "Test BOM 1"}),
+				"bom_no": nts.db.get_value("BOM", {"item": "Test BOM 1"}),
 				"planned_qty": 3,
 			},
 		)
@@ -590,13 +590,13 @@ class TestProductionPlan(FrappeTestCase):
 		pln.make_work_order()
 
 		# last level sub-assembly work order produce qty
-		to_produce_qty = frappe.db.get_value(
+		to_produce_qty = nts.db.get_value(
 			"Work Order", {"production_plan": pln.name, "production_item": "Test BOM 3"}, "qty"
 		)
 
 		self.assertEqual(to_produce_qty, 18.0)
 		pln.cancel()
-		frappe.delete_doc("Production Plan", pln.name)
+		nts.delete_doc("Production Plan", pln.name)
 
 	def test_get_warehouse_list_group(self):
 		"Check if required child warehouses are returned."
@@ -626,7 +626,7 @@ class TestProductionPlan(FrappeTestCase):
 	def test_get_sales_order_with_variant(self):
 		"Check if Template BOM is fetched in absence of Variant BOM."
 		rm_item = create_item("PIV_RM", valuation_rate=100)
-		if not frappe.db.exists("Item", {"item_code": "PIV"}):
+		if not nts.db.exists("Item", {"item_code": "PIV"}):
 			item = create_item("PIV", valuation_rate=100)
 			variant_settings = {
 				"attributes": [
@@ -637,23 +637,23 @@ class TestProductionPlan(FrappeTestCase):
 			item.update(variant_settings)
 			item.save()
 			parent_bom = make_bom(item="PIV", raw_materials=[rm_item.item_code])
-		if not frappe.db.exists("BOM", {"item": "PIV"}):
+		if not nts.db.exists("BOM", {"item": "PIV"}):
 			parent_bom = make_bom(item="PIV", raw_materials=[rm_item.item_code])
 		else:
-			parent_bom = frappe.get_doc("BOM", {"item": "PIV"})
+			parent_bom = nts.get_doc("BOM", {"item": "PIV"})
 
-		if not frappe.db.exists("Item", {"item_code": "PIV-RED"}):
+		if not nts.db.exists("Item", {"item_code": "PIV-RED"}):
 			variant = create_variant("PIV", {"Colour": "Red"})
 			variant.save()
 			variant_bom = make_bom(item=variant.item_code, raw_materials=[rm_item.item_code])
 		else:
-			variant = frappe.get_doc("Item", "PIV-RED")
-		if not frappe.db.exists("BOM", {"item": "PIV-RED"}):
+			variant = nts.get_doc("Item", "PIV-RED")
+		if not nts.db.exists("BOM", {"item": "PIV-RED"}):
 			variant_bom = make_bom(item=variant.item_code, raw_materials=[rm_item.item_code])
 
 		"""Testing when item variant has a BOM"""
 		so = make_sales_order(item_code="PIV-RED", qty=5)
-		pln = frappe.new_doc("Production Plan")
+		pln = nts.new_doc("Production Plan")
 		pln.company = so.company
 		pln.get_items_from = "Sales Order"
 		pln.item_code = "PIV-RED"
@@ -663,9 +663,9 @@ class TestProductionPlan(FrappeTestCase):
 		self.assertEqual(pln.po_items[0].item_code, "PIV-RED")
 		self.assertEqual(pln.po_items[0].bom_no, variant_bom.name)
 		so.cancel()
-		frappe.delete_doc("Sales Order", so.name)
+		nts.delete_doc("Sales Order", so.name)
 		variant_bom.cancel()
-		frappe.delete_doc("BOM", variant_bom.name)
+		nts.delete_doc("BOM", variant_bom.name)
 
 		"""Testing when item variant doesn't have a BOM"""
 		so = make_sales_order(item_code="PIV-RED", qty=5)
@@ -676,7 +676,7 @@ class TestProductionPlan(FrappeTestCase):
 		self.assertEqual(pln.po_items[0].item_code, "PIV-RED")
 		self.assertEqual(pln.po_items[0].bom_no, parent_bom.name)
 
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def test_multiple_work_order_for_production_plan_item(self):
 		"Test producing Prod Plan (making WO) in parts."
@@ -694,7 +694,7 @@ class TestProductionPlan(FrappeTestCase):
 					item["use_multi_level_bom"] = 0
 
 				wo_name = pln.create_work_order(item)
-				wo_doc = frappe.get_doc("Work Order", wo_name)
+				wo_doc = nts.get_doc("Work Order", wo_name)
 				wo_doc.update(
 					{"wip_warehouse": "Work In Progress - _TC", "fg_warehouse": "Finished Goods - _TC"}
 				)
@@ -727,13 +727,13 @@ class TestProductionPlan(FrappeTestCase):
 		self.assertRaises(OverProductionError, create_work_order, item=item, pln=pln, qty=2)
 
 		# Cancel 1st Work Order
-		wo1 = frappe.get_doc("Work Order", wo_list[0])
+		wo1 = nts.get_doc("Work Order", wo_list[0])
 		wo1.cancel()
 		pln.reload()
 		self.assertEqual(pln.po_items[0].ordered_qty, 2)
 
 		# Cancel 2nd Work Order
-		wo2 = frappe.get_doc("Work Order", wo_list[1])
+		wo2 = nts.get_doc("Work Order", wo_list[1])
 		wo2.cancel()
 		pln.reload()
 		self.assertEqual(pln.po_items[0].ordered_qty, 0)
@@ -779,7 +779,7 @@ class TestProductionPlan(FrappeTestCase):
 		wo.production_plan_item = pln.po_items[0].name
 		wo.submit()
 
-		se = frappe.get_doc(make_se_from_wo(wo.name, "Manufacture", 1))
+		se = nts.get_doc(make_se_from_wo(wo.name, "Manufacture", 1))
 		se.submit()
 
 		pln.reload()
@@ -817,7 +817,7 @@ class TestProductionPlan(FrappeTestCase):
 		wo.production_plan_item = pln.po_items[0].name
 		wo.submit()
 
-		se = frappe.get_doc(make_se_from_wo(wo.name, "Manufacture", 1))
+		se = nts.get_doc(make_se_from_wo(wo.name, "Manufacture", 1))
 		se.submit()
 
 		pln.reload()
@@ -828,13 +828,13 @@ class TestProductionPlan(FrappeTestCase):
 		self.assertEqual(pln.po_items[0].pending_qty, 1)
 
 	def test_qty_based_status(self):
-		pp = frappe.new_doc("Production Plan")
-		pp.po_items = [frappe._dict(planned_qty=5, produce_qty=4)]
+		pp = nts.new_doc("Production Plan")
+		pp.po_items = [nts._dict(planned_qty=5, produce_qty=4)]
 		self.assertFalse(pp.all_items_completed())
 
 		pp.po_items = [
-			frappe._dict(planned_qty=5, produce_qty=10),
-			frappe._dict(planned_qty=5, produce_qty=4),
+			nts._dict(planned_qty=5, produce_qty=10),
+			nts._dict(planned_qty=5, produce_qty=4),
 		]
 		self.assertFalse(pp.all_items_completed())
 
@@ -858,7 +858,7 @@ class TestProductionPlan(FrappeTestCase):
 		self.assertEqual(pln.po_items[0].planned_qty, 0.55)
 
 	def test_temporary_name_relinking(self):
-		pp = frappe.new_doc("Production Plan")
+		pp = nts.new_doc("Production Plan")
 
 		# this can not be unittested so mocking data that would be expected
 		# from client side.
@@ -866,8 +866,8 @@ class TestProductionPlan(FrappeTestCase):
 			po_item = pp.append(
 				"po_items",
 				{
-					"name": frappe.generate_hash(length=10),
-					"temporary_name": frappe.generate_hash(length=10),
+					"name": nts.generate_hash(length=10),
+					"temporary_name": nts.generate_hash(length=10),
 				},
 			)
 			pp.append("sub_assembly_items", {"production_plan_item": po_item.temporary_name})
@@ -877,7 +877,7 @@ class TestProductionPlan(FrappeTestCase):
 			self.assertEqual(po_item.name, subassy_item.production_plan_item)
 
 		# bad links should be erased
-		pp.append("sub_assembly_items", {"production_plan_item": frappe.generate_hash(length=16)})
+		pp.append("sub_assembly_items", {"production_plan_item": nts.generate_hash(length=16)})
 		pp._rename_temporary_references()
 		self.assertIsNone(pp.sub_assembly_items[-1].production_plan_item)
 		pp.sub_assembly_items.pop()
@@ -910,10 +910,10 @@ class TestProductionPlan(FrappeTestCase):
 
 		# Step - 2: Create Work Orders
 		pln.make_work_order()
-		work_orders = frappe.get_all("Work Order", filters={"production_plan": pln.name}, pluck="name")
+		work_orders = nts.get_all("Work Order", filters={"production_plan": pln.name}, pluck="name")
 		sa_wo = fg_wo = None
 		for work_order in work_orders:
-			wo_doc = frappe.get_doc("Work Order", work_order)
+			wo_doc = nts.get_doc("Work Order", work_order)
 			if wo_doc.production_plan_item:
 				wo_doc.update(
 					{"wip_warehouse": "Work In Progress - _TC", "fg_warehouse": "Finished Goods - _TC"}
@@ -927,10 +927,10 @@ class TestProductionPlan(FrappeTestCase):
 			wo_doc.submit()
 
 		# Step - 3: Complete Work Orders
-		se = frappe.get_doc(make_se_from_wo(sa_wo, "Manufacture"))
+		se = nts.get_doc(make_se_from_wo(sa_wo, "Manufacture"))
 		se.submit()
 
-		se = frappe.get_doc(make_se_from_wo(fg_wo, "Manufacture"))
+		se = nts.get_doc(make_se_from_wo(fg_wo, "Manufacture"))
 		se.submit()
 
 		# Step - 4: Check Production Plan Item Produced Qty
@@ -946,8 +946,8 @@ class TestProductionPlan(FrappeTestCase):
 			properties={"is_stock_item": 1, "stock_uom": "_Test UOM 1", "purchase_uom": "Nos"}
 		).name
 
-		if not frappe.db.exists("UOM Conversion Detail", {"parent": bom_item, "uom": "Nos"}):
-			doc = frappe.get_doc("Item", bom_item)
+		if not nts.db.exists("UOM Conversion Detail", {"parent": bom_item, "uom": "Nos"}):
+			doc = nts.get_doc("Item", bom_item)
 			doc.append("uoms", {"uom": "Nos", "conversion_factor": 10})
 			doc.save()
 
@@ -963,7 +963,7 @@ class TestProductionPlan(FrappeTestCase):
 			self.assertEqual(row.uom, "Nos")
 			self.assertEqual(row.quantity, 1)
 
-		for row in frappe.get_all(
+		for row in nts.get_all(
 			"Material Request Item",
 			filters={"production_plan": pln.name},
 			fields=["item_code", "uom", "qty"],
@@ -1004,19 +1004,19 @@ class TestProductionPlan(FrappeTestCase):
 		from prodman.stock.utils import get_or_make_bin
 
 		bin_name = get_or_make_bin("Raw Material Item 1", "_Test Warehouse - _TC")
-		before_qty = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+		before_qty = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 
 		pln = create_production_plan(item_code="Test Production Item 1")
 
 		bin_name = get_or_make_bin("Raw Material Item 1", "_Test Warehouse - _TC")
-		after_qty = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+		after_qty = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 
 		self.assertEqual(after_qty - before_qty, 1)
-		pln = frappe.get_doc("Production Plan", pln.name)
+		pln = nts.get_doc("Production Plan", pln.name)
 		pln.cancel()
 
 		bin_name = get_or_make_bin("Raw Material Item 1", "_Test Warehouse - _TC")
-		after_qty = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+		after_qty = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 
 		pln.reload()
 		self.assertEqual(pln.docstatus, 2)
@@ -1026,20 +1026,20 @@ class TestProductionPlan(FrappeTestCase):
 		from prodman.stock.utils import get_or_make_bin
 
 		bin_name = get_or_make_bin("Raw Material Item 1", "_Test Warehouse - _TC")
-		before_qty = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+		before_qty = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 
 		pln = create_production_plan(item_code="Test Production Item 1")
 
 		bin_name = get_or_make_bin("Raw Material Item 1", "_Test Warehouse - _TC")
-		after_qty = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+		after_qty = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 
 		self.assertEqual(after_qty - before_qty, 1)
 
 		pln.make_work_order()
 
 		work_orders = []
-		for row in frappe.get_all("Work Order", filters={"production_plan": pln.name}, fields=["name"]):
-			wo_doc = frappe.get_doc("Work Order", row.name)
+		for row in nts.get_all("Work Order", filters={"production_plan": pln.name}, fields=["name"]):
+			wo_doc = nts.get_doc("Work Order", row.name)
 			wo_doc.source_warehouse = "_Test Warehouse - _TC"
 			wo_doc.wip_warehouse = "_Test Warehouse 1 - _TC"
 			wo_doc.fg_warehouse = "_Test Warehouse - _TC"
@@ -1056,7 +1056,7 @@ class TestProductionPlan(FrappeTestCase):
 			work_orders.append(wo_doc)
 
 		bin_name = get_or_make_bin("Raw Material Item 1", "_Test Warehouse - _TC")
-		after_qty = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+		after_qty = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 
 		self.assertEqual(after_qty, before_qty)
 
@@ -1068,10 +1068,10 @@ class TestProductionPlan(FrappeTestCase):
 					break
 
 		if rm_work_order:
-			s = frappe.get_doc(make_se_from_wo(rm_work_order.name, "Material Transfer for Manufacture", 1))
+			s = nts.get_doc(make_se_from_wo(rm_work_order.name, "Material Transfer for Manufacture", 1))
 			s.submit()
 			bin_name = get_or_make_bin("Raw Material Item 1", "_Test Warehouse - _TC")
-			after_qty = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+			after_qty = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 
 			self.assertEqual(after_qty, before_qty)
 
@@ -1079,20 +1079,20 @@ class TestProductionPlan(FrappeTestCase):
 		from prodman.stock.utils import get_or_make_bin
 
 		bin_name = get_or_make_bin("Raw Material Item 1", "_Test Warehouse - _TC")
-		before_qty = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+		before_qty = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 
 		pln = create_production_plan(item_code="Test Production Item 1", planned_qty=10)
 
 		bin_name = get_or_make_bin("Raw Material Item 1", "_Test Warehouse - _TC")
-		after_qty = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+		after_qty = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 
 		self.assertEqual(after_qty - before_qty, 10)
 
 		pln.make_work_order()
 
 		plans = []
-		for row in frappe.get_all("Work Order", filters={"production_plan": pln.name}, fields=["name"]):
-			wo_doc = frappe.get_doc("Work Order", row.name)
+		for row in nts.get_all("Work Order", filters={"production_plan": pln.name}, fields=["name"]):
+			wo_doc = nts.get_doc("Work Order", row.name)
 			wo_doc.source_warehouse = "_Test Warehouse - _TC"
 			wo_doc.wip_warehouse = "_Test Warehouse 1 - _TC"
 			wo_doc.fg_warehouse = "_Test Warehouse - _TC"
@@ -1110,7 +1110,7 @@ class TestProductionPlan(FrappeTestCase):
 			plans.append(pln.name)
 
 		bin_name = get_or_make_bin("Raw Material Item 1", "_Test Warehouse - _TC")
-		after_qty = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+		after_qty = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 
 		self.assertEqual(after_qty, before_qty)
 
@@ -1126,15 +1126,15 @@ class TestProductionPlan(FrappeTestCase):
 			properties={"is_stock_item": 1, "stock_uom": "_Test UOM 1", "purchase_uom": "Nos"}
 		).name
 
-		if not frappe.db.exists("UOM Conversion Detail", {"parent": bom_item, "uom": "Nos"}):
-			doc = frappe.get_doc("Item", bom_item)
+		if not nts.db.exists("UOM Conversion Detail", {"parent": bom_item, "uom": "Nos"}):
+			doc = nts.get_doc("Item", bom_item)
 			doc.append("uoms", {"uom": "Nos", "conversion_factor": 25})
 			doc.save()
 
 		make_bom(item=fg_item, raw_materials=[bom_item], source_warehouse="_Test Warehouse - _TC")
 
 		bin_name = get_or_make_bin(bom_item, "_Test Warehouse - _TC")
-		before_qty = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+		before_qty = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 
 		pln = create_production_plan(
 			item_code=fg_item, planned_qty=100, ignore_existing_ordered_qty=1, stock_uom="_Test UOM 1"
@@ -1144,24 +1144,24 @@ class TestProductionPlan(FrappeTestCase):
 			self.assertEqual(row.uom, "Nos")
 			self.assertEqual(row.quantity, 4)
 
-			reserved_qty = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+			reserved_qty = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 			self.assertEqual(reserved_qty - before_qty, 100.0)
 
 		pln.submit_material_request = 1
 		pln.make_work_order()
 
-		for work_order in frappe.get_all(
+		for work_order in nts.get_all(
 			"Work Order",
 			fields=["name"],
 			filters={"production_plan": pln.name},
 		):
-			wo_doc = frappe.get_doc("Work Order", work_order.name)
+			wo_doc = nts.get_doc("Work Order", work_order.name)
 			wo_doc.source_warehouse = "_Test Warehouse - _TC"
 			wo_doc.wip_warehouse = "_Test Warehouse 1 - _TC"
 			wo_doc.fg_warehouse = "_Test Warehouse - _TC"
 			wo_doc.submit()
 
-		reserved_qty_after_mr = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+		reserved_qty_after_mr = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 		self.assertEqual(reserved_qty_after_mr, before_qty)
 
 	def test_from_warehouse_for_purchase_material_request(self):
@@ -1235,7 +1235,7 @@ class TestProductionPlan(FrappeTestCase):
 
 		mr_items = get_items_for_material_requests(plan.as_dict())
 		for row in mr_items:
-			row = frappe._dict(row)
+			row = nts._dict(row)
 			if row.item_code == "ChildPart1 For SUB Test":
 				self.assertEqual(row.quantity, 5)
 
@@ -1282,8 +1282,8 @@ class TestProductionPlan(FrappeTestCase):
 		}
 
 		parent_bom = create_nested_bom(bom_tree, prefix="")
-		if not frappe.db.exists("UOM Conversion Detail", {"parent": "Test RM Item INK", "uom": "Kg"}):
-			doc = frappe.get_doc("Item", "Test RM Item INK")
+		if not nts.db.exists("UOM Conversion Detail", {"parent": "Test RM Item INK", "uom": "Kg"}):
+			doc = nts.get_doc("Item", "Test RM Item INK")
 			doc.purchase_uom = "Kg"
 			doc.append("uoms", {"uom": "Kg", "conversion_factor": 0.5})
 			doc.save()
@@ -1320,7 +1320,7 @@ class TestProductionPlan(FrappeTestCase):
 		)
 
 		for row in items:
-			row = frappe._dict(row)
+			row = nts._dict(row)
 			if row.material_request_type == "Material Transfer":
 				self.assertTrue(row.uom == row.stock_uom)
 				self.assertTrue(row.from_warehouse in [wh1, wh2])
@@ -1380,7 +1380,7 @@ class TestProductionPlan(FrappeTestCase):
 			make_stock_entry(item_code=item_code, target=warehouse, qty=2, basic_rate=100)
 
 		before_qty = flt(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Bin",
 				{"item_code": "Frame Assembly", "warehouse": sub_assembly_warehouse},
 				"reserved_qty_for_production_plan",
@@ -1401,7 +1401,7 @@ class TestProductionPlan(FrappeTestCase):
 		plan.submit()
 
 		after_qty = flt(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Bin",
 				{"item_code": "Frame Assembly", "warehouse": sub_assembly_warehouse},
 				"reserved_qty_for_production_plan",
@@ -1411,7 +1411,7 @@ class TestProductionPlan(FrappeTestCase):
 		self.assertEqual(after_qty, before_qty + 2)
 
 		plan.make_work_order()
-		work_orders = frappe.get_all(
+		work_orders = nts.get_all(
 			"Work Order",
 			fields=["name", "production_item"],
 			filters={"production_plan": plan.name},
@@ -1419,7 +1419,7 @@ class TestProductionPlan(FrappeTestCase):
 		)
 
 		for d in work_orders:
-			wo_doc = frappe.get_doc("Work Order", d.name)
+			wo_doc = nts.get_doc("Work Order", d.name)
 			wo_doc.skip_transfer = 1
 			wo_doc.from_wip_warehouse = 1
 
@@ -1433,11 +1433,11 @@ class TestProductionPlan(FrappeTestCase):
 
 			if d.production_item == "Frame Assembly":
 				self.assertEqual(wo_doc.fg_warehouse, sub_assembly_warehouse)
-				se_doc = frappe.get_doc(make_se_from_wo(wo_doc.name, "Manufacture", 2))
+				se_doc = nts.get_doc(make_se_from_wo(wo_doc.name, "Manufacture", 2))
 				se_doc.submit()
 
 		after_qty = flt(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Bin",
 				{"item_code": "Frame Assembly", "warehouse": sub_assembly_warehouse},
 				"reserved_qty_for_production_plan",
@@ -1465,8 +1465,8 @@ class TestProductionPlan(FrappeTestCase):
 			rate=99,
 		)
 
-		if not frappe.db.exists("UOM Conversion Detail", {"parent": bom_item, "uom": "Nos"}):
-			doc = frappe.get_doc("Item", bom_item)
+		if not nts.db.exists("UOM Conversion Detail", {"parent": bom_item, "uom": "Nos"}):
+			doc = nts.get_doc("Item", bom_item)
 			doc.append("uoms", {"uom": "Nos", "conversion_factor": 10})
 			doc.save()
 
@@ -1519,20 +1519,20 @@ class TestProductionPlan(FrappeTestCase):
 		pln.submit()
 
 		bin_name = get_or_make_bin(rm_item, rm_warehouse)
-		before_qty = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+		before_qty = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 
 		pln.reload()
 		pln.set_status(close=True, update_bin=True)
 
 		bin_name = get_or_make_bin(rm_item, rm_warehouse)
-		after_qty = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+		after_qty = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 		self.assertAlmostEqual(after_qty, before_qty - 10)
 
 		pln.reload()
 		pln.set_status(close=False, update_bin=True)
 
 		bin_name = get_or_make_bin(rm_item, rm_warehouse)
-		after_qty = flt(frappe.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
+		after_qty = flt(nts.db.get_value("Bin", bin_name, "reserved_qty_for_production_plan"))
 		self.assertAlmostEqual(after_qty, before_qty)
 
 	def test_min_order_qty_in_pp(self):
@@ -1583,7 +1583,7 @@ class TestProductionPlan(FrappeTestCase):
 
 		pln.make_work_order()
 
-		work_orders = frappe.get_all(
+		work_orders = nts.get_all(
 			"Work Order",
 			fields=["qty", "production_plan_item as name"],
 			filters={"production_plan": pln.name},
@@ -1670,7 +1670,7 @@ class TestProductionPlan(FrappeTestCase):
 			{
 				"use_multi_level_bom": 1,
 				"item_code": "_Test FG Item 2",
-				"bom_no": frappe.db.get_value("Item", "_Test FG Item 2", "default_bom"),
+				"bom_no": nts.db.get_value("Item", "_Test FG Item 2", "default_bom"),
 				"planned_qty": 50,
 				"planned_start_date": now_datetime(),
 				"stock_uom": "Nos",
@@ -1700,9 +1700,9 @@ def create_production_plan(**args):
 	get_items_from (str): Sales Order/Material Request
 	skip_getting_mr_items (bool): Whether or not to plan for new MRs
 	"""
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
-	pln = frappe.get_doc(
+	pln = nts.get_doc(
 		{
 			"doctype": "Production Plan",
 			"company": args.company or "_Test Company",
@@ -1723,7 +1723,7 @@ def create_production_plan(**args):
 			{
 				"use_multi_level_bom": args.use_multi_level_bom or 1,
 				"item_code": args.item_code,
-				"bom_no": frappe.db.get_value("Item", args.item_code, "default_bom"),
+				"bom_no": nts.db.get_value("Item", args.item_code, "default_bom"),
 				"planned_qty": args.planned_qty or 1,
 				"planned_start_date": args.planned_start_date or now_datetime(),
 				"stock_uom": args.stock_uom or "Nos",
@@ -1758,9 +1758,9 @@ def create_production_plan(**args):
 
 
 def make_bom(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
-	bom = frappe.get_doc(
+	bom = nts.get_doc(
 		{
 			"doctype": "BOM",
 			"is_default": 1,
@@ -1778,7 +1778,7 @@ def make_bom(**args):
 		bom.operating_cost_per_bom_quantity = args.operating_cost_per_bom_quantity
 
 	for item in args.raw_materials:
-		item_doc = frappe.get_doc("Item", item)
+		item_doc = nts.get_doc("Item", item)
 		bom.append(
 			"items",
 			{

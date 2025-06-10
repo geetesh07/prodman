@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts 
 
-test_records = frappe.get_test_records("Sales Taxes and Charges Template")
+test_records = nts .get_test_records("Sales Taxes and Charges Template")
 
 
 class TestSalesTaxesandChargesTemplate(unittest.TestCase):

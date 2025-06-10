@@ -1,15 +1,15 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import json
 import time
 from uuid import uuid4
 
-import frappe
-from frappe.core.page.permission_manager.permission_manager import reset
-from frappe.custom.doctype.property_setter.property_setter import make_property_setter
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, add_to_date, flt, today
+import nts
+from nts.core.page.permission_manager.permission_manager import reset
+from nts.custom.doctype.property_setter.property_setter import make_property_setter
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import add_days, add_to_date, flt, today
 
 from prodman.accounts.doctype.gl_entry.gl_entry import rename_gle_sle_docs
 from prodman.stock.doctype.delivery_note.test_delivery_note import create_delivery_note
@@ -30,22 +30,22 @@ from prodman.stock.stock_ledger import get_previous_sle
 from prodman.stock.tests.test_utils import StockTestMixin
 
 
-class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
+class TestStockLedgerEntry(ntsTestCase, StockTestMixin):
 	def setUp(self):
 		items = create_items()
 		reset("Stock Entry")
 
 		# delete SLE and BINs for all items
-		frappe.db.sql(
+		nts.db.sql(
 			"delete from `tabStock Ledger Entry` where item_code in (%s)" % (", ".join(["%s"] * len(items))),
 			items,
 		)
-		frappe.db.sql(
+		nts.db.sql(
 			"delete from `tabBin` where item_code in (%s)" % (", ".join(["%s"] * len(items))), items
 		)
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def test_item_cost_reposting(self):
 		company = "_Test Company"
@@ -58,7 +58,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 			rate=100,
 			company=company,
 			expense_account="Stock Adjustment - _TC"
-			if frappe.get_all("Stock Ledger Entry")
+			if nts.get_all("Stock Ledger Entry")
 			else "Temporary Opening - _TC",
 			posting_date="2020-04-10",
 			posting_time="14:00",
@@ -72,7 +72,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 			rate=200,
 			company=company,
 			expense_account="Stock Adjustment - _TC"
-			if frappe.get_all("Stock Ledger Entry")
+			if nts.get_all("Stock Ledger Entry")
 			else "Temporary Opening - _TC",
 			posting_date="2020-04-20",
 			posting_time="14:00",
@@ -86,12 +86,12 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 			company=company,
 			qty=10,
 			expense_account="Stock Adjustment - _TC"
-			if frappe.get_all("Stock Ledger Entry")
+			if nts.get_all("Stock Ledger Entry")
 			else "Temporary Opening - _TC",
 			posting_date="2020-04-30",
 			posting_time="14:00",
 		)
-		target_wh_sle = frappe.db.get_value(
+		target_wh_sle = nts.db.get_value(
 			"Stock Ledger Entry",
 			{
 				"item_code": "_Test Item for Reposting",
@@ -108,7 +108,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		# Repack entry on 5-5-2020
 		repack = create_repack_entry(company=company, posting_date="2020-05-05", posting_time="14:00")
 
-		finished_item_sle = frappe.db.get_value(
+		finished_item_sle = nts.db.get_value(
 			"Stock Ledger Entry",
 			{
 				"item_code": "_Test Finished Item for Reposting",
@@ -130,7 +130,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 			rate=150,
 			company=company,
 			expense_account="Stock Adjustment - _TC"
-			if frappe.get_all("Stock Ledger Entry")
+			if nts.get_all("Stock Ledger Entry")
 			else "Temporary Opening - _TC",
 			posting_date="2020-04-12",
 			posting_time="14:00",
@@ -149,7 +149,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		self.assertEqual(target_wh_sle.get("valuation_rate"), 175)
 
 		# Check valuation rate of repacked item after back-dated entry at Stores
-		finished_item_sle = frappe.db.get_value(
+		finished_item_sle = nts.db.get_value(
 			"Stock Ledger Entry",
 			{
 				"item_code": "_Test Finished Item for Reposting",
@@ -189,7 +189,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		)
 
 		# check sle
-		outgoing_rate, stock_value_difference = frappe.db.get_value(
+		outgoing_rate, stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": "Purchase Receipt", "voucher_no": return_pr.name},
 			["outgoing_rate", "stock_value_difference"],
@@ -200,7 +200,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 
 		create_landed_cost_voucher("Purchase Receipt", pr.name, pr.company)
 
-		outgoing_rate, stock_value_difference = frappe.db.get_value(
+		outgoing_rate, stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": "Purchase Receipt", "voucher_no": return_pr.name},
 			["outgoing_rate", "stock_value_difference"],
@@ -236,7 +236,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 
 		# check outgoing_rate for DN
 		outgoing_rate = abs(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Stock Ledger Entry",
 				{"voucher_type": "Delivery Note", "voucher_no": dn.name},
 				"stock_value_difference",
@@ -261,7 +261,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		)
 
 		# check incoming rate for Return entry
-		incoming_rate, stock_value_difference = frappe.db.get_value(
+		incoming_rate, stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": "Delivery Note", "voucher_no": return_dn.name},
 			["incoming_rate", "stock_value_difference"],
@@ -278,7 +278,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 
 		# check outgoing_rate for DN after reposting
 		outgoing_rate = abs(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Stock Ledger Entry",
 				{"voucher_type": "Delivery Note", "voucher_no": dn.name},
 				"stock_value_difference",
@@ -291,7 +291,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		self.assertEqual(dn.items[0].incoming_rate, 110)
 
 		# check incoming rate for Return entry after reposting
-		incoming_rate, stock_value_difference = frappe.db.get_value(
+		incoming_rate, stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": "Delivery Note", "voucher_no": return_dn.name},
 			["incoming_rate", "stock_value_difference"],
@@ -338,7 +338,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 
 		# check outgoing_rate for DN
 		outgoing_rate = abs(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Stock Ledger Entry",
 				{"voucher_type": "Delivery Note", "voucher_no": dn.name},
 				"stock_value_difference",
@@ -363,7 +363,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		)
 
 		# check incoming rate for Return entry
-		incoming_rate, stock_value_difference = frappe.db.get_value(
+		incoming_rate, stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": "Delivery Note", "voucher_no": return_dn.name},
 			["incoming_rate", "stock_value_difference"],
@@ -380,7 +380,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 
 		# check outgoing_rate for DN after reposting
 		outgoing_rate = abs(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Stock Ledger Entry",
 				{"voucher_type": "Delivery Note", "voucher_no": dn.name},
 				"stock_value_difference",
@@ -393,7 +393,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		self.assertEqual(dn.packed_items[0].incoming_rate, 101)
 
 		# check incoming rate for Return entry after reposting
-		incoming_rate, stock_value_difference = frappe.db.get_value(
+		incoming_rate, stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": "Delivery Note", "voucher_no": return_dn.name},
 			["incoming_rate", "stock_value_difference"],
@@ -413,17 +413,17 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 
 	def test_back_dated_entry_not_allowed(self):
 		# Back dated stock transactions are only allowed to stock managers
-		frappe.db.set_single_value(
+		nts.db.set_single_value(
 			"Stock Settings", "role_allowed_to_create_edit_back_dated_transactions", "Stock Manager"
 		)
 
 		# Set User with Stock User role but not Stock Manager
 		try:
-			user = frappe.get_doc("User", "test@example.com")
+			user = nts.get_doc("User", "test@example.com")
 			user.add_roles("Stock User")
 			user.remove_roles("Stock Manager")
 
-			frappe.set_user(user.name)
+			nts.set_user(user.name)
 
 			stock_entry_on_today = make_stock_entry(target="_Test Warehouse - _TC", qty=10, basic_rate=100)
 			back_dated_se_1 = make_stock_entry(
@@ -437,9 +437,9 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 			# Block back-dated entry
 			self.assertRaises(BackDatedStockTransaction, back_dated_se_1.submit)
 
-			frappe.set_user("Administrator")
+			nts.set_user("Administrator")
 			user.add_roles("Stock Manager")
-			frappe.set_user(user.name)
+			nts.set_user(user.name)
 
 			# Back dated entry allowed to Stock Manager
 			back_dated_se_2 = make_stock_entry(
@@ -450,10 +450,10 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 			stock_entry_on_today.cancel()
 
 		finally:
-			frappe.db.set_single_value(
+			nts.db.set_single_value(
 				"Stock Settings", "role_allowed_to_create_edit_back_dated_transactions", None
 			)
-			frappe.set_user("Administrator")
+			nts.set_user("Administrator")
 			user.remove_roles("Stock Manager")
 
 	def test_batchwise_item_valuation_fifo(self):
@@ -480,7 +480,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 			(item, warehouses[0], batches[0], 1, 200),
 		]
 
-		frappe.flags.use_serial_and_batch_fields = True
+		nts.flags.use_serial_and_batch_fields = True
 		dns = create_delivery_note_entries_for_batchwise_item_valuation_test(dn_entry_list)
 		sle_details = fetch_sle_details_for_doc_list(dns, ["stock_value_difference"])
 		svd_list = [-1 * d["stock_value_difference"] for d in sle_details]
@@ -493,7 +493,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 				"Incorrect 'Incoming Rate' values fetched for DN items",
 			)
 
-		frappe.flags.use_serial_and_batch_fields = False
+		nts.flags.use_serial_and_batch_fields = False
 
 	def test_batchwise_item_valuation_moving_average(self):
 		item, warehouses, batches = setup_item_valuation_test(valuation_method="Moving Average")
@@ -519,7 +519,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 			(item, warehouses[0], batches[0], 1, 200),
 		]
 
-		frappe.flags.use_serial_and_batch_fields = True
+		nts.flags.use_serial_and_batch_fields = True
 		dns = create_delivery_note_entries_for_batchwise_item_valuation_test(dn_entry_list)
 		sle_details = fetch_sle_details_for_doc_list(dns, ["stock_value_difference"])
 		svd_list = [-1 * d["stock_value_difference"] for d in sle_details]
@@ -532,7 +532,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 				"Incorrect 'Incoming Rate' values fetched for DN items",
 			)
 
-		frappe.flags.use_serial_and_batch_fields = False
+		nts.flags.use_serial_and_batch_fields = False
 
 	def test_batchwise_item_valuation_stock_reco(self):
 		item, warehouses, batches = setup_item_valuation_test()
@@ -946,7 +946,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 
 		receipt = make_stock_entry(item_code=item.name, target=source, qty=10, do_not_save=True, rate=10)
 		for rate in rates[1:]:
-			row = frappe.copy_doc(receipt.items[0], ignore_no_copy=False)
+			row = nts.copy_doc(receipt.items[0], ignore_no_copy=False)
 			row.basic_rate = rate
 			receipt.append("items", row)
 
@@ -962,7 +962,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 			item_code=item.name, source=source, target=target, qty=10, do_not_save=True, rate=10
 		)
 		for _ in rates[1:]:
-			row = frappe.copy_doc(transfer.items[0], ignore_no_copy=False)
+			row = nts.copy_doc(transfer.items[0], ignore_no_copy=False)
 			transfer.append("items", row)
 
 		transfer.save()
@@ -980,7 +980,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 
 		receipt = make_stock_entry(item_code=rm.name, target=warehouse, qty=10, do_not_save=True, rate=10)
 		for rate in rates[1:]:
-			row = frappe.copy_doc(receipt.items[0], ignore_no_copy=False)
+			row = nts.copy_doc(receipt.items[0], ignore_no_copy=False)
 			row.basic_rate = rate
 			receipt.append("items", row)
 
@@ -991,7 +991,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 			item_code=rm.name, source=warehouse, qty=10, do_not_save=True, rate=10, purpose="Repack"
 		)
 		for _ in rates[1:]:
-			row = frappe.copy_doc(repack.items[0], ignore_no_copy=False)
+			row = nts.copy_doc(repack.items[0], ignore_no_copy=False)
 			repack.append("items", row)
 
 		repack.append(
@@ -1031,7 +1031,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 
 	def test_dependent_gl_entry_reposting(self):
 		def _get_stock_credit(doc):
-			return frappe.db.get_value(
+			return nts.db.get_value(
 				"GL Entry",
 				{
 					"voucher_no": doc.name,
@@ -1084,19 +1084,19 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 	def test_tie_breaking(self):
 		from prodman.stock.doctype.repost_item_valuation.repost_item_valuation import repost_entries
 
-		frappe.flags.dont_execute_stock_reposts = True
-		self.addCleanup(frappe.flags.pop, "dont_execute_stock_reposts")
+		nts.flags.dont_execute_stock_reposts = True
+		self.addCleanup(nts.flags.pop, "dont_execute_stock_reposts")
 
 		item = make_item().name
 		warehouse = "_Test Warehouse - _TC"
 
 		posting_date = "2022-01-01"
 		posting_time = "00:00:01"
-		sle = frappe.qb.DocType("Stock Ledger Entry")
+		sle = nts.qb.DocType("Stock Ledger Entry")
 
 		def ordered_qty_after_transaction():
 			return (
-				frappe.qb.from_(sle)
+				nts.qb.from_(sle)
 				.select("qty_after_transaction")
 				.where((sle.item_code == item) & (sle.warehouse == warehouse) & (sle.is_cancelled == 0))
 				.orderby(sle.posting_datetime)
@@ -1200,7 +1200,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 			posting_time="02:00:00.1234",
 		)
 
-		sle = frappe.get_all(
+		sle = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"voucher_no": reciept1.name},
 			fields=["qty_after_transaction", "actual_qty"],
@@ -1208,7 +1208,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		self.assertEqual(sle[0].qty_after_transaction, 100)
 		self.assertEqual(sle[0].actual_qty, 100)
 
-		sle = frappe.get_all(
+		sle = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"voucher_no": reciept2.name},
 			fields=["qty_after_transaction", "actual_qty"],
@@ -1241,7 +1241,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 			posting_time="02:00:00.1234",
 		)
 
-		sle = frappe.get_all(
+		sle = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"voucher_no": reciept1.name},
 			fields=["qty_after_transaction", "actual_qty"],
@@ -1249,7 +1249,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		self.assertEqual(sle[0].qty_after_transaction, 5)
 		self.assertEqual(sle[0].actual_qty, 5)
 
-		sle = frappe.get_all(
+		sle = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"voucher_no": reciept2.name},
 			fields=["qty_after_transaction", "actual_qty"],
@@ -1284,7 +1284,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		)
 
 		filters = {"voucher_no": transfer.name, "voucher_type": transfer.doctype, "is_cancelled": 0}
-		sles = frappe.get_all(
+		sles = nts.get_all(
 			"Stock Ledger Entry",
 			fields=["*"],
 			filters=filters,
@@ -1307,7 +1307,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 		make_stock_entry(item_code=item_code, source=warehouse, qty=470.84, rate=100)
 		self.assertEqual(get_stock_balance(item_code, warehouse), 88.9927)
 
-		settings = frappe.get_doc("System Settings")
+		settings = nts.get_doc("System Settings")
 		settings.float_precision = 3
 		settings.save()
 
@@ -1370,7 +1370,7 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 			cost_center="Main - _TC",
 		)
 
-		settings = frappe.get_doc("System Settings")
+		settings = nts.get_doc("System Settings")
 		settings.float_precision = 3
 		settings.save()
 
@@ -1381,8 +1381,8 @@ class TestStockLedgerEntry(FrappeTestCase, StockTestMixin):
 
 
 def create_repack_entry(**args):
-	args = frappe._dict(args)
-	repack = frappe.new_doc("Stock Entry")
+	args = nts._dict(args)
+	repack = nts.new_doc("Stock Entry")
 	repack.stock_entry_type = "Repack"
 	repack.company = args.company or "_Test Company"
 	repack.posting_date = args.posting_date
@@ -1427,8 +1427,8 @@ def create_repack_entry(**args):
 
 
 def create_product_bundle_item(new_item_code, packed_items):
-	if not frappe.db.exists("Product Bundle", new_item_code):
-		item = frappe.new_doc("Product Bundle")
+	if not nts.db.exists("Product Bundle", new_item_code):
+		item = nts.new_doc("Product Bundle")
 		item.new_item_code = new_item_code
 
 		for d in packed_items:
@@ -1477,12 +1477,12 @@ def setup_item_valuation_test(
 	batches = [f"IV - Test Batch {i} {valuation_method} {suffix}" for i in batches_list]
 
 	for i, batch_id in enumerate(batches):
-		if not frappe.db.exists("Batch", batch_id):
+		if not nts.db.exists("Batch", batch_id):
 			ubw = use_batchwise_valuation
 			if isinstance(use_batchwise_valuation, list | tuple):
 				ubw = use_batchwise_valuation[i]
-			batch = frappe.get_doc(
-				frappe._dict(
+			batch = nts.get_doc(
+				nts._dict(
 					doctype="Batch", batch_id=batch_id, item=item.item_code, use_batchwise_valuation=ubw
 				)
 			).insert()
@@ -1515,11 +1515,11 @@ def create_delivery_note_entries_for_batchwise_item_valuation_test(dn_entry_list
 		dn = make_delivery_note(so.name)
 
 		dn.items[0].serial_and_batch_bundle = make_serial_batch_bundle(
-			frappe._dict(
+			nts._dict(
 				{
 					"item_code": dn.items[0].item_code,
 					"qty": dn.items[0].qty * (-1 if not dn.is_return else 1),
-					"batches": frappe._dict({batch_no: qty}),
+					"batches": nts._dict({batch_no: qty}),
 					"type_of_transaction": "Outward",
 					"warehouse": dn.items[0].warehouse,
 					"posting_date": dn.posting_date,
@@ -1538,7 +1538,7 @@ def create_delivery_note_entries_for_batchwise_item_valuation_test(dn_entry_list
 
 
 def fetch_sle_details_for_doc_list(doc_list, columns, as_dict=1):
-	return frappe.db.sql(
+	return nts.db.sql(
 		f"""
 		SELECT { ', '.join(columns)}
 		FROM `tabStock Ledger Entry`
@@ -1590,12 +1590,12 @@ def get_unique_suffix():
 	return str(uuid4())[:8].upper()
 
 
-class TestDeferredNaming(FrappeTestCase):
+class TestDeferredNaming(ntsTestCase):
 	@classmethod
 	def setUpClass(cls) -> None:
 		super().setUpClass()
-		cls.gle_autoname = frappe.get_meta("GL Entry").autoname
-		cls.sle_autoname = frappe.get_meta("Stock Ledger Entry").autoname
+		cls.gle_autoname = nts.get_meta("GL Entry").autoname
+		cls.sle_autoname = nts.get_meta("Stock Ledger Entry").autoname
 
 	def setUp(self) -> None:
 		self.item = make_item().name
@@ -1621,13 +1621,13 @@ class TestDeferredNaming(FrappeTestCase):
 		)
 
 		# since deferred naming autocommits, commit all changes to avoid flake
-		frappe.db.commit()  # nosemgrep
+		nts.db.commit()  # nosemgrep
 
 	@staticmethod
 	def get_gle_sles(se):
 		filters = {"voucher_type": se.doctype, "voucher_no": se.name}
-		gle = set(frappe.get_list("GL Entry", filters, pluck="name"))
-		sle = set(frappe.get_list("Stock Ledger Entry", filters, pluck="name"))
+		gle = set(nts.get_list("GL Entry", filters, pluck="name"))
+		sle = set(nts.get_list("Stock Ledger Entry", filters, pluck="name"))
 		return gle, sle
 
 	def test_deferred_naming(self):

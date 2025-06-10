@@ -1,11 +1,11 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import getdate, nowdate
+import nts
+from nts import _
+from nts.model.document import Document
+from nts.utils import getdate, nowdate
 
 
 class Contract(Document):
@@ -15,7 +15,7 @@ class Contract(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.crm.doctype.contract_fulfilment_checklist.contract_fulfilment_checklist import (
 			ContractFulfilmentChecklist,
@@ -53,8 +53,8 @@ class Contract(Document):
 			name += f" - {self.contract_template} Agreement"
 
 		# If identical, append contract name with the next number in the iteration
-		if frappe.db.exists("Contract", name):
-			count = len(frappe.get_all("Contract", filters={"name": ["like", f"%{name}%"]}))
+		if nts.db.exists("Contract", name):
+			count = len(nts.get_all("Contract", filters={"name": ["like", f"%{name}%"]}))
 			name = f"{name} - {count}"
 
 		self.name = _(name)
@@ -68,11 +68,11 @@ class Contract(Document):
 	def set_missing_values(self):
 		if not self.party_full_name:
 			field = self.party_type.lower() + "_name"
-			if res := frappe.db.get_value(self.party_type, self.party_name, field):
+			if res := nts.db.get_value(self.party_type, self.party_name, field):
 				self.party_full_name = res
 
 	def before_submit(self):
-		self.signed_by_company = frappe.session.user
+		self.signed_by_company = nts.session.user
 
 	def before_update_after_submit(self):
 		self.update_contract_status()
@@ -80,7 +80,7 @@ class Contract(Document):
 
 	def validate_dates(self):
 		if self.end_date and self.end_date < self.start_date:
-			frappe.throw(_("End Date cannot be before Start Date."))
+			nts.throw(_("End Date cannot be before Start Date."))
 
 	def update_contract_status(self):
 		if self.is_signed:
@@ -142,7 +142,7 @@ def update_status_for_contracts():
 	and submitted Contracts
 	"""
 
-	contracts = frappe.get_all(
+	contracts = nts.get_all(
 		"Contract",
 		filters={"is_signed": True, "docstatus": 1},
 		fields=["name", "start_date", "end_date"],
@@ -151,4 +151,4 @@ def update_status_for_contracts():
 	for contract in contracts:
 		status = get_status(contract.get("start_date"), contract.get("end_date"))
 
-		frappe.db.set_value("Contract", contract.get("name"), "status", status)
+		nts.db.set_value("Contract", contract.get("name"), "status", status)

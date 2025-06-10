@@ -1,4 +1,4 @@
-import frappe
+import nts
 
 
 def execute():
@@ -6,11 +6,11 @@ def execute():
 	Remove "production_plan_item" field where linked field doesn't exist in tha table.
 	"""
 
-	work_order = frappe.qb.DocType("Work Order")
-	pp_item = frappe.qb.DocType("Production Plan Item")
+	work_order = nts.qb.DocType("Work Order")
+	pp_item = nts.qb.DocType("Production Plan Item")
 
 	broken_work_orders = (
-		frappe.qb.from_(work_order)
+		nts.qb.from_(work_order)
 		.left_join(pp_item)
 		.on(work_order.production_plan_item == pp_item.name)
 		.select(work_order.name)
@@ -26,7 +26,7 @@ def execute():
 		return
 
 	(
-		frappe.qb.update(work_order)
+		nts.qb.update(work_order)
 		.set(work_order.production_plan_item, None)
 		.where(work_order.name.isin(broken_work_orders))
 	).run()

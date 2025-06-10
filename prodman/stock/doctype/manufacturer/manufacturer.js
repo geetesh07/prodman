@@ -1,14 +1,14 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Manufacturer", {
+nts.ui.form.on("Manufacturer", {
 	refresh: function (frm) {
 		if (frm.doc.__islocal) {
 			hide_field(["address_html", "contact_html"]);
-			frappe.contacts.clear_address_and_contact(frm);
+			nts.contacts.clear_address_and_contact(frm);
 		} else {
 			unhide_field(["address_html", "contact_html"]);
-			frappe.contacts.render_address_and_contact(frm);
+			nts.contacts.render_address_and_contact(frm);
 		}
 	},
 });

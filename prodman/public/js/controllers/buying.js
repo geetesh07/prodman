@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.buying");
+nts.provide("prodman.buying");
 // cur_frm.add_fetch('project', 'cost_center', 'cost_center');
 
 prodman.buying = {
@@ -34,10 +34,10 @@ prodman.buying = {
 				});
 
 				if (this.frm.doc.__islocal
-					&& frappe.meta.has_field(this.frm.doc.doctype, "disable_rounded_total")) {
+					&& nts.meta.has_field(this.frm.doc.doctype, "disable_rounded_total")) {
 
-						var df = frappe.meta.get_docfield(this.frm.doc.doctype, "disable_rounded_total");
-						var disable = cint(df.default) || cint(frappe.sys_defaults.disable_rounded_total);
+						var df = nts.meta.get_docfield(this.frm.doc.doctype, "disable_rounded_total");
+						var disable = cint(df.default) || cint(nts.sys_defaults.disable_rounded_total);
 						this.frm.set_value("disable_rounded_total", disable);
 				}
 
@@ -47,7 +47,7 @@ prodman.buying = {
 					this.frm.set_query("shipping_address", () => {
 						if(this.frm.doc.customer) {
 							return {
-								query: 'frappe.contacts.doctype.address.address.address_query',
+								query: 'nts.contacts.doctype.address.address.address_query',
 								filters: { link_doctype: 'Customer', link_name: this.frm.doc.customer }
 							};
 						} else
@@ -128,7 +128,7 @@ prodman.buying = {
 			}
 
 			refresh(doc) {
-				frappe.dynamic_link = {doc: this.frm.doc, fieldname: 'supplier', doctype: 'Supplier'};
+				nts.dynamic_link = {doc: this.frm.doc, fieldname: 'supplier', doctype: 'Supplier'};
 
 				this.frm.toggle_display("supplier_name",
 					(this.frm.doc.supplier_name && this.frm.doc.supplier_name!==this.frm.doc.supplier));
@@ -160,9 +160,9 @@ prodman.buying = {
 			}
 
 			company(){
-				if(!frappe.meta.has_field(this.frm.doc.doctype, "billing_address")) return;
+				if(!nts.meta.has_field(this.frm.doc.doctype, "billing_address")) return;
 
-				frappe.call({
+				nts.call({
 					method: "prodman.setup.doctype.company.company.get_billing_shipping_address",
 					args: {
 						name: this.frm.doc.company,
@@ -172,7 +172,7 @@ prodman.buying = {
 					callback: (r) => {
 						this.frm.set_value("billing_address", r.message.primary_address || "");
 
-						if(!frappe.meta.has_field(this.frm.doc.doctype, "shipping_address")) return;
+						if(!nts.meta.has_field(this.frm.doc.doctype, "shipping_address")) return;
 						this.frm.set_value("shipping_address", r.message.shipping_address || "");
 					},
 				});
@@ -188,13 +188,13 @@ prodman.buying = {
 			}
 
 			discount_percentage(doc, cdt, cdn) {
-				var item = frappe.get_doc(cdt, cdn);
+				var item = nts.get_doc(cdt, cdn);
 				item.discount_amount = 0.0;
 				this.price_list_rate(doc, cdt, cdn);
 			}
 
 			discount_amount(doc, cdt, cdn) {
-				var item = frappe.get_doc(cdt, cdn);
+				var item = nts.get_doc(cdt, cdn);
 				item.discount_percentage = 0.0;
 				this.price_list_rate(doc, cdt, cdn);
 			}
@@ -211,16 +211,16 @@ prodman.buying = {
 			}
 
 			calculate_received_qty(doc, cdt, cdn){
-				var item = frappe.get_doc(cdt, cdn);
-				frappe.model.round_floats_in(item, ["qty", "rejected_qty"]);
+				var item = nts.get_doc(cdt, cdn);
+				nts.model.round_floats_in(item, ["qty", "rejected_qty"]);
 
 				if(!doc.is_return && this.validate_negative_quantity(cdt, cdn, item, ["qty", "rejected_qty"])){ return }
 
 				let received_qty = flt(item.qty + item.rejected_qty, precision("received_qty", item));
 				let received_stock_qty = flt(item.conversion_factor, precision("conversion_factor", item)) * flt(received_qty);
 
-				frappe.model.set_value(cdt, cdn, "received_qty", received_qty);
-				frappe.model.set_value(cdt, cdn, "received_stock_qty", received_stock_qty);
+				nts.model.set_value(cdt, cdn, "received_qty", received_qty);
+				nts.model.set_value(cdt, cdn, "received_stock_qty", received_stock_qty);
 			}
 
 			batch_no(doc, cdt, cdn) {
@@ -233,7 +233,7 @@ prodman.buying = {
 				var is_negative_qty = false;
 				for(var i = 0; i<fieldnames.length; i++) {
 					if(item[fieldnames[i]] < 0){
-						frappe.msgprint(__("Row #{0}: {1} can not be negative for item {2}", [item.idx,__(frappe.meta.get_label(cdt, fieldnames[i], cdn)), item.item_code]));
+						nts.msgprint(__("Row #{0}: {1} can not be negative for item {2}", [item.idx,__(nts.meta.get_label(cdt, fieldnames[i], cdn)), item.item_code]));
 						is_negative_qty = true;
 						break;
 					}
@@ -243,7 +243,7 @@ prodman.buying = {
 			}
 
 			warehouse(doc, cdt, cdn) {
-				var item = frappe.get_doc(cdt, cdn);
+				var item = nts.get_doc(cdt, cdn);
 				if(item.item_code && item.warehouse) {
 					return this.frm.call({
 						method: "prodman.stock.get_item_details.get_bin_details",
@@ -259,7 +259,7 @@ prodman.buying = {
 			}
 
 			project(doc, cdt, cdn) {
-				var item = frappe.get_doc(cdt, cdn);
+				var item = nts.get_doc(cdt, cdn);
 				if(item.project) {
 					$.each(this.frm.doc["items"] || [],
 						function(i, other_item) {
@@ -318,17 +318,17 @@ prodman.buying = {
 
 			update_auto_repeat_reference(doc) {
 				if (doc.auto_repeat) {
-					frappe.call({
-						method:"frappe.automation.doctype.auto_repeat.auto_repeat.update_reference",
+					nts.call({
+						method:"nts.automation.doctype.auto_repeat.auto_repeat.update_reference",
 						args:{
 							docname: doc.auto_repeat,
 							reference:doc.name
 						},
 						callback: function(r){
 							if (r.message=="success") {
-								frappe.show_alert({message:__("Auto repeat document updated"), indicator:'green'});
+								nts.show_alert({message:__("Auto repeat document updated"), indicator:'green'});
 							} else {
-								frappe.show_alert({message:__("An error occurred during the update process"), indicator:'red'});
+								nts.show_alert({message:__("An error occurred during the update process"), indicator:'red'});
 							}
 						}
 					})
@@ -339,7 +339,7 @@ prodman.buying = {
 				const row = locals[cdt][cdn];
 
 				if(row.manufacturer) {
-					frappe.call({
+					nts.call({
 						method: "prodman.stock.doctype.item_manufacturer.item_manufacturer.get_item_manufacturer_part_no",
 						args: {
 							'item_code': row.item_code,
@@ -347,7 +347,7 @@ prodman.buying = {
 						},
 						callback: function(r) {
 							if (r.message) {
-								frappe.model.set_value(cdt, cdn, 'manufacturer_part_no', r.message);
+								nts.model.set_value(cdt, cdn, 'manufacturer_part_no', r.message);
 							}
 						}
 					});
@@ -358,7 +358,7 @@ prodman.buying = {
 				const row = locals[cdt][cdn];
 
 				if (row.manufacturer_part_no) {
-					frappe.model.get_value('Item Manufacturer',
+					nts.model.get_value('Item Manufacturer',
 						{
 							'item_code': row.item_code,
 							'manufacturer': row.manufacturer,
@@ -371,7 +371,7 @@ prodman.buying = {
 									message: __("Manufacturer Part Number <b>{0}</b> is invalid", [row.manufacturer_part_no]),
 									title: __("Invalid Part Number")
 								}
-								frappe.throw(msg);
+								nts.throw(msg);
 							}
 						}
 					);
@@ -383,7 +383,7 @@ prodman.buying = {
 				let me = this;
 				let fields = ["has_batch_no", "has_serial_no"];
 
-				frappe.db.get_value("Item", item.item_code, fields)
+				nts.db.get_value("Item", item.item_code, fields)
 					.then((r) => {
 						if (r.message && (r.message.has_batch_no || r.message.has_serial_no)) {
 							fields.forEach((field) => {
@@ -411,7 +411,7 @@ prodman.buying = {
 											update_values["warehouse"] = r.warehouse;
 										}
 
-										frappe.model.set_value(item.doctype, item.name, update_values);
+										nts.model.set_value(item.doctype, item.name, update_values);
 									}
 								}
 							);
@@ -424,7 +424,7 @@ prodman.buying = {
 				let me = this;
 				let fields = ["has_batch_no", "has_serial_no"];
 
-				frappe.db.get_value("Item", item.item_code, fields)
+				nts.db.get_value("Item", item.item_code, fields)
 					.then((r) => {
 						if (r.message && (r.message.has_batch_no || r.message.has_serial_no)) {
 							fields.forEach((field) => {
@@ -452,7 +452,7 @@ prodman.buying = {
 											update_values["rejected_warehouse"] = r.warehouse;
 										}
 
-										frappe.model.set_value(item.doctype, item.name, update_values);
+										nts.model.set_value(item.doctype, item.name, update_values);
 									}
 								}
 							);
@@ -464,14 +464,14 @@ prodman.buying = {
 }
 
 prodman.buying.link_to_mrs = function(frm) {
-	frappe.call({
+	nts.call({
 		method: "prodman.buying.utils.get_linked_material_requests",
 		args:{
 			items: frm.doc.items.map((item) => item.item_code)
 		},
 		callback: function(r) {
 			if (!r.message || r.message.length == 0) {
-				frappe.throw({
+				nts.throw({
 					message: __("No pending Material Requests found to link for the given items."),
 					title: __("Note")
 				});
@@ -491,11 +491,11 @@ prodman.buying.link_to_mrs = function(frm) {
 						item.stock_qty = my_qty*item.conversion_factor;
 						item.qty = my_qty;
 
-						frappe.msgprint("Assigning " + d.mr_name + " to " + d.item_code + " (row " + item.idx + ")");
+						nts.msgprint("Assigning " + d.mr_name + " to " + d.item_code + " (row " + item.idx + ")");
 						if (qty > 0)
 						{
-							frappe.msgprint("Splitting " + qty + " units of " + d.item_code);
-							var newrow = frappe.model.add_child(frm.doc, item.doctype, "items");
+							nts.msgprint("Splitting " + qty + " units of " + d.item_code);
+							var newrow = nts.model.add_child(frm.doc, item.doctype, "items");
 							item_length++;
 
 							for (var key in item)
@@ -522,7 +522,7 @@ prodman.buying.link_to_mrs = function(frm) {
 prodman.buying.get_default_bom = function(frm) {
 	$.each(frm.doc["items"] || [], function(i, d) {
 		if (d.item_code && d.bom === "") {
-			return frappe.call({
+			return nts.call({
 				type: "GET",
 				method: "prodman.stock.get_item_details.get_default_bom",
 				args: {
@@ -530,7 +530,7 @@ prodman.buying.get_default_bom = function(frm) {
 				},
 				callback: function(r) {
 					if(r) {
-						frappe.model.set_value(d.doctype, d.name, "bom", r.message);
+						nts.model.set_value(d.doctype, d.name, "bom", r.message);
 					}
 				}
 			})
@@ -539,7 +539,7 @@ prodman.buying.get_default_bom = function(frm) {
 }
 
 prodman.buying.get_items_from_product_bundle = function(frm) {
-	var dialog = new frappe.ui.Dialog({
+	var dialog = new nts.ui.Dialog({
 		title: __("Get Items from Product Bundle"),
 		fields: [
 			{
@@ -561,7 +561,7 @@ prodman.buying.get_items_from_product_bundle = function(frm) {
 		primary_action(args){
 			if(!args) return;
 			dialog.hide();
-			return frappe.call({
+			return nts.call({
 				type: "GET",
 				method: "prodman.stock.doctype.packed_item.packed_item.get_items_from_product_bundle",
 				args: {
@@ -608,7 +608,7 @@ prodman.buying.get_items_from_product_bundle = function(frm) {
 									d[key] = item[key];
 								}
 							}
-							if(frappe.meta.get_docfield(d.doctype, "price_list_rate", d.name)) {
+							if(nts.meta.get_docfield(d.doctype, "price_list_rate", d.name)) {
 								frm.script_manager.trigger("price_list_rate", d.doctype, d.name);
 							}
 						}

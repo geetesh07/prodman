@@ -1,8 +1,8 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -15,7 +15,7 @@ def execute(filters=None):
 def get_data(filters):
 	filter_conditions = get_filter_conditions(filters)
 
-	return frappe.get_all(
+	return nts.get_all(
 		"Serial and Batch Bundle",
 		fields=[
 			"`tabSerial and Batch Bundle`.`voucher_type`",
@@ -93,7 +93,7 @@ def get_columns(filters, data):
 		item_codes = [d.item_code for d in data]
 
 	if filters.get("item_code") or (item_codes and len(list(set(item_codes))) == 1):
-		item_details = frappe.get_cached_value(
+		item_details = nts.get_cached_value(
 			"Item",
 			filters.get("item_code") or item_codes[0],
 			["has_serial_no", "has_batch_no"],
@@ -169,10 +169,10 @@ def get_columns(filters, data):
 	return columns
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def get_voucher_type(doctype, txt, searchfield, start, page_len, filters):
-	child_doctypes = frappe.get_all(
+	child_doctypes = nts.get_all(
 		"DocField",
 		filters={"fieldname": "serial_and_batch_bundle"},
 		fields=["distinct parent as parent"],
@@ -182,11 +182,11 @@ def get_voucher_type(doctype, txt, searchfield, start, page_len, filters):
 	if txt:
 		query_filters["parent"] = ["like", f"%{txt}%"]
 
-	return frappe.get_all("DocField", filters=query_filters, fields=["distinct parent"], as_list=True)
+	return nts.get_all("DocField", filters=query_filters, fields=["distinct parent"], as_list=True)
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def get_serial_nos(doctype, txt, searchfield, start, page_len, filters):
 	query_filters = {}
 
@@ -194,7 +194,7 @@ def get_serial_nos(doctype, txt, searchfield, start, page_len, filters):
 		query_filters["serial_no"] = ["like", f"%{txt}%"]
 
 	if filters.get("voucher_no"):
-		serial_batch_bundle = frappe.get_cached_value(
+		serial_batch_bundle = nts.get_cached_value(
 			"Serial and Batch Bundle",
 			{"voucher_no": ("in", filters.get("voucher_no")), "docstatus": 1, "is_cancelled": 0},
 			"name",
@@ -204,17 +204,17 @@ def get_serial_nos(doctype, txt, searchfield, start, page_len, filters):
 		if not txt:
 			query_filters["serial_no"] = ("is", "set")
 
-		return frappe.get_all(
+		return nts.get_all(
 			"Serial and Batch Entry", filters=query_filters, fields=["serial_no"], as_list=True
 		)
 
 	else:
 		query_filters["item_code"] = filters.get("item_code")
-		return frappe.get_all("Serial No", filters=query_filters, as_list=True)
+		return nts.get_all("Serial No", filters=query_filters, as_list=True)
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def get_batch_nos(doctype, txt, searchfield, start, page_len, filters):
 	query_filters = {}
 
@@ -222,7 +222,7 @@ def get_batch_nos(doctype, txt, searchfield, start, page_len, filters):
 		query_filters["batch_no"] = ["like", f"%{txt}%"]
 
 	if filters.get("voucher_no"):
-		serial_batch_bundle = frappe.get_cached_value(
+		serial_batch_bundle = nts.get_cached_value(
 			"Serial and Batch Bundle",
 			{"voucher_no": ("in", filters.get("voucher_no")), "docstatus": 1, "is_cancelled": 0},
 			"name",
@@ -232,7 +232,7 @@ def get_batch_nos(doctype, txt, searchfield, start, page_len, filters):
 		if not txt:
 			query_filters["batch_no"] = ("is", "set")
 
-		return frappe.get_all(
+		return nts.get_all(
 			"Serial and Batch Entry", filters=query_filters, fields=["batch_no"], as_list=True
 		)
 
@@ -241,4 +241,4 @@ def get_batch_nos(doctype, txt, searchfield, start, page_len, filters):
 			query_filters["name"] = ["like", f"%{txt}%"]
 
 		query_filters["item"] = filters.get("item_code")
-		return frappe.get_all("Batch", filters=query_filters, as_list=True)
+		return nts.get_all("Batch", filters=query_filters, as_list=True)

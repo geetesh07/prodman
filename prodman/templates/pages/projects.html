@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block head_include %}
-  <link rel="stylesheet" href="/assets/frappe/css/fonts/fontawesome/font-awesome.min.css">
+  <link rel="stylesheet" href="/assets/nts/css/fonts/fontawesome/font-awesome.min.css">
 {% endblock %}
 
 {% block header %}
@@ -101,8 +101,8 @@
 </div>
 
 <script>
-  { % include "frappe/public/js/frappe/provide.js" % }
-  { % include "frappe/public/js/frappe/form/formatters.js" % }
+  { % include "nts/public/js/nts/provide.js" % }
+  { % include "nts/public/js/nts/form/formatters.js" % }
  </script>
 
 {% endblock %}
@@ -122,12 +122,12 @@
 
 
 {% macro empty_state(section_name) %}
-<div class="frappe-list align-items-center">
+<div class="nts-list align-items-center">
   <div class=" text-muted flex justify-center align-center" style="">
     <div class=" text-muted flex text-center">
       <div class="msg-box no-border">
         <div>
-          <img src="/assets/frappe/images/ui-states/list-empty-state.svg" alt="Generic Empty State" class="null-state">
+          <img src="/assets/nts/images/ui-states/list-empty-state.svg" alt="Generic Empty State" class="null-state">
         </div>
         <p>{{ _("You haven't created a {0} yet").format(section_name) }}</p>
       </div>

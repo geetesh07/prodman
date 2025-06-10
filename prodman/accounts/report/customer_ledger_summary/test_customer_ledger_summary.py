@@ -1,7 +1,7 @@
-import frappe
-from frappe import qb
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days, flt, getdate, today
+import nts 
+from nts  import qb
+from nts .tests.utils import nts TestCase
+from nts .utils import add_days, flt, getdate, today
 
 from prodman.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
@@ -9,7 +9,7 @@ from prodman.accounts.report.customer_ledger_summary.customer_ledger_summary imp
 from prodman.accounts.test.accounts_mixin import AccountsTestMixin
 
 
-class TestCustomerLedgerSummary(FrappeTestCase, AccountsTestMixin):
+class TestCustomerLedgerSummary(nts TestCase, AccountsTestMixin):
 	def setUp(self):
 		self.create_company()
 		self.create_customer()
@@ -17,7 +17,7 @@ class TestCustomerLedgerSummary(FrappeTestCase, AccountsTestMixin):
 		self.clear_old_entries()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def create_sales_invoice(self, do_not_submit=False, **args):
 		si = create_sales_invoice(

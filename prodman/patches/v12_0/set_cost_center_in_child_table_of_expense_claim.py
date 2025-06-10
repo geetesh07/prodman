@@ -1,9 +1,9 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("hr", "doctype", "expense_claim_detail")
-	frappe.db.sql(
+	nts.reload_doc("hr", "doctype", "expense_claim_detail")
+	nts.db.sql(
 		"""
 		UPDATE `tabExpense Claim Detail` child, `tabExpense Claim` par
 		SET child.cost_center = par.cost_center

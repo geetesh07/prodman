@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import unittest
 
-import frappe
-from frappe.tests.utils import change_settings
-from frappe.utils import flt, nowdate
+import nts 
+from nts .tests.utils import change_settings
+from nts .utils import flt, nowdate
 
 from prodman.accounts.doctype.account.test_account import get_inventory_account
 from prodman.accounts.doctype.journal_entry.journal_entry import StockAccountInvalidTransaction
@@ -16,22 +16,22 @@ from prodman.exceptions import InvalidAccountCurrency
 class TestJournalEntry(unittest.TestCase):
 	@change_settings("Accounts Settings", {"unlink_payment_on_cancellation_of_invoice": 1})
 	def test_journal_entry_with_against_jv(self):
-		jv_invoice = frappe.copy_doc(test_records[2])
-		base_jv = frappe.copy_doc(test_records[0])
+		jv_invoice = nts .copy_doc(test_records[2])
+		base_jv = nts .copy_doc(test_records[0])
 		self.jv_against_voucher_testcase(base_jv, jv_invoice)
 
 	def test_jv_against_sales_order(self):
 		from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
 
 		sales_order = make_sales_order(do_not_save=True)
-		base_jv = frappe.copy_doc(test_records[0])
+		base_jv = nts .copy_doc(test_records[0])
 		self.jv_against_voucher_testcase(base_jv, sales_order)
 
 	def test_jv_against_purchase_order(self):
 		from prodman.buying.doctype.purchase_order.test_purchase_order import create_purchase_order
 
 		purchase_order = create_purchase_order(do_not_save=True)
-		base_jv = frappe.copy_doc(test_records[1])
+		base_jv = nts .copy_doc(test_records[1])
 		self.jv_against_voucher_testcase(base_jv, purchase_order)
 
 	def jv_against_voucher_testcase(self, base_jv, test_voucher):
@@ -42,7 +42,7 @@ class TestJournalEntry(unittest.TestCase):
 
 		if test_voucher.doctype == "Journal Entry":
 			self.assertTrue(
-				frappe.db.sql(
+				nts .db.sql(
 					"""select name from `tabJournal Entry Account`
 				where account = %s and docstatus = 1 and parent = %s""",
 					("Debtors - _TC", test_voucher.name),
@@ -50,7 +50,7 @@ class TestJournalEntry(unittest.TestCase):
 			)
 
 		self.assertFalse(
-			frappe.db.sql(
+			nts .db.sql(
 				"""select name from `tabJournal Entry Account`
 			where reference_type = %s and reference_name = %s""",
 				(test_voucher.doctype, test_voucher.name),
@@ -65,10 +65,10 @@ class TestJournalEntry(unittest.TestCase):
 		base_jv.insert()
 		base_jv.submit()
 
-		submitted_voucher = frappe.get_doc(test_voucher.doctype, test_voucher.name)
+		submitted_voucher = nts .get_doc(test_voucher.doctype, test_voucher.name)
 
 		self.assertTrue(
-			frappe.db.sql(
+			nts .db.sql(
 				f"""select name from `tabJournal Entry Account`
 			where reference_type = %s and reference_name = %s and {dr_or_cr}=400""",
 				(submitted_voucher.doctype, submitted_voucher.name),
@@ -81,7 +81,7 @@ class TestJournalEntry(unittest.TestCase):
 
 	def advance_paid_testcase(self, base_jv, test_voucher, dr_or_cr):
 		# Test advance paid field
-		advance_paid = frappe.db.sql(
+		advance_paid = nts .db.sql(
 			"""select advance_paid from `tab{}`
 					where name={}""".format(test_voucher.doctype, "%s"),
 			(test_voucher.name),
@@ -95,7 +95,7 @@ class TestJournalEntry(unittest.TestCase):
 			# if test_voucher is a Journal Entry, test cancellation of test_voucher
 			test_voucher.cancel()
 			self.assertFalse(
-				frappe.db.sql(
+				nts .db.sql(
 					"""select name from `tabJournal Entry Account`
 				where reference_type='Journal Entry' and reference_name=%s""",
 					test_voucher.name,
@@ -104,11 +104,11 @@ class TestJournalEntry(unittest.TestCase):
 
 		elif test_voucher.doctype in ["Sales Order", "Purchase Order"]:
 			# if test_voucher is a Sales Order/Purchase Order, test error on cancellation of test_voucher
-			frappe.db.set_single_value(
+			nts .db.set_single_value(
 				"Accounts Settings", "unlink_advance_payment_on_cancelation_of_order", 0
 			)
-			submitted_voucher = frappe.get_doc(test_voucher.doctype, test_voucher.name)
-			self.assertRaises(frappe.LinkExistsError, submitted_voucher.cancel)
+			submitted_voucher = nts .get_doc(test_voucher.doctype, test_voucher.name)
+			self.assertRaises(nts .LinkExistsError, submitted_voucher.cancel)
 
 	def test_jv_against_stock_account(self):
 		company = "_Test Company with perpetual inventory"
@@ -124,7 +124,7 @@ class TestJournalEntry(unittest.TestCase):
 		if not diff:
 			diff = 100
 
-		jv = frappe.new_doc("Journal Entry")
+		jv = nts .new_doc("Journal Entry")
 		jv.company = company
 		jv.posting_date = nowdate()
 		jv.append(
@@ -149,7 +149,7 @@ class TestJournalEntry(unittest.TestCase):
 
 		if account_bal == stock_bal:
 			self.assertRaises(StockAccountInvalidTransaction, jv.save)
-			frappe.db.rollback()
+			nts .db.rollback()
 		else:
 			jv.submit()
 			jv.cancel()
@@ -195,7 +195,7 @@ class TestJournalEntry(unittest.TestCase):
 		# cancel
 		jv.cancel()
 
-		gle = frappe.db.sql(
+		gle = nts .db.sql(
 			"""select name from `tabGL Entry`
 			where voucher_type='Sales Invoice' and voucher_no=%s""",
 			jv.name,
@@ -349,7 +349,7 @@ class TestJournalEntry(unittest.TestCase):
 	def test_jv_with_project(self):
 		from prodman.projects.doctype.project.test_project import make_project
 
-		if not frappe.db.exists("Project", {"project_name": "Journal Entry Project"}):
+		if not nts .db.exists("Project", {"project_name": "Journal Entry Project"}):
 			project = make_project(
 				{
 					"project_name": "Journal Entry Project",
@@ -359,7 +359,7 @@ class TestJournalEntry(unittest.TestCase):
 			)
 			project_name = project.name
 		else:
-			project_name = frappe.get_value("Project", {"project_name": "_Test Project"})
+			project_name = nts .get_value("Project", {"project_name": "_Test Project"})
 
 		jv = make_journal_entry("_Test Cash - _TC", "_Test Bank - _TC", 100, save=False)
 		for d in jv.accounts:
@@ -413,7 +413,7 @@ class TestJournalEntry(unittest.TestCase):
 		from prodman.accounts.doctype.cost_center.test_cost_center import create_cost_center
 
 		# Configure Repost Accounting Ledger for JVs
-		settings = frappe.get_doc("Repost Accounting Ledger Settings")
+		settings = nts .get_doc("Repost Accounting Ledger Settings")
 		if not [x for x in settings.allowed_types if x.document_type == "Journal Entry"]:
 			settings.append("allowed_types", {"document_type": "Journal Entry", "allowed": True})
 		settings.save()
@@ -462,8 +462,8 @@ class TestJournalEntry(unittest.TestCase):
 		self.check_gl_entries()
 
 	def check_gl_entries(self):
-		gl = frappe.qb.DocType("GL Entry")
-		query = frappe.qb.from_(gl)
+		gl = nts .qb.DocType("GL Entry")
+		query = nts .qb.from_(gl)
 		for field in self.fields:
 			query = query.select(gl[field])
 
@@ -481,7 +481,7 @@ class TestJournalEntry(unittest.TestCase):
 		from prodman.accounts.general_ledger import process_gl_map
 
 		# Create JV with defaut cost center - _Test Cost Center
-		frappe.db.set_single_value("Accounts Settings", "merge_similar_account_heads", 0)
+		nts .db.set_single_value("Accounts Settings", "merge_similar_account_heads", 0)
 
 		jv = make_journal_entry("_Test Bank - _TC", "_Test Bank - _TC", 100 * -1, save=True)
 		jv.append(
@@ -518,9 +518,9 @@ class TestJournalEntry(unittest.TestCase):
 		from prodman.accounts.general_ledger import process_gl_map
 
 		# Create JV with defaut cost center - _Test Cost Center
-		frappe.db.set_single_value("Accounts Settings", "merge_similar_account_heads", 0)
+		nts .db.set_single_value("Accounts Settings", "merge_similar_account_heads", 0)
 
-		jv = frappe.new_doc("Journal Entry")
+		jv = nts .new_doc("Journal Entry")
 		jv.posting_date = nowdate()
 		jv.company = "_Test Company"
 		jv.user_remark = "test"
@@ -568,7 +568,7 @@ class TestJournalEntry(unittest.TestCase):
 		jv.accounts[0].update({"debit_in_account_currency": 8500, "exchange_rate": 1})
 		jv.accounts[1].update({"party_type": "Customer", "party": "_Test Customer USD", "exchange_rate": 85})
 		jv.submit()
-		actual = frappe.db.get_all(
+		actual = nts .db.get_all(
 			"GL Entry",
 			filters={"voucher_no": jv.name, "is_cancelled": 0},
 			fields=["account", "transaction_exchange_rate"],
@@ -596,7 +596,7 @@ def make_journal_entry(
 	if not cost_center:
 		cost_center = "_Test Cost Center - _TC"
 
-	jv = frappe.new_doc("Journal Entry")
+	jv = nts .new_doc("Journal Entry")
 	jv.posting_date = posting_date or nowdate()
 	jv.company = company or "_Test Company"
 	jv.user_remark = "test"
@@ -631,4 +631,4 @@ def make_journal_entry(
 	return jv
 
 
-test_records = frappe.get_test_records("Journal Entry")
+test_records = nts .get_test_records("Journal Entry")

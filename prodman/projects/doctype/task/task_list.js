@@ -1,4 +1,4 @@
-frappe.listview_settings["Task"] = {
+nts.listview_settings["Task"] = {
 	add_fields: [
 		"project",
 		"status",
@@ -59,7 +59,7 @@ frappe.listview_settings["Task"] = {
 			const assignment_wrapper = `
 				<span>Assigned to:</span>
 				<span class="text-white">
-					${assign_list.map((user) => frappe.user_info(user).fullname).join(", ")}
+					${assign_list.map((user) => nts.user_info(user).fullname).join(", ")}
 				</span>
 			`;
 			html += assignment_wrapper;

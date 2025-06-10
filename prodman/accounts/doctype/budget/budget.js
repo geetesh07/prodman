@@ -1,8 +1,8 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
-frappe.provide("prodman.accounts.dimensions");
+nts .provide("prodman.accounts.dimensions");
 
-frappe.ui.form.on("Budget", {
+nts .ui.form.on("Budget", {
 	onload: function (frm) {
 		frm.set_query("account", "accounts", function () {
 			return {

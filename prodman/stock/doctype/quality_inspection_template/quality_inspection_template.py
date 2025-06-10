@@ -1,9 +1,9 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe.model.document import Document
+import nts
+from nts.model.document import Document
 
 
 class QualityInspectionTemplate(Document):
@@ -13,7 +13,7 @@ class QualityInspectionTemplate(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.stock.doctype.item_quality_inspection_parameter.item_quality_inspection_parameter import (
 			ItemQualityInspectionParameter,
@@ -30,7 +30,7 @@ def get_template_details(template):
 	if not template:
 		return []
 
-	return frappe.get_all(
+	return nts.get_all(
 		"Item Quality Inspection Parameter",
 		fields=[
 			"specification",

@@ -1,4 +1,4 @@
-frappe.ui.form.on("Accounts Settings", {
+nts .ui.form.on("Accounts Settings", {
 	refresh: function (frm) {
 		frm.set_df_property("acc_frozen_upto", "label", "Books Closed Through");
 		frm.set_df_property(

@@ -1,6 +1,6 @@
 import os
 
-import frappe
+import nts
 
 in_ci = os.environ.get("CI")
 
@@ -10,19 +10,19 @@ def execute():
 		contacts = get_portal_user_contacts()
 		add_portal_users(contacts)
 	except Exception:
-		frappe.db.rollback()
-		frappe.log_error("Failed to migrate portal users")
+		nts.db.rollback()
+		nts.log_error("Failed to migrate portal users")
 
 		if in_ci:  # TODO: better way to handle this.
 			raise
 
 
 def get_portal_user_contacts():
-	contact = frappe.qb.DocType("Contact")
-	dynamic_link = frappe.qb.DocType("Dynamic Link")
+	contact = nts.qb.DocType("Contact")
+	dynamic_link = nts.qb.DocType("Dynamic Link")
 
 	return (
-		frappe.qb.from_(contact)
+		nts.qb.from_(contact)
 		.inner_join(dynamic_link)
 		.on(contact.name == dynamic_link.parent)
 		.select(
@@ -39,16 +39,16 @@ def get_portal_user_contacts():
 
 def add_portal_users(contacts):
 	for contact in contacts:
-		user = frappe.db.get_value("User", {"email": contact.portal_user}, "name")
+		user = nts.db.get_value("User", {"email": contact.portal_user}, "name")
 		if not user:
 			continue
 
-		roles = frappe.get_roles(user)
+		roles = nts.get_roles(user)
 		required_role = contact.doctype
 		if required_role not in roles:
 			continue
 
-		portal_user_doc = frappe.new_doc("Portal User")
+		portal_user_doc = nts.new_doc("Portal User")
 		portal_user_doc.parenttype = contact.doctype
 		portal_user_doc.parentfield = "portal_users"
 		portal_user_doc.parent = contact.parent

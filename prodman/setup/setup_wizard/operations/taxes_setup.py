@@ -1,17 +1,17 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 import os
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def setup_taxes_and_charges(company_name: str, country: str):
-	if not frappe.db.exists("Company", company_name):
-		frappe.throw(_("Company {} does not exist yet. Taxes setup aborted.").format(company_name))
+	if not nts.db.exists("Company", company_name):
+		nts.throw(_("Company {} does not exist yet. Taxes setup aborted.").format(company_name))
 
 	file_path = os.path.join(os.path.dirname(__file__), "..", "data", "country_wise_tax.json")
 	with open(file_path) as json_file:
@@ -88,11 +88,11 @@ def from_detailed_data(company_name, data):
 	"""Create Taxes and Charges Templates from detailed data."""
 	charts_company_name = company_name
 	if (
-		frappe.db.get_value("Company", company_name, "create_chart_of_accounts_based_on")
+		nts.db.get_value("Company", company_name, "create_chart_of_accounts_based_on")
 		== "Existing Company"
 	):
-		charts_company_name = frappe.db.get_value("Company", company_name, "existing_company")
-	coa_name = frappe.db.get_value("Company", charts_company_name, "chart_of_accounts")
+		charts_company_name = nts.db.get_value("Company", company_name, "existing_company")
+	coa_name = nts.db.get_value("Company", charts_company_name, "chart_of_accounts")
 	coa_data = data.get("chart_of_accounts", {})
 	tax_templates = coa_data.get(coa_name) or coa_data.get("*", {})
 	tax_categories = data.get("tax_categories")
@@ -118,23 +118,23 @@ def from_detailed_data(company_name, data):
 
 
 def update_regional_tax_settings(country, company):
-	path = frappe.get_app_path("prodman", "regional", frappe.scrub(country))
+	path = nts.get_app_path("prodman", "regional", nts.scrub(country))
 	if os.path.exists(path.encode("utf-8")):
 		try:
-			module_name = f"prodman.regional.{frappe.scrub(country)}.setup.update_regional_tax_settings"
-			frappe.get_attr(module_name)(country, company)
+			module_name = f"prodman.regional.{nts.scrub(country)}.setup.update_regional_tax_settings"
+			nts.get_attr(module_name)(country, company)
 		except (ImportError, AttributeError):
 			pass
 		except Exception:
 			# Log error and ignore if failed to setup regional tax settings
-			frappe.log_error("Unable to setup regional tax settings")
+			nts.log_error("Unable to setup regional tax settings")
 
 
 def make_taxes_and_charges_template(company_name, doctype, template):
 	template["company"] = company_name
 	template["doctype"] = doctype
 
-	if frappe.db.exists(doctype, {"title": template.get("title"), "company": company_name}):
+	if nts.db.exists(doctype, {"title": template.get("title"), "company": company_name}):
 		return
 
 	for tax_row in template.get("taxes"):
@@ -142,7 +142,7 @@ def make_taxes_and_charges_template(company_name, doctype, template):
 		tax_row_defaults = {
 			"category": "Total",
 			"charge_type": "On Net Total",
-			"cost_center": frappe.db.get_value("Company", company_name, "cost_center"),
+			"cost_center": nts.db.get_value("Company", company_name, "cost_center"),
 		}
 
 		if doctype == "Purchase Taxes and Charges Template":
@@ -162,7 +162,7 @@ def make_taxes_and_charges_template(company_name, doctype, template):
 			if fieldname not in tax_row:
 				tax_row[fieldname] = default_value
 
-	doc = frappe.get_doc(template)
+	doc = nts.get_doc(template)
 
 	# Data in country wise json is already pre validated, hence validations can be ignored
 	# Ingone validations to make doctypes faster
@@ -183,7 +183,7 @@ def make_item_tax_template(company_name, template):
 	template["company"] = company_name
 	template["doctype"] = doctype
 
-	if frappe.db.exists(doctype, {"title": template.get("title"), "company": company_name}):
+	if nts.db.exists(doctype, {"title": template.get("title"), "company": company_name}):
 		return
 
 	for tax_row in template.get("taxes"):
@@ -196,7 +196,7 @@ def make_item_tax_template(company_name, template):
 			if "tax_rate" not in tax_row:
 				tax_row["tax_rate"] = account_data.get("tax_rate")
 
-	doc = frappe.get_doc(template)
+	doc = nts.get_doc(template)
 
 	# Data in country wise json is already pre validated, hence validations can be ignored
 	# Ingone validations to make doctypes faster
@@ -218,12 +218,12 @@ def get_or_create_account(company_name, account):
 	if account.get("account_number"):
 		or_filters.update({"account_number": account.get("account_number")})
 
-	existing_accounts = frappe.get_all(
+	existing_accounts = nts.get_all(
 		"Account", filters={"company": company_name, "root_type": root_type}, or_filters=or_filters
 	)
 
 	if existing_accounts:
-		return frappe.get_doc("Account", existing_accounts[0].name)
+		return nts.get_doc("Account", existing_accounts[0].name)
 
 	tax_group = get_or_create_tax_group(company_name, root_type)
 
@@ -235,7 +235,7 @@ def get_or_create_account(company_name, account):
 	account["root_type"] = root_type
 	account["is_group"] = 0
 
-	doc = frappe.get_doc(account)
+	doc = nts.get_doc(account)
 	doc.flags.ignore_links = True
 	doc.flags.ignore_validate = True
 	doc.insert(ignore_permissions=True, ignore_mandatory=True, ignore_if_duplicate=True)
@@ -244,7 +244,7 @@ def get_or_create_account(company_name, account):
 
 def get_or_create_tax_group(company_name, root_type):
 	# Look for a group account of type 'Tax'
-	tax_group_name = frappe.db.get_value(
+	tax_group_name = nts.db.get_value(
 		"Account",
 		{"is_group": 1, "root_type": root_type, "account_type": "Tax", "company": company_name},
 	)
@@ -254,7 +254,7 @@ def get_or_create_tax_group(company_name, root_type):
 
 	# Look for a group account named 'Duties and Taxes' or 'Tax Assets'
 	account_name = _("Duties and Taxes") if root_type == "Liability" else _("Tax Assets")
-	tax_group_name = frappe.db.get_value(
+	tax_group_name = nts.db.get_value(
 		"Account",
 		{"is_group": 1, "root_type": root_type, "account_name": account_name, "company": company_name},
 	)
@@ -264,7 +264,7 @@ def get_or_create_tax_group(company_name, root_type):
 
 	# Create a new group account named 'Duties and Taxes' or 'Tax Assets' just
 	# below the root account
-	root_account = frappe.get_all(
+	root_account = nts.get_all(
 		"Account",
 		{
 			"is_group": 1,
@@ -276,7 +276,7 @@ def get_or_create_tax_group(company_name, root_type):
 		limit=1,
 	)[0]
 
-	tax_group_account = frappe.get_doc(
+	tax_group_account = nts.get_doc(
 		{
 			"doctype": "Account",
 			"company": company_name,
@@ -304,6 +304,6 @@ def make_tax_category(tax_category):
 		tax_category = {"title": tax_category}
 
 	tax_category["doctype"] = doctype
-	if not frappe.db.exists(doctype, tax_category["title"]):
-		doc = frappe.get_doc(tax_category)
+	if not nts.db.exists(doctype, tax_category["title"]):
+		doc = nts.get_doc(tax_category)
 		doc.insert(ignore_permissions=True)

@@ -1,8 +1,8 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -62,11 +62,11 @@ def get_data(filters, columns):
 
 
 def get_item_price_qty_data(filters):
-	item_price = frappe.qb.DocType("Item Price")
-	bin = frappe.qb.DocType("Bin")
+	item_price = nts.qb.DocType("Item Price")
+	bin = nts.qb.DocType("Bin")
 
 	query = (
-		frappe.qb.from_(item_price)
+		nts.qb.from_(item_price)
 		.left_join(bin)
 		.on(item_price.item_code == bin.item_code)
 		.select(
@@ -132,7 +132,7 @@ def get_price_map(price_list_names, buying=0, selling=0):
 	else:
 		filters["selling"] = 1
 
-	pricing_details = frappe.get_all(
+	pricing_details = nts.get_all(
 		"Item Price", fields=["name", "price_list", "price_list_rate"], filters=filters
 	)
 

@@ -22,7 +22,7 @@
 				>
 					{% if (!item.image) { %}
 					<span class="placeholder-text">
-						{%= frappe.get_abbr(item.item_name || item.name) %}
+						{%= nts.get_abbr(item.item_name || item.name) %}
 					</span>
 					{% } %}
 					{% if (item.image) { %}

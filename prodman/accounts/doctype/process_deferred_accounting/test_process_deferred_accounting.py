@@ -1,9 +1,9 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2019, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts 
 
 from prodman.accounts.doctype.account.test_account import create_account
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import (
@@ -40,7 +40,7 @@ class TestProcessDeferredAccounting(unittest.TestCase):
 		si.save()
 		si.submit()
 
-		process_deferred_accounting = frappe.get_doc(
+		process_deferred_accounting = nts .get_doc(
 			dict(
 				doctype="Process Deferred Accounting",
 				posting_date="2023-07-01",
@@ -66,7 +66,7 @@ class TestProcessDeferredAccounting(unittest.TestCase):
 		change_acc_settings()
 
 	def test_pda_submission_and_cancellation(self):
-		pda = frappe.get_doc(
+		pda = nts .get_doc(
 			dict(
 				doctype="Process Deferred Accounting",
 				posting_date="2019-01-01",
@@ -80,7 +80,7 @@ class TestProcessDeferredAccounting(unittest.TestCase):
 
 
 def change_acc_settings(acc_frozen_upto="", book_deferred_entries_based_on="Days"):
-	acc_settings = frappe.get_doc("Accounts Settings", "Accounts Settings")
+	acc_settings = nts .get_doc("Accounts Settings", "Accounts Settings")
 	acc_settings.acc_frozen_upto = acc_frozen_upto
 	acc_settings.book_deferred_entries_based_on = book_deferred_entries_based_on
 	acc_settings.save()

@@ -1,7 +1,7 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Asset Maintenance", {
+nts .ui.form.on("Asset Maintenance", {
 	setup: (frm) => {
 		frm.set_query("asset_name", function () {
 			return {
@@ -40,7 +40,7 @@ frappe.ui.form.on("Asset Maintenance", {
 	},
 	make_dashboard: (frm) => {
 		if (!frm.is_new()) {
-			frappe.call({
+			nts .call({
 				method: "prodman.assets.doctype.asset_maintenance.asset_maintenance.get_maintenance_log",
 				args: { asset_name: frm.doc.asset_name },
 				callback: (r) => {
@@ -53,7 +53,7 @@ frappe.ui.form.on("Asset Maintenance", {
 					(r.message || []).forEach(function (d) {
 						$(`<div class='row' style='margin-bottom: 10px;'>
 							<div class='col-sm-3 small'>
-								<a onclick="frappe.set_route('List', 'Asset Maintenance Log',
+								<a onclick="nts .set_route('List', 'Asset Maintenance Log',
 									{'asset_name': '${d.asset_name}','maintenance_status': '${d.maintenance_status}' });">
 									${__(d.maintenance_status)} <span class="badge">${d.count}</span>
 								</a>
@@ -67,7 +67,7 @@ frappe.ui.form.on("Asset Maintenance", {
 	},
 });
 
-frappe.ui.form.on("Asset Maintenance Task", {
+nts .ui.form.on("Asset Maintenance Task", {
 	start_date: (frm, cdt, cdn) => {
 		get_next_due_date(frm, cdt, cdn);
 	},
@@ -85,7 +85,7 @@ frappe.ui.form.on("Asset Maintenance Task", {
 var get_next_due_date = function (frm, cdt, cdn) {
 	var d = locals[cdt][cdn];
 	if (d.start_date && d.periodicity) {
-		return frappe.call({
+		return nts .call({
 			method: "prodman.assets.doctype.asset_maintenance.asset_maintenance.calculate_next_due_date",
 			args: {
 				start_date: d.start_date,
@@ -96,9 +96,9 @@ var get_next_due_date = function (frm, cdt, cdn) {
 			},
 			callback: function (r) {
 				if (r.message) {
-					frappe.model.set_value(cdt, cdn, "next_due_date", r.message);
+					nts .model.set_value(cdt, cdn, "next_due_date", r.message);
 				} else {
-					frappe.model.set_value(cdt, cdn, "next_due_date", "");
+					nts .model.set_value(cdt, cdn, "next_due_date", "");
 				}
 			},
 		});

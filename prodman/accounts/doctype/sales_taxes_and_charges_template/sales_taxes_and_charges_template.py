@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import flt
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .utils import flt
 
 from prodman.controllers.accounts_controller import (
 	validate_account_head,
@@ -22,7 +22,7 @@ class SalesTaxesandChargesTemplate(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.sales_taxes_and_charges.sales_taxes_and_charges import (
 			SalesTaxesandCharges,
@@ -41,22 +41,22 @@ class SalesTaxesandChargesTemplate(Document):
 
 	def autoname(self):
 		if self.company and self.title:
-			abbr = frappe.get_cached_value("Company", self.company, "abbr")
+			abbr = nts .get_cached_value("Company", self.company, "abbr")
 			self.name = f"{self.title} - {abbr}"
 
 	def set_missing_values(self):
 		for data in self.taxes:
 			if data.charge_type == "On Net Total" and flt(data.rate) == 0.0:
-				data.rate = frappe.get_cached_value("Account", data.account_head, "tax_rate")
+				data.rate = nts .get_cached_value("Account", data.account_head, "tax_rate")
 
 
 def valdiate_taxes_and_charges_template(doc):
 	# default should not be disabled
-	# if not doc.is_default and not frappe.get_all(doc.doctype, filters={"is_default": 1}):
+	# if not doc.is_default and not nts .get_all(doc.doctype, filters={"is_default": 1}):
 	# 	doc.is_default = 1
 
 	if doc.is_default == 1:
-		frappe.db.sql(
+		nts .db.sql(
 			f"""update `tab{doc.doctype}` set is_default = 0
 			where is_default = 1 and name != %s and company = %s""",
 			(doc.name, doc.company),
@@ -76,14 +76,14 @@ def valdiate_taxes_and_charges_template(doc):
 
 def validate_disabled(doc):
 	if doc.is_default and doc.disabled:
-		frappe.throw(_("Disabled template must not be default template"))
+		nts .throw(_("Disabled template must not be default template"))
 
 
 def validate_for_tax_category(doc):
 	if not doc.tax_category:
 		return
 
-	if frappe.db.exists(
+	if nts .db.exists(
 		doc.doctype,
 		{
 			"company": doc.company,
@@ -92,8 +92,8 @@ def validate_for_tax_category(doc):
 			"name": ["!=", doc.name],
 		},
 	):
-		frappe.throw(
+		nts .throw(
 			_(
 				"A template with tax category {0} already exists. Only one template is allowed with each tax category"
-			).format(frappe.bold(doc.tax_category))
+			).format(nts .bold(doc.tax_category))
 		)

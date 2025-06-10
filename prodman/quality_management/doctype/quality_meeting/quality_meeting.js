@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Frappe and contributors
+// Copyright (c) 2018, nts and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Quality Meeting", {});
+nts.ui.form.on("Quality Meeting", {});

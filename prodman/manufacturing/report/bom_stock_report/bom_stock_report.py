@@ -1,11 +1,11 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import Floor, Sum
-from frappe.utils import cint
+import nts
+from nts import _
+from nts.query_builder.functions import Floor, Sum
+from nts.utils import cint
 from pypika.terms import ExistsCriterion
 
 
@@ -38,24 +38,24 @@ def get_columns():
 def get_bom_stock(filters):
 	qty_to_produce = filters.get("qty_to_produce")
 	if cint(qty_to_produce) <= 0:
-		frappe.throw(_("Quantity to Produce should be greater than zero."))
+		nts.throw(_("Quantity to Produce should be greater than zero."))
 
 	if filters.get("show_exploded_view"):
 		bom_item_table = "BOM Explosion Item"
 	else:
 		bom_item_table = "BOM Item"
 
-	warehouse_details = frappe.db.get_value("Warehouse", filters.get("warehouse"), ["lft", "rgt"], as_dict=1)
+	warehouse_details = nts.db.get_value("Warehouse", filters.get("warehouse"), ["lft", "rgt"], as_dict=1)
 
-	BOM = frappe.qb.DocType("BOM")
-	BOM_ITEM = frappe.qb.DocType(bom_item_table)
-	BIN = frappe.qb.DocType("Bin")
-	WH = frappe.qb.DocType("Warehouse")
+	BOM = nts.qb.DocType("BOM")
+	BOM_ITEM = nts.qb.DocType(bom_item_table)
+	BIN = nts.qb.DocType("Bin")
+	WH = nts.qb.DocType("Warehouse")
 	CONDITIONS = ()
 
 	if warehouse_details:
 		CONDITIONS = ExistsCriterion(
-			frappe.qb.from_(WH)
+			nts.qb.from_(WH)
 			.select(WH.name)
 			.where(
 				(WH.lft >= warehouse_details.lft)
@@ -67,7 +67,7 @@ def get_bom_stock(filters):
 		CONDITIONS = BIN.warehouse == filters.get("warehouse")
 
 	QUERY = (
-		frappe.qb.from_(BOM)
+		nts.qb.from_(BOM)
 		.inner_join(BOM_ITEM)
 		.on(BOM.name == BOM_ITEM.parent)
 		.left_join(BIN)

@@ -1,7 +1,7 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2018, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.listview_settings["Transaction Deletion Record"] = {
+nts.listview_settings["Transaction Deletion Record"] = {
 	add_fields: ["status"],
 	get_indicator: function (doc) {
 		let colors = {

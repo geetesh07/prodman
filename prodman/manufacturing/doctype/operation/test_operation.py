@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts
 
-test_records = frappe.get_test_records("Operation")
+test_records = nts.get_test_records("Operation")
 
 
 class TestOperation(unittest.TestCase):
@@ -17,13 +17,13 @@ def make_operation(*args, **kwargs):
 	if isinstance(args, tuple):
 		args = args[0]
 
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
-	if not frappe.db.exists("Operation", args.operation):
-		doc = frappe.get_doc(
+	if not nts.db.exists("Operation", args.operation):
+		doc = nts.get_doc(
 			{"doctype": "Operation", "name": args.operation, "workstation": args.workstation}
 		)
 		doc.insert()
 		return doc
 
-	return frappe.get_doc("Operation", args.operation)
+	return nts.get_doc("Operation", args.operation)

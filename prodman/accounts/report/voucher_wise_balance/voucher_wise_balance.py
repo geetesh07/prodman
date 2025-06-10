@@ -1,9 +1,9 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import Sum
+import nts 
+from nts  import _
+from nts .query_builder.functions import Sum
 
 
 def execute(filters=None):
@@ -40,9 +40,9 @@ def get_columns():
 
 
 def get_data(filters):
-	gle = frappe.qb.DocType("GL Entry")
+	gle = nts .qb.DocType("GL Entry")
 	query = (
-		frappe.qb.from_(gle)
+		nts .qb.from_(gle)
 		.select(gle.voucher_type, gle.voucher_no, Sum(gle.debit).as_("debit"), Sum(gle.credit).as_("credit"))
 		.where(gle.is_cancelled == 0)
 		.groupby(gle.voucher_no)

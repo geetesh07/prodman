@@ -1,11 +1,11 @@
 from contextlib import contextmanager
 
-import frappe
+import nts
 
 
 @contextmanager
 def temporary_flag(flag_name, value):
-	flags = frappe.local.flags
+	flags = nts.local.flags
 	flags[flag_name] = value
 	try:
 		yield

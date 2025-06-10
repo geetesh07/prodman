@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
 from typing import TYPE_CHECKING, overload
 
-import frappe
-from frappe.utils import cint, flt
+import nts
+from nts.utils import cint, flt
 
 import prodman
 
@@ -34,7 +34,7 @@ def make_stock_entry(
 	...
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_stock_entry(**args):
 	"""Helper function to make a Stock Entry
 
@@ -63,8 +63,8 @@ def make_stock_entry(**args):
 
 		return "\n".join(uniques)
 
-	s = frappe.new_doc("Stock Entry")
-	args = frappe._dict(args)
+	s = nts.new_doc("Stock Entry")
+	args = nts._dict(args)
 
 	if args.posting_date or args.posting_time:
 		s.set_posting_time = 1
@@ -106,12 +106,12 @@ def make_stock_entry(**args):
 	# company
 	if not args.company:
 		if args.source:
-			args.company = frappe.db.get_value("Warehouse", args.source, "company")
+			args.company = nts.db.get_value("Warehouse", args.source, "company")
 		elif args.target:
-			args.company = frappe.db.get_value("Warehouse", args.target, "company")
+			args.company = nts.db.get_value("Warehouse", args.target, "company")
 
 	# set vales from test
-	if frappe.flags.in_test:
+	if nts.flags.in_test:
 		if not args.company:
 			args.company = "_Test Company"
 		if not args.item:
@@ -124,19 +124,19 @@ def make_stock_entry(**args):
 	s.sales_invoice_no = args.sales_invoice_no
 	s.is_opening = args.is_opening or "No"
 	if not args.cost_center:
-		args.cost_center = frappe.get_value("Company", s.company, "cost_center")
+		args.cost_center = nts.get_value("Company", s.company, "cost_center")
 
 	if not args.expense_account and s.is_opening == "No":
-		args.expense_account = frappe.get_value("Company", s.company, "stock_adjustment_account")
+		args.expense_account = nts.get_value("Company", s.company, "stock_adjustment_account")
 
 	# We can find out the serial number using the batch source document
 	serial_number = args.serial_no
 
 	bundle_id = None
 	if not args.use_serial_batch_fields and (args.serial_no or args.batch_no or args.batches):
-		batches = frappe._dict({})
+		batches = nts._dict({})
 		if args.batch_no:
-			batches = frappe._dict({args.batch_no: args.qty})
+			batches = nts._dict({args.batch_no: args.qty})
 		elif args.batches:
 			batches = args.batches
 

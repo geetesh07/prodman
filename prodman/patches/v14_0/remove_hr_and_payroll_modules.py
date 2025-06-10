@@ -1,27 +1,27 @@
-import frappe
+import nts
 
 
 def execute():
-	if "hrms" in frappe.get_installed_apps():
+	if "hrms" in nts.get_installed_apps():
 		return
 
-	frappe.delete_doc("Module Def", "HR", ignore_missing=True, force=True)
-	frappe.delete_doc("Module Def", "Payroll", ignore_missing=True, force=True)
+	nts.delete_doc("Module Def", "HR", ignore_missing=True, force=True)
+	nts.delete_doc("Module Def", "Payroll", ignore_missing=True, force=True)
 
-	frappe.delete_doc("Workspace", "HR", ignore_missing=True, force=True)
-	frappe.delete_doc("Workspace", "Payroll", ignore_missing=True, force=True)
+	nts.delete_doc("Workspace", "HR", ignore_missing=True, force=True)
+	nts.delete_doc("Workspace", "Payroll", ignore_missing=True, force=True)
 
-	print_formats = frappe.get_all(
+	print_formats = nts.get_all(
 		"Print Format", {"module": ("in", ["HR", "Payroll"]), "standard": "Yes"}, pluck="name"
 	)
 	for print_format in print_formats:
-		frappe.delete_doc("Print Format", print_format, ignore_missing=True, force=True)
+		nts.delete_doc("Print Format", print_format, ignore_missing=True, force=True)
 
-	reports = frappe.get_all(
+	reports = nts.get_all(
 		"Report", {"module": ("in", ["HR", "Payroll"]), "is_standard": "Yes"}, pluck="name"
 	)
 	for report in reports:
-		frappe.delete_doc("Report", report, ignore_missing=True, force=True)
+		nts.delete_doc("Report", report, ignore_missing=True, force=True)
 
 	# reports moved from Projects, Accounts, and Regional module to HRMS app
 	for report in [
@@ -31,27 +31,27 @@ def execute():
 		"Professional Tax Deductions",
 		"Provident Fund Deductions",
 	]:
-		frappe.delete_doc("Report", report, ignore_missing=True, force=True)
+		nts.delete_doc("Report", report, ignore_missing=True, force=True)
 
-	doctypes = frappe.get_all("DocType", {"module": ("in", ["HR", "Payroll"]), "custom": 0}, pluck="name")
+	doctypes = nts.get_all("DocType", {"module": ("in", ["HR", "Payroll"]), "custom": 0}, pluck="name")
 	for doctype in doctypes:
-		frappe.delete_doc("DocType", doctype, ignore_missing=True, force=True)
+		nts.delete_doc("DocType", doctype, ignore_missing=True, force=True)
 
-	frappe.delete_doc("DocType", "Salary Slip Loan", ignore_missing=True, force=True)
-	frappe.delete_doc("DocType", "Salary Component Account", ignore_missing=True, force=True)
+	nts.delete_doc("DocType", "Salary Slip Loan", ignore_missing=True, force=True)
+	nts.delete_doc("DocType", "Salary Component Account", ignore_missing=True, force=True)
 
-	notifications = frappe.get_all(
+	notifications = nts.get_all(
 		"Notification", {"module": ("in", ["HR", "Payroll"]), "is_standard": 1}, pluck="name"
 	)
 	for notifcation in notifications:
-		frappe.delete_doc("Notification", notifcation, ignore_missing=True, force=True)
+		nts.delete_doc("Notification", notifcation, ignore_missing=True, force=True)
 
-	frappe.delete_doc("User Type", "Employee Self Service", ignore_missing=True, force=True)
+	nts.delete_doc("User Type", "Employee Self Service", ignore_missing=True, force=True)
 
 	for dt in ["Web Form", "Dashboard", "Dashboard Chart", "Number Card"]:
-		records = frappe.get_all(dt, {"module": ("in", ["HR", "Payroll"]), "is_standard": 1}, pluck="name")
+		records = nts.get_all(dt, {"module": ("in", ["HR", "Payroll"]), "is_standard": 1}, pluck="name")
 		for record in records:
-			frappe.delete_doc(dt, record, ignore_missing=True, force=True)
+			nts.delete_doc(dt, record, ignore_missing=True, force=True)
 
 	custom_fields = {
 		"Salary Component": ["component_type"],
@@ -87,6 +87,6 @@ def execute():
 
 	for doc, fields in custom_fields.items():
 		filters = {"dt": doc, "fieldname": ["in", fields]}
-		records = frappe.get_all("Custom Field", filters=filters, pluck="name")
+		records = nts.get_all("Custom Field", filters=filters, pluck="name")
 		for record in records:
-			frappe.delete_doc("Custom Field", record, ignore_missing=True, force=True)
+			nts.delete_doc("Custom Field", record, ignore_missing=True, force=True)

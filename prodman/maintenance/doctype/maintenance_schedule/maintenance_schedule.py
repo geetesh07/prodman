@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe import _, throw
-from frappe.utils import add_days, cint, cstr, date_diff, formatdate, getdate
+import nts
+from nts import _, throw
+from nts.utils import add_days, cint, cstr, date_diff, formatdate, getdate
 
 from prodman.setup.doctype.employee.employee import get_holiday_list_for_employee
 from prodman.stock.doctype.serial_no.serial_no import get_serial_nos
@@ -17,7 +17,7 @@ class MaintenanceSchedule(TransactionBase):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.maintenance.doctype.maintenance_schedule_detail.maintenance_schedule_detail import (
 			MaintenanceScheduleDetail,
@@ -45,7 +45,7 @@ class MaintenanceSchedule(TransactionBase):
 		transaction_date: DF.Date
 	# end: auto-generated types
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def generate_schedule(self):
 		if self.docstatus != 0:
 			return
@@ -68,7 +68,7 @@ class MaintenanceSchedule(TransactionBase):
 				child.completion_status = "Pending"
 				child.item_reference = d.name
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def validate_end_date_visits(self):
 		days_in_period = {"Weekly": 7, "Monthly": 30, "Quarterly": 91, "Half Yearly": 182, "Yearly": 365}
 		for item in self.items:
@@ -108,7 +108,7 @@ class MaintenanceSchedule(TransactionBase):
 		email_map = {}
 		for d in self.get("items"):
 			if d.serial_and_batch_bundle:
-				serial_nos = frappe.get_doc(
+				serial_nos = nts.get_doc(
 					"Serial and Batch Bundle", d.serial_and_batch_bundle
 				).get_serial_nos()
 
@@ -118,20 +118,20 @@ class MaintenanceSchedule(TransactionBase):
 
 			no_email_sp = []
 			if d.sales_person and d.sales_person not in email_map:
-				sp = frappe.get_doc("Sales Person", d.sales_person)
+				sp = nts.get_doc("Sales Person", d.sales_person)
 				try:
 					email_map[d.sales_person] = sp.get_email_id()
-				except frappe.ValidationError:
+				except nts.ValidationError:
 					no_email_sp.append(d.sales_person)
 
 			if no_email_sp:
-				frappe.msgprint(
+				nts.msgprint(
 					_(
 						"Setting Events to {0}, since the Employee attached to the below Sales Persons does not have a User ID{1}"
 					).format(self.owner, "<br>" + "<br>".join(no_email_sp))
 				)
 
-			scheduled_date = frappe.db.get_all(
+			scheduled_date = nts.db.get_all(
 				"Maintenance Schedule Detail",
 				{"parent": self.name, "item_code": d.item_code},
 				["scheduled_date"],
@@ -139,10 +139,10 @@ class MaintenanceSchedule(TransactionBase):
 			)
 
 			for key in scheduled_date:
-				description = frappe._("Reference: {0}, Item Code: {1} and Customer: {2}").format(
+				description = nts._("Reference: {0}, Item Code: {1} and Customer: {2}").format(
 					self.name, d.item_code, self.customer
 				)
-				event = frappe.get_doc(
+				event = nts.get_doc(
 					{
 						"doctype": "Event",
 						"owner": email_map.get(d.sales_person, self.owner),
@@ -179,13 +179,13 @@ class MaintenanceSchedule(TransactionBase):
 	def validate_schedule_date_for_holiday_list(self, schedule_date, sales_person):
 		validated = False
 
-		employee = frappe.db.get_value("Sales Person", sales_person, "employee")
+		employee = nts.db.get_value("Sales Person", sales_person, "employee")
 		if employee:
 			holiday_list = get_holiday_list_for_employee(employee)
 		else:
-			holiday_list = frappe.get_cached_value("Company", self.company, "default_holiday_list")
+			holiday_list = nts.get_cached_value("Company", self.company, "default_holiday_list")
 
-		holidays = frappe.db.sql_list(
+		holidays = nts.db.sql_list(
 			"""select holiday_date from `tabHoliday` where parent=%s""", holiday_list
 		)
 
@@ -237,7 +237,7 @@ class MaintenanceSchedule(TransactionBase):
 	def validate_sales_order(self):
 		for d in self.get("items"):
 			if d.sales_order:
-				chk = frappe.db.sql(
+				chk = nts.db.sql(
 					"""select ms.name from `tabMaintenance Schedule` ms,
 					`tabMaintenance Schedule Item` msi where msi.parent=ms.name and
 					msi.sales_order=%s and ms.docstatus=1""",
@@ -284,7 +284,7 @@ class MaintenanceSchedule(TransactionBase):
 		if not ids:
 			return
 
-		voucher_nos = frappe.get_all(
+		voucher_nos = nts.get_all(
 			"Serial and Batch Bundle", fields=["name", "voucher_type"], filters={"name": ("in", ids)}
 		)
 
@@ -293,20 +293,20 @@ class MaintenanceSchedule(TransactionBase):
 				msg = f"""Serial and Batch Bundle {row.name}
 					should have voucher type as 'Maintenance Schedule'"""
 
-				frappe.throw(_(msg))
+				nts.throw(_(msg))
 
 	def on_update(self):
 		self.db_set("status", "Draft")
 
 	def update_amc_date(self, serial_nos, amc_expiry_date=None):
 		for serial_no in serial_nos:
-			serial_no_doc = frappe.get_doc("Serial No", serial_no)
+			serial_no_doc = nts.get_doc("Serial No", serial_no)
 			serial_no_doc.amc_expiry_date = amc_expiry_date
 			serial_no_doc.save()
 
 	def validate_serial_no(self, item_code, serial_nos, amc_start_date):
 		for serial_no in serial_nos:
-			sr_details = frappe.db.get_value(
+			sr_details = nts.db.get_value(
 				"Serial No",
 				serial_no,
 				["warranty_expiry_date", "amc_expiry_date", "warehouse", "delivery_date", "item_code"],
@@ -314,12 +314,12 @@ class MaintenanceSchedule(TransactionBase):
 			)
 
 			if not sr_details:
-				frappe.throw(_("Serial No {0} not found").format(serial_no))
+				nts.throw(_("Serial No {0} not found").format(serial_no))
 
 			if sr_details.get("item_code") != item_code:
-				frappe.throw(
+				nts.throw(
 					_("Serial No {0} does not belong to Item {1}").format(
-						frappe.bold(serial_no), frappe.bold(item_code)
+						nts.bold(serial_no), nts.bold(item_code)
 					),
 					title=_("Invalid"),
 				)
@@ -391,7 +391,7 @@ class MaintenanceSchedule(TransactionBase):
 	def on_cancel(self):
 		for d in self.get("items"):
 			if d.serial_and_batch_bundle:
-				serial_nos = frappe.get_doc(
+				serial_nos = nts.get_doc(
 					"Serial and Batch Bundle", d.serial_and_batch_bundle
 				).get_serial_nos()
 
@@ -404,7 +404,7 @@ class MaintenanceSchedule(TransactionBase):
 	def on_trash(self):
 		delete_events(self.doctype, self.name)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_pending_data(self, data_type, s_date=None, item_name=None):
 		if data_type == "date":
 			dates = ""
@@ -428,11 +428,11 @@ class MaintenanceSchedule(TransactionBase):
 					return schedule.name
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_serial_nos_from_schedule(item_code, schedule=None):
 	serial_nos = []
 	if schedule:
-		serial_nos = frappe.db.get_value(
+		serial_nos = nts.db.get_value(
 			"Maintenance Schedule Item", {"parent": schedule, "item_code": item_code}, "serial_no"
 		)
 
@@ -442,9 +442,9 @@ def get_serial_nos_from_schedule(item_code, schedule=None):
 	return serial_nos
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_maintenance_visit(source_name, target_doc=None, item_name=None, s_id=None):
-	from frappe.model.mapper import get_mapped_doc
+	from nts.model.mapper import get_mapped_doc
 
 	def condition(doc):
 		if s_id:
@@ -459,10 +459,10 @@ def make_maintenance_visit(source_name, target_doc=None, item_name=None, s_id=No
 
 	def update_serial(source, target, parent):
 		if source.item_reference:
-			if sbb := frappe.db.get_value(
+			if sbb := nts.db.get_value(
 				"Maintenance Schedule Item", source.item_reference, "serial_and_batch_bundle"
 			):
-				serial_nos = frappe.get_doc("Serial and Batch Bundle", sbb).get_serial_nos()
+				serial_nos = nts.get_doc("Serial and Batch Bundle", sbb).get_serial_nos()
 
 				if len(serial_nos) == 1:
 					target.serial_no = serial_nos[0]

@@ -1,10 +1,10 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2017, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe.utils import add_days, get_last_day, nowdate
+import nts 
+from nts .utils import add_days, get_last_day, nowdate
 
 from prodman.assets.doctype.asset_maintenance.asset_maintenance import calculate_next_due_date
 from prodman.stock.doctype.purchase_receipt.test_purchase_receipt import make_purchase_receipt
@@ -19,8 +19,8 @@ class TestAssetMaintenance(unittest.TestCase):
 	def test_create_asset_maintenance(self):
 		pr = make_purchase_receipt(item_code="Photocopier", qty=1, rate=100000.0, location="Test Location")
 
-		asset_name = frappe.db.get_value("Asset", {"purchase_receipt": pr.name}, "name")
-		asset_doc = frappe.get_doc("Asset", asset_name)
+		asset_name = nts .db.get_value("Asset", {"purchase_receipt": pr.name}, "name")
+		asset_doc = nts .get_doc("Asset", asset_name)
 		month_end_date = get_last_day(nowdate())
 
 		purchase_date = nowdate() if nowdate() != month_end_date else add_days(nowdate(), -15)
@@ -42,8 +42,8 @@ class TestAssetMaintenance(unittest.TestCase):
 
 		asset_doc.save()
 
-		if not frappe.db.exists("Asset Maintenance", "Photocopier"):
-			asset_maintenance = frappe.get_doc(
+		if not nts .db.exists("Asset Maintenance", "Photocopier"):
+			asset_maintenance = nts .get_doc(
 				{
 					"doctype": "Asset Maintenance",
 					"asset_name": "Photocopier",
@@ -57,8 +57,8 @@ class TestAssetMaintenance(unittest.TestCase):
 			self.assertEqual(asset_maintenance.asset_maintenance_tasks[0].next_due_date, next_due_date)
 
 	def test_create_asset_maintenance_log(self):
-		if not frappe.db.exists("Asset Maintenance Log", "Photocopier"):
-			asset_maintenance_log = frappe.get_doc(
+		if not nts .db.exists("Asset Maintenance Log", "Photocopier"):
+			asset_maintenance_log = nts .get_doc(
 				{
 					"doctype": "Asset Maintenance Log",
 					"asset_maintenance": "Photocopier",
@@ -67,22 +67,22 @@ class TestAssetMaintenance(unittest.TestCase):
 					"maintenance_status": "Completed",
 				}
 			).insert()
-		asset_maintenance = frappe.get_doc("Asset Maintenance", "Photocopier")
+		asset_maintenance = nts .get_doc("Asset Maintenance", "Photocopier")
 		next_due_date = calculate_next_due_date(asset_maintenance_log.completion_date, "Monthly")
 		self.assertEqual(asset_maintenance.asset_maintenance_tasks[0].next_due_date, next_due_date)
 
 
 def create_asset_data():
-	if not frappe.db.exists("Asset Category", "Equipment"):
+	if not nts .db.exists("Asset Category", "Equipment"):
 		create_asset_category()
 
-	if not frappe.db.exists("Location", "Test Location"):
-		frappe.get_doc({"doctype": "Location", "location_name": "Test Location"}).insert()
+	if not nts .db.exists("Location", "Test Location"):
+		nts .get_doc({"doctype": "Location", "location_name": "Test Location"}).insert()
 
-	if not frappe.db.exists("Item", "Photocopier"):
-		meta = frappe.get_meta("Asset")
+	if not nts .db.exists("Item", "Photocopier"):
+		meta = nts .get_meta("Asset")
 		naming_series = meta.get_field("naming_series").options
-		frappe.get_doc(
+		nts .get_doc(
 			{
 				"doctype": "Item",
 				"item_code": "Photocopier",
@@ -100,11 +100,11 @@ def create_asset_data():
 
 def create_maintenance_team():
 	user_list = ["marcus@abc.com", "thalia@abc.com", "mathias@abc.com"]
-	if not frappe.db.exists("Role", "Technician"):
-		frappe.get_doc({"doctype": "Role", "role_name": "Technician"}).insert()
+	if not nts .db.exists("Role", "Technician"):
+		nts .get_doc({"doctype": "Role", "role_name": "Technician"}).insert()
 	for user in user_list:
-		if not frappe.db.get_value("User", user):
-			frappe.get_doc(
+		if not nts .db.get_value("User", user):
+			nts .get_doc(
 				{
 					"doctype": "User",
 					"email": user,
@@ -114,8 +114,8 @@ def create_maintenance_team():
 				}
 			).insert()
 
-	if not frappe.db.exists("Asset Maintenance Team", "Team Awesome"):
-		frappe.get_doc(
+	if not nts .db.exists("Asset Maintenance Team", "Team Awesome"):
+		nts .get_doc(
 			{
 				"doctype": "Asset Maintenance Team",
 				"maintenance_manager": "marcus@abc.com",
@@ -154,7 +154,7 @@ def get_maintenance_tasks():
 
 
 def create_asset_category():
-	asset_category = frappe.new_doc("Asset Category")
+	asset_category = nts .new_doc("Asset Category")
 	asset_category.asset_category_name = "Equipment"
 	asset_category.total_number_of_depreciations = 3
 	asset_category.frequency_of_depreciation = 3
@@ -171,7 +171,7 @@ def create_asset_category():
 
 
 def set_depreciation_settings_in_company():
-	company = frappe.get_doc("Company", "_Test Company")
+	company = nts .get_doc("Company", "_Test Company")
 	company.accumulated_depreciation_account = "_Test Accumulated Depreciations - _TC"
 	company.depreciation_expense_account = "_Test Depreciations - _TC"
 	company.disposal_account = "_Test Gain/Loss on Asset Disposal - _TC"
@@ -179,4 +179,4 @@ def set_depreciation_settings_in_company():
 	company.save()
 
 	# Enable booking asset depreciation entry automatically
-	frappe.db.set_single_value("Accounts Settings", "book_asset_depreciation_entry_automatically", 1)
+	nts .db.set_single_value("Accounts Settings", "book_asset_depreciation_entry_automatically", 1)

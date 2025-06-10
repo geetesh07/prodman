@@ -1,16 +1,16 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 import datetime
 import json
 from collections import OrderedDict
 
-import frappe
-from frappe import _, bold
-from frappe.model.document import Document
-from frappe.model.mapper import get_mapped_doc
-from frappe.query_builder import Criterion
-from frappe.query_builder.functions import IfNull, Max, Min
-from frappe.utils import (
+import nts
+from nts import _, bold
+from nts.model.document import Document
+from nts.model.mapper import get_mapped_doc
+from nts.query_builder import Criterion
+from nts.query_builder.functions import IfNull, Max, Min
+from nts.utils import (
 	add_days,
 	add_to_date,
 	cint,
@@ -30,23 +30,23 @@ from prodman.manufacturing.doctype.manufacturing_settings.manufacturing_settings
 from prodman.manufacturing.doctype.workstation_type.workstation_type import get_workstations
 
 
-class OverlapError(frappe.ValidationError):
+class OverlapError(nts.ValidationError):
 	pass
 
 
-class OperationMismatchError(frappe.ValidationError):
+class OperationMismatchError(nts.ValidationError):
 	pass
 
 
-class OperationSequenceError(frappe.ValidationError):
+class OperationSequenceError(nts.ValidationError):
 	pass
 
 
-class JobCardCancelError(frappe.ValidationError):
+class JobCardCancelError(nts.ValidationError):
 	pass
 
 
-class JobCardOverTransferError(frappe.ValidationError):
+class JobCardOverTransferError(nts.ValidationError):
 	pass
 
 
@@ -57,7 +57,7 @@ class JobCard(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.manufacturing.doctype.job_card_item.job_card_item import JobCardItem
 		from prodman.manufacturing.doctype.job_card_operation.job_card_operation import JobCardOperation
@@ -126,13 +126,13 @@ class JobCard(Document):
 	# end: auto-generated types
 
 	def onload(self):
-		excess_transfer = frappe.db.get_single_value("Manufacturing Settings", "job_card_excess_transfer")
+		excess_transfer = nts.db.get_single_value("Manufacturing Settings", "job_card_excess_transfer")
 		self.set_onload("job_card_excess_transfer", excess_transfer)
 		self.set_onload("work_order_closed", self.is_work_order_closed())
 		self.set_onload("has_stock_entry", self.has_stock_entry())
 
 	def has_stock_entry(self):
-		return frappe.db.exists("Stock Entry", {"job_card": self.name, "docstatus": ["!=", 2]})
+		return nts.db.exists("Stock Entry", {"job_card": self.name, "docstatus": ["!=", 2]})
 
 	def before_validate(self):
 		self.set_wip_warehouse()
@@ -153,17 +153,17 @@ class JobCard(Document):
 		if not (self.operation_id and self.work_order):
 			return
 
-		wo_qty = flt(frappe.get_cached_value("Work Order", self.work_order, "qty"))
+		wo_qty = flt(nts.get_cached_value("Work Order", self.work_order, "qty"))
 
-		completed_qty = flt(frappe.db.get_value("Work Order Operation", self.operation_id, "completed_qty"))
+		completed_qty = flt(nts.db.get_value("Work Order Operation", self.operation_id, "completed_qty"))
 
 		over_production_percentage = flt(
-			frappe.db.get_single_value("Manufacturing Settings", "overproduction_percentage_for_work_order")
+			nts.db.get_single_value("Manufacturing Settings", "overproduction_percentage_for_work_order")
 		)
 
 		wo_qty = wo_qty + (wo_qty * over_production_percentage / 100)
 
-		job_card_qty = frappe.get_all(
+		job_card_qty = nts.get_all(
 			"Job Card",
 			fields=["sum(for_quantity)"],
 			filters={
@@ -188,12 +188,12 @@ class JobCard(Document):
 				'Overproduction Percentage For Work Order'
 				in the {form_link}."""
 
-			frappe.throw(_(msg), title=_("Extra Job Card Quantity"))
+			nts.throw(_(msg), title=_("Extra Job Card Quantity"))
 
 	def set_sub_operations(self):
 		if not self.sub_operations and self.operation:
 			self.sub_operations = []
-			for row in frappe.get_all(
+			for row in nts.get_all(
 				"Sub Operation",
 				filters={"parent": self.operation},
 				fields=["operation", "idx"],
@@ -210,7 +210,7 @@ class JobCard(Document):
 		if self.get("time_logs"):
 			for d in self.get("time_logs"):
 				if d.to_time and get_datetime(d.from_time) > get_datetime(d.to_time):
-					frappe.throw(_("Row {0}: From time must be less than to time").format(d.idx))
+					nts.throw(_("Row {0}: From time must be less than to time").format(d.idx))
 
 				open_job_cards = []
 				if d.get("employee"):
@@ -218,7 +218,7 @@ class JobCard(Document):
 
 				data = self.get_overlap_for(d, open_job_cards=open_job_cards)
 				if data:
-					frappe.throw(
+					nts.throw(
 						_("Row {0}: From Time and To Time of {1} is overlapping with {2}").format(
 							d.idx, self.name, data.name
 						),
@@ -252,11 +252,11 @@ class JobCard(Document):
 		production_capacity = 1
 		if self.workstation:
 			production_capacity = (
-				frappe.get_cached_value("Workstation", self.workstation, "production_capacity") or 1
+				nts.get_cached_value("Workstation", self.workstation, "production_capacity") or 1
 			)
 
 		if self.get_open_job_cards(args.get("employee")):
-			frappe.throw(
+			nts.throw(
 				_(
 					"Employee {0} is currently working on another workstation. Please assign another employee."
 				).format(args.get("employee")),
@@ -314,8 +314,8 @@ class JobCard(Document):
 		if args.get("remaining_time_in_mins") and get_datetime(args.from_time) >= get_datetime(args.to_time):
 			args.to_time = add_to_date(args.from_time, minutes=args.get("remaining_time_in_mins"))
 
-		jc = frappe.qb.DocType("Job Card")
-		jctl = frappe.qb.DocType(doctype)
+		jc = nts.qb.DocType("Job Card")
+		jctl = nts.qb.DocType(doctype)
 
 		time_conditions = [
 			((jctl.from_time < args.from_time) & (jctl.to_time > args.from_time)),
@@ -324,7 +324,7 @@ class JobCard(Document):
 		]
 
 		query = (
-			frappe.qb.from_(jctl)
+			nts.qb.from_(jctl)
 			.from_(jc)
 			.select(
 				jc.name.as_("name"),
@@ -369,11 +369,11 @@ class JobCard(Document):
 		return time_logs
 
 	def get_open_job_cards(self, employee, workstation=None):
-		jc = frappe.qb.DocType("Job Card")
-		jctl = frappe.qb.DocType("Job Card Time Log")
+		jc = nts.qb.DocType("Job Card")
+		jctl = nts.qb.DocType("Job Card Time Log")
 
 		query = (
-			frappe.qb.from_(jc)
+			nts.qb.from_(jc)
 			.left_join(jctl)
 			.on(jc.name == jctl.parent)
 			.select(jc.name)
@@ -398,7 +398,7 @@ class JobCard(Document):
 			for time_slot in busy_workstations:
 				available_workstations = sorted(list(set(workstations) - set(busy_workstations[time_slot])))
 				if available_workstations:
-					return frappe._dict(
+					return nts._dict(
 						{
 							"workstation": available_workstations[0],
 							"planned_start_time": get_datetime(time_slot[0]),
@@ -406,7 +406,7 @@ class JobCard(Document):
 						}
 					)
 
-		return frappe._dict({})
+		return nts._dict({})
 
 	@staticmethod
 	def time_slot_wise_busy_workstations(existing_time_logs) -> dict:
@@ -421,7 +421,7 @@ class JobCard(Document):
 	def schedule_time_logs(self, row):
 		row.remaining_time_in_mins = row.time_in_mins
 		while row.remaining_time_in_mins > 0:
-			args = frappe._dict(
+			args = nts._dict(
 				{
 					"from_time": row.planned_start_time,
 					"to_time": row.planned_end_time,
@@ -458,9 +458,9 @@ class JobCard(Document):
 			self.validate_overlap_for_workstation(args, row)
 
 	def check_workstation_time(self, row):
-		workstation_doc = frappe.get_cached_doc("Workstation", self.workstation)
+		workstation_doc = nts.get_cached_doc("Workstation", self.workstation)
 		if not workstation_doc.working_hours or cint(
-			frappe.db.get_single_value("Manufacturing Settings", "allow_overtime")
+			nts.db.get_single_value("Manufacturing Settings", "allow_overtime")
 		):
 			if get_datetime(row.planned_end_time) <= get_datetime(row.planned_start_time):
 				row.planned_end_time = add_to_date(row.planned_start_time, minutes=row.time_in_mins)
@@ -538,7 +538,7 @@ class JobCard(Document):
 						}
 					)
 		elif args.get("start_time"):
-			new_args = frappe._dict(
+			new_args = nts._dict(
 				{
 					"from_time": get_datetime(args.get("start_time")),
 					"operation": args.get("sub_operation"),
@@ -592,7 +592,7 @@ class JobCard(Document):
 			if time_log.operation not in operation_wise_completed_time:
 				operation_wise_completed_time.setdefault(
 					time_log.operation,
-					frappe._dict(
+					nts._dict(
 						{"status": "Pending", "completed_qty": 0.0, "completed_time": 0.0, "employee": []}
 					),
 				)
@@ -637,18 +637,18 @@ class JobCard(Document):
 			},
 		)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_required_items(self):
 		if not self.get("work_order"):
 			return
 
-		doc = frappe.get_doc("Work Order", self.get("work_order"))
+		doc = nts.get_doc("Work Order", self.get("work_order"))
 		if doc.transfer_material_against == "Work Order" or doc.skip_transfer:
 			return
 
 		for d in doc.required_items:
 			if not d.operation:
-				frappe.throw(
+				nts.throw(
 					_("Row {0} : Operation is required against the raw material item {1}").format(
 						d.idx, d.item_code
 					)
@@ -660,7 +660,7 @@ class JobCard(Document):
 					{
 						"item_code": d.item_code,
 						"source_warehouse": d.source_warehouse,
-						"uom": frappe.db.get_value("Item", d.item_code, "stock_uom"),
+						"uom": nts.db.get_value("Item", d.item_code, "stock_uom"),
 						"item_name": d.item_name,
 						"description": d.description,
 						"required_qty": (d.required_qty * flt(self.for_quantity)) / doc.qty,
@@ -685,30 +685,30 @@ class JobCard(Document):
 
 	def validate_transfer_qty(self):
 		if not self.is_corrective_job_card and self.items and self.transferred_qty < self.for_quantity:
-			frappe.throw(
+			nts.throw(
 				_(
 					"Materials needs to be transferred to the work in progress warehouse for the job card {0}"
 				).format(self.name)
 			)
 
 	def validate_job_card(self):
-		if self.work_order and frappe.get_cached_value("Work Order", self.work_order, "status") == "Stopped":
-			frappe.throw(
+		if self.work_order and nts.get_cached_value("Work Order", self.work_order, "status") == "Stopped":
+			nts.throw(
 				_("Transaction not allowed against stopped Work Order {0}").format(
 					get_link_to_form("Work Order", self.work_order)
 				)
 			)
 
 		if not self.time_logs:
-			frappe.throw(
+			nts.throw(
 				_("Time logs are required for {0} {1}").format(
 					bold("Job Card"), get_link_to_form("Job Card", self.name)
 				)
 			)
-		elif frappe.db.get_single_value("Manufacturing Settings", "enforce_time_logs"):
+		elif nts.db.get_single_value("Manufacturing Settings", "enforce_time_logs"):
 			for row in self.time_logs:
 				if not row.from_time or not row.to_time:
-					frappe.throw(
+					nts.throw(
 						_("Row #{0}: From Time and To Time fields are required").format(row.idx),
 					)
 
@@ -721,7 +721,7 @@ class JobCard(Document):
 			total_completed_qty_label = bold(_("Total Completed Qty"))
 			qty_to_manufacture = bold(_("Qty to Manufacture"))
 
-			frappe.throw(
+			nts.throw(
 				_("The {0} ({1}) must be equal to {2} ({3})").format(
 					total_completed_qty_label,
 					bold(flt(total_completed_qty, precision)),
@@ -770,7 +770,7 @@ class JobCard(Document):
 			return
 
 		if self.is_corrective_job_card and not cint(
-			frappe.db.get_single_value(
+			nts.db.get_single_value(
 				"Manufacturing Settings", "add_corrective_operation_cost_in_finished_good_valuation"
 			)
 		):
@@ -785,7 +785,7 @@ class JobCard(Document):
 			time_in_mins = flt(data[0].time_in_mins)
 			process_loss_qty = flt(data[0].process_loss_qty)
 
-		wo = frappe.get_doc("Work Order", self.work_order)
+		wo = nts.get_doc("Work Order", self.work_order)
 
 		if self.is_corrective_job_card:
 			self.update_corrective_in_work_order(wo)
@@ -796,7 +796,7 @@ class JobCard(Document):
 
 	def update_corrective_in_work_order(self, wo):
 		wo.corrective_operation_cost = 0.0
-		for row in frappe.get_all(
+		for row in nts.get_all(
 			"Job Card",
 			fields=["total_time_in_mins", "hour_rate"],
 			filters={"is_corrective_job_card": 1, "docstatus": 1, "work_order": self.work_order},
@@ -814,23 +814,23 @@ class JobCard(Document):
 		if wo.produced_qty > for_quantity + process_loss_qty:
 			first_part_msg = _(
 				"The {0} {1} is used to calculate the valuation cost for the finished good {2}."
-			).format(frappe.bold(_("Job Card")), frappe.bold(self.name), frappe.bold(self.production_item))
+			).format(nts.bold(_("Job Card")), nts.bold(self.name), nts.bold(self.production_item))
 
 			second_part_msg = _(
 				"Kindly cancel the Manufacturing Entries first against the work order {0}."
-			).format(frappe.bold(get_link_to_form("Work Order", self.work_order)))
+			).format(nts.bold(get_link_to_form("Work Order", self.work_order)))
 
-			frappe.throw(
+			nts.throw(
 				_("{0} {1}").format(first_part_msg, second_part_msg), JobCardCancelError, title=_("Error")
 			)
 
 	def update_work_order_data(self, for_quantity, process_loss_qty, time_in_mins, wo):
-		workstation_hour_rate = frappe.get_value("Workstation", self.workstation, "hour_rate")
-		jc = frappe.qb.DocType("Job Card")
-		jctl = frappe.qb.DocType("Job Card Time Log")
+		workstation_hour_rate = nts.get_value("Workstation", self.workstation, "hour_rate")
+		jc = nts.qb.DocType("Job Card")
+		jctl = nts.qb.DocType("Job Card Time Log")
 
 		time_data = (
-			frappe.qb.from_(jc)
+			nts.qb.from_(jc)
 			.from_(jctl)
 			.select(Min(jctl.from_time).as_("start_time"), Max(jctl.to_time).as_("end_time"))
 			.where(
@@ -861,7 +861,7 @@ class JobCard(Document):
 		wo.save()
 
 	def get_current_operation_data(self):
-		return frappe.get_all(
+		return nts.get_all(
 			"Job Card",
 			fields=[
 				"sum(total_time_in_mins) as time_in_mins",
@@ -878,17 +878,17 @@ class JobCard(Document):
 
 	def set_transferred_qty_in_job_card_item(self, ste_doc):
 		def _get_job_card_items_transferred_qty(ste_doc):
-			from frappe.query_builder.functions import Sum
+			from nts.query_builder.functions import Sum
 
 			job_card_items_transferred_qty = {}
 			job_card_items = [x.get("job_card_item") for x in ste_doc.get("items") if x.get("job_card_item")]
 
 			if job_card_items:
-				se = frappe.qb.DocType("Stock Entry")
-				sed = frappe.qb.DocType("Stock Entry Detail")
+				se = nts.qb.DocType("Stock Entry")
+				sed = nts.qb.DocType("Stock Entry Detail")
 
 				query = (
-					frappe.qb.from_(sed)
+					nts.qb.from_(sed)
 					.join(se)
 					.on(sed.parent == se.name)
 					.select(sed.job_card_item, Sum(sed.qty))
@@ -900,27 +900,27 @@ class JobCard(Document):
 					.groupby(sed.job_card_item)
 				)
 
-				job_card_items_transferred_qty = frappe._dict(query.run(as_list=True))
+				job_card_items_transferred_qty = nts._dict(query.run(as_list=True))
 
 			return job_card_items_transferred_qty
 
 		def _validate_over_transfer(row, transferred_qty):
 			"Block over transfer of items if not allowed in settings."
-			required_qty = frappe.db.get_value("Job Card Item", row.job_card_item, "required_qty")
+			required_qty = nts.db.get_value("Job Card Item", row.job_card_item, "required_qty")
 			is_excess = flt(transferred_qty) > flt(required_qty)
 			if is_excess:
-				frappe.throw(
+				nts.throw(
 					_(
 						"Row #{0}: Cannot transfer more than Required Qty {1} for Item {2} against Job Card {3}"
 					).format(
-						row.idx, frappe.bold(required_qty), frappe.bold(row.item_code), ste_doc.job_card
+						row.idx, nts.bold(required_qty), nts.bold(row.item_code), ste_doc.job_card
 					),
 					title=_("Excess Transfer"),
 					exc=JobCardOverTransferError,
 				)
 
 		job_card_items_transferred_qty = _get_job_card_items_transferred_qty(ste_doc) or {}
-		allow_excess = frappe.db.get_single_value("Manufacturing Settings", "job_card_excess_transfer")
+		allow_excess = nts.db.get_single_value("Manufacturing Settings", "job_card_excess_transfer")
 
 		for row in ste_doc.items:
 			if not row.job_card_item:
@@ -931,21 +931,21 @@ class JobCard(Document):
 			if not allow_excess:
 				_validate_over_transfer(row, transferred_qty)
 
-			frappe.db.set_value("Job Card Item", row.job_card_item, "transferred_qty", flt(transferred_qty))
+			nts.db.set_value("Job Card Item", row.job_card_item, "transferred_qty", flt(transferred_qty))
 
 	def set_transferred_qty(self, update_status=False):
 		"Set total FG Qty in Job Card for which RM was transferred."
 		if not self.items:
 			self.transferred_qty = self.for_quantity if self.docstatus == 1 else 0
 
-		doc = frappe.get_doc("Work Order", self.get("work_order"))
+		doc = nts.get_doc("Work Order", self.get("work_order"))
 		if doc.transfer_material_against == "Work Order" or doc.skip_transfer:
 			return
 
 		if self.items:
 			# sum of 'For Quantity' of Stock Entries against JC
 			self.transferred_qty = (
-				frappe.db.get_value(
+				nts.db.get_value(
 					"Stock Entry",
 					{
 						"job_card": self.name,
@@ -1010,7 +1010,7 @@ class JobCard(Document):
 
 	def set_wip_warehouse(self):
 		if not self.wip_warehouse:
-			self.wip_warehouse = frappe.db.get_single_value("Manufacturing Settings", "default_wip_warehouse")
+			self.wip_warehouse = nts.db.get_single_value("Manufacturing Settings", "default_wip_warehouse")
 
 	def validate_operation_id(self):
 		if (
@@ -1018,11 +1018,11 @@ class JobCard(Document):
 			and self.get("operation_row_number")
 			and self.operation
 			and self.work_order
-			and frappe.get_cached_value("Work Order Operation", self.operation_row_number, "name")
+			and nts.get_cached_value("Work Order Operation", self.operation_row_number, "name")
 			!= self.operation_id
 		):
 			work_order = bold(get_link_to_form("Work Order", self.work_order))
-			frappe.throw(
+			nts.throw(
 				_("Operation {0} does not belong to the work order {1}").format(
 					bold(self.operation), work_order
 				),
@@ -1043,7 +1043,7 @@ class JobCard(Document):
 
 		current_operation_qty += flt(self.total_completed_qty)
 
-		data = frappe.get_all(
+		data = nts.get_all(
 			"Work Order Operation",
 			fields=["operation", "status", "completed_qty", "sequence_id"],
 			filters={"docstatus": 1, "parent": self.work_order, "sequence_id": ("<", self.sequence_id)},
@@ -1056,7 +1056,7 @@ class JobCard(Document):
 
 		for row in data:
 			if row.status != "Completed" and row.completed_qty < current_operation_qty:
-				frappe.throw(
+				nts.throw(
 					_("{0}, complete the operation {1} before the operation {2}.").format(
 						message, bold(row.operation), bold(self.operation)
 					),
@@ -1071,15 +1071,15 @@ class JobCard(Document):
 					{bold(row.operation)}.
 				"""
 
-				frappe.throw(_(msg))
+				nts.throw(_(msg))
 
 	def validate_work_order(self):
 		if self.is_work_order_closed():
-			frappe.throw(_("You can't make any changes to Job Card since Work Order is closed."))
+			nts.throw(_("You can't make any changes to Job Card since Work Order is closed."))
 
 	def is_work_order_closed(self):
 		if self.work_order:
-			status = frappe.get_value("Work Order", self.work_order)
+			status = nts.get_value("Work Order", self.work_order)
 
 			if status == "Closed":
 				return True
@@ -1090,40 +1090,40 @@ class JobCard(Document):
 		if not self.workstation:
 			return
 
-		frappe.db.set_value("Workstation", self.workstation, "status", status)
+		nts.db.set_value("Workstation", self.workstation, "status", status)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_time_log(args):
 	if isinstance(args, str):
 		args = json.loads(args)
 
-	args = frappe._dict(args)
-	doc = frappe.get_doc("Job Card", args.job_card_id)
+	args = nts._dict(args)
+	doc = nts.get_doc("Job Card", args.job_card_id)
 	doc.validate_sequence_id()
 	doc.add_time_log(args)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_operation_details(work_order, operation):
 	if work_order and operation:
-		return frappe.get_all(
+		return nts.get_all(
 			"Work Order Operation",
 			fields=["name", "idx"],
 			filters={"parent": work_order, "operation": operation},
 		)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_operations(doctype, txt, searchfield, start, page_len, filters):
 	if not filters.get("work_order"):
-		frappe.msgprint(_("Please select a Work Order first."))
+		nts.msgprint(_("Please select a Work Order first."))
 		return []
 	args = {"parent": filters.get("work_order")}
 	if txt:
 		args["operation"] = ("like", f"%{txt}%")
 
-	return frappe.get_all(
+	return nts.get_all(
 		"Work Order Operation",
 		filters=args,
 		fields=["distinct operation as operation"],
@@ -1134,7 +1134,7 @@ def get_operations(doctype, txt, searchfield, start, page_len, filters):
 	)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_material_request(source_name, target_doc=None):
 	def update_item(obj, target, source_parent):
 		target.warehouse = source_parent.wip_warehouse
@@ -1165,7 +1165,7 @@ def make_material_request(source_name, target_doc=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_stock_entry(source_name, target_doc=None):
 	def update_item(source, target, source_parent):
 		target.t_warehouse = source_parent.wip_warehouse
@@ -1188,13 +1188,13 @@ def make_stock_entry(source_name, target_doc=None):
 		target.set_missing_values()
 		target.set_stock_entry_type()
 
-		wo_allows_alternate_item = frappe.db.get_value(
+		wo_allows_alternate_item = nts.db.get_value(
 			"Work Order", target.work_order, "allow_alternative_item"
 		)
 		for item in target.items:
 			item.allow_alternative_item = int(
 				wo_allows_alternate_item
-				and frappe.get_cached_value("Item", item.item_code, "allow_alternative_item")
+				and nts.get_cached_value("Item", item.item_code, "allow_alternative_item")
 			)
 
 	doclist = get_mapped_doc(
@@ -1227,7 +1227,7 @@ def time_diff_in_minutes(string_ed_date, string_st_date):
 	return time_diff(string_ed_date, string_st_date).total_seconds() / 60
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_job_details(start, end, filters=None):
 	events = []
 
@@ -1237,11 +1237,11 @@ def get_job_details(start, end, filters=None):
 		"Work In Progress": "#D3D3D3",
 	}
 
-	from frappe.desk.reportview import get_filters_cond
+	from nts.desk.reportview import get_filters_cond
 
 	conditions = get_filters_cond("Job Card", filters, [])
 
-	job_cards = frappe.db.sql(
+	job_cards = nts.db.sql(
 		f""" SELECT `tabJob Card`.name, `tabJob Card`.work_order,
 			`tabJob Card`.status, ifnull(`tabJob Card`.remarks, ''),
 			min(`tabJob Card Time Log`.from_time) as from_time,
@@ -1275,7 +1275,7 @@ def get_job_details(start, end, filters=None):
 	return events
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_corrective_job_card(source_name, operation=None, for_operation=None, target_doc=None):
 	def set_missing_values(source, target):
 		target.is_corrective_job_card = 1

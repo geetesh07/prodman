@@ -1,15 +1,15 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 from datetime import datetime
 
-import frappe
-from frappe import qb
-from frappe.query_builder.functions import Sum
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, getdate, nowdate
-from frappe.utils.data import getdate as convert_to_date
+import nts
+from nts import qb
+from nts.query_builder.functions import Sum
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import add_days, getdate, nowdate
+from nts.utils.data import getdate as convert_to_date
 
 from prodman.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from prodman.accounts.doctype.payment_entry.test_payment_entry import create_payment_entry
@@ -22,8 +22,8 @@ from prodman.stock.doctype.item.test_item import create_item
 
 
 def make_customer(customer_name, currency=None):
-	if not frappe.db.exists("Customer", customer_name):
-		customer = frappe.new_doc("Customer")
+	if not nts.db.exists("Customer", customer_name):
+		customer = nts.new_doc("Customer")
 		customer.customer_name = customer_name
 		customer.customer_type = "Individual"
 
@@ -36,8 +36,8 @@ def make_customer(customer_name, currency=None):
 
 
 def make_supplier(supplier_name, currency=None):
-	if not frappe.db.exists("Supplier", supplier_name):
-		supplier = frappe.new_doc("Supplier")
+	if not nts.db.exists("Supplier", supplier_name):
+		supplier = nts.new_doc("Supplier")
 		supplier.supplier_name = supplier_name
 		supplier.supplier_type = "Individual"
 		supplier.supplier_group = "All Supplier Groups"
@@ -50,7 +50,7 @@ def make_supplier(supplier_name, currency=None):
 		return supplier_name
 
 
-class TestAccountsController(FrappeTestCase):
+class TestAccountsController(ntsTestCase):
 	"""
 	Test Exchange Gain/Loss booking on various scenarios.
 	Test Cases are numbered for better organization
@@ -73,15 +73,15 @@ class TestAccountsController(FrappeTestCase):
 		self.clear_old_entries()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def create_company(self):
 		company_name = "_Test Company"
 		self.company_abbr = abbr = "_TC"
-		if frappe.db.exists("Company", company_name):
-			company = frappe.get_doc("Company", company_name)
+		if nts.db.exists("Company", company_name):
+			company = nts.get_doc("Company", company_name)
 		else:
-			company = frappe.get_doc(
+			company = nts.get_doc(
 				{
 					"doctype": "Company",
 					"company_name": company_name,
@@ -122,7 +122,7 @@ class TestAccountsController(FrappeTestCase):
 
 	def create_account(self):
 		accounts = [
-			frappe._dict(
+			nts._dict(
 				{
 					"attribute_name": "debtors_usd",
 					"name": "Debtors USD",
@@ -131,7 +131,7 @@ class TestAccountsController(FrappeTestCase):
 					"parent_account": "Accounts Receivable - " + self.company_abbr,
 				}
 			),
-			frappe._dict(
+			nts._dict(
 				{
 					"attribute_name": "creditors_usd",
 					"name": "Creditors USD",
@@ -141,7 +141,7 @@ class TestAccountsController(FrappeTestCase):
 				}
 			),
 			# Advance accounts under Asset and Liability header
-			frappe._dict(
+			nts._dict(
 				{
 					"attribute_name": "advance_received_usd",
 					"name": "Advance Received USD",
@@ -150,7 +150,7 @@ class TestAccountsController(FrappeTestCase):
 					"parent_account": "Current Liabilities - " + self.company_abbr,
 				}
 			),
-			frappe._dict(
+			nts._dict(
 				{
 					"attribute_name": "advance_paid_usd",
 					"name": "Advance Paid USD",
@@ -162,8 +162,8 @@ class TestAccountsController(FrappeTestCase):
 		]
 
 		for x in accounts:
-			if not frappe.db.get_value("Account", filters={"account_name": x.name, "company": self.company}):
-				acc = frappe.new_doc("Account")
+			if not nts.db.get_value("Account", filters={"account_name": x.name, "company": self.company}):
+				acc = nts.new_doc("Account")
 				acc.account_name = x.name
 				acc.parent_account = x.parent_account
 				acc.company = self.company
@@ -171,21 +171,21 @@ class TestAccountsController(FrappeTestCase):
 				acc.account_type = x.account_type
 				acc.insert()
 			else:
-				name = frappe.db.get_value(
+				name = nts.db.get_value(
 					"Account",
 					filters={"account_name": x.name, "company": self.company},
 					fieldname="name",
 					pluck=True,
 				)
-				acc = frappe.get_doc("Account", name)
+				acc = nts.get_doc("Account", name)
 			setattr(self, x.attribute_name, acc.name)
 
 	def setup_advance_accounts_in_party_master(self):
-		company = frappe.get_doc("Company", self.company)
+		company = nts.get_doc("Company", self.company)
 		company.book_advance_payments_in_separate_party_account = 1
 		company.save()
 
-		customer = frappe.get_doc("Customer", self.customer)
+		customer = nts.get_doc("Customer", self.customer)
 		customer.append(
 			"accounts",
 			{
@@ -196,7 +196,7 @@ class TestAccountsController(FrappeTestCase):
 		)
 		customer.save()
 
-		supplier = frappe.get_doc("Supplier", self.supplier)
+		supplier = nts.get_doc("Supplier", self.supplier)
 		supplier.append(
 			"accounts",
 			{
@@ -208,13 +208,13 @@ class TestAccountsController(FrappeTestCase):
 		supplier.save()
 
 	def remove_advance_accounts_from_party_master(self):
-		company = frappe.get_doc("Company", self.company)
+		company = nts.get_doc("Company", self.company)
 		company.book_advance_payments_in_separate_party_account = 0
 		company.save()
-		customer = frappe.get_doc("Customer", self.customer)
+		customer = nts.get_doc("Customer", self.customer)
 		customer.accounts = []
 		customer.save()
-		supplier = frappe.get_doc("Supplier", self.supplier)
+		supplier = nts.get_doc("Supplier", self.supplier)
 		supplier.accounts = []
 		supplier.save()
 
@@ -335,7 +335,7 @@ class TestAccountsController(FrappeTestCase):
 			qb.from_(qb.DocType(doctype)).delete().where(qb.DocType(doctype).company == self.company).run()
 
 	def create_payment_reconciliation(self):
-		pr = frappe.new_doc("Payment Reconciliation")
+		pr = nts.new_doc("Payment Reconciliation")
 		pr.company = self.company
 		pr.party_type = "Customer"
 		pr.party = self.customer
@@ -354,7 +354,7 @@ class TestAccountsController(FrappeTestCase):
 		posting_date=None,
 		cost_center=None,
 	):
-		je = frappe.new_doc("Journal Entry")
+		je = nts.new_doc("Journal Entry")
 		je.posting_date = posting_date or nowdate()
 		je.company = self.company
 		je.user_remark = "test"
@@ -389,7 +389,7 @@ class TestAccountsController(FrappeTestCase):
 	def get_journals_for(self, voucher_type: str, voucher_no: str) -> list:
 		journals = []
 		if voucher_type and voucher_no:
-			journals = frappe.db.get_all(
+			journals = nts.db.get_all(
 				"Journal Entry Account",
 				filters={"reference_type": voucher_type, "reference_name": voucher_no, "docstatus": 1},
 				fields=["parent"],
@@ -701,7 +701,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(exc_je_for_si[0], exc_je_for_pe[0])
 
 		# Reconcile the remaining amount
-		pr = frappe.get_doc("Payment Reconciliation")
+		pr = nts.get_doc("Payment Reconciliation")
 		pr.company = self.company
 		pr.party_type = "Customer"
 		pr.party = self.customer
@@ -711,7 +711,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		self.assertEqual(len(pr.invoices), 0)
 		self.assertEqual(len(pr.payments), 0)
@@ -760,7 +760,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assert_ledger_outstanding(si.doctype, si.name, 160.0, 2.0)
 
 		# Reconcile the remaining amount
-		pr = frappe.get_doc("Payment Reconciliation")
+		pr = nts.get_doc("Payment Reconciliation")
 		pr.company = self.company
 		pr.party_type = "Customer"
 		pr.party = self.customer
@@ -770,7 +770,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.allocation[0].gain_loss_posting_date = add_days(nowdate(), 1)
 		pr.reconcile()
 
@@ -783,7 +783,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(exc_je_for_si[0], exc_je_for_pe[0])
 
 		self.assertEqual(
-			frappe.db.get_value("Journal Entry", exc_je_for_si[0].parent, "posting_date"),
+			nts.db.get_value("Journal Entry", exc_je_for_si[0].parent, "posting_date"),
 			getdate(add_days(nowdate(), 1)),
 		)
 
@@ -839,7 +839,7 @@ class TestAccountsController(FrappeTestCase):
 		# rate should not reset to incoming rate
 		self.assertEqual(si.items[0].rate, arms_length_price)
 
-		frappe.db.set_single_value("Stock Settings", "allow_internal_transfer_at_arms_length_price", 0)
+		nts.db.set_single_value("Stock Settings", "allow_internal_transfer_at_arms_length_price", 0)
 		si.items[0].rate = arms_length_price
 		si.save()
 		# rate should reset to incoming rate
@@ -859,7 +859,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(pi.items[0].rate, 100)
 		self.assertEqual(pi.items[0].valuation_rate, 100)
 
-		frappe.db.set_single_value("Stock Settings", "allow_internal_transfer_at_arms_length_price", 1)
+		nts.db.set_single_value("Stock Settings", "allow_internal_transfer_at_arms_length_price", 1)
 		pi = make_inter_company_purchase_invoice(si.name)
 		pi.update_stock = 1
 		pi.items[0].rate = arms_length_price
@@ -895,7 +895,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		self.assertEqual(len(pr.invoices), 0)
 		self.assertEqual(len(pr.payments), 0)
@@ -914,7 +914,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(exc_je_for_si[0], exc_je_for_pe[0])
 
 		self.assertEqual(
-			getdate(nowdate()), frappe.db.get_value("Journal Entry", exc_je_for_pe[0].parent, "posting_date")
+			getdate(nowdate()), nts.db.get_value("Journal Entry", exc_je_for_pe[0].parent, "posting_date")
 		)
 		# Cancel Payment
 		pe.reload()
@@ -934,8 +934,8 @@ class TestAccountsController(FrappeTestCase):
 	@change_settings("Accounts Settings", {"add_taxes_from_item_tax_template": 1})
 	def test_18_fetch_taxes_based_on_taxes_and_charges_template(self):
 		# Create a Sales Taxes and Charges Template
-		if not frappe.db.exists("Sales Taxes and Charges Template", "_Test Tax - _TC"):
-			doc = frappe.new_doc("Sales Taxes and Charges Template")
+		if not nts.db.exists("Sales Taxes and Charges Template", "_Test Tax - _TC"):
+			doc = nts.new_doc("Sales Taxes and Charges Template")
 			doc.company = self.company
 			doc.title = "_Test Tax"
 			doc.append(
@@ -950,7 +950,7 @@ class TestAccountsController(FrappeTestCase):
 			doc.insert()
 
 		# Create a Sales Invoice
-		sinv = frappe.new_doc("Sales Invoice")
+		sinv = nts.new_doc("Sales Invoice")
 		sinv.customer = self.customer
 		sinv.company = self.company
 		sinv.currency = "INR"
@@ -984,7 +984,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		self.assertEqual(len(pr.invoices), 0)
 		self.assertEqual(len(pr.payments), 0)
@@ -1162,7 +1162,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		self.assertEqual(len(pr.invoices), 0)
 		self.assertEqual(len(pr.payments), 0)
@@ -1228,7 +1228,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		difference_amount = pr.calculate_difference_on_allocation_change(
 			[x.as_dict() for x in pr.payments], [x.as_dict() for x in pr.invoices], 1
 		)
@@ -1257,7 +1257,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.allocation[0].allocated_amount = 1
 		pr.allocation[0].difference_amount = difference_amount
 		pr.reconcile()
@@ -1313,7 +1313,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		self.assertEqual(len(pr.invoices), 0)
 		self.assertEqual(len(pr.payments), 0)
@@ -1363,7 +1363,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		difference_amount = pr.calculate_difference_on_allocation_change(
 			[x.as_dict() for x in pr.payments], [x.as_dict() for x in pr.invoices], 1
 		)
@@ -1406,8 +1406,8 @@ class TestAccountsController(FrappeTestCase):
 		Gain/Loss JE should inherit cost center from payment if company default is unset
 		"""
 		# remove default cost center
-		cc = frappe.db.get_value("Company", self.company, "cost_center")
-		frappe.db.set_value("Company", self.company, "cost_center", None)
+		cc = nts.db.get_value("Company", self.company, "cost_center")
+		nts.db.set_value("Company", self.company, "cost_center", None)
 
 		rate_in_account_currency = 1
 		si = self.create_sales_invoice(qty=1, rate=rate_in_account_currency, do_not_submit=True)
@@ -1430,19 +1430,19 @@ class TestAccountsController(FrappeTestCase):
 
 		self.assertEqual(
 			[self.cost_center, self.cost_center],
-			frappe.db.get_all(
+			nts.db.get_all(
 				"Journal Entry Account", filters={"parent": exc_je_for_si[0].parent}, pluck="cost_center"
 			),
 		)
-		frappe.db.set_value("Company", self.company, "cost_center", cc)
+		nts.db.set_value("Company", self.company, "cost_center", cc)
 
 	def test_41_cost_center_from_journal_entry(self):
 		"""
 		Gain/Loss JE should inherit cost center from payment if company default is unset
 		"""
 		# remove default cost center
-		cc = frappe.db.get_value("Company", self.company, "cost_center")
-		frappe.db.set_value("Company", self.company, "cost_center", None)
+		cc = nts.db.get_value("Company", self.company, "cost_center")
+		nts.db.set_value("Company", self.company, "cost_center", None)
 
 		rate_in_account_currency = 1
 		si = self.create_sales_invoice(qty=1, rate=rate_in_account_currency, do_not_submit=True)
@@ -1469,7 +1469,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		self.assertEqual(len(pr.invoices), 0)
 		self.assertEqual(len(pr.payments), 0)
@@ -1484,19 +1484,19 @@ class TestAccountsController(FrappeTestCase):
 
 		self.assertEqual(
 			[self.cost_center, self.cost_center],
-			frappe.db.get_all(
+			nts.db.get_all(
 				"Journal Entry Account", filters={"parent": exc_je_for_si[0].parent}, pluck="cost_center"
 			),
 		)
-		frappe.db.set_value("Company", self.company, "cost_center", cc)
+		nts.db.set_value("Company", self.company, "cost_center", cc)
 
 	def test_42_cost_center_from_cr_note(self):
 		"""
 		Gain/Loss JE should inherit cost center from payment if company default is unset
 		"""
 		# remove default cost center
-		cc = frappe.db.get_value("Company", self.company, "cost_center")
-		frappe.db.set_value("Company", self.company, "cost_center", None)
+		cc = nts.db.get_value("Company", self.company, "cost_center")
+		nts.db.set_value("Company", self.company, "cost_center", None)
 
 		rate_in_account_currency = 1
 		si = self.create_sales_invoice(qty=1, rate=rate_in_account_currency, do_not_submit=True)
@@ -1515,7 +1515,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		self.assertEqual(len(pr.invoices), 0)
 		self.assertEqual(len(pr.payments), 0)
@@ -1532,12 +1532,12 @@ class TestAccountsController(FrappeTestCase):
 			with self.subTest(x=x):
 				self.assertEqual(
 					[self.cost_center, self.cost_center],
-					frappe.db.get_all(
+					nts.db.get_all(
 						"Journal Entry Account", filters={"parent": x.parent}, pluck="cost_center"
 					),
 				)
 
-		frappe.db.set_value("Company", self.company, "cost_center", cc)
+		nts.db.set_value("Company", self.company, "cost_center", cc)
 
 	def setup_dimensions(self):
 		# create dimension
@@ -1547,7 +1547,7 @@ class TestAccountsController(FrappeTestCase):
 
 		create_dimension()
 		# make it non-mandatory
-		loc = frappe.get_doc("Accounting Dimension", "Location")
+		loc = nts.get_doc("Accounting Dimension", "Location")
 		for x in loc.dimension_defaults:
 			x.mandatory_for_bs = False
 			x.mandatory_for_pl = False
@@ -1646,7 +1646,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		self.assertEqual(len(pr.invoices), 0)
 		self.assertEqual(len(pr.payments), 0)
@@ -1663,7 +1663,7 @@ class TestAccountsController(FrappeTestCase):
 			with self.subTest(x=x):
 				self.assertEqual(
 					[cr_note.department, cr_note.department],
-					frappe.db.get_all(
+					nts.db.get_all(
 						"Journal Entry Account", filters={"parent": x.parent}, pluck="department"
 					),
 				)
@@ -1689,7 +1689,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		self.assertEqual(len(pr.invoices), 0)
 		self.assertEqual(len(pr.payments), 0)
@@ -1698,7 +1698,7 @@ class TestAccountsController(FrappeTestCase):
 		journals = self.get_journals_for(si.doctype, si.name)
 		self.assertEqual(
 			[dpt, dpt],
-			frappe.db.get_all(
+			nts.db.get_all(
 				"Journal Entry Account",
 				filters={"parent": ("in", [x.parent for x in journals])},
 				pluck="department",
@@ -1744,7 +1744,7 @@ class TestAccountsController(FrappeTestCase):
 		journals = self.get_journals_for(si.doctype, si.name)
 		self.assertEqual(
 			[dpt, dpt],
-			frappe.db.get_all(
+			nts.db.get_all(
 				"Journal Entry Account",
 				filters={"parent": ("in", [x.parent for x in journals])},
 				pluck="department",
@@ -1786,7 +1786,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		self.assertEqual(len(pr.invoices), 0)
 		self.assertEqual(len(pr.payments), 0)
@@ -1857,7 +1857,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		self.assertEqual(len(pr.invoices), 0)
 		self.assertEqual(len(pr.payments), 0)
@@ -1917,7 +1917,7 @@ class TestAccountsController(FrappeTestCase):
 		pe.paid_amount = amount * exc_rate2
 		pe.save().submit()
 
-		pr = frappe.get_doc(
+		pr = nts.get_doc(
 			{
 				"doctype": "Payment Reconciliation",
 				"company": self.company,
@@ -1932,7 +1932,7 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		self.assertEqual(len(pr.invoices), 0)
 		self.assertEqual(len(pr.payments), 0)
@@ -1980,7 +1980,7 @@ class TestAccountsController(FrappeTestCase):
 		# Allocate and Reconcile
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		self.assertEqual(len(pr.invoices), 0)
 		self.assertEqual(len(pr.payments), 0)
@@ -2049,7 +2049,7 @@ class TestAccountsController(FrappeTestCase):
 		# Allocate and Reconcile
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		self.assertEqual(len(pr.invoices), 0)
 		self.assertEqual(len(pr.payments), 0)
@@ -2110,8 +2110,8 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(exc_je_for_si, exc_je_for_adv)
 
 		# check jv created with difference_posting_date in sales invoice
-		jv = frappe.get_doc("Journal Entry", exc_je_for_si[0].parent)
-		sales_invoice = frappe.get_doc("Sales Invoice", si.name)
+		jv = nts.get_doc("Journal Entry", exc_je_for_si[0].parent)
+		sales_invoice = nts.get_doc("Sales Invoice", si.name)
 		self.assertEqual(sales_invoice.advances[0].difference_posting_date, jv.posting_date)
 
 		# create payment entry for supplier
@@ -2162,19 +2162,19 @@ class TestAccountsController(FrappeTestCase):
 		self.assertEqual(exc_je_for_pi, exc_je_for_adv)
 
 		# check jv created with difference_posting_date in purchase invoice
-		journal_voucher = frappe.get_doc("Journal Entry", exc_je_for_pi[0].parent)
-		purchase_invoice = frappe.get_doc("Purchase Invoice", pi.name)
+		journal_voucher = nts.get_doc("Journal Entry", exc_je_for_pi[0].parent)
+		purchase_invoice = nts.get_doc("Purchase Invoice", pi.name)
 		self.assertEqual(purchase_invoice.advances[0].difference_posting_date, journal_voucher.posting_date)
 
 	def test_company_validation_in_dimension(self):
 		si = create_sales_invoice(do_not_submit=True)
 		project = make_project({"project_name": "_Test Demo Project1", "company": "_Test Company 1"})
 		si.project = project.name
-		self.assertRaises(frappe.ValidationError, si.save)
+		self.assertRaises(nts.ValidationError, si.save)
 
 		si_1 = create_sales_invoice(do_not_submit=True)
 		si_1.items[0].project = project.name
-		self.assertRaises(frappe.ValidationError, si_1.save)
+		self.assertRaises(nts.ValidationError, si_1.save)
 
 	def test_party_billing_and_shipping_address(self):
 		from prodman.crm.doctype.prospect.test_prospect import make_address
@@ -2199,24 +2199,24 @@ class TestAccountsController(FrappeTestCase):
 
 		si = create_sales_invoice(do_not_save=True)
 		si.customer_address = supplier_billing.name
-		self.assertRaises(frappe.ValidationError, si.save)
+		self.assertRaises(nts.ValidationError, si.save)
 		si.customer_address = customer_billing.name
 		si.save()
 
 		si.shipping_address_name = supplier_shipping.name
-		self.assertRaises(frappe.ValidationError, si.save)
+		self.assertRaises(nts.ValidationError, si.save)
 		si.shipping_address_name = customer_shipping.name
 		si.reload()
 		si.save()
 
 		pi = make_purchase_invoice(do_not_save=True)
 		pi.supplier_address = customer_shipping.name
-		self.assertRaises(frappe.ValidationError, pi.save)
+		self.assertRaises(nts.ValidationError, pi.save)
 		pi.supplier_address = supplier_shipping.name
 		pi.save()
 
 	def test_party_contact(self):
-		from frappe.contacts.doctype.contact.test_contact import create_contact
+		from nts.contacts.doctype.contact.test_contact import create_contact
 
 		customer_contact = create_contact(name="Customer", salutation="Mr", save=False)
 		customer_contact.append("links", {"link_doctype": "Customer", "link_name": "_Test Customer"})
@@ -2228,6 +2228,6 @@ class TestAccountsController(FrappeTestCase):
 
 		si = create_sales_invoice(do_not_save=True)
 		si.contact_person = supplier_contact.name
-		self.assertRaises(frappe.ValidationError, si.save)
+		self.assertRaises(nts.ValidationError, si.save)
 		si.contact_person = customer_contact.name
 		si.save()

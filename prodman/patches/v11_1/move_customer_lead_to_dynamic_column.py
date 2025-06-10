@@ -1,17 +1,17 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doctype("Quotation")
-	frappe.db.sql(""" UPDATE `tabQuotation` set party_name = lead WHERE quotation_to = 'Lead' """)
-	frappe.db.sql(""" UPDATE `tabQuotation` set party_name = customer WHERE quotation_to = 'Customer' """)
+	nts.reload_doctype("Quotation")
+	nts.db.sql(""" UPDATE `tabQuotation` set party_name = lead WHERE quotation_to = 'Lead' """)
+	nts.db.sql(""" UPDATE `tabQuotation` set party_name = customer WHERE quotation_to = 'Customer' """)
 
-	frappe.reload_doctype("Opportunity")
-	frappe.db.sql(""" UPDATE `tabOpportunity` set party_name = lead WHERE opportunity_from = 'Lead' """)
-	frappe.db.sql(
+	nts.reload_doctype("Opportunity")
+	nts.db.sql(""" UPDATE `tabOpportunity` set party_name = lead WHERE opportunity_from = 'Lead' """)
+	nts.db.sql(
 		""" UPDATE `tabOpportunity` set party_name = customer WHERE opportunity_from = 'Customer' """
 	)

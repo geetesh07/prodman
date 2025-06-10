@@ -1,11 +1,11 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2020, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import copy
 import unittest
 
-import frappe
-from frappe import _
+import nts 
+from nts  import _
 
 from prodman.accounts.doctype.mode_of_payment.test_mode_of_payment import (
 	set_default_account_for_mode_of_payment,
@@ -27,29 +27,29 @@ class TestPOSInvoice(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
 		make_stock_entry(target="_Test Warehouse - _TC", item_code="_Test Item", qty=800, basic_rate=100)
-		frappe.db.sql("delete from `tabTax Rule`")
+		nts .db.sql("delete from `tabTax Rule`")
 
 		from prodman.accounts.doctype.pos_closing_entry.test_pos_closing_entry import init_user_and_profile
 		from prodman.accounts.doctype.pos_opening_entry.test_pos_opening_entry import create_opening_entry
 
 		cls.test_user, cls.pos_profile = init_user_and_profile()
 		create_opening_entry(cls.pos_profile, cls.test_user)
-		mode_of_payment = frappe.get_doc("Mode of Payment", "Bank Draft")
+		mode_of_payment = nts .get_doc("Mode of Payment", "Bank Draft")
 		set_default_account_for_mode_of_payment(mode_of_payment, "_Test Company", "_Test Bank - _TC")
 
 	def tearDown(self):
-		if frappe.session.user != "Administrator":
-			frappe.set_user("Administrator")
+		if nts .session.user != "Administrator":
+			nts .set_user("Administrator")
 
-		if frappe.db.get_single_value("Selling Settings", "validate_selling_price"):
-			frappe.db.set_single_value("Selling Settings", "validate_selling_price", 0)
+		if nts .db.get_single_value("Selling Settings", "validate_selling_price"):
+			nts .db.set_single_value("Selling Settings", "validate_selling_price", 0)
 
 	def test_timestamp_change(self):
 		w = create_pos_invoice(do_not_save=1)
 		w.docstatus = 0
 		w.insert()
 
-		w2 = frappe.get_doc(w.doctype, w.name)
+		w2 = nts .get_doc(w.doctype, w.name)
 
 		import time
 
@@ -59,13 +59,13 @@ class TestPOSInvoice(unittest.TestCase):
 		import time
 
 		time.sleep(1)
-		self.assertRaises(frappe.TimestampMismatchError, w2.save)
+		self.assertRaises(nts .TimestampMismatchError, w2.save)
 
 	def test_change_naming_series(self):
 		inv = create_pos_invoice(do_not_submit=1)
 		inv.naming_series = "TEST-"
 
-		self.assertRaises(frappe.CannotChangeConstantError, inv.save)
+		self.assertRaises(nts .CannotChangeConstantError, inv.save)
 
 	def test_discount_and_inclusive_tax(self):
 		inv = create_pos_invoice(qty=100, rate=50, do_not_save=1)
@@ -333,7 +333,7 @@ class TestPOSInvoice(unittest.TestCase):
 		pos_return1.submit()
 		pos_return1.reload()
 
-		bundle_id = frappe.get_doc(
+		bundle_id = nts .get_doc(
 			"Serial and Batch Bundle", pos_return1.get("items")[0].serial_and_batch_bundle
 		)
 
@@ -378,7 +378,7 @@ class TestPOSInvoice(unittest.TestCase):
 		inv = create_pos_invoice(do_not_save=1)
 		# Check that the invoice cannot be submitted without payments
 		inv.payments = []
-		self.assertRaises(frappe.ValidationError, inv.insert)
+		self.assertRaises(nts .ValidationError, inv.insert)
 
 	def test_partial_payment(self):
 		pos_inv = create_pos_invoice(rate=10000, do_not_save=1)
@@ -437,7 +437,7 @@ class TestPOSInvoice(unittest.TestCase):
 		pos2.append("payments", {"mode_of_payment": "Bank Draft", "amount": 1000})
 
 		pos2.insert()
-		self.assertRaises(frappe.ValidationError, pos2.submit)
+		self.assertRaises(nts .ValidationError, pos2.submit)
 
 	def test_delivered_serialized_item_transaction(self):
 		from prodman.stock.doctype.stock_entry.test_stock_entry import make_serialized_item
@@ -486,7 +486,7 @@ class TestPOSInvoice(unittest.TestCase):
 		pos2.append("payments", {"mode_of_payment": "Bank Draft", "amount": 1000})
 
 		pos2.insert()
-		self.assertRaises(frappe.ValidationError, pos2.submit)
+		self.assertRaises(nts .ValidationError, pos2.submit)
 
 	def test_invalid_serial_no_validation(self):
 		from prodman.stock.doctype.stock_entry.test_stock_entry import make_serialized_item
@@ -516,7 +516,7 @@ class TestPOSInvoice(unittest.TestCase):
 
 		pos.get("items")[0].has_serial_no = 1
 
-		self.assertRaises(frappe.ValidationError, pos.insert)
+		self.assertRaises(nts .ValidationError, pos.insert)
 
 	def test_value_error_on_serial_no_validation(self):
 		from prodman.stock.doctype.stock_entry.test_stock_entry import make_serialized_item
@@ -556,7 +556,7 @@ class TestPOSInvoice(unittest.TestCase):
 		pos_return.submit()
 
 		# set docstatus to 2 for pos to trigger this issue
-		frappe.db.set_value("POS Invoice", pos.name, "docstatus", 2)
+		nts .db.set_value("POS Invoice", pos.name, "docstatus", 2)
 
 		pos2 = create_pos_invoice(
 			company="_Test Company",
@@ -584,7 +584,7 @@ class TestPOSInvoice(unittest.TestCase):
 		from prodman.accounts.doctype.loyalty_program.test_loyalty_program import create_records
 
 		create_records()
-		frappe.db.set_value("Customer", "Test Loyalty Customer", "loyalty_program", "Test Single Loyalty")
+		nts .db.set_value("Customer", "Test Loyalty Customer", "loyalty_program", "Test Single Loyalty")
 		before_lp_details = get_loyalty_program_details_with_points(
 			"Test Loyalty Customer", company="_Test Company", loyalty_program="Test Single Loyalty"
 		)
@@ -597,7 +597,7 @@ class TestPOSInvoice(unittest.TestCase):
 		inv.insert()
 		inv.submit()
 
-		lpe = frappe.get_doc(
+		lpe = nts .get_doc(
 			"Loyalty Point Entry",
 			{"invoice_type": "POS Invoice", "invoice": inv.name, "customer": inv.customer},
 		)
@@ -657,7 +657,7 @@ class TestPOSInvoice(unittest.TestCase):
 			consolidate_pos_invoices,
 		)
 
-		frappe.db.sql("delete from `tabPOS Invoice`")
+		nts .db.sql("delete from `tabPOS Invoice`")
 		test_user, pos_profile = init_user_and_profile()
 		pos_inv = create_pos_invoice(rate=300, additional_discount_percentage=10, do_not_submit=1)
 		pos_inv.append("payments", {"mode_of_payment": "Cash", "amount": 270})
@@ -672,7 +672,7 @@ class TestPOSInvoice(unittest.TestCase):
 		consolidate_pos_invoices()
 
 		pos_inv.load_from_db()
-		rounded_total = frappe.db.get_value("Sales Invoice", pos_inv.consolidated_invoice, "rounded_total")
+		rounded_total = nts .db.get_value("Sales Invoice", pos_inv.consolidated_invoice, "rounded_total")
 		self.assertEqual(rounded_total, 3470)
 
 	def test_merging_into_sales_invoice_with_discount_and_inclusive_tax(self):
@@ -683,7 +683,7 @@ class TestPOSInvoice(unittest.TestCase):
 			consolidate_pos_invoices,
 		)
 
-		frappe.db.sql("delete from `tabPOS Invoice`")
+		nts .db.sql("delete from `tabPOS Invoice`")
 		test_user, pos_profile = init_user_and_profile()
 		pos_inv = create_pos_invoice(rate=300, do_not_submit=1)
 		pos_inv.append("payments", {"mode_of_payment": "Cash", "amount": 300})
@@ -721,7 +721,7 @@ class TestPOSInvoice(unittest.TestCase):
 		consolidate_pos_invoices()
 
 		pos_inv.load_from_db()
-		rounded_total = frappe.db.get_value("Sales Invoice", pos_inv.consolidated_invoice, "rounded_total")
+		rounded_total = nts .db.get_value("Sales Invoice", pos_inv.consolidated_invoice, "rounded_total")
 		self.assertEqual(rounded_total, 840)
 
 	def test_merging_with_validate_selling_price(self):
@@ -732,13 +732,13 @@ class TestPOSInvoice(unittest.TestCase):
 			consolidate_pos_invoices,
 		)
 
-		if not frappe.db.get_single_value("Selling Settings", "validate_selling_price"):
-			frappe.db.set_single_value("Selling Settings", "validate_selling_price", 1)
+		if not nts .db.get_single_value("Selling Settings", "validate_selling_price"):
+			nts .db.set_single_value("Selling Settings", "validate_selling_price", 1)
 
 		item = "Test Selling Price Validation"
 		make_item(item, {"is_stock_item": 1})
 		make_purchase_receipt(item_code=item, warehouse="_Test Warehouse - _TC", qty=1, rate=300)
-		frappe.db.sql("delete from `tabPOS Invoice`")
+		nts .db.sql("delete from `tabPOS Invoice`")
 		test_user, pos_profile = init_user_and_profile()
 		pos_inv = create_pos_invoice(item=item, rate=300, do_not_submit=1)
 		pos_inv.append("payments", {"mode_of_payment": "Cash", "amount": 300})
@@ -753,7 +753,7 @@ class TestPOSInvoice(unittest.TestCase):
 				"included_in_print_rate": 1,
 			},
 		)
-		self.assertRaises(frappe.ValidationError, pos_inv.submit)
+		self.assertRaises(nts .ValidationError, pos_inv.submit)
 
 		pos_inv2 = create_pos_invoice(item=item, rate=400, do_not_submit=1)
 		pos_inv2.append("payments", {"mode_of_payment": "Cash", "amount": 400})
@@ -774,7 +774,7 @@ class TestPOSInvoice(unittest.TestCase):
 		consolidate_pos_invoices()
 
 		pos_inv2.load_from_db()
-		rounded_total = frappe.db.get_value("Sales Invoice", pos_inv2.consolidated_invoice, "rounded_total")
+		rounded_total = nts .db.get_value("Sales Invoice", pos_inv2.consolidated_invoice, "rounded_total")
 		self.assertEqual(rounded_total, 400)
 
 	def test_pos_batch_reservation(self):
@@ -809,7 +809,7 @@ class TestPOSInvoice(unittest.TestCase):
 		pos_inv1.reload()
 
 		batches = get_auto_batch_nos(
-			frappe._dict({"item_code": "_BATCH ITEM Test For Reserve", "warehouse": "_Test Warehouse - _TC"})
+			nts ._dict({"item_code": "_BATCH ITEM Test For Reserve", "warehouse": "_Test Warehouse - _TC"})
 		)
 
 		for batch in batches:
@@ -830,7 +830,7 @@ class TestPOSInvoice(unittest.TestCase):
 		self.assertTrue(pos_inv2.items[0].serial_and_batch_bundle)
 
 		batches = get_auto_batch_nos(
-			frappe._dict({"item_code": "_BATCH ITEM Test For Reserve", "warehouse": "_Test Warehouse - _TC"})
+			nts ._dict({"item_code": "_BATCH ITEM Test For Reserve", "warehouse": "_Test Warehouse - _TC"})
 		)
 
 		for batch in batches:
@@ -847,7 +847,7 @@ class TestPOSInvoice(unittest.TestCase):
 		from prodman.stock.serial_batch_bundle import SerialBatchCreation
 
 		create_batch_item_with_batch("_BATCH ITEM", "TestBatch 01")
-		item = frappe.get_doc("Item", "_BATCH ITEM")
+		item = nts .get_doc("Item", "_BATCH ITEM")
 
 		se = make_stock_entry(
 			target="_Test Warehouse - _TC",
@@ -877,7 +877,7 @@ class TestPOSInvoice(unittest.TestCase):
 				"voucher_no": pos_inv2.name,
 				"qty": 2,
 				"avg_rate": 300,
-				"batches": frappe._dict({"TestBatch 01": 2}),
+				"batches": nts ._dict({"TestBatch 01": 2}),
 				"type_of_transaction": "Outward",
 				"company": pos_inv2.company,
 			}
@@ -896,7 +896,7 @@ class TestPOSInvoice(unittest.TestCase):
 	def test_ignore_pricing_rule(self):
 		from prodman.accounts.doctype.pricing_rule.test_pricing_rule import make_pricing_rule
 
-		item_price = frappe.get_doc(
+		item_price = nts .get_doc(
 			{
 				"doctype": "Item Price",
 				"item_code": "_Test Item",
@@ -938,7 +938,7 @@ class TestPOSInvoice(unittest.TestCase):
 		from prodman.stock.doctype.delivery_note.test_delivery_note import create_delivery_note
 		from prodman.stock.doctype.stock_entry.test_stock_entry import make_serialized_item
 
-		frappe.db.savepoint("before_test_delivered_serial_no_case")
+		nts .db.savepoint("before_test_delivered_serial_no_case")
 		try:
 			se = make_serialized_item()
 			serial_no = get_serial_nos_from_bundle(se.get("items")[0].serial_and_batch_bundle)[0]
@@ -958,21 +958,21 @@ class TestPOSInvoice(unittest.TestCase):
 				do_not_submit=True,
 			)
 
-			self.assertRaises(frappe.ValidationError, pos_inv.submit)
+			self.assertRaises(nts .ValidationError, pos_inv.submit)
 
 		finally:
-			frappe.db.rollback(save_point="before_test_delivered_serial_no_case")
-			frappe.set_user("Administrator")
+			nts .db.rollback(save_point="before_test_delivered_serial_no_case")
+			nts .set_user("Administrator")
 
 
 def create_pos_invoice(**args):
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 	pos_profile = None
 	if not args.pos_profile:
 		pos_profile = make_pos_profile()
 		pos_profile.save()
 
-	pos_inv = frappe.new_doc("POS Invoice")
+	pos_inv = nts .new_doc("POS Invoice")
 	pos_inv.update(args)
 	pos_inv.update_stock = 1
 	pos_inv.is_pos = 1
@@ -980,7 +980,7 @@ def create_pos_invoice(**args):
 
 	if args.posting_date:
 		pos_inv.set_posting_time = 1
-	pos_inv.posting_date = args.posting_date or frappe.utils.nowdate()
+	pos_inv.posting_date = args.posting_date or nts .utils.nowdate()
 
 	pos_inv.company = args.company or "_Test Company"
 	pos_inv.customer = args.customer or "_Test Customer"
@@ -1004,10 +1004,10 @@ def create_pos_invoice(**args):
 		qty *= -1 if type_of_transaction == "Outward" else 1
 		batches = {}
 		if args.get("batch_no"):
-			batches = frappe._dict({args.batch_no: qty})
+			batches = nts ._dict({args.batch_no: qty})
 
 		bundle_id = make_serial_batch_bundle(
-			frappe._dict(
+			nts ._dict(
 				{
 					"item_code": args.item or args.item_code or "_Test Item",
 					"warehouse": args.warehouse or "_Test Warehouse - _TC",
@@ -1025,7 +1025,7 @@ def create_pos_invoice(**args):
 
 		if not bundle_id:
 			msg = f"Serial No {args.serial_no} not available for Item {args.item}"
-			frappe.throw(_(msg))
+			nts .throw(_(msg))
 
 	pos_invoice_item = {
 		"warehouse": args.warehouse or "_Test Warehouse - _TC",
@@ -1076,5 +1076,5 @@ def create_pos_invoice(**args):
 def make_batch_item(item_name):
 	from prodman.stock.doctype.item.test_item import make_item
 
-	if not frappe.db.exists(item_name):
+	if not nts .db.exists(item_name):
 		return make_item(item_name, dict(has_batch_no=1, create_new_batch=1, is_stock_item=1))

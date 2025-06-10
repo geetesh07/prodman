@@ -1,12 +1,12 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // For license information, please see license.txt
 
-frappe.provide("prodman.accounts");
+nts .provide("prodman.accounts");
 prodman.accounts.PaymentReconciliationController = class PaymentReconciliationController extends (
-	frappe.ui.form.Controller
+	nts .ui.form.Controller
 ) {
 	onload() {
-		const default_company = frappe.defaults.get_default("company");
+		const default_company = nts .defaults.get_default("company");
 		this.frm.set_value("company", default_company);
 
 		this.frm.set_value("party_type", "");
@@ -16,7 +16,7 @@ prodman.accounts.PaymentReconciliationController = class PaymentReconciliationCo
 		this.frm.set_query("party_type", () => {
 			return {
 				filters: {
-					name: ["in", Object.keys(frappe.boot.party_account_types)],
+					name: ["in", Object.keys(nts .boot.party_account_types)],
 				},
 			};
 		});
@@ -26,7 +26,7 @@ prodman.accounts.PaymentReconciliationController = class PaymentReconciliationCo
 				filters: {
 					company: this.frm.doc.company,
 					is_group: 0,
-					account_type: frappe.boot.party_account_types[this.frm.doc.party_type],
+					account_type: nts .boot.party_account_types[this.frm.doc.party_type],
 					root_type: this.frm.doc.party_type == "Customer" ? "Asset" : "Liability",
 				},
 			};
@@ -115,7 +115,7 @@ prodman.accounts.PaymentReconciliationController = class PaymentReconciliationCo
 							})
 							.then((r) => {
 								if (r.message) {
-									let doc_link = frappe.utils.get_form_link(
+									let doc_link = nts .utils.get_form_link(
 										"Process Payment Reconciliation",
 										r.message,
 										true
@@ -133,7 +133,7 @@ prodman.accounts.PaymentReconciliationController = class PaymentReconciliationCo
 		}
 	}
 	set_query_for_dimension_filters() {
-		frappe.call({
+		nts .call({
 			method: "prodman.accounts.doctype.payment_reconciliation.payment_reconciliation.get_queries_for_dimension_filters",
 			args: {
 				company: this.frm.doc.company,
@@ -166,7 +166,7 @@ prodman.accounts.PaymentReconciliationController = class PaymentReconciliationCo
 		this.frm.trigger("clear_child_tables");
 
 		if (!this.frm.doc.receivable_payable_account && this.frm.doc.party_type && this.frm.doc.party) {
-			frappe.call({
+			nts .call({
 				method: "prodman.accounts.party.get_party_account",
 				args: {
 					company: this.frm.doc.company,
@@ -216,13 +216,13 @@ prodman.accounts.PaymentReconciliationController = class PaymentReconciliationCo
 			method: "get_unreconciled_entries",
 			callback: () => {
 				if (!(this.frm.doc.payments.length || this.frm.doc.invoices.length)) {
-					frappe.throw({
+					nts .throw({
 						message: __("No Unreconciled Invoices and Payments found for this party and account"),
 					});
 				} else if (!this.frm.doc.invoices.length) {
-					frappe.throw({ message: __("No Outstanding Invoices found for this party") });
+					nts .throw({ message: __("No Outstanding Invoices found for this party") });
 				} else if (!this.frm.doc.payments.length) {
-					frappe.throw({ message: __("No Unreconciled Payments found for this party") });
+					nts .throw({ message: __("No Unreconciled Payments found for this party") });
 				}
 				this.frm.refresh();
 			},
@@ -256,7 +256,7 @@ prodman.accounts.PaymentReconciliationController = class PaymentReconciliationCo
 
 		if (show_dialog && show_dialog.length) {
 			this.data = [];
-			const dialog = new frappe.ui.Dialog({
+			const dialog = new nts .ui.Dialog({
 				title: __("Select Difference Account"),
 				size: "extra-large",
 				fields: [
@@ -325,13 +325,13 @@ prodman.accounts.PaymentReconciliationController = class PaymentReconciliationCo
 					const args = dialog.get_values()["allocation"];
 
 					args.forEach((d) => {
-						frappe.model.set_value(
+						nts .model.set_value(
 							"Payment Reconciliation Allocation",
 							d.docname,
 							"difference_account",
 							d.difference_account
 						);
-						frappe.model.set_value(
+						nts .model.set_value(
 							"Payment Reconciliation Allocation",
 							d.docname,
 							"gain_loss_posting_date",
@@ -377,7 +377,7 @@ prodman.accounts.PaymentReconciliationController = class PaymentReconciliationCo
 	}
 };
 
-frappe.ui.form.on("Payment Reconciliation Allocation", {
+nts .ui.form.on("Payment Reconciliation Allocation", {
 	allocated_amount: function (frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
 		// filter invoice

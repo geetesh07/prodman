@@ -1,13 +1,13 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 from collections import deque
 from functools import partial
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, timeout
-from frappe.utils import cstr, flt
+import nts
+from nts.tests.utils import ntsTestCase, timeout
+from nts.utils import cstr, flt
 
 from prodman.controllers.tests.test_subcontracting_controller import (
 	set_backflush_based_on,
@@ -21,11 +21,11 @@ from prodman.stock.doctype.stock_reconciliation.test_stock_reconciliation import
 	create_stock_reconciliation,
 )
 
-test_records = frappe.get_test_records("BOM")
+test_records = nts.get_test_records("BOM")
 test_dependencies = ["Item", "Quality Inspection Template"]
 
 
-class TestBOM(FrappeTestCase):
+class TestBOM(ntsTestCase):
 	@timeout
 	def test_get_items(self):
 		from prodman.manufacturing.doctype.bom.bom import get_bom_items_as_dict
@@ -59,9 +59,9 @@ class TestBOM(FrappeTestCase):
 	@timeout
 	def test_default_bom(self):
 		def _get_default_bom_in_item():
-			return cstr(frappe.db.get_value("Item", "_Test FG Item 2", "default_bom"))
+			return cstr(nts.db.get_value("Item", "_Test FG Item 2", "default_bom"))
 
-		bom = frappe.get_doc("BOM", {"item": "_Test FG Item 2", "is_default": 1})
+		bom = nts.get_doc("BOM", {"item": "_Test FG Item 2", "is_default": 1})
 		self.assertEqual(_get_default_bom_in_item(), bom.name)
 
 		bom.is_active = 0
@@ -77,7 +77,7 @@ class TestBOM(FrappeTestCase):
 	@timeout
 	def test_update_bom_cost_in_all_boms(self):
 		# get current rate for '_Test Item 2'
-		bom_rates = frappe.db.get_values(
+		bom_rates = nts.db.get_values(
 			"BOM Item",
 			{
 				"parent": "BOM-_Test Item Home Desktop Manufactured-001",
@@ -96,7 +96,7 @@ class TestBOM(FrappeTestCase):
 		update_cost_in_all_boms_in_test()
 
 		# check if new valuation rate updated in all BOMs
-		for d in frappe.db.sql(
+		for d in nts.db.sql(
 			"""select base_rate from `tabBOM Item`
 			where item_code='_Test Item 2' and docstatus=1 and parenttype='BOM'""",
 			as_dict=1,
@@ -105,7 +105,7 @@ class TestBOM(FrappeTestCase):
 
 	@timeout
 	def test_bom_cost(self):
-		bom = frappe.copy_doc(test_records[2])
+		bom = nts.copy_doc(test_records[2])
 		bom.insert()
 
 		raw_material_cost = 0.0
@@ -134,7 +134,7 @@ class TestBOM(FrappeTestCase):
 
 	@timeout
 	def test_bom_cost_with_batch_size(self):
-		bom = frappe.copy_doc(test_records[2])
+		bom = nts.copy_doc(test_records[2])
 		bom.docstatus = 0
 		op_cost = 0.0
 		for op_row in bom.operations:
@@ -153,18 +153,18 @@ class TestBOM(FrappeTestCase):
 
 	@timeout
 	def test_bom_cost_multi_uom_multi_currency_based_on_price_list(self):
-		frappe.db.set_value("Price List", "_Test Price List", "price_not_uom_dependent", 1)
+		nts.db.set_value("Price List", "_Test Price List", "price_not_uom_dependent", 1)
 		for item_code, rate in (("_Test Item", 3600), ("_Test Item Home Desktop Manufactured", 3000)):
-			frappe.db.sql(
+			nts.db.sql(
 				"delete from `tabItem Price` where price_list='_Test Price List' and item_code=%s", item_code
 			)
-			item_price = frappe.new_doc("Item Price")
+			item_price = nts.new_doc("Item Price")
 			item_price.price_list = "_Test Price List"
 			item_price.item_code = item_code
 			item_price.price_list_rate = rate
 			item_price.insert()
 
-		bom = frappe.copy_doc(test_records[2])
+		bom = nts.copy_doc(test_records[2])
 		bom.set_rate_of_sub_assembly_item_based_on_bom = 0
 		bom.rm_cost_as_per = "Price List"
 		bom.buying_price_list = "_Test Price List"
@@ -190,7 +190,7 @@ class TestBOM(FrappeTestCase):
 
 	@timeout
 	def test_bom_cost_multi_uom_based_on_valuation_rate(self):
-		bom = frappe.copy_doc(test_records[2])
+		bom = nts.copy_doc(test_records[2])
 		bom.set_rate_of_sub_assembly_item_based_on_bom = 0
 		bom.rm_cost_as_per = "Valuation Rate"
 		bom.items[0].uom = "_Test UOM 1"
@@ -199,7 +199,7 @@ class TestBOM(FrappeTestCase):
 
 		reset_item_valuation_rate(
 			item_code="_Test Item",
-			warehouse_list=frappe.get_all("Warehouse", {"is_group": 0, "company": bom.company}, pluck="name"),
+			warehouse_list=nts.get_all("Warehouse", {"is_group": 0, "company": bom.company}, pluck="name"),
 			qty=200,
 			rate=200,
 		)
@@ -210,7 +210,7 @@ class TestBOM(FrappeTestCase):
 
 	@timeout
 	def test_bom_cost_with_fg_based_operating_cost(self):
-		bom = frappe.copy_doc(test_records[4])
+		bom = nts.copy_doc(test_records[4])
 		bom.insert()
 
 		raw_material_cost = 0.0
@@ -241,18 +241,18 @@ class TestBOM(FrappeTestCase):
 		item_code = "_Test Subcontracted FG Item 1"
 		set_backflush_based_on("Material Transferred for Subcontract")
 
-		if not frappe.db.exists("Item", item_code):
+		if not nts.db.exists("Item", item_code):
 			make_item(item_code, {"is_stock_item": 1, "is_sub_contracted_item": 1, "stock_uom": "Nos"})
 
-		if not frappe.db.exists("Item", "Test Extra Item 1"):
+		if not nts.db.exists("Item", "Test Extra Item 1"):
 			make_item("Test Extra Item 1", {"is_stock_item": 1, "stock_uom": "Nos"})
 
-		if not frappe.db.exists("Item", "Test Extra Item 2"):
+		if not nts.db.exists("Item", "Test Extra Item 2"):
 			make_item("Test Extra Item 2", {"is_stock_item": 1, "stock_uom": "Nos"})
 
-		if not frappe.db.exists("Item", "Test Extra Item 3"):
+		if not nts.db.exists("Item", "Test Extra Item 3"):
 			make_item("Test Extra Item 3", {"is_stock_item": 1, "stock_uom": "Nos"})
-		bom = frappe.get_doc(
+		bom = nts.get_doc(
 			{
 				"doctype": "BOM",
 				"is_default": 1,
@@ -264,7 +264,7 @@ class TestBOM(FrappeTestCase):
 		)
 
 		for item in ["Test Extra Item 1", "Test Extra Item 2"]:
-			item_doc = frappe.get_doc("Item", item)
+			item_doc = nts.get_doc("Item", item)
 
 			bom.append(
 				"items",
@@ -390,9 +390,9 @@ class TestBOM(FrappeTestCase):
 		"""BOM should not allow BOM item again in child"""
 		item_code = make_item(properties={"is_stock_item": 1}).name
 
-		bom = frappe.new_doc("BOM")
+		bom = nts.new_doc("BOM")
 		bom.item = item_code
-		bom.append("items", frappe._dict(item_code=item_code))
+		bom.append("items", nts._dict(item_code=item_code))
 		bom.save()
 		with self.assertRaises(BOMRecursionError):
 			bom.items[0].bom_no = bom.name
@@ -403,14 +403,14 @@ class TestBOM(FrappeTestCase):
 		item1 = make_item(properties={"is_stock_item": 1}).name
 		item2 = make_item(properties={"is_stock_item": 1}).name
 
-		bom1 = frappe.new_doc("BOM")
+		bom1 = nts.new_doc("BOM")
 		bom1.item = item1
-		bom1.append("items", frappe._dict(item_code=item2))
+		bom1.append("items", nts._dict(item_code=item2))
 		bom1.save()
 
-		bom2 = frappe.new_doc("BOM")
+		bom2 = nts.new_doc("BOM")
 		bom2.item = item2
-		bom2.append("items", frappe._dict(item_code=item1))
+		bom2.append("items", nts._dict(item_code=item1))
 		bom2.save()
 
 		bom2.items[0].bom_no = bom1.name
@@ -428,11 +428,11 @@ class TestBOM(FrappeTestCase):
 			fg_item_non_whole, bom_item, scrap_qty=2, scrap_rate=0, process_loss_percentage=110
 		)
 		#  PL can't be > 100
-		self.assertRaises(frappe.ValidationError, bom_doc.submit)
+		self.assertRaises(nts.ValidationError, bom_doc.submit)
 
 		bom_doc = create_bom_with_process_loss_item(fg_item_whole, bom_item, process_loss_percentage=20)
 		#  Items with whole UOMs can't be PL Items
-		self.assertRaises(frappe.ValidationError, bom_doc.submit)
+		self.assertRaises(nts.ValidationError, bom_doc.submit)
 
 	@timeout
 	def test_bom_item_query(self):
@@ -455,7 +455,7 @@ class TestBOM(FrappeTestCase):
 	@timeout
 	def test_exclude_exploded_items_from_bom(self):
 		bom_no = get_default_bom()
-		new_bom = frappe.copy_doc(frappe.get_doc("BOM", bom_no))
+		new_bom = nts.copy_doc(nts.get_doc("BOM", bom_no))
 		for row in new_bom.items:
 			if row.item_code == "_Test Item Home Desktop Manufactured":
 				self.assertTrue(row.bom_no)
@@ -473,10 +473,10 @@ class TestBOM(FrappeTestCase):
 
 	@timeout
 	def test_valid_transfer_defaults(self):
-		bom_with_op = frappe.db.get_value(
+		bom_with_op = nts.db.get_value(
 			"BOM", {"item": "_Test FG Item 2", "with_operations": 1, "is_active": 1}
 		)
-		bom = frappe.copy_doc(frappe.get_doc("BOM", bom_with_op), ignore_no_copy=False)
+		bom = nts.copy_doc(nts.get_doc("BOM", bom_with_op), ignore_no_copy=False)
 
 		# test defaults
 		bom.docstatus = 0
@@ -486,7 +486,7 @@ class TestBOM(FrappeTestCase):
 
 		bom.reload()
 		bom.transfer_material_against = None
-		with self.assertRaises(frappe.ValidationError):
+		with self.assertRaises(nts.ValidationError):
 			bom.save()
 		bom.reload()
 
@@ -511,7 +511,7 @@ class TestBOM(FrappeTestCase):
 
 	@timeout
 	def test_version_index(self):
-		bom = frappe.new_doc("BOM")
+		bom = nts.new_doc("BOM")
 
 		version_index_test_cases = [
 			(1, []),
@@ -532,7 +532,7 @@ class TestBOM(FrappeTestCase):
 
 	@timeout
 	def test_bom_versioning(self):
-		bom_tree = {frappe.generate_hash(length=10): {frappe.generate_hash(length=10): {}}}
+		bom_tree = {nts.generate_hash(length=10): {nts.generate_hash(length=10): {}}}
 		bom = create_nested_bom(bom_tree, prefix="")
 		self.assertEqual(int(bom.name.split("-")[-1]), 1)
 		original_bom_name = bom.name
@@ -542,7 +542,7 @@ class TestBOM(FrappeTestCase):
 		self.assertEqual(bom.name, original_bom_name)
 
 		# create a new amendment
-		amendment = frappe.copy_doc(bom)
+		amendment = nts.copy_doc(bom)
 		amendment.docstatus = 0
 		amendment.amended_from = bom.name
 
@@ -556,7 +556,7 @@ class TestBOM(FrappeTestCase):
 		self.assertEqual(int(amendment.name.split("-")[-2]), 1)
 
 		# create a new version
-		version = frappe.copy_doc(amendment)
+		version = nts.copy_doc(amendment)
 		version.docstatus = 0
 		version.amended_from = None
 		version.save()
@@ -565,7 +565,7 @@ class TestBOM(FrappeTestCase):
 
 	@timeout
 	def test_clear_inpection_quality(self):
-		bom = frappe.copy_doc(test_records[2], ignore_no_copy=True)
+		bom = nts.copy_doc(test_records[2], ignore_no_copy=True)
 		bom.docstatus = 0
 		bom.is_default = 0
 		bom.quality_inspection_template = "_Test Quality Inspection Template"
@@ -585,15 +585,15 @@ class TestBOM(FrappeTestCase):
 	def test_bom_pricing_based_on_lpp(self):
 		from prodman.stock.doctype.purchase_receipt.test_purchase_receipt import make_purchase_receipt
 
-		parent = frappe.generate_hash(length=10)
-		child = frappe.generate_hash(length=10)
+		parent = nts.generate_hash(length=10)
+		child = nts.generate_hash(length=10)
 		bom_tree = {parent: {child: {}}}
 		bom = create_nested_bom(bom_tree, prefix="")
 
 		# add last purchase price
 		make_purchase_receipt(item_code=child, rate=42)
 
-		bom = frappe.copy_doc(bom)
+		bom = nts.copy_doc(bom)
 		bom.docstatus = 0
 		bom.amended_from = None
 		bom.rm_cost_as_per = "Last Purchase Rate"
@@ -610,7 +610,7 @@ class TestBOM(FrappeTestCase):
 		bom_item = make_item(properties={"is_stock_item": 1})
 
 		# Step 1: Create BOM
-		bom = frappe.new_doc("BOM")
+		bom = nts.new_doc("BOM")
 		bom.item = fg_item.item_code
 		bom.quantity = 1
 		bom.append(
@@ -625,19 +625,19 @@ class TestBOM(FrappeTestCase):
 		)
 		bom.save()
 		bom.submit()
-		self.assertEqual(frappe.get_value("Item", fg_item.item_code, "default_bom"), bom.name)
+		self.assertEqual(nts.get_value("Item", fg_item.item_code, "default_bom"), bom.name)
 
 		# Step 2: Uncheck is_active field
 		bom.is_active = 0
 		bom.save()
 		bom.reload()
-		self.assertIsNone(frappe.get_value("Item", fg_item.item_code, "default_bom"))
+		self.assertIsNone(nts.get_value("Item", fg_item.item_code, "default_bom"))
 
 		# Step 3: Check is_active field
 		bom.is_active = 1
 		bom.save()
 		bom.reload()
-		self.assertEqual(frappe.get_value("Item", fg_item.item_code, "default_bom"), bom.name)
+		self.assertEqual(nts.get_value("Item", fg_item.item_code, "default_bom"), bom.name)
 
 	@timeout
 	def test_exploded_items_rate(self):
@@ -719,8 +719,8 @@ class TestBOM(FrappeTestCase):
 	def test_do_not_include_manufacturing_and_fixed_items(self):
 		from prodman.manufacturing.doctype.bom.bom import item_query
 
-		if not frappe.db.exists("Asset Category", "Computers-Test"):
-			doc = frappe.get_doc({"doctype": "Asset Category", "asset_category_name": "Computers-Test"})
+		if not nts.db.exists("Asset Category", "Computers-Test"):
+			doc = nts.get_doc({"doctype": "Asset Category", "asset_category_name": "Computers-Test"})
 			doc.flags.ignore_mandatory = True
 			doc.insert()
 
@@ -758,7 +758,7 @@ class TestBOM(FrappeTestCase):
 	def test_get_scrap_items_from_sub_assemblies(self):
 		from prodman.manufacturing.doctype.bom.bom import get_scrap_items_from_sub_assemblies
 
-		bom = frappe.copy_doc(test_records[1])
+		bom = nts.copy_doc(test_records[1])
 		bom.insert(ignore_mandatory=True)
 
 		bom_scraped_items = [i.get("item_code") for i in bom.get("scrap_items", [])]
@@ -780,7 +780,7 @@ class TestBOM(FrappeTestCase):
 		for row in bom.items:
 			self.assertEqual(row.stock_uom, "Nos")
 
-		frappe.db.set_value("Item", rm_item, "stock_uom", "Kg")
+		nts.db.set_value("Item", rm_item, "stock_uom", "Kg")
 
 		bom.items[0].qty = 2
 		bom.save()
@@ -790,7 +790,7 @@ class TestBOM(FrappeTestCase):
 
 
 def get_default_bom(item_code="_Test FG Item 2"):
-	return frappe.db.get_value("BOM", {"item": item_code, "is_active": 1, "is_default": 1})
+	return nts.db.get_value("BOM", {"item": item_code, "is_active": 1, "is_default": 1})
 
 
 def level_order_traversal(node):
@@ -814,8 +814,8 @@ def create_nested_bom(tree, prefix="_Test bom "):
 	def create_items(bom_tree):
 		for item_code, subtree in bom_tree.items():
 			bom_item_code = prefix + item_code
-			if not frappe.db.exists("Item", bom_item_code):
-				frappe.get_doc(
+			if not nts.db.exists("Item", bom_item_code):
+				nts.get_doc(
 					doctype="Item", item_code=bom_item_code, item_group="_Test Item Group"
 				).insert()
 			create_items(subtree)
@@ -838,7 +838,7 @@ def create_nested_bom(tree, prefix="_Test bom "):
 		child_items = dfs(tree, item)
 		if child_items:
 			bom_item_code = prefix + item
-			bom = frappe.get_doc(doctype="BOM", item=bom_item_code)
+			bom = nts.get_doc(doctype="BOM", item=bom_item_code)
 			for child_item in child_items.keys():
 				bom.append("items", {"item_code": prefix + child_item})
 			bom.company = "_Test Company"
@@ -854,7 +854,7 @@ def reset_item_valuation_rate(item_code, warehouse_list=None, qty=None, rate=Non
 		warehouse_list = [warehouse_list]
 
 	if not warehouse_list:
-		warehouse_list = frappe.db.sql_list(
+		warehouse_list = nts.db.sql_list(
 			"""
 			select warehouse from `tabBin`
 			where item_code=%s and actual_qty > 0
@@ -872,7 +872,7 @@ def reset_item_valuation_rate(item_code, warehouse_list=None, qty=None, rate=Non
 def create_bom_with_process_loss_item(
 	fg_item, bom_item, scrap_qty=0, scrap_rate=0, fg_qty=2, process_loss_percentage=0
 ):
-	bom_doc = frappe.new_doc("BOM")
+	bom_doc = nts.new_doc("BOM")
 	bom_doc.item = fg_item.item_code
 	bom_doc.quantity = fg_qty
 	bom_doc.append(
@@ -915,7 +915,7 @@ def create_process_loss_bom_items():
 
 def create_process_loss_bom_item(item_tuple):
 	item_code, stock_uom = item_tuple
-	if frappe.db.exists("Item", item_code) is None:
+	if nts.db.exists("Item", item_code) is None:
 		return make_item(item_code, {"stock_uom": stock_uom, "valuation_rate": 100})
 	else:
-		return frappe.get_doc("Item", item_code)
+		return nts.get_doc("Item", item_code)

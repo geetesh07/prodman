@@ -1,18 +1,18 @@
 import json
 
-import frappe
-from frappe.model.naming import make_autoname
+import nts
+from nts.model.naming import make_autoname
 
 
 def execute():
-	if "tax_type" not in frappe.db.get_table_columns("Item Tax"):
+	if "tax_type" not in nts.db.get_table_columns("Item Tax"):
 		return
 	old_item_taxes = {}
 	item_tax_templates = {}
 
-	frappe.reload_doc("accounts", "doctype", "item_tax_template_detail", force=1)
-	frappe.reload_doc("accounts", "doctype", "item_tax_template", force=1)
-	existing_templates = frappe.db.sql(
+	nts.reload_doc("accounts", "doctype", "item_tax_template_detail", force=1)
+	nts.reload_doc("accounts", "doctype", "item_tax_template", force=1)
+	existing_templates = nts.db.sql(
 		"""select template.name, details.tax_type, details.tax_rate
 		from `tabItem Tax Template` template, `tabItem Tax Template Detail` details
 		where details.parent=template.name
@@ -25,25 +25,25 @@ def execute():
 			item_tax_templates.setdefault(d.name, {})
 			item_tax_templates[d.name][d.tax_type] = d.tax_rate
 
-	for d in frappe.db.sql(
+	for d in nts.db.sql(
 		"""select parent as item_code, tax_type, tax_rate from `tabItem Tax`""", as_dict=1
 	):
 		old_item_taxes.setdefault(d.item_code, [])
 		old_item_taxes[d.item_code].append(d)
 
-	frappe.reload_doc("stock", "doctype", "item", force=1)
-	frappe.reload_doc("stock", "doctype", "item_tax", force=1)
-	frappe.reload_doc("selling", "doctype", "quotation_item", force=1)
-	frappe.reload_doc("selling", "doctype", "sales_order_item", force=1)
-	frappe.reload_doc("stock", "doctype", "delivery_note_item", force=1)
-	frappe.reload_doc("accounts", "doctype", "sales_invoice_item", force=1)
-	frappe.reload_doc("buying", "doctype", "supplier_quotation_item", force=1)
-	frappe.reload_doc("buying", "doctype", "purchase_order_item", force=1)
-	frappe.reload_doc("stock", "doctype", "purchase_receipt_item", force=1)
-	frappe.reload_doc("accounts", "doctype", "purchase_invoice_item", force=1)
-	frappe.reload_doc("accounts", "doctype", "accounts_settings", force=1)
+	nts.reload_doc("stock", "doctype", "item", force=1)
+	nts.reload_doc("stock", "doctype", "item_tax", force=1)
+	nts.reload_doc("selling", "doctype", "quotation_item", force=1)
+	nts.reload_doc("selling", "doctype", "sales_order_item", force=1)
+	nts.reload_doc("stock", "doctype", "delivery_note_item", force=1)
+	nts.reload_doc("accounts", "doctype", "sales_invoice_item", force=1)
+	nts.reload_doc("buying", "doctype", "supplier_quotation_item", force=1)
+	nts.reload_doc("buying", "doctype", "purchase_order_item", force=1)
+	nts.reload_doc("stock", "doctype", "purchase_receipt_item", force=1)
+	nts.reload_doc("accounts", "doctype", "purchase_invoice_item", force=1)
+	nts.reload_doc("accounts", "doctype", "accounts_settings", force=1)
 
-	frappe.db.auto_commit_on_many_writes = True
+	nts.db.auto_commit_on_many_writes = True
 
 	# for each item that have item tax rates
 	for item_code in old_item_taxes.keys():
@@ -59,9 +59,9 @@ def execute():
 		)
 
 		# update the item tax table
-		frappe.db.sql("delete from `tabItem Tax` where parent=%s and parenttype='Item'", item_code)
+		nts.db.sql("delete from `tabItem Tax` where parent=%s and parenttype='Item'", item_code)
 		if item_tax_template_name:
-			item = frappe.get_doc("Item", item_code)
+			item = nts.get_doc("Item", item_code)
 			item.set("taxes", [])
 			item.append("taxes", {"item_tax_template": item_tax_template_name, "tax_category": ""})
 			for d in item.taxes:
@@ -79,7 +79,7 @@ def execute():
 	]
 
 	for dt in doctypes:
-		for d in frappe.db.sql(
+		for d in nts.db.sql(
 			f"""select name, parenttype, parent, item_code, item_tax_rate from `tab{dt} Item`
 								where ifnull(item_tax_rate, '') not in ('', '{{}}')
 								and item_tax_template is NULL""",
@@ -89,11 +89,11 @@ def execute():
 			item_tax_template_name = get_item_tax_template(
 				item_tax_templates, item_tax_map, d.item_code, d.parenttype, d.parent, tax_types=tax_types
 			)
-			frappe.db.set_value(dt + " Item", d.name, "item_tax_template", item_tax_template_name)
+			nts.db.set_value(dt + " Item", d.name, "item_tax_template", item_tax_template_name)
 
-	frappe.db.auto_commit_on_many_writes = False
+	nts.db.auto_commit_on_many_writes = False
 
-	settings = frappe.get_single("Accounts Settings")
+	settings = nts.get_single("Accounts Settings")
 	settings.add_taxes_from_item_tax_template = 0
 	settings.determine_address_tax_category_from = "Billing Address"
 	settings.save()
@@ -108,12 +108,12 @@ def get_item_tax_template(
 			return template
 
 	# if no item tax template found, create one
-	item_tax_template = frappe.new_doc("Item Tax Template")
+	item_tax_template = nts.new_doc("Item Tax Template")
 	item_tax_template.title = make_autoname("Item Tax Template-.####")
 	item_tax_template_name = item_tax_template.title
 
 	for tax_type, tax_rate in item_tax_map.items():
-		account_details = frappe.db.get_value(
+		account_details = nts.db.get_value(
 			"Account", tax_type, ["name", "account_type", "company"], as_dict=1
 		)
 		if account_details:
@@ -129,7 +129,7 @@ def get_item_tax_template(
 				"Expense Account",
 				"Expenses Included In Valuation",
 			):
-				frappe.db.set_value("Account", account_details.name, "account_type", "Chargeable")
+				nts.db.set_value("Account", account_details.name, "account_type", "Chargeable")
 		else:
 			parts = tax_type.strip().split(" - ")
 			account_name = " - ".join(parts[:-1])
@@ -137,11 +137,11 @@ def get_item_tax_template(
 				tax_type = None
 			else:
 				company = get_company(parts[-1], parenttype, parent)
-				parent_account = frappe.get_value(
+				parent_account = nts.get_value(
 					"Account", {"account_name": account_name, "company": company}, "parent_account"
 				)
 				if not parent_account:
-					parent_account = frappe.db.get_value(
+					parent_account = nts.db.get_value(
 						"Account",
 						filters={
 							"account_type": "Tax",
@@ -152,7 +152,7 @@ def get_item_tax_template(
 						fieldname="parent_account",
 					)
 				if not parent_account:
-					parent_account = frappe.db.get_value(
+					parent_account = nts.db.get_value(
 						"Account",
 						filters={
 							"account_type": "Tax",
@@ -167,19 +167,19 @@ def get_item_tax_template(
 					"account_type": "Tax",
 					"parent_account": parent_account,
 				}
-				tax_type = frappe.db.get_value("Account", filters)
+				tax_type = nts.db.get_value("Account", filters)
 				if not tax_type:
-					account = frappe.new_doc("Account")
+					account = nts.new_doc("Account")
 					account.update(filters)
 					try:
 						account.insert()
 						tax_type = account.name
-					except frappe.DuplicateEntryError:
-						tax_type = frappe.db.get_value(
+					except nts.DuplicateEntryError:
+						tax_type = nts.db.get_value(
 							"Account", {"account_name": account_name, "company": company}, "name"
 						)
 
-		account_type = frappe.get_cached_value("Account", tax_type, "account_type")
+		account_type = nts.get_cached_value("Account", tax_type, "account_type")
 
 		if tax_type and account_type in (
 			"Tax",
@@ -201,12 +201,12 @@ def get_item_tax_template(
 
 def get_company(company_abbr, parenttype=None, parent=None):
 	if parenttype and parent:
-		company = frappe.get_cached_value(parenttype, parent, "company")
+		company = nts.get_cached_value(parenttype, parent, "company")
 	else:
-		company = frappe.db.get_value("Company", filters={"abbr": company_abbr})
+		company = nts.db.get_value("Company", filters={"abbr": company_abbr})
 
 	if not company:
-		companies = frappe.get_all("Company")
+		companies = nts.get_all("Company")
 		if len(companies) == 1:
 			company = companies[0].name
 

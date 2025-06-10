@@ -41,7 +41,7 @@
 						</div>
 						{% if(tasks[i].date) { %}
 							<div class="text-muted ml-1">
-								{%= frappe.datetime.global_date_format(tasks[i].date) %}
+								{%= nts.datetime.global_date_format(tasks[i].date) %}
 							</div>
 						{% } %}
 						{% if(tasks[i].allocated_to) { %}
@@ -83,16 +83,16 @@
                             </div>
                         </div>
                         <div class="text-muted ml-1">
-                            {%= frappe.datetime.global_date_format(events[i].starts_on) %}
+                            {%= nts.datetime.global_date_format(events[i].starts_on) %}
 
                             {% if (events[i].ends_on) { %}
-                                {% if (frappe.datetime.obj_to_user(events[i].starts_on) != frappe.datetime.obj_to_user(events[i].ends_on)) %}
+                                {% if (nts.datetime.obj_to_user(events[i].starts_on) != nts.datetime.obj_to_user(events[i].ends_on)) %}
                                     -
-                                    {%= frappe.datetime.global_date_format(frappe.datetime.obj_to_user(events[i].ends_on)) %}
-                                    {%= frappe.datetime.get_time(events[i].ends_on) %}
+                                    {%= nts.datetime.global_date_format(nts.datetime.obj_to_user(events[i].ends_on)) %}
+                                    {%= nts.datetime.get_time(events[i].ends_on) %}
                                 {% } else if (events[i].ends_on) { %}
                                     -
-                                    {%= frappe.datetime.get_time(events[i].ends_on) %}
+                                    {%= nts.datetime.get_time(events[i].ends_on) %}
                                 {% } %}
                             {% } %}
 

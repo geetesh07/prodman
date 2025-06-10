@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _, qb, throw
-from frappe.model.mapper import get_mapped_doc
-from frappe.query_builder.functions import Sum
-from frappe.utils import cint, cstr, flt, formatdate, get_link_to_form, getdate, nowdate
+import nts 
+from nts  import _, qb, throw
+from nts .model.mapper import get_mapped_doc
+from nts .query_builder.functions import Sum
+from nts .utils import cint, cstr, flt, formatdate, get_link_to_form, getdate, nowdate
 
 import prodman
 from prodman.accounts.deferred_revenue import validate_service_stop_date
@@ -45,7 +45,7 @@ from prodman.stock.doctype.purchase_receipt.purchase_receipt import (
 )
 
 
-class WarehouseMissingError(frappe.ValidationError):
+class WarehouseMissingError(nts .ValidationError):
 	pass
 
 
@@ -59,7 +59,7 @@ class PurchaseInvoice(BuyingController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.advance_tax.advance_tax import AdvanceTax
 		from prodman.accounts.doctype.payment_schedule.payment_schedule import PaymentSchedule
@@ -240,7 +240,7 @@ class PurchaseInvoice(BuyingController):
 
 	def onload(self):
 		super().onload()
-		supplier_tds = frappe.db.get_value("Supplier", self.supplier, "tax_withholding_category")
+		supplier_tds = nts .db.get_value("Supplier", self.supplier, "tax_withholding_category")
 		self.set_onload("supplier_tds", supplier_tds)
 
 		if self.is_new():
@@ -309,16 +309,16 @@ class PurchaseInvoice(BuyingController):
 
 	def validate_release_date(self):
 		if self.release_date and getdate(nowdate()) >= getdate(self.release_date):
-			frappe.throw(_("Release date must be in the future"))
+			nts .throw(_("Release date must be in the future"))
 
 	def validate_cash(self):
 		if not self.cash_bank_account and flt(self.paid_amount):
-			frappe.throw(_("Cash or Bank Account is mandatory for making payment entry"))
+			nts .throw(_("Cash or Bank Account is mandatory for making payment entry"))
 
 		if flt(self.paid_amount) + flt(self.write_off_amount) - flt(
 			self.get("rounded_total") or self.grand_total
 		) > 1 / (10 ** (self.precision("base_grand_total") + 1)):
-			frappe.throw(_("""Paid amount + Write Off Amount can not be greater than Grand Total"""))
+			nts .throw(_("""Paid amount + Write Off Amount can not be greater than Grand Total"""))
 
 	def create_remarks(self):
 		if not self.remarks:
@@ -333,7 +333,7 @@ class PurchaseInvoice(BuyingController):
 	def set_missing_values(self, for_validate=False):
 		if not self.credit_to:
 			self.credit_to = get_party_account("Supplier", self.supplier, self.company)
-			self.party_account_currency = frappe.get_cached_value(
+			self.party_account_currency = nts .get_cached_value(
 				"Account", self.credit_to, "account_currency"
 			)
 		if not self.due_date:
@@ -341,7 +341,7 @@ class PurchaseInvoice(BuyingController):
 				self.posting_date, "Supplier", self.supplier, self.company, self.bill_date
 			)
 
-		tds_category = frappe.db.get_value("Supplier", self.supplier, "tax_withholding_category")
+		tds_category = nts .db.get_value("Supplier", self.supplier, "tax_withholding_category")
 		if tds_category and not for_validate:
 			self.apply_tds = 1
 			self.tax_withholding_category = tds_category
@@ -355,23 +355,23 @@ class PurchaseInvoice(BuyingController):
 			if not self.credit_to:
 				self.raise_missing_debit_credit_account_error("Supplier", self.supplier)
 
-		account = frappe.get_cached_value(
+		account = nts .get_cached_value(
 			"Account", self.credit_to, ["account_type", "report_type", "account_currency"], as_dict=True
 		)
 
 		if account.report_type != "Balance Sheet":
-			frappe.throw(
+			nts .throw(
 				_(
 					"Please ensure that the {0} account is a Balance Sheet account. You can change the parent account to a Balance Sheet account or select a different account."
-				).format(frappe.bold(_("Credit To"))),
+				).format(nts .bold(_("Credit To"))),
 				title=_("Invalid Account"),
 			)
 
 		if self.supplier and account.account_type != "Payable":
-			frappe.throw(
+			nts .throw(
 				_(
 					"Please ensure that the {0} account {1} is a Payable account. You can change the account type to Payable or select a different account."
-				).format(frappe.bold(_("Credit To")), frappe.bold(self.credit_to)),
+				).format(nts .bold(_("Credit To")), nts .bold(self.credit_to)),
 				title=_("Invalid Account"),
 			)
 
@@ -411,7 +411,7 @@ class PurchaseInvoice(BuyingController):
 		)
 
 		if (
-			cint(frappe.db.get_single_value("Buying Settings", "maintain_same_rate"))
+			cint(nts .db.get_single_value("Buying Settings", "maintain_same_rate"))
 			and not self.is_return
 			and not self.is_internal_supplier
 		):
@@ -427,7 +427,7 @@ class PurchaseInvoice(BuyingController):
 			stock_items = self.get_stock_items()
 			for d in self.get("items"):
 				if not d.warehouse and d.item_code in stock_items:
-					frappe.throw(
+					nts .throw(
 						_(
 							"Row No {0}: Warehouse is required. Please set a Default Warehouse for Item {1} and Company {2}"
 						).format(d.idx, d.item_code, self.company),
@@ -439,7 +439,7 @@ class PurchaseInvoice(BuyingController):
 	def validate_item_code(self):
 		for d in self.get("items"):
 			if not d.item_code:
-				frappe.msgprint(_("Item Code required at Row No {0}").format(d.idx), raise_exception=True)
+				nts .msgprint(_("Item Code required at Row No {0}").format(d.idx), raise_exception=True)
 
 	def set_expense_account(self, for_validate=False):
 		auto_accounting_for_stock = prodman.is_perpetual_inventory_enabled(self.company)
@@ -467,7 +467,7 @@ class PurchaseInvoice(BuyingController):
 				and not item.is_fixed_asset
 				and (
 					not item.po_detail
-					or not frappe.db.get_value("Purchase Order Item", item.po_detail, "delivered_by_supplier")
+					or not nts .db.get_value("Purchase Order Item", item.po_detail, "delivered_by_supplier")
 				)
 			):
 				if self.update_stock and item.warehouse and (not item.from_warehouse):
@@ -480,16 +480,16 @@ class PurchaseInvoice(BuyingController):
 							"Row {0}: Expense Head changed to {1} because account {2} is not linked to warehouse {3} or it is not the default inventory account"
 						).format(
 							item.idx,
-							frappe.bold(warehouse_account[item.warehouse]["account"]),
-							frappe.bold(item.expense_account),
-							frappe.bold(item.warehouse),
+							nts .bold(warehouse_account[item.warehouse]["account"]),
+							nts .bold(item.expense_account),
+							nts .bold(item.warehouse),
 						)
-						frappe.msgprint(msg, title=_("Expense Head Changed"))
+						nts .msgprint(msg, title=_("Expense Head Changed"))
 					item.expense_account = warehouse_account[item.warehouse]["account"]
 				else:
 					# check if 'Stock Received But Not Billed' account is credited in Purchase receipt or not
 					if item.purchase_receipt:
-						negative_expense_booked_in_pr = frappe.db.sql(
+						negative_expense_booked_in_pr = nts .db.sql(
 							"""select name from `tabGL Entry`
 							where voucher_type='Purchase Receipt' and voucher_no=%s and account = %s""",
 							(item.purchase_receipt, stock_not_billed_account),
@@ -505,10 +505,10 @@ class PurchaseInvoice(BuyingController):
 									"Row {0}: Expense Head changed to {1} because expense is booked against this account in Purchase Receipt {2}"
 								).format(
 									item.idx,
-									frappe.bold(stock_not_billed_account),
-									frappe.bold(item.purchase_receipt),
+									nts .bold(stock_not_billed_account),
+									nts .bold(item.purchase_receipt),
 								)
-								frappe.msgprint(msg, title=_("Expense Head Changed"))
+								nts .msgprint(msg, title=_("Expense Head Changed"))
 
 							item.expense_account = stock_not_billed_account
 					else:
@@ -522,19 +522,19 @@ class PurchaseInvoice(BuyingController):
 							msg = _(
 								"Row {0}: Expense Head changed to {1} as no Purchase Receipt is created against Item {2}."
 							).format(
-								item.idx, frappe.bold(stock_not_billed_account), frappe.bold(item.item_code)
+								item.idx, nts .bold(stock_not_billed_account), nts .bold(item.item_code)
 							)
 							msg += "<br>"
 							msg += _(
 								"This is done to handle accounting for cases when Purchase Receipt is created after Purchase Invoice"
 							)
-							frappe.msgprint(msg, title=_("Expense Head Changed"))
+							nts .msgprint(msg, title=_("Expense Head Changed"))
 
 						item.expense_account = stock_not_billed_account
 			elif item.is_fixed_asset:
 				account = None
 				if not item.pr_detail and item.po_detail:
-					receipt_item = frappe.get_cached_value(
+					receipt_item = nts .get_cached_value(
 						"Purchase Receipt Item",
 						{
 							"purchase_order": item.purchase_order,
@@ -555,7 +555,7 @@ class PurchaseInvoice(BuyingController):
 						)
 
 					# check if 'Asset Received But Not Billed' account is credited in Purchase receipt or not
-					arbnb_booked_in_pr = frappe.db.get_value(
+					arbnb_booked_in_pr = nts .db.get_value(
 						"GL Entry",
 						{
 							"voucher_type": "Purchase Receipt",
@@ -602,45 +602,45 @@ class PurchaseInvoice(BuyingController):
 
 	def force_set_against_expense_account(self):
 		self.set_against_expense_account()
-		frappe.db.set_value(self.doctype, self.name, "against_expense_account", self.against_expense_account)
+		nts .db.set_value(self.doctype, self.name, "against_expense_account", self.against_expense_account)
 
 	def po_required(self):
-		if frappe.db.get_value("Buying Settings", None, "po_required") == "Yes":
-			if frappe.get_value(
+		if nts .db.get_value("Buying Settings", None, "po_required") == "Yes":
+			if nts .get_value(
 				"Supplier", self.supplier, "allow_purchase_invoice_creation_without_purchase_order"
 			):
 				return
 
 			for d in self.get("items"):
 				if not d.purchase_order:
-					msg = _("Purchase Order Required for item {}").format(frappe.bold(d.item_code))
+					msg = _("Purchase Order Required for item {}").format(nts .bold(d.item_code))
 					msg += "<br><br>"
 					msg += _(
 						"To submit the invoice without purchase order please set {0} as {1} in {2}"
 					).format(
-						frappe.bold(_("Purchase Order Required")),
-						frappe.bold(_("No")),
+						nts .bold(_("Purchase Order Required")),
+						nts .bold(_("No")),
 						get_link_to_form("Buying Settings", "Buying Settings", "Buying Settings"),
 					)
 					throw(msg, title=_("Mandatory Purchase Order"))
 
 	def pr_required(self):
 		stock_items = self.get_stock_items()
-		if frappe.db.get_value("Buying Settings", None, "pr_required") == "Yes":
-			if frappe.get_value(
+		if nts .db.get_value("Buying Settings", None, "pr_required") == "Yes":
+			if nts .get_value(
 				"Supplier", self.supplier, "allow_purchase_invoice_creation_without_purchase_receipt"
 			):
 				return
 
 			for d in self.get("items"):
 				if not d.purchase_receipt and d.item_code in stock_items:
-					msg = _("Purchase Receipt Required for item {}").format(frappe.bold(d.item_code))
+					msg = _("Purchase Receipt Required for item {}").format(nts .bold(d.item_code))
 					msg += "<br><br>"
 					msg += _(
 						"To submit the invoice without purchase receipt please set {0} as {1} in {2}"
 					).format(
-						frappe.bold(_("Purchase Receipt Required")),
-						frappe.bold(_("No")),
+						nts .bold(_("Purchase Receipt Required")),
+						nts .bold(_("No")),
 						get_link_to_form("Buying Settings", "Buying Settings", "Buying Settings"),
 					)
 					throw(msg, title=_("Mandatory Purchase Receipt"))
@@ -652,18 +652,18 @@ class PurchaseInvoice(BuyingController):
 	def check_prev_docstatus(self):
 		for d in self.get("items"):
 			if d.purchase_order:
-				submitted = frappe.db.sql(
+				submitted = nts .db.sql(
 					"select name from `tabPurchase Order` where docstatus = 1 and name = %s", d.purchase_order
 				)
 				if not submitted:
-					frappe.throw(_("Purchase Order {0} is not submitted").format(d.purchase_order))
+					nts .throw(_("Purchase Order {0} is not submitted").format(d.purchase_order))
 			if d.purchase_receipt:
-				submitted = frappe.db.sql(
+				submitted = nts .db.sql(
 					"select name from `tabPurchase Receipt` where docstatus = 1 and name = %s",
 					d.purchase_receipt,
 				)
 				if not submitted:
-					frappe.throw(_("Purchase Receipt {0} is not submitted").format(d.purchase_receipt))
+					nts .throw(_("Purchase Receipt {0} is not submitted").format(d.purchase_receipt))
 
 	def update_status_updater_args(self):
 		if cint(self.update_stock):
@@ -720,7 +720,7 @@ class PurchaseInvoice(BuyingController):
 		if self.update_stock:
 			for item in self.get("items"):
 				if item.purchase_receipt:
-					frappe.throw(
+					nts .throw(
 						_("Stock cannot be updated against Purchase Receipt {0}").format(
 							item.purchase_receipt
 						)
@@ -747,7 +747,7 @@ class PurchaseInvoice(BuyingController):
 		self.update_status_updater_args()
 		self.update_prevdoc_status()
 
-		frappe.get_doc("Authorization Control").validate_approving_authority(
+		nts .get_doc("Authorization Control").validate_approving_authority(
 			self.doctype, self.company, self.base_grand_total
 		)
 
@@ -774,7 +774,7 @@ class PurchaseInvoice(BuyingController):
 		if self.update_stock == 1:
 			self.repost_future_sle_and_gle()
 
-		if frappe.db.get_single_value("Buying Settings", "project_update_frequency") == "Each Transaction":
+		if nts .db.get_single_value("Buying Settings", "project_update_frequency") == "Each Transaction":
 			self.update_project()
 
 		update_linked_doc(self.doctype, self.name, self.inter_company_invoice_reference)
@@ -880,7 +880,7 @@ class PurchaseInvoice(BuyingController):
 		# Check if there exists any item with cwip accounting enabled in it's asset category
 		for item in self.get("items"):
 			if item.item_code and item.is_fixed_asset:
-				asset_category = frappe.get_cached_value("Item", item.item_code, "asset_category")
+				asset_category = nts .get_cached_value("Item", item.item_code, "asset_category")
 				if is_cwip_accounting_enabled(asset_category):
 					return 1
 		return 0
@@ -942,7 +942,7 @@ class PurchaseInvoice(BuyingController):
 
 		voucher_wise_stock_value = {}
 		if self.update_stock:
-			stock_ledger_entries = frappe.get_all(
+			stock_ledger_entries = nts .get_all(
 				"Stock Ledger Entry",
 				fields=["voucher_detail_no", "stock_value_difference", "warehouse"],
 				filters={"voucher_no": self.name, "voucher_type": self.doctype, "is_cancelled": 0},
@@ -962,7 +962,7 @@ class PurchaseInvoice(BuyingController):
 		exchange_rate_map, net_rate_map = get_purchase_document_details(self)
 
 		provisional_accounting_for_non_stock_items = cint(
-			frappe.get_cached_value(
+			nts .get_cached_value(
 				"Company", self.company, "enable_provisional_accounting_for_non_stock_items"
 			)
 		)
@@ -972,7 +972,7 @@ class PurchaseInvoice(BuyingController):
 		for item in self.get("items"):
 			if flt(item.base_net_amount):
 				if item.item_code:
-					frappe.get_cached_value("Item", item.item_code, "asset_category")
+					nts .get_cached_value("Item", item.item_code, "asset_category")
 
 				if (
 					self.update_stock
@@ -1088,7 +1088,7 @@ class PurchaseInvoice(BuyingController):
 					if flt(item.rm_supp_cost):
 						supplier_warehouse_account = warehouse_account[self.supplier_warehouse]["account"]
 						if not supplier_warehouse_account:
-							frappe.throw(
+							nts .throw(
 								_("Please set account in Warehouse {0}").format(self.supplier_warehouse)
 							)
 						gl_entries.append(
@@ -1182,7 +1182,7 @@ class PurchaseInvoice(BuyingController):
 			):
 				# Post reverse entry for Stock-Received-But-Not-Billed if it is booked in Purchase Receipt
 				if item.purchase_receipt and valuation_tax_accounts:
-					negative_expense_booked_in_pr = frappe.db.sql(
+					negative_expense_booked_in_pr = nts .db.sql(
 						"""select name from `tabGL Entry`
 							where voucher_type='Purchase Receipt' and voucher_no=%s and account in %s""",
 						(item.purchase_receipt, valuation_tax_accounts),
@@ -1221,9 +1221,9 @@ class PurchaseInvoice(BuyingController):
 				self.update_gross_purchase_amount_for_linked_assets(item)
 
 	def get_provisional_accounts(self):
-		self.provisional_accounts = frappe._dict()
+		self.provisional_accounts = nts ._dict()
 		linked_purchase_receipts = set([d.purchase_receipt for d in self.items if d.purchase_receipt])
-		pr_items = frappe.get_all(
+		pr_items = nts .get_all(
 			"Purchase Receipt Item",
 			filters={"parent": ("in", linked_purchase_receipts)},
 			fields=["name", "provisional_expense_account", "qty", "base_rate"],
@@ -1238,7 +1238,7 @@ class PurchaseInvoice(BuyingController):
 			]
 		)
 
-		provisional_gl_entries = frappe.get_all(
+		provisional_gl_entries = nts .get_all(
 			"GL Entry",
 			filters={
 				"voucher_type": "Purchase Receipt",
@@ -1261,7 +1261,7 @@ class PurchaseInvoice(BuyingController):
 		if item.purchase_receipt:
 			pr_item = self.provisional_accounts.get(item.pr_detail, {})
 			if pr_item.get("has_provisional_entry"):
-				purchase_receipt_doc = frappe.get_cached_doc("Purchase Receipt", item.purchase_receipt)
+				purchase_receipt_doc = nts .get_cached_doc("Purchase Receipt", item.purchase_receipt)
 
 				# Intentionally passing purchase invoice item to handle partial billing
 				purchase_receipt_doc.add_provisional_gl_entry(
@@ -1274,7 +1274,7 @@ class PurchaseInvoice(BuyingController):
 				)
 
 	def update_gross_purchase_amount_for_linked_assets(self, item):
-		assets = frappe.db.get_all(
+		assets = nts .db.get_all(
 			"Asset",
 			filters={
 				"purchase_invoice": self.name,
@@ -1285,7 +1285,7 @@ class PurchaseInvoice(BuyingController):
 		)
 		for asset in assets:
 			purchase_amount = flt(item.valuation_rate) * asset.asset_quantity
-			frappe.db.set_value(
+			nts .db.set_value(
 				"Asset",
 				asset.name,
 				{
@@ -1401,7 +1401,7 @@ class PurchaseInvoice(BuyingController):
 				and not self.is_internal_transfer()
 			):
 				if self.auto_accounting_for_stock and not tax.cost_center:
-					frappe.throw(
+					nts .throw(
 						_("Cost Center is required in row {0} in Taxes table for type {1}").format(
 							tax.idx, _(tax.category)
 						)
@@ -1435,7 +1435,7 @@ class PurchaseInvoice(BuyingController):
 								"credit": applicable_amount,
 								"credit_in_transaction_currency": flt(
 									applicable_amount / self.conversion_rate,
-									frappe.get_precision("Purchase Invoice Item", "item_tax_amount"),
+									nts .get_precision("Purchase Invoice Item", "item_tax_amount"),
 								),
 								"remarks": self.remarks or _("Accounting Entry for Stock"),
 							},
@@ -1457,7 +1457,7 @@ class PurchaseInvoice(BuyingController):
 								"credit": valuation_tax[tax.name],
 								"credit_in_transaction_currency": flt(
 									valuation_tax[tax.name] / self.conversion_rate,
-									frappe.get_precision("Purchase Invoice Item", "item_tax_amount"),
+									nts .get_precision("Purchase Invoice Item", "item_tax_amount"),
 								),
 								"remarks": self.remarks or _("Accounting Entry for Stock"),
 							},
@@ -1615,14 +1615,14 @@ class PurchaseInvoice(BuyingController):
 
 			if self.is_opening == "Yes" and self.rounding_adjustment:
 				if not round_off_for_opening:
-					frappe.throw(
+					nts .throw(
 						_(
 							"Opening Invoice has rounding adjustment of {0}.<br><br> '{1}' account is required to post these values. Please set it in Company: {2}.<br><br> Or, '{3}' can be enabled to not post any rounding adjustment."
 						).format(
-							frappe.bold(self.rounding_adjustment),
-							frappe.bold("Round Off for Opening"),
+							nts .bold(self.rounding_adjustment),
+							nts .bold("Round Off for Opening"),
 							get_link_to_form("Company", self.company),
-							frappe.bold("Disable Rounded Total"),
+							nts .bold("Disable Rounded Total"),
 						)
 					)
 				else:
@@ -1677,7 +1677,7 @@ class PurchaseInvoice(BuyingController):
 		if self.update_stock == 1:
 			self.repost_future_sle_and_gle()
 
-		if frappe.db.get_single_value("Buying Settings", "project_update_frequency") == "Each Transaction":
+		if nts .db.get_single_value("Buying Settings", "project_update_frequency") == "Each Transaction":
 			self.update_project()
 		self.db_set("status", "Cancelled")
 
@@ -1699,7 +1699,7 @@ class PurchaseInvoice(BuyingController):
 		self.update_advance_tax_references(cancel=1)
 
 	def update_project(self):
-		projects = frappe._dict()
+		projects = nts ._dict()
 		for d in self.items:
 			if d.project:
 				if self.docstatus == 1:
@@ -1707,12 +1707,12 @@ class PurchaseInvoice(BuyingController):
 				elif self.docstatus == 2:
 					projects[d.project] = projects.get(d.project, 0) - d.base_net_amount
 
-		pj = frappe.qb.DocType("Project")
+		pj = nts .qb.DocType("Project")
 		for proj, value in projects.items():
-			res = frappe.qb.from_(pj).select(pj.total_purchase_cost).where(pj.name == proj).for_update().run()
+			res = nts .qb.from_(pj).select(pj.total_purchase_cost).where(pj.name == proj).for_update().run()
 			current_purchase_cost = res and res[0][0] or 0
-			# frappe.db.set_value("Project", proj, "total_purchase_cost", current_purchase_cost + value)
-			project_doc = frappe.get_doc("Project", proj)
+			# nts .db.set_value("Project", proj, "total_purchase_cost", current_purchase_cost + value)
+			project_doc = nts .get_doc("Project", proj)
 			project_doc.total_purchase_cost = current_purchase_cost + value
 			project_doc.calculate_gross_margin()
 			project_doc.db_update()
@@ -1720,13 +1720,13 @@ class PurchaseInvoice(BuyingController):
 	def validate_supplier_invoice(self):
 		if self.bill_date:
 			if getdate(self.bill_date) > getdate(self.posting_date):
-				frappe.throw(_("Supplier Invoice Date cannot be greater than Posting Date"))
+				nts .throw(_("Supplier Invoice Date cannot be greater than Posting Date"))
 
 		if self.bill_no:
-			if cint(frappe.db.get_single_value("Accounts Settings", "check_supplier_invoice_uniqueness")):
+			if cint(nts .db.get_single_value("Accounts Settings", "check_supplier_invoice_uniqueness")):
 				fiscal_year = get_fiscal_year(self.posting_date, company=self.company, as_dict=True)
 
-				pi = frappe.db.sql(
+				pi = nts .db.sql(
 					"""select name from `tabPurchase Invoice`
 					where
 						bill_no = %(bill_no)s
@@ -1746,7 +1746,7 @@ class PurchaseInvoice(BuyingController):
 				if pi:
 					pi = pi[0][0]
 
-					frappe.throw(
+					nts .throw(
 						_("Supplier Invoice No exists in Purchase Invoice {0}").format(
 							get_link_to_form("Purchase Invoice", pi)
 						)
@@ -1763,7 +1763,7 @@ class PurchaseInvoice(BuyingController):
 
 		for d in self.get("items"):
 			if d.pr_detail:
-				frappe.db.set_value(
+				nts .db.set_value(
 					"Purchase Receipt Item",
 					d.pr_detail,
 					"billed_amt",
@@ -1777,14 +1777,14 @@ class PurchaseInvoice(BuyingController):
 		if po_details:
 			updated_pr += update_billed_amount_based_on_po(po_details, update_modified)
 
-		adjust_incoming_rate = frappe.db.get_single_value(
+		adjust_incoming_rate = nts .db.get_single_value(
 			"Buying Settings", "set_landed_cost_based_on_purchase_invoice_rate"
 		)
 
 		for pr in set(updated_pr):
 			from prodman.stock.doctype.purchase_receipt.purchase_receipt import update_billing_percentage
 
-			pr_doc = frappe.get_doc("Purchase Receipt", pr)
+			pr_doc = nts .get_doc("Purchase Receipt", pr)
 			update_billing_percentage(
 				pr_doc, update_modified=update_modified, adjust_incoming_rate=adjust_incoming_rate
 			)
@@ -1795,15 +1795,15 @@ class PurchaseInvoice(BuyingController):
 		pr_details_billed_amt = {}
 		pr_details = [d.get("pr_detail") for d in self.get("items") if d.get("pr_detail")]
 		if pr_details:
-			doctype = frappe.qb.DocType("Purchase Invoice Item")
+			doctype = nts .qb.DocType("Purchase Invoice Item")
 			query = (
-				frappe.qb.from_(doctype)
+				nts .qb.from_(doctype)
 				.select(doctype.pr_detail, Sum(doctype.amount))
 				.where(doctype.pr_detail.isin(pr_details) & doctype.docstatus == 1)
 				.groupby(doctype.pr_detail)
 			)
 
-			pr_details_billed_amt = frappe._dict(query.run(as_list=1))
+			pr_details_billed_amt = nts ._dict(query.run(as_list=1))
 
 		return pr_details_billed_amt
 
@@ -1827,7 +1827,7 @@ class PurchaseInvoice(BuyingController):
 			return
 
 		if self.apply_tds and not self.get("tax_withholding_category"):
-			self.tax_withholding_category = frappe.db.get_value(
+			self.tax_withholding_category = nts .db.get_value(
 				"Supplier", self.supplier, "tax_withholding_category"
 			)
 
@@ -1904,14 +1904,14 @@ class PurchaseInvoice(BuyingController):
 
 	def update_advance_tax_references(self, cancel=0):
 		for tax in self.get("advance_tax"):
-			at = frappe.qb.DocType("Advance Taxes and Charges").as_("at")
+			at = nts .qb.DocType("Advance Taxes and Charges").as_("at")
 
 			if cancel:
-				frappe.qb.update(at).set(
+				nts .qb.update(at).set(
 					at.allocated_amount, at.allocated_amount - tax.allocated_amount
 				).where(at.name == tax.reference_detail).run()
 			else:
-				frappe.qb.update(at).set(
+				nts .qb.update(at).set(
 					at.allocated_amount, at.allocated_amount + tax.allocated_amount
 				).where(at.name == tax.reference_detail).run()
 
@@ -1937,7 +1937,7 @@ class PurchaseInvoice(BuyingController):
 				elif outstanding_amount > 0 and getdate(self.due_date) >= getdate():
 					self.status = "Unpaid"
 				# Check if outstanding amount is 0 due to debit note issued against invoice
-				elif self.is_return == 0 and frappe.db.get_value(
+				elif self.is_return == 0 and nts .db.get_value(
 					"Purchase Invoice", {"is_return": 1, "return_against": self.name, "docstatus": 1}
 				):
 					self.status = "Debit Note Issued"
@@ -1976,8 +1976,8 @@ def get_purchase_document_details(doc):
 		if item.get(items_reference):
 			items.append(item.get(items_reference))
 
-	exchange_rate_map = frappe._dict(
-		frappe.get_all(
+	exchange_rate_map = nts ._dict(
+		nts .get_all(
 			parent_doctype,
 			filters={"name": ("in", purchase_receipts_or_invoices)},
 			fields=["name", "conversion_rate"],
@@ -1985,8 +1985,8 @@ def get_purchase_document_details(doc):
 		)
 	)
 
-	net_rate_map = frappe._dict(
-		frappe.get_all(child_doctype, filters={"name": ("in", items)}, fields=["name", "net_rate"], as_list=1)
+	net_rate_map = nts ._dict(
+		nts .get_all(child_doctype, filters={"name": ("in", items)}, fields=["name", "net_rate"], as_list=1)
 	)
 
 	return exchange_rate_map, net_rate_map
@@ -2012,14 +2012,14 @@ def make_regional_gl_entries(gl_entries, doc):
 	return gl_entries
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def make_debit_note(source_name, target_doc=None):
 	from prodman.controllers.sales_and_purchase_return import make_return_doc
 
 	return make_return_doc("Purchase Invoice", source_name, target_doc)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def make_stock_entry(source_name, target_doc=None):
 	doc = get_mapped_doc(
 		"Purchase Invoice",
@@ -2037,35 +2037,35 @@ def make_stock_entry(source_name, target_doc=None):
 	return doc
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def change_release_date(name, release_date=None):
-	if frappe.db.exists("Purchase Invoice", name):
-		pi = frappe.get_doc("Purchase Invoice", name)
+	if nts .db.exists("Purchase Invoice", name):
+		pi = nts .get_doc("Purchase Invoice", name)
 		pi.db_set("release_date", release_date)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def unblock_invoice(name):
-	if frappe.db.exists("Purchase Invoice", name):
-		pi = frappe.get_doc("Purchase Invoice", name)
+	if nts .db.exists("Purchase Invoice", name):
+		pi = nts .get_doc("Purchase Invoice", name)
 		pi.unblock_invoice()
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def block_invoice(name, release_date, hold_comment=None):
-	if frappe.db.exists("Purchase Invoice", name):
-		pi = frappe.get_doc("Purchase Invoice", name)
+	if nts .db.exists("Purchase Invoice", name):
+		pi = nts .get_doc("Purchase Invoice", name)
 		pi.block_invoice(hold_comment, release_date)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def make_inter_company_sales_invoice(source_name, target_doc=None):
 	from prodman.accounts.doctype.sales_invoice.sales_invoice import make_inter_company_transaction
 
 	return make_inter_company_transaction("Purchase Invoice", source_name, target_doc)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def make_purchase_receipt(source_name, target_doc=None):
 	def update_item(obj, target, source_parent):
 		target.qty = flt(obj.qty) - flt(obj.received_qty)

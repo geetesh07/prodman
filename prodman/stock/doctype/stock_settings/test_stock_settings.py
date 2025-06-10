@@ -1,18 +1,18 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2017, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 
-class TestStockSettings(FrappeTestCase):
+class TestStockSettings(ntsTestCase):
 	def setUp(self):
 		super().setUp()
-		frappe.db.set_single_value("Stock Settings", "clean_description_html", 0)
+		nts.db.set_single_value("Stock Settings", "clean_description_html", 0)
 
 	def test_settings(self):
-		item = frappe.get_doc(
+		item = nts.get_doc(
 			dict(
 				doctype="Item",
 				item_code="Item for description test",
@@ -21,7 +21,7 @@ class TestStockSettings(FrappeTestCase):
 			)
 		).insert()
 
-		settings = frappe.get_single("Stock Settings")
+		settings = nts.get_single("Stock Settings")
 		settings.clean_description_html = 1
 		settings.save()
 
@@ -35,11 +35,11 @@ class TestStockSettings(FrappeTestCase):
 		item.delete()
 
 	def test_clean_html(self):
-		settings = frappe.get_single("Stock Settings")
+		settings = nts.get_single("Stock Settings")
 		settings.clean_description_html = 1
 		settings.save()
 
-		item = frappe.get_doc(
+		item = nts.get_doc(
 			dict(
 				doctype="Item",
 				item_code="Item for description test",

@@ -1,4 +1,4 @@
-frappe.listview_settings["Common Code"] = {
+nts.listview_settings["Common Code"] = {
 	onload: function (listview) {
 		listview.page.add_inner_button(__("Import Genericode File"), function () {
 			prodman.edi.import_genericode(listview);

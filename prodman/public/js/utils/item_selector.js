@@ -31,7 +31,7 @@ prodman.ItemSelector = class ItemSelector {
 	}
 
 	make_dialog() {
-		this.dialog = new frappe.ui.Dialog({
+		this.dialog = new nts.ui.Dialog({
 			title: __("Add Items"),
 		});
 		var body = $(this.dialog.body);
@@ -66,8 +66,8 @@ prodman.ItemSelector = class ItemSelector {
 		// find row with item if exists
 		$.each(this.frm.doc.items || [], (i, d) => {
 			if (d[this.item_field] === item_code) {
-				frappe.model.set_value(d.doctype, d.name, "qty", d.qty + 1);
-				frappe.show_alert({ message: __("Added {0} ({1})", [item_code, d.qty]), indicator: "green" });
+				nts.model.set_value(d.doctype, d.name, "qty", d.qty + 1);
+				nts.show_alert({ message: __("Added {0} ({1})", [item_code, d.qty]), indicator: "green" });
 				added = true;
 				return false;
 			}
@@ -75,15 +75,15 @@ prodman.ItemSelector = class ItemSelector {
 
 		if (!added) {
 			var d = null;
-			frappe.run_serially([
+			nts.run_serially([
 				() => {
 					d = this.grid.add_new_row();
 				},
-				() => frappe.model.set_value(d.doctype, d.name, this.item_field, item_code),
-				() => frappe.timeout(0.1),
+				() => nts.model.set_value(d.doctype, d.name, this.item_field, item_code),
+				() => nts.timeout(0.1),
 				() => {
-					frappe.model.set_value(d.doctype, d.name, "qty", 1);
-					frappe.show_alert({ message: __("Added {0} ({1})", [item_code, 1]), indicator: "green" });
+					nts.model.set_value(d.doctype, d.name, "qty", 1);
+					nts.show_alert({ message: __("Added {0} ({1})", [item_code, 1]), indicator: "green" });
 				},
 			]);
 		}
@@ -102,14 +102,14 @@ prodman.ItemSelector = class ItemSelector {
 		}
 
 		var me = this;
-		frappe.link_search("Item", args, function (results) {
+		nts.link_search("Item", args, function (results) {
 			$.each(results, function (i, d) {
 				if (!d.image) {
-					d.abbr = frappe.get_abbr(d.item_name);
-					d.color = frappe.get_palette(d.item_name);
+					d.abbr = nts.get_abbr(d.item_name);
+					d.color = nts.get_palette(d.item_name);
 				}
 			});
-			me.dialog.results.html(frappe.render_template("item_selector", { data: results }));
+			me.dialog.results.html(nts.render_template("item_selector", { data: results }));
 		});
 	}
 };

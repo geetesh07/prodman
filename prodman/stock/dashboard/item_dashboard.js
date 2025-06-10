@@ -1,4 +1,4 @@
-frappe.provide("prodman.stock");
+nts.provide("prodman.stock");
 
 prodman.stock.ItemDashboard = class ItemDashboard {
 	constructor(opts) {
@@ -13,7 +13,7 @@ prodman.stock.ItemDashboard = class ItemDashboard {
 			this.sort_order = "asc";
 		}
 
-		this.content = $(frappe.render_template("item_dashboard")).appendTo(this.parent);
+		this.content = $(nts.render_template("item_dashboard")).appendTo(this.parent);
 		this.result = this.content.find(".result");
 
 		this.content.on("click", ".btn-move", function () {
@@ -28,7 +28,7 @@ prodman.stock.ItemDashboard = class ItemDashboard {
 			let item = unescape($(this).attr("data-item"));
 			let warehouse = unescape($(this).attr("data-warehouse"));
 			let company = unescape($(this).attr("data-company"));
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Putaway Rule",
 				{
 					item_code: item,
@@ -37,7 +37,7 @@ prodman.stock.ItemDashboard = class ItemDashboard {
 				},
 				"name",
 				(r) => {
-					frappe.set_route("Form", "Putaway Rule", r.name);
+					nts.set_route("Form", "Putaway Rule", r.name);
 				}
 			);
 		});
@@ -67,13 +67,13 @@ prodman.stock.ItemDashboard = class ItemDashboard {
 		}
 
 		function open_stock_entry(item, warehouse, entry_type) {
-			frappe.model.with_doctype("Stock Entry", function () {
-				var doc = frappe.model.get_new_doc("Stock Entry");
+			nts.model.with_doctype("Stock Entry", function () {
+				var doc = nts.model.get_new_doc("Stock Entry");
 				if (entry_type) {
 					doc.stock_entry_type = entry_type;
 				}
 
-				var row = frappe.model.add_child(doc, "items");
+				var row = nts.model.add_child(doc, "items");
 				row.item_code = item;
 
 				if (entry_type === "Material Transfer") {
@@ -82,7 +82,7 @@ prodman.stock.ItemDashboard = class ItemDashboard {
 					row.t_warehouse = warehouse;
 				}
 
-				frappe.set_route("Form", doc.doctype, doc.name);
+				nts.set_route("Form", doc.doctype, doc.name);
 			});
 		}
 
@@ -109,7 +109,7 @@ prodman.stock.ItemDashboard = class ItemDashboard {
 		};
 
 		var me = this;
-		frappe.call({
+		nts.call({
 			method: this.method,
 			args: args,
 			callback: function (r) {
@@ -146,7 +146,7 @@ prodman.stock.ItemDashboard = class ItemDashboard {
 		// If not any stock in any warehouses provide a message to end user
 		if (context.data.length > 0) {
 			this.content.find(".result").css("text-align", "unset");
-			$(frappe.render_template(this.template, context)).appendTo(this.result);
+			$(nts.render_template(this.template, context)).appendTo(this.result);
 		} else {
 			var message = __("No Stock Available Currently");
 			this.content.find(".result").css("text-align", "center");
@@ -177,7 +177,7 @@ prodman.stock.ItemDashboard = class ItemDashboard {
 		});
 
 		let can_write = 0;
-		if (frappe.boot.user.can_write.indexOf("Stock Entry") >= 0) {
+		if (nts.boot.user.can_write.indexOf("Stock Entry") >= 0) {
 			can_write = 1;
 		}
 
@@ -197,7 +197,7 @@ prodman.stock.ItemDashboard = class ItemDashboard {
 		});
 
 		let can_write = 0;
-		if (frappe.boot.user.can_write.indexOf("Putaway Rule") >= 0) {
+		if (nts.boot.user.can_write.indexOf("Putaway Rule") >= 0) {
 			can_write = 1;
 		}
 
@@ -209,7 +209,7 @@ prodman.stock.ItemDashboard = class ItemDashboard {
 };
 
 prodman.stock.move_item = function (item, source, target, actual_qty, rate, stock_uom, callback) {
-	var dialog = new frappe.ui.Dialog({
+	var dialog = new nts.ui.Dialog({
 		title: target ? __("Add Item") : __("Move Item"),
 		fields: [
 			{
@@ -279,21 +279,21 @@ prodman.stock.move_item = function (item, source, target, actual_qty, rate, stoc
 
 	dialog.set_primary_action(__("Create Stock Entry"), function () {
 		if (source && (dialog.get_value("qty") == 0 || dialog.get_value("qty") > actual_qty)) {
-			frappe.msgprint(__("Quantity must be greater than zero, and less or equal to {0}", [actual_qty]));
+			nts.msgprint(__("Quantity must be greater than zero, and less or equal to {0}", [actual_qty]));
 			return;
 		}
 
 		if (dialog.get_value("source") === dialog.get_value("target")) {
-			frappe.msgprint(__("Source and target warehouse must be different"));
+			nts.msgprint(__("Source and target warehouse must be different"));
 			return;
 		}
 
-		frappe.model.with_doctype("Stock Entry", function () {
-			let doc = frappe.model.get_new_doc("Stock Entry");
+		nts.model.with_doctype("Stock Entry", function () {
+			let doc = nts.model.get_new_doc("Stock Entry");
 			doc.from_warehouse = dialog.get_value("source");
 			doc.to_warehouse = dialog.get_value("target");
 			doc.stock_entry_type = doc.from_warehouse ? "Material Transfer" : "Material Receipt";
-			let row = frappe.model.add_child(doc, "items");
+			let row = nts.model.add_child(doc, "items");
 			row.item_code = dialog.get_value("item_code");
 			row.s_warehouse = dialog.get_value("source");
 			row.stock_uom = stock_uom;
@@ -303,7 +303,7 @@ prodman.stock.move_item = function (item, source, target, actual_qty, rate, stoc
 			row.conversion_factor = 1;
 			row.transfer_qty = dialog.get_value("qty");
 			row.basic_rate = dialog.get_value("rate");
-			frappe.set_route("Form", doc.doctype, doc.name);
+			nts.set_route("Form", doc.doctype, doc.name);
 		});
 	});
 };

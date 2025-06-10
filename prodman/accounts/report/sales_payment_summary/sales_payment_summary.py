@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.utils import cstr
+import nts 
+from nts  import _
+from nts .utils import cstr
 
 
 def execute(filters=None):
@@ -119,7 +119,7 @@ def get_conditions(filters):
 
 def get_pos_invoice_data(filters):
 	conditions = get_conditions(filters)
-	result = frappe.db.sql(
+	result = nts .db.sql(
 		""
 		"SELECT "
 		'posting_date, owner, sum(net_total) as "net_total", sum(total_taxes) as "total_taxes", '
@@ -155,7 +155,7 @@ def get_pos_invoice_data(filters):
 
 def get_sales_invoice_data(filters):
 	conditions = get_conditions(filters)
-	return frappe.db.sql(
+	return nts .db.sql(
 		f"""
 		select
 			a.posting_date, a.owner,
@@ -179,7 +179,7 @@ def get_mode_of_payments(filters):
 	invoice_list = get_invoices(filters)
 	invoice_list_names = ",".join("'" + invoice["name"] + "'" for invoice in invoice_list)
 	if invoice_list:
-		inv_mop = frappe.db.sql(
+		inv_mop = nts .db.sql(
 			f"""select a.owner,a.posting_date, ifnull(b.mode_of_payment, '') as mode_of_payment
 			from `tabSales Invoice` a, `tabSales Invoice Payment` b
 			where a.name = b.parent
@@ -210,7 +210,7 @@ def get_mode_of_payments(filters):
 
 def get_invoices(filters):
 	conditions = get_conditions(filters)
-	return frappe.db.sql(
+	return nts .db.sql(
 		f"""select a.name
 		from `tabSales Invoice` a
 		where a.docstatus = 1 and {conditions}""",
@@ -224,7 +224,7 @@ def get_mode_of_payment_details(filters):
 	invoice_list = get_invoices(filters)
 	invoice_list_names = ",".join("'" + invoice["name"] + "'" for invoice in invoice_list)
 	if invoice_list:
-		inv_mop_detail = frappe.db.sql(
+		inv_mop_detail = nts .db.sql(
 			f"""
 			select t.owner,
 			       t.posting_date,
@@ -262,7 +262,7 @@ def get_mode_of_payment_details(filters):
 			as_dict=1,
 		)
 
-		inv_change_amount = frappe.db.sql(
+		inv_change_amount = nts .db.sql(
 			f"""select a.owner, a.posting_date,
 			ifnull(b.mode_of_payment, '') as mode_of_payment, sum(a.base_change_amount) as change_amount
 			from `tabSales Invoice` a, `tabSales Invoice Payment` b

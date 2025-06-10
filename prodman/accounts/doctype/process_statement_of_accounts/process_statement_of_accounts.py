@@ -1,17 +1,17 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2020, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import copy
 
-import frappe
-from frappe import _
-from frappe.desk.reportview import get_match_cond
-from frappe.model.document import Document
-from frappe.utils import add_days, add_months, format_date, getdate, today
-from frappe.utils.jinja import validate_template
-from frappe.utils.pdf import get_pdf
-from frappe.www.printview import get_print_style
+import nts 
+from nts  import _
+from nts .desk.reportview import get_match_cond
+from nts .model.document import Document
+from nts .utils import add_days, add_months, format_date, getdate, today
+from nts .utils.jinja import validate_template
+from nts .utils.pdf import get_pdf
+from nts .www.printview import get_print_style
 
 from prodman import get_company_currency
 from prodman.accounts.party import get_party_account_currency
@@ -29,7 +29,7 @@ class ProcessStatementOfAccounts(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.process_statement_of_accounts_cc.process_statement_of_accounts_cc import (
 			ProcessStatementOfAccountsCC,
@@ -97,7 +97,7 @@ class ProcessStatementOfAccounts(Document):
 		validate_template(self.body)
 
 		if not self.customers:
-			frappe.throw(_("Customers not selected."))
+			nts .throw(_("Customers not selected."))
 
 		if self.enable_auto_email:
 			if self.start_date and getdate(self.start_date) >= getdate(today()):
@@ -127,7 +127,7 @@ def get_statement_dict(doc, get_statement_dict=False):
 		if doc.include_ageing:
 			ageing = set_ageing(doc, entry)
 
-		tax_id = frappe.get_doc("Customer", entry.customer).tax_id
+		tax_id = nts .get_doc("Customer", entry.customer).tax_id
 		presentation_currency = (
 			doc.currency
 			or get_party_account_currency("Customer", entry.customer, doc.company)
@@ -163,7 +163,7 @@ def get_statement_dict(doc, get_statement_dict=False):
 
 
 def set_ageing(doc, entry):
-	ageing_filters = frappe._dict(
+	ageing_filters = nts ._dict(
 		{
 			"company": doc.company,
 			"report_date": doc.posting_date,
@@ -185,7 +185,7 @@ def set_ageing(doc, entry):
 
 
 def get_common_filters(doc):
-	return frappe._dict(
+	return nts ._dict(
 		{
 			"company": doc.company,
 			"finance_book": doc.finance_book if doc.finance_book else None,
@@ -235,23 +235,23 @@ def get_ar_filters(doc, entry):
 
 
 def get_html(doc, filters, entry, col, res, ageing):
-	base_template_path = "frappe/www/printview.html"
+	base_template_path = "nts /www/printview.html"
 	template_path = "prodman/accounts/doctype/process_statement_of_accounts/process_statement_of_accounts_accounts_receivable.html"
 	if doc.report == "General Ledger":
 		template_path = (
 			"prodman/accounts/doctype/process_statement_of_accounts/process_statement_of_accounts.html"
 		)
 
-	process_soa_html = frappe.get_hooks("process_soa_html")
+	process_soa_html = nts .get_hooks("process_soa_html")
 	# fetching custom print format for Process Statement of Accounts
 	if process_soa_html and process_soa_html.get(doc.report):
 		template_path = process_soa_html[doc.report][-1]
 
 	if doc.letter_head:
-		from frappe.www.printview import get_letter_head
+		from nts .www.printview import get_letter_head
 
 		letter_head = get_letter_head(doc, 0)
-	html = frappe.render_template(
+	html = nts .render_template(
 		template_path,
 		{
 			"filters": filters,
@@ -259,14 +259,14 @@ def get_html(doc, filters, entry, col, res, ageing):
 			"report": {"report_name": doc.report, "columns": col},
 			"ageing": ageing[0] if (doc.include_ageing and ageing) else None,
 			"letter_head": letter_head if doc.letter_head else None,
-			"terms_and_conditions": frappe.db.get_value(
+			"terms_and_conditions": nts .db.get_value(
 				"Terms and Conditions", doc.terms_and_conditions, "terms"
 			)
 			if doc.terms_and_conditions
 			else None,
 		},
 	)
-	html = frappe.render_template(
+	html = nts .render_template(
 		base_template_path,
 		{"body": html, "css": get_print_style(), "title": "Statement For " + entry.customer},
 	)
@@ -278,17 +278,17 @@ def get_customers_based_on_territory_or_customer_group(customer_collection, coll
 		"Customer Group": "customer_group",
 		"Territory": "territory",
 	}
-	collection = frappe.get_doc(customer_collection, collection_name)
+	collection = nts .get_doc(customer_collection, collection_name)
 	selected = [
 		customer.name
-		for customer in frappe.get_list(
+		for customer in nts .get_list(
 			customer_collection,
 			filters=[["lft", ">=", collection.lft], ["rgt", "<=", collection.rgt]],
 			fields=["name"],
 			order_by="lft asc, rgt desc",
 		)
 	]
-	return frappe.get_list(
+	return nts .get_list(
 		"Customer",
 		fields=["name", "customer_name", "email_id"],
 		filters=[["disabled", "=", 0], [fields_dict[customer_collection], "IN", selected]],
@@ -296,8 +296,8 @@ def get_customers_based_on_territory_or_customer_group(customer_collection, coll
 
 
 def get_customers_based_on_sales_person(sales_person):
-	lft, rgt = frappe.db.get_value("Sales Person", sales_person, ["lft", "rgt"])
-	records = frappe.db.sql(
+	lft, rgt = nts .db.get_value("Sales Person", sales_person, ["lft", "rgt"])
+	records = nts .db.sql(
 		"""
 		select distinct parent, parenttype
 		from `tabSales Team` steam
@@ -307,11 +307,11 @@ def get_customers_based_on_sales_person(sales_person):
 		(lft, rgt),
 		as_dict=1,
 	)
-	sales_person_records = frappe._dict()
+	sales_person_records = nts ._dict()
 	for d in records:
 		sales_person_records.setdefault(d.parenttype, set()).add(d.parent)
 	if sales_person_records.get("Customer"):
-		return frappe.get_list(
+		return nts .get_list(
 			"Customer",
 			fields=["name", "customer_name", "email_id"],
 			filters=[["name", "in", list(sales_person_records["Customer"])]],
@@ -333,7 +333,7 @@ def get_recipients_and_cc(customer, doc):
 	cc = []
 	if doc.cc_to != "":
 		try:
-			cc = [frappe.get_value("User", user.cc, "email") for user in doc.cc_to]
+			cc = [nts .get_value("User", user.cc, "email") for user in doc.cc_to]
 		except Exception:
 			pass
 
@@ -347,12 +347,12 @@ def get_context(customer, doc):
 	template_doc.to_date = format_date(template_doc.to_date)
 	return {
 		"doc": template_doc,
-		"customer": frappe.get_doc("Customer", customer),
-		"frappe": frappe.utils,
+		"customer": nts .get_doc("Customer", customer),
+		"nts ": nts .utils,
 	}
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def fetch_customers(customer_collection, collection_name, primary_mandatory):
 	customer_list = []
 	customers = []
@@ -360,10 +360,10 @@ def fetch_customers(customer_collection, collection_name, primary_mandatory):
 	if customer_collection == "Sales Person":
 		customers = get_customers_based_on_sales_person(collection_name)
 		if not bool(customers):
-			frappe.throw(_("No Customers found with selected options."))
+			nts .throw(_("No Customers found with selected options."))
 	else:
 		if customer_collection == "Sales Partner":
-			customers = frappe.get_list(
+			customers = nts .get_list(
 				"Customer",
 				fields=["name", "customer_name", "email_id"],
 				filters=[["default_sales_partner", "=", collection_name]],
@@ -392,13 +392,13 @@ def fetch_customers(customer_collection, collection_name, primary_mandatory):
 	return customer_list
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_customer_emails(customer_name, primary_mandatory, billing_and_primary=True):
 	"""Returns first email from Contact Email table as a Billing email
 	when Is Billing Contact checked
 	and Primary email- email with Is Primary checked"""
 
-	billing_email = frappe.db.sql(
+	billing_email = nts .db.sql(
 		"""
 		SELECT
 			email.email_id
@@ -425,55 +425,55 @@ def get_customer_emails(customer_name, primary_mandatory, billing_and_primary=Tr
 
 	if len(billing_email) == 0 or (billing_email[0][0] is None):
 		if billing_and_primary:
-			frappe.throw(_("No billing email found for customer: {0}").format(customer_name))
+			nts .throw(_("No billing email found for customer: {0}").format(customer_name))
 		else:
 			return ""
 
 	if billing_and_primary:
-		primary_email = frappe.get_value("Customer", customer_name, "email_id")
+		primary_email = nts .get_value("Customer", customer_name, "email_id")
 		if primary_email is None and int(primary_mandatory):
-			frappe.throw(_("No primary email found for customer: {0}").format(customer_name))
+			nts .throw(_("No primary email found for customer: {0}").format(customer_name))
 		return [primary_email or "", billing_email[0][0]]
 	else:
 		return billing_email[0][0] or ""
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def download_statements(document_name):
-	doc = frappe.get_doc("Process Statement Of Accounts", document_name)
+	doc = nts .get_doc("Process Statement Of Accounts", document_name)
 	report = get_report_pdf(doc)
 	if report:
-		frappe.local.response.filename = doc.name + ".pdf"
-		frappe.local.response.filecontent = report
-		frappe.local.response.type = "download"
+		nts .local.response.filename = doc.name + ".pdf"
+		nts .local.response.filecontent = report
+		nts .local.response.type = "download"
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def send_emails(document_name, from_scheduler=False, posting_date=None):
-	doc = frappe.get_doc("Process Statement Of Accounts", document_name)
+	doc = nts .get_doc("Process Statement Of Accounts", document_name)
 	report = get_report_pdf(doc, consolidated=False)
 
 	if report:
 		for customer, report_pdf in report.items():
 			context = get_context(customer, doc)
-			filename = frappe.render_template(doc.pdf_name, context)
+			filename = nts .render_template(doc.pdf_name, context)
 			attachments = [{"fname": filename + ".pdf", "fcontent": report_pdf}]
 
 			recipients, cc = get_recipients_and_cc(customer, doc)
 			if not recipients:
 				continue
 
-			subject = frappe.render_template(doc.subject, context)
-			message = frappe.render_template(doc.body, context)
+			subject = nts .render_template(doc.subject, context)
+			message = nts .render_template(doc.body, context)
 
 			if doc.sender:
-				sender_email = frappe.db.get_value("Email Account", doc.sender, "email_id")
+				sender_email = nts .db.get_value("Email Account", doc.sender, "email_id")
 			else:
-				sender_email = frappe.session.user
+				sender_email = nts .session.user
 
-			frappe.enqueue(
+			nts .enqueue(
 				queue="short",
-				method=frappe.sendmail,
+				method=nts .sendmail,
 				recipients=recipients,
 				sender=sender_email,
 				cc=cc,
@@ -493,7 +493,7 @@ def send_emails(document_name, from_scheduler=False, posting_date=None):
 			else:
 				new_to_date = add_months(new_to_date, 1 if doc.frequency == "Monthly" else 3)
 			new_from_date = add_months(new_to_date, -1 * doc.filter_duration)
-			doc.add_comment("Comment", "Emails sent on: " + frappe.utils.format_datetime(frappe.utils.now()))
+			doc.add_comment("Comment", "Emails sent on: " + nts .utils.format_datetime(nts .utils.now()))
 			if doc.report == "General Ledger":
 				doc.db_set("to_date", new_to_date, commit=True)
 				doc.db_set("from_date", new_from_date, commit=True)
@@ -504,9 +504,9 @@ def send_emails(document_name, from_scheduler=False, posting_date=None):
 		return False
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def send_auto_email():
-	selected = frappe.get_list(
+	selected = nts .get_list(
 		"Process Statement Of Accounts",
 		filters={"enable_auto_email": 1},
 		or_filters={"to_date": format_date(today()), "posting_date": format_date(today())},

@@ -5617,7 +5617,7 @@ Enable Shopify,Aktivera Shopify,
 App Type,App typ,
 Last Sync Datetime,Senast synkroniserad datetime,
 Shop URL,Shop URL,
-eg: frappe.myshopify.com,t.ex. frappe.myshopify.com,
+eg: nts.myshopify.com,t.ex. nts.myshopify.com,
 Shared secret,Delad hemlighet,
 Webhooks Details,Webbooks detaljer,
 Webhooks,Webhooks,
@@ -8838,7 +8838,7 @@ Du kan använda <a href=""https://jinja.palletsprojects.com/en/2.11.x/"" target=
 <p>Exempel: Om slutpunkt är exchange.com/2021-08-01 måste du ange exchange.com/{transaction_date}</p>",
 "<h4>Body Text and Closing Text Example</h4>
 
-<div>We have noticed that you have not yet paid invoice {{sales_invoice}} for {{frappe.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}. This is a friendly reminder that the invoice was due on {{due_date}}. Please pay the amount due immediately to avoid any further dunning cost.</div>
+<div>We have noticed that you have not yet paid invoice {{sales_invoice}} for {{nts.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}. This is a friendly reminder that the invoice was due on {{due_date}}. Please pay the amount due immediately to avoid any further dunning cost.</div>
 
 <h4>How to get fieldnames</h4>
 
@@ -8848,7 +8848,7 @@ Du kan använda <a href=""https://jinja.palletsprojects.com/en/2.11.x/"" target=
 
 <p>Templates are compiled using the Jinja Templating Language. To learn more about Jinja, <a class=""strong"" href=""http://jinja.pocoo.org/docs/dev/templates/"">read this documentation.</a></p>","<h4>Huvudtext och exempel på Avslutande Text</h4>
 
-<div>Vi har märkt att ni ännu inte har betalat faktura {{sales_invoice}} för {{frappe.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}. Detta är en vänlig påminnelse om att fakturan var förfallen {{due_date}}. Vänligen betala förfallen belopp omedelbart för att undvika ytterligare kostnader.</div>
+<div>Vi har märkt att ni ännu inte har betalat faktura {{sales_invoice}} för {{nts.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}. Detta är en vänlig påminnelse om att fakturan var förfallen {{due_date}}. Vänligen betala förfallen belopp omedelbart för att undvika ytterligare kostnader.</div>
 
 <h4>Hur får man fältnamn</h4>
 

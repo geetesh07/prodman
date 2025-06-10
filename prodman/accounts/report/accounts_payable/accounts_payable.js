@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.query_reports["Accounts Payable"] = {
+nts .query_reports["Accounts Payable"] = {
 	filters: [
 		{
 			fieldname: "company",
@@ -9,13 +9,13 @@ frappe.query_reports["Accounts Payable"] = {
 			fieldtype: "Link",
 			options: "Company",
 			reqd: 1,
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts .defaults.get_user_default("Company"),
 		},
 		{
 			fieldname: "report_date",
 			label: __("Posting Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.get_today(),
+			default: nts .datetime.get_today(),
 		},
 		{
 			fieldname: "finance_book",
@@ -29,7 +29,7 @@ frappe.query_reports["Accounts Payable"] = {
 			fieldtype: "Link",
 			options: "Cost Center",
 			get_query: () => {
-				var company = frappe.query_report.get_filter_value("company");
+				var company = nts .query_report.get_filter_value("company");
 				return {
 					filters: {
 						company: company,
@@ -43,7 +43,7 @@ frappe.query_reports["Accounts Payable"] = {
 			fieldtype: "Link",
 			options: "Account",
 			get_query: () => {
-				var company = frappe.query_report.get_filter_value("company");
+				var company = nts .query_report.get_filter_value("company");
 				return {
 					filters: {
 						company: company,
@@ -85,10 +85,10 @@ frappe.query_reports["Accounts Payable"] = {
 			fieldtype: "Autocomplete",
 			options: get_party_type_options(),
 			on_change: function () {
-				frappe.query_report.set_filter_value("party", "");
-				frappe.query_report.toggle_filter_display(
+				nts .query_report.set_filter_value("party", "");
+				nts .query_report.toggle_filter_display(
 					"supplier_group",
-					frappe.query_report.get_filter_value("party_type") !== "Supplier"
+					nts .query_report.get_filter_value("party_type") !== "Supplier"
 				);
 			},
 		},
@@ -98,12 +98,12 @@ frappe.query_reports["Accounts Payable"] = {
 			fieldtype: "MultiSelectList",
 			options: "party_type",
 			get_data: function (txt) {
-				if (!frappe.query_report.filters) return;
+				if (!nts .query_report.filters) return;
 
-				let party_type = frappe.query_report.get_filter_value("party_type");
+				let party_type = nts .query_report.get_filter_value("party_type");
 				if (!party_type) return;
 
-				return frappe.db.get_link_options(party_type, txt);
+				return nts .db.get_link_options(party_type, txt);
 			},
 		},
 		{
@@ -166,7 +166,7 @@ frappe.query_reports["Accounts Payable"] = {
 	onload: function (report) {
 		report.page.add_inner_button(__("Accounts Payable Summary"), function () {
 			var filters = report.get_values();
-			frappe.set_route("query-report", "Accounts Payable Summary", { company: filters.company });
+			nts .set_route("query-report", "Accounts Payable Summary", { company: filters.company });
 		});
 	},
 };
@@ -175,7 +175,7 @@ prodman.utils.add_dimensions("Accounts Payable", 10);
 
 function get_party_type_options() {
 	let options = [];
-	frappe.db
+	nts .db
 		.get_list("Party Type", { filters: { account_type: "Payable" }, fields: ["name"] })
 		.then((res) => {
 			res.forEach((party_type) => {

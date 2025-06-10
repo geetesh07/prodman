@@ -1,13 +1,13 @@
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import today
+import nts 
+from nts .tests.utils import nts TestCase
+from nts .utils import today
 
 from prodman.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
 from prodman.accounts.report.accounts_payable.accounts_payable import execute
 from prodman.accounts.test.accounts_mixin import AccountsTestMixin
 
 
-class TestAccountsPayable(AccountsTestMixin, FrappeTestCase):
+class TestAccountsPayable(AccountsTestMixin, nts TestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_customer()
@@ -16,7 +16,7 @@ class TestAccountsPayable(AccountsTestMixin, FrappeTestCase):
 		self.create_usd_payable_account()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def test_accounts_payable_for_foreign_currency_supplier(self):
 		pi = self.create_purchase_invoice(do_not_submit=True)
@@ -39,14 +39,14 @@ class TestAccountsPayable(AccountsTestMixin, FrappeTestCase):
 		self.assertEqual(data[1][0].get("currency"), "USD")
 
 	def create_purchase_invoice(self, do_not_submit=False):
-		frappe.set_user("Administrator")
+		nts .set_user("Administrator")
 		pi = make_purchase_invoice(
 			item=self.item,
 			company=self.company,
 			supplier=self.supplier,
 			is_return=False,
 			update_stock=False,
-			posting_date=frappe.utils.datetime.date(2021, 5, 1),
+			posting_date=nts .utils.datetime.date(2021, 5, 1),
 			do_not_save=1,
 			rate=300,
 			price_list_rate=300,

@@ -1,4 +1,4 @@
-frappe.listview_settings["Delivery Trip"] = {
+nts.listview_settings["Delivery Trip"] = {
 	add_fields: ["status"],
 	get_indicator: function (doc) {
 		if (["Cancelled", "Draft"].includes(doc.status)) {

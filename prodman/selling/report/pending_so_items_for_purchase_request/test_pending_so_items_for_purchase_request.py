@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_months, nowdate
+from nts.tests.utils import ntsTestCase
+from nts.utils import add_months, nowdate
 
 from prodman.selling.doctype.sales_order.sales_order import make_material_request
 from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
@@ -12,7 +12,7 @@ from prodman.selling.report.pending_so_items_for_purchase_request.pending_so_ite
 )
 
 
-class TestPendingSOItemsForPurchaseRequest(FrappeTestCase):
+class TestPendingSOItemsForPurchaseRequest(ntsTestCase):
 	def test_result_for_partial_material_request(self):
 		so = make_sales_order()
 		mr = make_material_request(so.name)

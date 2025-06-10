@@ -1,9 +1,9 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import cstr
+import nts 
+from nts .tests.utils import nts TestCase
+from nts .utils import cstr
 
 from prodman.assets.doctype.asset.test_asset import create_asset
 from prodman.assets.doctype.asset_depreciation_schedule.asset_depreciation_schedule import (
@@ -11,14 +11,14 @@ from prodman.assets.doctype.asset_depreciation_schedule.asset_depreciation_sched
 )
 
 
-class TestAssetShiftAllocation(FrappeTestCase):
+class TestAssetShiftAllocation(nts TestCase):
 	@classmethod
 	def setUpClass(cls):
 		create_asset_shift_factors()
 
 	@classmethod
 	def tearDownClass(cls):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def test_asset_shift_allocation(self):
 		asset = create_asset(
@@ -55,7 +55,7 @@ class TestAssetShiftAllocation(FrappeTestCase):
 
 		self.assertEqual(schedules, expected_schedules)
 
-		asset_shift_allocation = frappe.get_doc(
+		asset_shift_allocation = nts .get_doc(
 			{"doctype": "Asset Shift Allocation", "asset": asset.name}
 		).insert()
 
@@ -66,7 +66,7 @@ class TestAssetShiftAllocation(FrappeTestCase):
 
 		self.assertEqual(schedules, expected_schedules)
 
-		asset_shift_allocation = frappe.get_doc("Asset Shift Allocation", asset_shift_allocation.name)
+		asset_shift_allocation = nts .get_doc("Asset Shift Allocation", asset_shift_allocation.name)
 		asset_shift_allocation.depreciation_schedule[4].shift = "Triple"
 		asset_shift_allocation.save()
 
@@ -110,4 +110,4 @@ def create_asset_shift_factors():
 	]
 
 	for s in shifts:
-		frappe.get_doc(s).insert()
+		nts .get_doc(s).insert()

@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _, msgprint, scrub, unscrub
-from frappe.core.doctype.user_permission.user_permission import get_permitted_documents
-from frappe.model.document import Document
-from frappe.utils import get_link_to_form, now
+import nts 
+from nts  import _, msgprint, scrub, unscrub
+from nts .core.doctype.user_permission.user_permission import get_permitted_documents
+from nts .model.document import Document
+from nts .utils import get_link_to_form, now
 
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_checks_for_pl_and_bs_accounts,
@@ -20,7 +20,7 @@ class POSProfile(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.pos_customer_group.pos_customer_group import POSCustomerGroup
 		from prodman.accounts.doctype.pos_item_group.pos_item_group import POSItemGroup
@@ -84,19 +84,19 @@ class POSProfile(Document):
 				and not self.get(acc_dim.fieldname)
 				and (acc_dim.mandatory_for_pl or acc_dim.mandatory_for_bs)
 			):
-				frappe.throw(
+				nts .throw(
 					_(
 						"{0} is a mandatory Accounting Dimension. <br>"
 						"Please set a value for {0} in Accounting Dimensions section."
 					).format(
-						frappe.bold(acc_dim.label),
+						nts .bold(acc_dim.label),
 					),
 					title=_("Mandatory Accounting Dimension"),
 				)
 
 	def validate_default_profile(self):
 		for row in self.applicable_for_users:
-			res = frappe.db.sql(
+			res = nts .db.sql(
 				"""select pf.name
 				from
 					`tabPOS Profile User` pfu, `tabPOS Profile` pf
@@ -129,40 +129,40 @@ class POSProfile(Document):
 
 		for link_dt, dn_list in accounts.items():
 			for link_dn in dn_list:
-				if link_dn and not frappe.db.exists(
+				if link_dn and not nts .db.exists(
 					{"doctype": link_dt, "company": self.company, "name": link_dn}
 				):
-					frappe.throw(_("{0} does not belong to Company {1}").format(link_dn, self.company))
+					nts .throw(_("{0} does not belong to Company {1}").format(link_dn, self.company))
 
 	def validate_duplicate_groups(self):
 		item_groups = [d.item_group for d in self.item_groups]
 		customer_groups = [d.customer_group for d in self.customer_groups]
 
 		if len(item_groups) != len(set(item_groups)):
-			frappe.throw(
+			nts .throw(
 				_("Duplicate item group found in the item group table"), title=_("Duplicate Item Group")
 			)
 
 		if len(customer_groups) != len(set(customer_groups)):
-			frappe.throw(
+			nts .throw(
 				_("Duplicate customer group found in the cutomer group table"),
 				title=_("Duplicate Customer Group"),
 			)
 
 	def validate_payment_methods(self):
 		if not self.payments:
-			frappe.throw(_("Payment methods are mandatory. Please add at least one payment method."))
+			nts .throw(_("Payment methods are mandatory. Please add at least one payment method."))
 
 		default_mode = [d.default for d in self.payments if d.default]
 		if not default_mode:
-			frappe.throw(_("Please select a default mode of payment"))
+			nts .throw(_("Please select a default mode of payment"))
 
 		if len(default_mode) > 1:
-			frappe.throw(_("You can only select one mode of payment as default"))
+			nts .throw(_("You can only select one mode of payment as default"))
 
 		invalid_modes = []
 		for d in self.payments:
-			account = frappe.db.get_value(
+			account = nts .db.get_value(
 				"Mode of Payment Account",
 				{"parent": d.mode_of_payment, "company": self.company},
 				"default_account",
@@ -176,7 +176,7 @@ class POSProfile(Document):
 				msg = _("Please set default Cash or Bank account in Mode of Payment {}")
 			else:
 				msg = _("Please set default Cash or Bank account in Mode of Payments {}")
-			frappe.throw(msg.format(", ".join(invalid_modes)), title=_("Missing Account"))
+			nts .throw(msg.format(", ".join(invalid_modes)), title=_("Missing Account"))
 
 	def on_update(self):
 		self.set_defaults()
@@ -185,28 +185,28 @@ class POSProfile(Document):
 		self.set_defaults(include_current_pos=False)
 
 	def set_defaults(self, include_current_pos=True):
-		frappe.defaults.clear_default("is_pos")
+		nts .defaults.clear_default("is_pos")
 
 		if not include_current_pos:
 			condition = " where pfu.name != '%s' and pfu.default = 1 " % self.name.replace("'", "'")
 		else:
 			condition = " where pfu.default = 1 "
 
-		pos_view_users = frappe.db.sql_list(
+		pos_view_users = nts .db.sql_list(
 			f"""select pfu.user
 			from `tabPOS Profile User` as pfu {condition}"""
 		)
 
 		for user in pos_view_users:
 			if user:
-				frappe.defaults.set_user_default("is_pos", 1, user)
+				nts .defaults.set_user_default("is_pos", 1, user)
 			else:
-				frappe.defaults.set_global_default("is_pos", 1)
+				nts .defaults.set_global_default("is_pos", 1)
 
 
 def get_item_groups(pos_profile):
 	item_groups = []
-	pos_profile = frappe.get_cached_doc("POS Profile", pos_profile)
+	pos_profile = nts .get_cached_doc("POS Profile", pos_profile)
 	permitted_item_groups = get_permitted_nodes("Item Group")
 
 	if pos_profile.get("item_groups"):
@@ -214,14 +214,14 @@ def get_item_groups(pos_profile):
 		for data in pos_profile.get("item_groups"):
 			item_groups.extend(
 				[
-					"%s" % frappe.db.escape(d.name)
+					"%s" % nts .db.escape(d.name)
 					for d in get_child_nodes("Item Group", data.item_group)
 					if not permitted_item_groups or d.name in permitted_item_groups
 				]
 			)
 
 	if not item_groups and permitted_item_groups:
-		item_groups = ["%s" % frappe.db.escape(d) for d in permitted_item_groups]
+		item_groups = ["%s" % nts .db.escape(d) for d in permitted_item_groups]
 
 	return list(set(item_groups))
 
@@ -234,7 +234,7 @@ def get_permitted_nodes(group_type):
 		return nodes
 
 	for node in permitted_nodes:
-		if frappe.db.get_value(group_type, node, "is_group"):
+		if nts .db.get_value(group_type, node, "is_group"):
 			nodes.extend([d.name for d in get_child_nodes(group_type, node)])
 		else:
 			nodes.append(node)
@@ -243,19 +243,19 @@ def get_permitted_nodes(group_type):
 
 
 def get_child_nodes(group_type, root):
-	lft, rgt = frappe.db.get_value(group_type, root, ["lft", "rgt"])
-	return frappe.db.sql(
+	lft, rgt = nts .db.get_value(group_type, root, ["lft", "rgt"])
+	return nts .db.sql(
 		f""" Select name, lft, rgt from `tab{group_type}` where
 			lft >= {lft} and rgt <= {rgt} order by lft""",
 		as_dict=1,
 	)
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts .whitelist()
+@nts .validate_and_sanitize_search_inputs
 def pos_profile_query(doctype, txt, searchfield, start, page_len, filters):
-	user = frappe.session["user"]
-	company = filters.get("company") or frappe.defaults.get_user_default("company")
+	user = nts .session["user"]
+	company = filters.get("company") or nts .defaults.get_user_default("company")
 
 	args = {
 		"user": user,
@@ -265,7 +265,7 @@ def pos_profile_query(doctype, txt, searchfield, start, page_len, filters):
 		"txt": "%%%s%%" % txt,
 	}
 
-	pos_profile = frappe.db.sql(
+	pos_profile = nts .db.sql(
 		"""select pf.name
 		from
 			`tabPOS Profile` pf, `tabPOS Profile User` pfu
@@ -279,7 +279,7 @@ def pos_profile_query(doctype, txt, searchfield, start, page_len, filters):
 	if not pos_profile:
 		del args["user"]
 
-		pos_profile = frappe.db.sql(
+		pos_profile = nts .db.sql(
 			"""select pf.name
 			from
 				`tabPOS Profile` pf left join `tabPOS Profile User` pfu
@@ -296,13 +296,13 @@ def pos_profile_query(doctype, txt, searchfield, start, page_len, filters):
 	return pos_profile
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def set_default_profile(pos_profile, company):
 	modified = now()
-	user = frappe.session.user
+	user = nts .session.user
 
 	if pos_profile and company:
-		frappe.db.sql(
+		nts .db.sql(
 			""" update `tabPOS Profile User` pfu, `tabPOS Profile` pf
 			set
 				pfu.default = 0, pf.modified = %s, pf.modified_by = %s
@@ -313,7 +313,7 @@ def set_default_profile(pos_profile, company):
 			auto_commit=1,
 		)
 
-		frappe.db.sql(
+		nts .db.sql(
 			""" update `tabPOS Profile User` pfu, `tabPOS Profile` pf
 			set
 				pfu.default = 1, pf.modified = %s, pf.modified_by = %s

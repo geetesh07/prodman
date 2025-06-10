@@ -1,4 +1,4 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import json
@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING, Literal
 if TYPE_CHECKING:
 	from prodman.manufacturing.doctype.bom_update_log.bom_update_log import BOMUpdateLog
 
-import frappe
-from frappe.model.document import Document
-from frappe.utils import date_diff, get_datetime, now
+import nts
+from nts.model.document import Document
+from nts.utils import date_diff, get_datetime, now
 
 
 class BOMUpdateTool(Document):
@@ -19,7 +19,7 @@ class BOMUpdateTool(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		current_bom: DF.Link
 		new_bom: DF.Link
@@ -28,7 +28,7 @@ class BOMUpdateTool(Document):
 	pass
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def enqueue_replace_bom(boms: dict | str | None = None, args: dict | str | None = None) -> "BOMUpdateLog":
 	"""Returns a BOM Update Log (that queues a job) for BOM Replacement."""
 	boms = boms or args
@@ -39,7 +39,7 @@ def enqueue_replace_bom(boms: dict | str | None = None, args: dict | str | None 
 	return update_log
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def enqueue_update_cost() -> "BOMUpdateLog":
 	"""Returns a BOM Update Log (that queues a job) for BOM Cost Updation."""
 	update_log = create_bom_update_log(update_type="Update Cost")
@@ -48,8 +48,8 @@ def enqueue_update_cost() -> "BOMUpdateLog":
 
 def auto_update_latest_price_in_all_boms() -> None:
 	"""Called via hooks.py."""
-	if frappe.db.get_single_value("Manufacturing Settings", "update_bom_costs_automatically"):
-		wip_log = frappe.get_all(
+	if nts.db.get_single_value("Manufacturing Settings", "update_bom_costs_automatically"):
+		wip_log = nts.get_all(
 			"BOM Update Log",
 			fields=["creation", "status"],
 			filters={"update_type": "Update Cost", "status": ["in", ["Queued", "In Progress"]]},
@@ -75,7 +75,7 @@ def create_bom_update_log(
 	boms = boms or {}
 	current_bom = boms.get("current_bom")
 	new_bom = boms.get("new_bom")
-	return frappe.get_doc(
+	return nts.get_doc(
 		{
 			"doctype": "BOM Update Log",
 			"current_bom": current_bom,

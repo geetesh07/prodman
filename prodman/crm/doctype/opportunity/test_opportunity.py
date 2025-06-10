@@ -1,17 +1,17 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe.utils import now_datetime, random_string, today
+import nts
+from nts.utils import now_datetime, random_string, today
 
 from prodman.crm.doctype.lead.lead import make_customer
 from prodman.crm.doctype.lead.test_lead import make_lead
 from prodman.crm.doctype.opportunity.opportunity import make_quotation
 from prodman.crm.utils import get_linked_communication_list
 
-test_records = frappe.get_test_records("Opportunity")
+test_records = nts.get_test_records("Opportunity")
 
 
 class TestOpportunity(unittest.TestCase):
@@ -24,7 +24,7 @@ class TestOpportunity(unittest.TestCase):
 		quotation.run_method("calculate_taxes_and_totals")
 		quotation.submit()
 
-		doc = frappe.get_doc("Opportunity", doc.name)
+		doc = nts.get_doc("Opportunity", doc.name)
 		self.assertEqual(doc.status, "Quotation")
 
 	def test_make_new_lead_if_required(self):
@@ -32,11 +32,11 @@ class TestOpportunity(unittest.TestCase):
 
 		self.assertTrue(opp_doc.party_name)
 		self.assertEqual(opp_doc.opportunity_from, "Lead")
-		self.assertEqual(frappe.db.get_value("Lead", opp_doc.party_name, "email_id"), opp_doc.contact_email)
+		self.assertEqual(nts.db.get_value("Lead", opp_doc.party_name, "email_id"), opp_doc.contact_email)
 
 		# create new customer and create new contact against 'new.opportunity@example.com'
 		customer = make_customer(opp_doc.party_name).insert(ignore_permissions=True)
-		contact = frappe.get_doc(
+		contact = nts.get_doc(
 			{
 				"doctype": "Contact",
 				"first_name": "_Test Opportunity Customer",
@@ -51,7 +51,7 @@ class TestOpportunity(unittest.TestCase):
 		self.assertEqual(opportunity_doc.total, 2200)
 
 	def test_carry_forward_of_email_and_comments(self):
-		frappe.db.set_single_value("CRM Settings", "carry_forward_communication_and_comments", 1)
+		nts.db.set_single_value("CRM Settings", "carry_forward_communication_and_comments", 1)
 		lead_doc = make_lead()
 		lead_doc.add_comment("Comment", text="Test Comment 1")
 		lead_doc.add_comment("Comment", text="Test Comment 2")
@@ -59,7 +59,7 @@ class TestOpportunity(unittest.TestCase):
 		create_communication(lead_doc.doctype, lead_doc.name, lead_doc.email_id)
 
 		opp_doc = make_opportunity(opportunity_from="Lead", lead=lead_doc.name)
-		opportunity_comment_count = frappe.db.count(
+		opportunity_comment_count = nts.db.count(
 			"Comment", {"reference_doctype": opp_doc.doctype, "reference_name": opp_doc.name}
 		)
 		opportunity_communication_count = len(get_linked_communication_list(opp_doc.doctype, opp_doc.name))
@@ -82,15 +82,15 @@ def make_opportunity_from_lead():
 		"transaction_date": today(),
 	}
 	# new lead should be created against the new.opportunity@example.com
-	opp_doc = frappe.get_doc(args).insert(ignore_permissions=True)
+	opp_doc = nts.get_doc(args).insert(ignore_permissions=True)
 
 	return opp_doc
 
 
 def make_opportunity(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
-	opp_doc = frappe.get_doc(
+	opp_doc = nts.get_doc(
 		{
 			"doctype": "Opportunity",
 			"company": args.company or "_Test Company",
@@ -123,7 +123,7 @@ def make_opportunity(**args):
 
 
 def create_communication(reference_doctype, reference_name, sender, sent_or_received=None, creation=None):
-	communication = frappe.get_doc(
+	communication = nts.get_doc(
 		{
 			"doctype": "Communication",
 			"communication_type": "Communication",

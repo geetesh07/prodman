@@ -1,23 +1,23 @@
 """ smoak tests to check basic functionality calls on known form loads."""
 
-import frappe
-from frappe.desk.form.load import getdoc
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.www.printview import get_html_and_style
+import nts
+from nts.desk.form.load import getdoc
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.www.printview import get_html_and_style
 
 
-class TestFormLoads(FrappeTestCase):
+class TestFormLoads(ntsTestCase):
 	@change_settings("Print Settings", {"allow_print_for_cancelled": 1})
 	def test_load(self):
-		prodman_modules = frappe.get_all("Module Def", filters={"app_name": "prodman"}, pluck="name")
-		doctypes = frappe.get_all(
+		prodman_modules = nts.get_all("Module Def", filters={"app_name": "prodman"}, pluck="name")
+		doctypes = nts.get_all(
 			"DocType",
 			{"istable": 0, "issingle": 0, "is_virtual": 0, "module": ("in", prodman_modules)},
 			pluck="name",
 		)
 
 		for doctype in doctypes:
-			last_doc = frappe.db.get_value(doctype, {}, "name", order_by="modified desc")
+			last_doc = nts.db.get_value(doctype, {}, "name", order_by="modified desc")
 			if not last_doc:
 				continue
 			with self.subTest(msg=f"Loading {doctype} - {last_doc}", doctype=doctype, last_doc=last_doc):
@@ -26,8 +26,8 @@ class TestFormLoads(FrappeTestCase):
 
 	def assertFormLoad(self, doctype, docname):
 		# reset previous response
-		frappe.response = frappe._dict({"docs": []})
-		frappe.response.docinfo = None
+		nts.response = nts._dict({"docs": []})
+		nts.response.docinfo = None
 
 		try:
 			getdoc(doctype, docname)
@@ -35,20 +35,20 @@ class TestFormLoads(FrappeTestCase):
 			self.fail(f"Failed to load {doctype}-{docname}: {e}")
 
 		self.assertTrue(
-			frappe.response.docs, msg=f"expected document in reponse, found: {frappe.response.docs}"
+			nts.response.docs, msg=f"expected document in reponse, found: {nts.response.docs}"
 		)
 		self.assertTrue(
-			frappe.response.docinfo, msg=f"expected docinfo in reponse, found: {frappe.response.docinfo}"
+			nts.response.docinfo, msg=f"expected docinfo in reponse, found: {nts.response.docinfo}"
 		)
 
 	def assertDocPrint(self, doctype, docname):
-		doc = frappe.get_doc(doctype, docname)
-		doc.set("__onload", frappe._dict())
+		doc = nts.get_doc(doctype, docname)
+		doc.set("__onload", nts._dict())
 		doc.run_method("onload")
 
-		messages_before = frappe.get_message_log()
+		messages_before = nts.get_message_log()
 		ret = get_html_and_style(doc=doc.as_json(), print_format="Standard", no_letterhead=1)
-		messages_after = frappe.get_message_log()
+		messages_after = nts.get_message_log()
 
 		if len(messages_after) > len(messages_before):
 			new_messages = messages_after[len(messages_before) :]

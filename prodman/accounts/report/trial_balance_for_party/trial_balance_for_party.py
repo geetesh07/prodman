@@ -1,11 +1,11 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import Sum
-from frappe.utils import cint, flt
+import nts 
+from nts  import _
+from nts .query_builder.functions import Sum
+from nts .utils import cint, flt
 
 from prodman.accounts.report.general_ledger.general_ledger import get_accounts_with_children
 from prodman.accounts.report.trial_balance.trial_balance import validate_filters
@@ -24,14 +24,14 @@ def execute(filters=None):
 
 def get_data(filters, show_party_name):
 	if filters.get("party_type") in ("Customer", "Supplier", "Employee", "Member"):
-		party_name_field = "{}_name".format(frappe.scrub(filters.get("party_type")))
+		party_name_field = "{}_name".format(nts .scrub(filters.get("party_type")))
 	elif filters.get("party_type") == "Shareholder":
 		party_name_field = "title"
 	else:
 		party_name_field = "name"
 
 	party_filters = {"name": filters.get("party")} if filters.get("party") else {}
-	parties = frappe.get_all(
+	parties = nts .get_all(
 		filters.get("party_type"),
 		fields=["name", party_name_field],
 		filters=party_filters,
@@ -42,13 +42,13 @@ def get_data(filters, show_party_name):
 	if filters.get("account"):
 		account_filter = get_accounts_with_children(filters.get("account"))
 
-	company_currency = frappe.get_cached_value("Company", filters.company, "default_currency")
+	company_currency = nts .get_cached_value("Company", filters.company, "default_currency")
 	opening_balances = get_opening_balances(filters, account_filter)
 	balances_within_period = get_balances_within_period(filters, account_filter)
 
 	data = []
 	# total_debit, total_credit = 0, 0
-	total_row = frappe._dict(
+	total_row = nts ._dict(
 		{
 			"opening_debit": 0,
 			"opening_credit": 0,
@@ -97,10 +97,10 @@ def get_data(filters, show_party_name):
 
 
 def get_opening_balances(filters, account_filter=None):
-	GL_Entry = frappe.qb.DocType("GL Entry")
+	GL_Entry = nts .qb.DocType("GL Entry")
 
 	query = (
-		frappe.qb.from_(GL_Entry)
+		nts .qb.from_(GL_Entry)
 		.select(
 			GL_Entry.party,
 			Sum(GL_Entry.debit).as_("opening_debit"),
@@ -124,7 +124,7 @@ def get_opening_balances(filters, account_filter=None):
 
 	gle = query.run(as_dict=True)
 
-	opening = frappe._dict()
+	opening = nts ._dict()
 	for d in gle:
 		opening_debit, opening_credit = toggle_debit_credit(d.opening_debit, d.opening_credit)
 		opening.setdefault(d.party, [opening_debit, opening_credit])
@@ -133,10 +133,10 @@ def get_opening_balances(filters, account_filter=None):
 
 
 def get_balances_within_period(filters, account_filter=None):
-	GL_Entry = frappe.qb.DocType("GL Entry")
+	GL_Entry = nts .qb.DocType("GL Entry")
 
 	query = (
-		frappe.qb.from_(GL_Entry)
+		nts .qb.from_(GL_Entry)
 		.select(
 			GL_Entry.party,
 			Sum(GL_Entry.debit).as_("debit"),
@@ -159,7 +159,7 @@ def get_balances_within_period(filters, account_filter=None):
 
 	gle = query.run(as_dict=True)
 
-	balances_within_period = frappe._dict()
+	balances_within_period = nts ._dict()
 	for d in gle:
 		balances_within_period.setdefault(d.party, [d.debit, d.credit])
 
@@ -256,9 +256,9 @@ def is_party_name_visible(filters):
 
 	if filters.get("party_type") in ["Customer", "Supplier"]:
 		if filters.get("party_type") == "Customer":
-			party_naming_by = frappe.db.get_single_value("Selling Settings", "cust_master_name")
+			party_naming_by = nts .db.get_single_value("Selling Settings", "cust_master_name")
 		else:
-			party_naming_by = frappe.db.get_single_value("Buying Settings", "supp_master_name")
+			party_naming_by = nts .db.get_single_value("Buying Settings", "supp_master_name")
 
 		if party_naming_by == "Naming Series":
 			show_party_name = True

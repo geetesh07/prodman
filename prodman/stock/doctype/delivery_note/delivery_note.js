@@ -1,19 +1,19 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 cur_frm.add_fetch("customer", "tax_id", "tax_id");
 
 cur_frm.cscript.tax_table = "Sales Taxes and Charges";
 
-frappe.provide("prodman.stock");
-frappe.provide("prodman.stock.delivery_note");
-frappe.provide("prodman.accounts.dimensions");
+nts.provide("prodman.stock");
+nts.provide("prodman.stock.delivery_note");
+nts.provide("prodman.accounts.dimensions");
 
 prodman.accounts.taxes.setup_tax_filters("Sales Taxes and Charges");
 prodman.accounts.taxes.setup_tax_validations("Delivery Note");
 prodman.sales_common.setup_selling_controller();
 
-frappe.ui.form.on("Delivery Note", {
+nts.ui.form.on("Delivery Note", {
 	setup: function (frm) {
 		(frm.custom_make_buttons = {
 			"Packing Slip": "Packing Slip",
@@ -83,12 +83,12 @@ frappe.ui.form.on("Delivery Note", {
 			frm.doc.docstatus === 1 &&
 			frm.doc.is_return === 1 &&
 			frm.doc.per_billed !== 100 &&
-			frappe.model.can_create("Sales Invoice")
+			nts.model.can_create("Sales Invoice")
 		) {
 			frm.add_custom_button(
 				__("Credit Note"),
 				function () {
-					frappe.model.open_mapped_doc({
+					nts.model.open_mapped_doc({
 						method: "prodman.stock.doctype.delivery_note.delivery_note.make_sales_invoice",
 						frm: cur_frm,
 					});
@@ -101,7 +101,7 @@ frappe.ui.form.on("Delivery Note", {
 		if (
 			frm.doc.docstatus == 1 &&
 			!frm.doc.inter_company_reference &&
-			frappe.model.can_create("Purchase Receipt")
+			nts.model.can_create("Purchase Receipt")
 		) {
 			let internal = frm.doc.is_internal_customer;
 			if (internal) {
@@ -113,7 +113,7 @@ frappe.ui.form.on("Delivery Note", {
 				frm.add_custom_button(
 					__(button_label),
 					function () {
-						frappe.model.open_mapped_doc({
+						nts.model.open_mapped_doc({
 							method: "prodman.stock.doctype.delivery_note.delivery_note.make_inter_company_purchase_receipt",
 							frm: frm,
 						});
@@ -125,7 +125,7 @@ frappe.ui.form.on("Delivery Note", {
 	},
 });
 
-frappe.ui.form.on("Delivery Note Item", {
+nts.ui.form.on("Delivery Note Item", {
 	expense_account: function (frm, dt, dn) {
 		var d = locals[dt][dn];
 		frm.update_in_all_rows("items", "expense_account", d.expense_account);
@@ -153,14 +153,14 @@ prodman.stock.DeliveryNoteController = class DeliveryNoteController extends (
 			!doc.is_return &&
 			(doc.status != "Closed" || this.frm.is_new()) &&
 			this.frm.has_perm("write") &&
-			frappe.model.can_read("Sales Order") &&
+			nts.model.can_read("Sales Order") &&
 			this.frm.doc.docstatus === 0
 		) {
 			this.frm.add_custom_button(
 				__("Sales Order"),
 				function () {
 					if (!me.frm.doc.customer) {
-						frappe.throw({
+						nts.throw({
 							title: __("Mandatory"),
 							message: __("Please Select a Customer"),
 						});
@@ -189,7 +189,7 @@ prodman.stock.DeliveryNoteController = class DeliveryNoteController extends (
 		}
 
 		if (!doc.is_return && doc.status != "Closed") {
-			if (doc.docstatus == 1 && frappe.model.can_create("Shipment")) {
+			if (doc.docstatus == 1 && nts.model.can_create("Shipment")) {
 				this.frm.add_custom_button(
 					__("Shipment"),
 					function () {
@@ -202,7 +202,7 @@ prodman.stock.DeliveryNoteController = class DeliveryNoteController extends (
 			if (
 				flt(doc.per_installed, 2) < 100 &&
 				doc.docstatus == 1 &&
-				frappe.model.can_create("Installation Note")
+				nts.model.can_create("Installation Note")
 			) {
 				this.frm.add_custom_button(
 					__("Installation Note"),
@@ -223,7 +223,7 @@ prodman.stock.DeliveryNoteController = class DeliveryNoteController extends (
 				);
 			}
 
-			if (doc.docstatus == 1 && doc.status != "Completed" && frappe.model.can_create("Delivery Trip")) {
+			if (doc.docstatus == 1 && doc.status != "Completed" && nts.model.can_create("Delivery Trip")) {
 				this.frm.add_custom_button(
 					__("Delivery Trip"),
 					function () {
@@ -238,12 +238,12 @@ prodman.stock.DeliveryNoteController = class DeliveryNoteController extends (
 				!doc.__islocal &&
 				doc.__onload &&
 				doc.__onload.has_unpacked_items &&
-				frappe.model.can_create("Packing Slip")
+				nts.model.can_create("Packing Slip")
 			) {
 				this.frm.add_custom_button(
 					__("Packing Slip"),
 					function () {
-						frappe.model.open_mapped_doc({
+						nts.model.open_mapped_doc({
 							method: "prodman.stock.doctype.delivery_note.delivery_note.make_packing_slip",
 							frm: me.frm,
 						});
@@ -281,7 +281,7 @@ prodman.stock.DeliveryNoteController = class DeliveryNoteController extends (
 			!doc.is_return &&
 			doc.status != "Closed" &&
 			flt(doc.per_billed) < 100 &&
-			frappe.model.can_create("Sales Invoice")
+			nts.model.can_create("Sales Invoice")
 		) {
 			// show Make Invoice button only if Delivery Note is not created from Sales Invoice
 			var from_sales_invoice = false;
@@ -313,35 +313,35 @@ prodman.stock.DeliveryNoteController = class DeliveryNoteController extends (
 	}
 
 	make_shipment() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.stock.doctype.delivery_note.delivery_note.make_shipment",
 			frm: this.frm,
 		});
 	}
 
 	make_sales_invoice() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.stock.doctype.delivery_note.delivery_note.make_sales_invoice",
 			frm: this.frm,
 		});
 	}
 
 	make_installation_note() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.stock.doctype.delivery_note.delivery_note.make_installation_note",
 			frm: this.frm,
 		});
 	}
 
 	make_sales_return() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.stock.doctype.delivery_note.delivery_note.make_sales_return",
 			frm: this.frm,
 		});
 	}
 
 	make_delivery_trip() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.stock.doctype.delivery_note.delivery_note.make_delivery_trip",
 			frm: cur_frm,
 		});
@@ -369,15 +369,15 @@ prodman.stock.DeliveryNoteController = class DeliveryNoteController extends (
 
 	update_status(status) {
 		var me = this;
-		frappe.ui.form.is_saving = true;
-		frappe.call({
+		nts.ui.form.is_saving = true;
+		nts.call({
 			method: "prodman.stock.doctype.delivery_note.delivery_note.update_delivery_note_status",
 			args: { docname: me.frm.doc.name, status: status },
 			callback: function (r) {
 				if (!r.exc) me.frm.reload_doc();
 			},
 			always: function () {
-				frappe.ui.form.is_saving = false;
+				nts.ui.form.is_saving = false;
 			},
 		});
 	}
@@ -385,7 +385,7 @@ prodman.stock.DeliveryNoteController = class DeliveryNoteController extends (
 
 extend_cscript(cur_frm.cscript, new prodman.stock.DeliveryNoteController({ frm: cur_frm }));
 
-frappe.ui.form.on("Delivery Note", {
+nts.ui.form.on("Delivery Note", {
 	setup: function (frm) {
 		if (frm.doc.company) {
 			frm.trigger("unhide_account_head");
@@ -405,8 +405,8 @@ frappe.ui.form.on("Delivery Note", {
 });
 
 prodman.stock.delivery_note.set_print_hide = function (doc, cdt, cdn) {
-	var dn_fields = frappe.meta.docfield_map["Delivery Note"];
-	var dn_item_fields = frappe.meta.docfield_map["Delivery Note Item"];
+	var dn_fields = nts.meta.docfield_map["Delivery Note"];
+	var dn_item_fields = nts.meta.docfield_map["Delivery Note Item"];
 	var dn_fields_copy = dn_fields;
 	var dn_item_fields_copy = dn_item_fields;
 	if (doc.print_without_amount) {
@@ -427,7 +427,7 @@ prodman.stock.delivery_note.set_print_hide = function (doc, cdt, cdn) {
 	}
 };
 
-frappe.tour["Delivery Note"] = [
+nts.tour["Delivery Note"] = [
 	{
 		fieldname: "customer",
 		title: __("Customer"),

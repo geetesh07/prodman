@@ -5613,7 +5613,7 @@ Enable Shopify,Shopify Etkinleştir,
 App Type,Uygulama Türü,
 Last Sync Datetime,Son Senkronizasyon Tarihi,
 Shop URL,Mağaza URL&#39;si,
-eg: frappe.myshopify.com,örnekleme: frappe.myshopify.com,
+eg: nts.myshopify.com,örnekleme: nts.myshopify.com,
 Shared secret,Paylaşılan secret,
 Webhooks Details,Webhooks Ayrıntılar,
 Webhooks,Webhooks,
@@ -9785,7 +9785,7 @@ Dinamik değerler için <b>Konu</b> ve <b>Gövde</b> alanlarında <a href=""http
 <p>Örnek: Son noktanız exchange.com/2024-08-01 ise, exchange.com/{transaction_date}</p>girmeniz gerekecektir.",
 "<h4>Body Text and Closing Text Example</h4>
 
-<div>We have noticed that you have not yet paid invoice {{sales_invoice}} for {{frappe.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}. This is a friendly reminder that the invoice was due on {{due_date}}. Please pay the amount due immediately to avoid any further dunning cost.</div>
+<div>We have noticed that you have not yet paid invoice {{sales_invoice}} for {{nts.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}. This is a friendly reminder that the invoice was due on {{due_date}}. Please pay the amount due immediately to avoid any further dunning cost.</div>
 
 <h4>How to get fieldnames</h4>
 
@@ -9795,7 +9795,7 @@ Dinamik değerler için <b>Konu</b> ve <b>Gövde</b> alanlarında <a href=""http
 
 <p>Templates are compiled using the Jinja Templating Language. To learn more about Jinja, <a class=""strong"" href=""http://jinja.pocoo.org/docs/dev/templates/"">read this documentation.</a></p>","<h4>Gövde Metni ve Kapanış Metni Örneği</h4>
 
-<div> {{frappe.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}için {{sales_invoice}} faturasını henüz ödemediğinizi fark ettik. Bu, faturanın {{due_date}}tarihinde ödenmesi gerektiğine dair dostane bir hatırlatmadır. Daha fazla ihtar masrafından kaçınmak için lütfen ödenmesi gereken tutarı derhal ödeyin.</div>
+<div> {{nts.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}için {{sales_invoice}} faturasını henüz ödemediğinizi fark ettik. Bu, faturanın {{due_date}}tarihinde ödenmesi gerektiğine dair dostane bir hatırlatmadır. Daha fazla ihtar masrafından kaçınmak için lütfen ödenmesi gereken tutarı derhal ödeyin.</div>
 
 <h4>Alan adları nasıl alınır</h4>
 

@@ -1,14 +1,14 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 import json
 from typing import Any
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.query_builder import DocType, Interval
-from frappe.query_builder.functions import Now
-from frappe.utils import cint, cstr, date_diff, today
+import nts
+from nts import _
+from nts.model.document import Document
+from nts.query_builder import DocType, Interval
+from nts.query_builder.functions import Now
+from nts.utils import cint, cstr, date_diff, today
 
 from prodman.manufacturing.doctype.bom_update_log.bom_updation_utils import (
 	get_leaf_boms,
@@ -19,7 +19,7 @@ from prodman.manufacturing.doctype.bom_update_log.bom_updation_utils import (
 )
 
 
-class BOMMissingError(frappe.ValidationError):
+class BOMMissingError(nts.ValidationError):
 	pass
 
 
@@ -30,7 +30,7 @@ class BOMUpdateLog(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.manufacturing.doctype.bom_update_batch.bom_update_batch import BOMUpdateBatch
 
@@ -49,7 +49,7 @@ class BOMUpdateLog(Document):
 	def clear_old_logs(days=None):
 		days = days or 90
 		table = DocType("BOM Update Log")
-		frappe.db.delete(
+		nts.db.delete(
 			table,
 			filters=((table.modified < (Now() - Interval(days=days))) & (table.update_type == "Update Cost")),
 		)
@@ -66,7 +66,7 @@ class BOMUpdateLog(Document):
 
 	def validate_boms_are_specified(self):
 		if self.update_type == "Replace BOM" and not (self.current_bom and self.new_bom):
-			frappe.throw(
+			nts.throw(
 				msg=_("Please mention the Current and New BOM for replacement."),
 				title=_("Mandatory"),
 				exc=BOMMissingError,
@@ -74,19 +74,19 @@ class BOMUpdateLog(Document):
 
 	def validate_same_bom(self):
 		if cstr(self.current_bom) == cstr(self.new_bom):
-			frappe.throw(_("Current BOM and New BOM can not be same"))
+			nts.throw(_("Current BOM and New BOM can not be same"))
 
 	def validate_bom_items(self):
-		current_bom_item = frappe.db.get_value("BOM", self.current_bom, "item")
-		new_bom_item = frappe.db.get_value("BOM", self.new_bom, "item")
+		current_bom_item = nts.db.get_value("BOM", self.current_bom, "item")
+		new_bom_item = nts.db.get_value("BOM", self.new_bom, "item")
 
 		if current_bom_item != new_bom_item:
-			frappe.throw(_("The selected BOMs are not for the same item"))
+			nts.throw(_("The selected BOMs are not for the same item"))
 
 	def validate_bom_cost_update_in_progress(self):
 		"If another Cost Updation Log is still in progress, dont make new ones."
 
-		wip_log = frappe.get_all(
+		wip_log = nts.get_all(
 			"BOM Update Log",
 			fields=["name", "modified"],
 			filters={"update_type": "Update Cost", "status": ["in", ["Queued", "In Progress"]]},
@@ -94,8 +94,8 @@ class BOMUpdateLog(Document):
 		)
 
 		if wip_log and date_diff(today(), wip_log[0].modified) < 1:
-			log_link = frappe.utils.get_link_to_form("BOM Update Log", wip_log[0].name)
-			frappe.throw(
+			log_link = nts.utils.get_link_to_form("BOM Update Log", wip_log[0].name)
+			nts.throw(
 				_("BOM Updation already in progress. Please wait until {0} is complete.").format(log_link),
 				title=_("Note"),
 			)
@@ -103,20 +103,20 @@ class BOMUpdateLog(Document):
 	def on_submit(self):
 		if self.update_type == "Replace BOM":
 			boms = {"current_bom": self.current_bom, "new_bom": self.new_bom}
-			frappe.enqueue(
+			nts.enqueue(
 				method="prodman.manufacturing.doctype.bom_update_log.bom_update_log.run_replace_bom_job",
 				doc=self,
 				boms=boms,
 				timeout=40000,
-				now=frappe.flags.in_test,
+				now=nts.flags.in_test,
 				enqueue_after_commit=True,
 			)
 		else:
-			frappe.enqueue(
+			nts.enqueue(
 				method="prodman.manufacturing.doctype.bom_update_log.bom_update_log.process_boms_cost_level_wise",
 				queue="long",
 				update_doc=self,
-				now=frappe.flags.in_test,
+				now=nts.flags.in_test,
 				enqueue_after_commit=True,
 			)
 
@@ -128,21 +128,21 @@ def run_replace_bom_job(
 	try:
 		doc.db_set("status", "In Progress")
 
-		if not frappe.flags.in_test:
-			frappe.db.commit()
+		if not nts.flags.in_test:
+			nts.db.commit()
 
-		frappe.db.auto_commit_on_many_writes = 1
-		boms = frappe._dict(boms or {})
+		nts.db.auto_commit_on_many_writes = 1
+		boms = nts._dict(boms or {})
 		replace_bom(boms, doc.name)
 
 		doc.db_set("status", "Completed")
 	except Exception:
 		handle_exception(doc)
 	finally:
-		frappe.db.auto_commit_on_many_writes = 0
+		nts.db.auto_commit_on_many_writes = 0
 
-		if not frappe.flags.in_test:
-			frappe.db.commit()  # nosemgrep
+		if not nts.flags.in_test:
+			nts.db.commit()  # nosemgrep
 
 
 def process_boms_cost_level_wise(
@@ -197,13 +197,13 @@ def queue_bom_cost_jobs(current_boms_list: list[str], update_doc: "BOMUpdateLog"
 		)
 		batch_row.db_insert()
 
-		frappe.enqueue(
+		nts.enqueue(
 			method="prodman.manufacturing.doctype.bom_update_log.bom_updation_utils.update_cost_in_level",
 			doc=update_doc,
 			bom_list=boms_to_process,
 			batch_name=batch_row.name,
 			queue="long",
-			now=frappe.flags.in_test,
+			now=nts.flags.in_test,
 		)
 
 
@@ -218,7 +218,7 @@ def resume_bom_cost_update_jobs():
 	Called every 5 minutes via Cron job.
 	"""
 
-	in_progress_logs = frappe.db.get_all(
+	in_progress_logs = nts.db.get_all(
 		"BOM Update Log",
 		{"update_type": "Update Cost", "status": "In Progress"},
 		["name", "processed_boms", "current_level"],
@@ -228,7 +228,7 @@ def resume_bom_cost_update_jobs():
 
 	for log in in_progress_logs:
 		# check if all log batches of current level are processed
-		bom_batches = frappe.db.get_all(
+		bom_batches = nts.db.get_all(
 			"BOM Update Batch",
 			{"parent": log.name, "level": log.current_level},
 			["name", "boms_updated", "status"],
@@ -255,11 +255,11 @@ def resume_bom_cost_update_jobs():
 
 		# clear progress section
 		if status == "Completed":
-			frappe.db.delete("BOM Update Batch", {"parent": log.name})
+			nts.db.delete("BOM Update Batch", {"parent": log.name})
 
 		if parent_boms:  # there is a next level to process
 			process_boms_cost_level_wise(
-				update_doc=frappe.get_doc("BOM Update Log", log.name), parent_boms=parent_boms
+				update_doc=nts.get_doc("BOM Update Log", log.name), parent_boms=parent_boms
 			)
 
 

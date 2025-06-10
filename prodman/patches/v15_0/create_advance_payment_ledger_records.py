@@ -1,10 +1,10 @@
-import frappe
-from frappe import qb
-from frappe.query_builder.custom import ConstantColumn
+import nts
+from nts import qb
+from nts.query_builder.custom import ConstantColumn
 
 
 def get_advance_doctypes() -> list:
-	return frappe.get_hooks("advance_payment_doctypes")
+	return nts.get_hooks("advance_payment_doctypes")
 
 
 def get_payments_with_so_po_reference() -> list:
@@ -57,7 +57,7 @@ def get_journals_with_so_po_reference() -> list:
 
 def make_advance_ledger_entries(vouchers: list):
 	for x in vouchers:
-		frappe.get_doc(x.doctype, x.name).make_advance_payment_ledger_entries()
+		nts.get_doc(x.doctype, x.name).make_advance_payment_ledger_entries()
 
 
 def execute():
@@ -65,7 +65,7 @@ def execute():
 	Description:
 	Create Advance Payment Ledger Entry for all Payments made against Sales / Purchase Orders
 	"""
-	frappe.db.truncate("Advance Payment Ledger Entry")
+	nts.db.truncate("Advance Payment Ledger Entry")
 	payment_entries = get_payments_with_so_po_reference()
 	make_advance_ledger_entries(payment_entries)
 

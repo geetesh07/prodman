@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 """Global Defaults"""
-import frappe
-import frappe.defaults
-from frappe.custom.doctype.property_setter.property_setter import make_property_setter
-from frappe.utils import cint
+import nts
+import nts.defaults
+from nts.custom.doctype.property_setter.property_setter import make_property_setter
+from nts.utils import cint
 
 keydict = {
 	# "key in defaults": "key in Global Defaults"
@@ -19,7 +19,7 @@ keydict = {
 	"disable_in_words": "disable_in_words",
 }
 
-from frappe.model.document import Document
+from nts.model.document import Document
 
 
 class GlobalDefaults(Document):
@@ -29,7 +29,7 @@ class GlobalDefaults(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		country: DF.Link | None
 		default_company: DF.Link | None
@@ -44,20 +44,20 @@ class GlobalDefaults(Document):
 	def on_update(self):
 		"""update defaults"""
 		for key in keydict:
-			frappe.db.set_default(key, self.get(keydict[key], ""))
+			nts.db.set_default(key, self.get(keydict[key], ""))
 
 		# enable default currency
 		if self.default_currency:
-			frappe.db.set_value("Currency", self.default_currency, "enabled", 1)
+			nts.db.set_value("Currency", self.default_currency, "enabled", 1)
 
 		self.toggle_rounded_total()
 		self.toggle_in_words()
 
-		frappe.clear_cache()
+		nts.clear_cache()
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_defaults(self):
-		return frappe.defaults.get_defaults()
+		return nts.defaults.get_defaults()
 
 	def toggle_rounded_total(self):
 		self.disable_rounded_total = cint(self.disable_rounded_total)

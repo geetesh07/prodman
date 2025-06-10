@@ -1,11 +1,11 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 // eslint-disable-next-line
-frappe.provide("prodman.accounts.dimensions");
+nts.provide("prodman.accounts.dimensions");
 prodman.buying.setup_buying_controller();
 
-frappe.ui.form.on("Material Request", {
+nts.ui.form.on("Material Request", {
 	setup: function (frm) {
 		frm.custom_make_buttons = {
 			"Stock Entry": "Issue Material",
@@ -88,7 +88,7 @@ frappe.ui.form.on("Material Request", {
 	set_from_warehouse: function (frm) {
 		if (frm.doc.material_request_type == "Material Transfer" && frm.doc.set_from_warehouse) {
 			frm.doc.items.forEach((d) => {
-				frappe.model.set_value(d.doctype, d.name, "from_warehouse", frm.doc.set_from_warehouse);
+				nts.model.set_value(d.doctype, d.name, "from_warehouse", frm.doc.set_from_warehouse);
 			});
 		}
 	},
@@ -103,7 +103,7 @@ frappe.ui.form.on("Material Request", {
 		}
 
 		if (frm.doc.docstatus == 1 && frm.doc.status != "Stopped") {
-			let precision = frappe.defaults.get_default("float_precision");
+			let precision = nts.defaults.get_default("float_precision");
 
 			if (flt(frm.doc.per_received, precision) < 100) {
 				frm.add_custom_button(__("Stop"), () => frm.events.update_status(frm, "Stopped"));
@@ -203,7 +203,7 @@ frappe.ui.form.on("Material Request", {
 	},
 
 	update_status: function (frm, stop_status) {
-		frappe.call({
+		nts.call({
 			method: "prodman.stock.doctype.material_request.material_request.update_status",
 			args: { name: frm.doc.name, status: stop_status },
 			callback(r) {
@@ -237,7 +237,7 @@ frappe.ui.form.on("Material Request", {
 			return;
 		}
 
-		frappe.call({
+		nts.call({
 			method: "prodman.stock.get_item_details.get_item_details",
 			args: {
 				args: {
@@ -245,8 +245,8 @@ frappe.ui.form.on("Material Request", {
 					from_warehouse: item.from_warehouse,
 					warehouse: item.warehouse,
 					doctype: frm.doc.doctype,
-					buying_price_list: frappe.defaults.get_default("buying_price_list"),
-					currency: frappe.defaults.get_default("Currency"),
+					buying_price_list: nts.defaults.get_default("buying_price_list"),
+					currency: nts.defaults.get_default("Currency"),
 					name: frm.doc.name,
 					qty: item.qty || 1,
 					stock_qty: item.stock_qty,
@@ -288,7 +288,7 @@ frappe.ui.form.on("Material Request", {
 					if (d.price_list_rate != r.message.price_list_rate) {
 						d.rate = 0.0;
 						d.price_list_rate = r.message.price_list_rate;
-						frappe.model.set_value(d.doctype, d.name, "rate", d.price_list_rate);
+						nts.model.set_value(d.doctype, d.name, "rate", d.price_list_rate);
 					}
 
 					refresh_field("items");
@@ -298,7 +298,7 @@ frappe.ui.form.on("Material Request", {
 	},
 
 	get_items_from_bom: function (frm) {
-		var d = new frappe.ui.Dialog({
+		var d = new nts.ui.Dialog({
 			title: __("Get Items from BOM"),
 			fields: [
 				{
@@ -330,17 +330,17 @@ frappe.ui.form.on("Material Request", {
 			primary_action(values) {
 				if (!values) return;
 				values["company"] = frm.doc.company;
-				if (!frm.doc.company) frappe.throw(__("Company field is required"));
-				frappe.call({
+				if (!frm.doc.company) nts.throw(__("Company field is required"));
+				nts.call({
 					method: "prodman.manufacturing.doctype.bom.bom.get_bom_items",
 					args: values,
 					callback: function (r) {
 						if (!r.message) {
-							frappe.throw(__("BOM does not contain any stock item"));
+							nts.throw(__("BOM does not contain any stock item"));
 						} else {
 							prodman.utils.remove_empty_first_row(frm, "items");
 							$.each(r.message, function (i, item) {
-								var d = frappe.model.add_child(cur_frm.doc, "Material Request Item", "items");
+								var d = nts.model.add_child(cur_frm.doc, "Material Request Item", "items");
 								d.item_code = item.item_code;
 								d.item_name = item.item_name;
 								d.description = item.description;
@@ -363,7 +363,7 @@ frappe.ui.form.on("Material Request", {
 	},
 
 	make_purchase_order: function (frm) {
-		frappe.prompt(
+		nts.prompt(
 			{
 				label: __("For Default Supplier (Optional)"),
 				fieldname: "default_supplier",
@@ -380,7 +380,7 @@ frappe.ui.form.on("Material Request", {
 				},
 			},
 			(values) => {
-				frappe.model.open_mapped_doc({
+				nts.model.open_mapped_doc({
 					method: "prodman.stock.doctype.material_request.material_request.make_purchase_order",
 					frm: frm,
 					args: { default_supplier: values.default_supplier },
@@ -393,7 +393,7 @@ frappe.ui.form.on("Material Request", {
 	},
 
 	make_request_for_quotation: function (frm) {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.stock.doctype.material_request.material_request.make_request_for_quotation",
 			frm: frm,
 			run_link_triggers: true,
@@ -401,21 +401,21 @@ frappe.ui.form.on("Material Request", {
 	},
 
 	make_supplier_quotation: function (frm) {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.stock.doctype.material_request.material_request.make_supplier_quotation",
 			frm: frm,
 		});
 	},
 
 	make_stock_entry: function (frm) {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.stock.doctype.material_request.material_request.make_stock_entry",
 			frm: frm,
 		});
 	},
 
 	make_in_transit_stock_entry(frm) {
-		frappe.prompt(
+		nts.prompt(
 			[
 				{
 					label: __("In Transit Warehouse"),
@@ -435,7 +435,7 @@ frappe.ui.form.on("Material Request", {
 				},
 			],
 			(values) => {
-				frappe.call({
+				nts.call({
 					method: "prodman.stock.doctype.material_request.material_request.make_in_transit_stock_entry",
 					args: {
 						source_name: frm.doc.name,
@@ -443,8 +443,8 @@ frappe.ui.form.on("Material Request", {
 					},
 					callback: function (r) {
 						if (r.message) {
-							let doc = frappe.model.sync(r.message);
-							frappe.set_route("Form", doc[0].doctype, doc[0].name);
+							let doc = nts.model.sync(r.message);
+							nts.set_route("Form", doc[0].doctype, doc[0].name);
 						}
 					},
 				});
@@ -455,14 +455,14 @@ frappe.ui.form.on("Material Request", {
 	},
 
 	create_pick_list: (frm) => {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.stock.doctype.material_request.material_request.create_pick_list",
 			frm: frm,
 		});
 	},
 
 	raise_work_orders: function (frm) {
-		frappe.call({
+		nts.call({
 			method: "prodman.stock.doctype.material_request.material_request.raise_work_orders",
 			args: {
 				material_request: frm.doc.name,
@@ -484,11 +484,11 @@ frappe.ui.form.on("Material Request", {
 	},
 });
 
-frappe.ui.form.on("Material Request Item", {
+nts.ui.form.on("Material Request Item", {
 	qty: function (frm, doctype, name) {
 		const item = locals[doctype][name];
 		if (flt(item.qty) < flt(item.min_order_qty)) {
-			frappe.msgprint(__("Warning: Material Requested Qty is less than Minimum Order Qty"));
+			nts.msgprint(__("Warning: Material Requested Qty is less than Minimum Order Qty"));
 		}
 		frm.events.get_item_data(frm, item, false);
 	},
@@ -506,7 +506,7 @@ frappe.ui.form.on("Material Request Item", {
 	rate(frm, doctype, name) {
 		const item = locals[doctype][name];
 		item.amount = flt(item.qty) * flt(item.rate);
-		frappe.model.set_value(doctype, name, "amount", item.amount);
+		nts.model.set_value(doctype, name, "amount", item.amount);
 		refresh_field("amount", item.name, item.parentfield);
 	},
 
@@ -581,7 +581,7 @@ prodman.buying.MaterialRequestController = class MaterialRequestController exten
 	}
 
 	items_add(doc, cdt, cdn) {
-		var row = frappe.get_doc(cdt, cdn);
+		var row = nts.get_doc(cdt, cdn);
 		if (doc.schedule_date) {
 			row.schedule_date = doc.schedule_date;
 			refresh_field("schedule_date", cdn, "items");
@@ -599,9 +599,9 @@ prodman.buying.MaterialRequestController = class MaterialRequestController exten
 	}
 
 	qty(doc, cdt, cdn) {
-		var row = frappe.get_doc(cdt, cdn);
+		var row = nts.get_doc(cdt, cdn);
 		row.amount = flt(row.qty) * flt(row.rate);
-		frappe.model.set_value(cdt, cdn, "amount", row.amount);
+		nts.model.set_value(cdt, cdn, "amount", row.amount);
 		refresh_field("amount", row.name, row.parentfield);
 	}
 };

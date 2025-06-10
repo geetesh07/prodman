@@ -9,10 +9,10 @@
         <th>Received Quantity</th>
     </tr>
     {% for item in doc.items %}
-        {% if frappe.utils.flt(item.received_qty, 2) > 0.0 %}
+        {% if nts.utils.flt(item.received_qty, 2) > 0.0 %}
             <tr align="center">
                 <td>{{ item.item_code }}</td>
-                <td>{{ frappe.utils.flt(item.received_qty, 2) }}</td>
+                <td>{{ nts.utils.flt(item.received_qty, 2) }}</td>
             </tr>
         {% endif %}
     {% endfor %}

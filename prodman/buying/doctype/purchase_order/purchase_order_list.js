@@ -1,4 +1,4 @@
-frappe.listview_settings["Purchase Order"] = {
+nts.listview_settings["Purchase Order"] = {
 	add_fields: [
 		"base_grand_total",
 		"company",
@@ -56,19 +56,19 @@ frappe.listview_settings["Purchase Order"] = {
 			listview.call_for_selected_items(method, { status: "Submitted" });
 		});
 
-		if (frappe.model.can_create("Purchase Invoice")) {
+		if (nts.model.can_create("Purchase Invoice")) {
 			listview.page.add_action_item(__("Purchase Invoice"), () => {
 				prodman.bulk_transaction_processing.create(listview, "Purchase Order", "Purchase Invoice");
 			});
 		}
 
-		if (frappe.model.can_create("Purchase Receipt")) {
+		if (nts.model.can_create("Purchase Receipt")) {
 			listview.page.add_action_item(__("Purchase Receipt"), () => {
 				prodman.bulk_transaction_processing.create(listview, "Purchase Order", "Purchase Receipt");
 			});
 		}
 
-		if (frappe.model.can_create("Payment Entry")) {
+		if (nts.model.can_create("Payment Entry")) {
 			listview.page.add_action_item(__("Advance Payment"), () => {
 				prodman.bulk_transaction_processing.create(listview, "Purchase Order", "Payment Entry");
 			});

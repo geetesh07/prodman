@@ -1,6 +1,6 @@
-frappe.provide("frappe.treeview_settings");
+nts .provide("nts .treeview_settings");
 
-frappe.treeview_settings["Account"] = {
+nts .treeview_settings["Account"] = {
 	breadcrumb: "Accounts",
 	title: __("Chart of Accounts"),
 	get_tree_root: false,
@@ -12,12 +12,12 @@ frappe.treeview_settings["Account"] = {
 			label: __("Company"),
 			default: prodman.utils.get_tree_default("company"),
 			on_change: function () {
-				var me = frappe.treeview_settings["Account"].treeview;
+				var me = nts .treeview_settings["Account"].treeview;
 				var company = me.page.fields_dict.company.get_value();
 				if (!company) {
-					frappe.throw(__("Please set a Company"));
+					nts .throw(__("Please set a Company"));
 				}
-				frappe.call({
+				nts .call({
 					method: "prodman.accounts.doctype.account.account.get_root_company",
 					args: {
 						company: company,
@@ -27,12 +27,12 @@ frappe.treeview_settings["Account"] = {
 							let root_company = r.message.length ? r.message[0] : "";
 							me.page.fields_dict.root_company.set_value(root_company);
 
-							frappe.db.get_value(
+							nts .db.get_value(
 								"Company",
 								{ name: company },
 								"allow_account_creation_against_child_company",
 								(r) => {
-									frappe.flags.ignore_root_company_validation =
+									nts .flags.ignore_root_company_validation =
 										r.allow_account_creation_against_child_company;
 								}
 							);
@@ -52,7 +52,7 @@ frappe.treeview_settings["Account"] = {
 	root_label: "Accounts",
 	get_tree_nodes: "prodman.accounts.utils.get_children",
 	on_get_node: function (nodes, deep = false) {
-		if (frappe.boot.user.can_read.indexOf("GL Entry") == -1) return;
+		if (nts .boot.user.can_read.indexOf("GL Entry") == -1) return;
 
 		let accounts = [];
 		if (deep) {
@@ -62,9 +62,9 @@ frappe.treeview_settings["Account"] = {
 			accounts = nodes;
 		}
 
-		frappe.db.get_single_value("Accounts Settings", "show_balance_in_coa").then((value) => {
+		nts .db.get_single_value("Accounts Settings", "show_balance_in_coa").then((value) => {
 			if (value) {
-				const get_balances = frappe.call({
+				const get_balances = nts .call({
 					method: "prodman.accounts.utils.get_account_balances",
 					args: {
 						accounts: accounts,
@@ -110,9 +110,9 @@ frappe.treeview_settings["Account"] = {
 		{
 			label: __("New Company"),
 			action: function () {
-				frappe.new_doc("Company", true);
+				nts .new_doc("Company", true);
 			},
-			condition: 'frappe.boot.user.can_create.indexOf("Company") !== -1',
+			condition: 'nts .boot.user.can_create.indexOf("Company") !== -1',
 		},
 	],
 	fields: [
@@ -150,7 +150,7 @@ frappe.treeview_settings["Account"] = {
 			fieldtype: "Select",
 			fieldname: "account_type",
 			label: __("Account Type"),
-			options: frappe.get_meta("Account").fields.filter((d) => d.fieldname == "account_type")[0]
+			options: nts .get_meta("Account").fields.filter((d) => d.fieldname == "account_type")[0]
 				.options,
 			description: __("Optional. This setting will be used to filter in various transactions."),
 		},
@@ -170,8 +170,8 @@ frappe.treeview_settings["Account"] = {
 	],
 	ignore_fields: ["parent_account"],
 	onload: function (treeview) {
-		frappe.treeview_settings["Account"].treeview = {};
-		$.extend(frappe.treeview_settings["Account"].treeview, treeview);
+		nts .treeview_settings["Account"].treeview = {};
+		$.extend(nts .treeview_settings["Account"].treeview, treeview);
 		function get_company() {
 			return treeview.page.fields_dict.company.get_value();
 		}
@@ -180,7 +180,7 @@ frappe.treeview_settings["Account"] = {
 		treeview.page.add_inner_button(
 			__("Chart of Cost Centers"),
 			function () {
-				frappe.set_route("Tree", "Cost Center", { company: get_company() });
+				nts .set_route("Tree", "Cost Center", { company: get_company() });
 			},
 			__("View")
 		);
@@ -188,7 +188,7 @@ frappe.treeview_settings["Account"] = {
 		treeview.page.add_inner_button(
 			__("Opening Invoice Creation Tool"),
 			function () {
-				frappe.set_route("Form", "Opening Invoice Creation Tool", { company: get_company() });
+				nts .set_route("Form", "Opening Invoice Creation Tool", { company: get_company() });
 			},
 			__("View")
 		);
@@ -196,7 +196,7 @@ frappe.treeview_settings["Account"] = {
 		treeview.page.add_inner_button(
 			__("Period Closing Voucher"),
 			function () {
-				frappe.set_route("List", "Period Closing Voucher", { company: get_company() });
+				nts .set_route("List", "Period Closing Voucher", { company: get_company() });
 			},
 			__("View")
 		);
@@ -204,14 +204,14 @@ frappe.treeview_settings["Account"] = {
 		treeview.page.add_inner_button(
 			__("Journal Entry"),
 			function () {
-				frappe.new_doc("Journal Entry", { company: get_company() });
+				nts .new_doc("Journal Entry", { company: get_company() });
 			},
 			__("Create")
 		);
 		treeview.page.add_inner_button(
 			__("Company"),
 			function () {
-				frappe.new_doc("Company");
+				nts .new_doc("Company");
 			},
 			__("Create")
 		);
@@ -229,21 +229,21 @@ frappe.treeview_settings["Account"] = {
 			treeview.page.add_inner_button(
 				__(report),
 				function () {
-					frappe.set_route("query-report", report, { company: get_company() });
+					nts .set_route("query-report", report, { company: get_company() });
 				},
 				__("Financial Statements")
 			);
 		}
 	},
 	post_render: function (treeview) {
-		frappe.treeview_settings["Account"].treeview["tree"] = treeview.tree;
+		nts .treeview_settings["Account"].treeview["tree"] = treeview.tree;
 		if (treeview.can_create) {
 			treeview.page.set_primary_action(
 				__("New"),
 				function () {
 					let root_company = treeview.page.fields_dict.root_company.get_value();
 					if (root_company) {
-						frappe.throw(__("Please add the account to root level Company - {0}"), [
+						nts .throw(__("Please add the account to root level Company - {0}"), [
 							root_company,
 						]);
 					} else {
@@ -259,35 +259,35 @@ frappe.treeview_settings["Account"] = {
 			label: __("Add Child"),
 			condition: function (node) {
 				return (
-					frappe.boot.user.can_create.indexOf("Account") !== -1 &&
-					(!frappe.treeview_settings[
+					nts .boot.user.can_create.indexOf("Account") !== -1 &&
+					(!nts .treeview_settings[
 						"Account"
 					].treeview.page.fields_dict.root_company.get_value() ||
-						frappe.flags.ignore_root_company_validation) &&
+						nts .flags.ignore_root_company_validation) &&
 					node.expandable &&
 					!node.hide_add
 				);
 			},
 			click: function () {
-				var me = frappe.views.trees["Account"];
+				var me = nts .views.trees["Account"];
 				me.new_node();
 			},
 			btnClass: "hidden-xs",
 		},
 		{
 			condition: function (node) {
-				return !node.root && frappe.boot.user.can_read.indexOf("GL Entry") !== -1;
+				return !node.root && nts .boot.user.can_read.indexOf("GL Entry") !== -1;
 			},
 			label: __("View Ledger"),
 			click: function (node, btn) {
-				frappe.route_options = {
+				nts .route_options = {
 					account: node.label,
-					from_date: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[1],
-					to_date: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[2],
+					from_date: prodman.utils.get_fiscal_year(nts .datetime.get_today(), true)[1],
+					to_date: prodman.utils.get_fiscal_year(nts .datetime.get_today(), true)[2],
 					company:
-						frappe.treeview_settings["Account"].treeview.page.fields_dict.company.get_value(),
+						nts .treeview_settings["Account"].treeview.page.fields_dict.company.get_value(),
 				};
-				frappe.set_route("query-report", "General Ledger");
+				nts .set_route("query-report", "General Ledger");
 			},
 			btnClass: "hidden-xs",
 		},

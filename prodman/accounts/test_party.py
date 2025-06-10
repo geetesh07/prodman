@@ -1,12 +1,12 @@
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts 
+from nts .tests.utils import nts TestCase
 
 from prodman.accounts.party import get_default_price_list
 
 
-class PartyTestCase(FrappeTestCase):
+class PartyTestCase(nts TestCase):
 	def test_get_default_price_list_should_return_none_for_invalid_group(self):
-		customer = frappe.get_doc(
+		customer = nts .get_doc(
 			{
 				"doctype": "Customer",
 				"customer_name": "test customer",

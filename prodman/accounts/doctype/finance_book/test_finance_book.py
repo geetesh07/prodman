@@ -1,9 +1,9 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts 
 
 from prodman.accounts.doctype.journal_entry.test_journal_entry import make_journal_entry
 
@@ -21,7 +21,7 @@ class TestFinanceBook(unittest.TestCase):
 		jv.submit()
 
 		# check the Finance Book in the GL Entry
-		gl_entries = frappe.get_all(
+		gl_entries = nts .get_all(
 			"GL Entry",
 			fields=["name", "finance_book"],
 			filters={"voucher_type": "Journal Entry", "voucher_no": jv.name},
@@ -32,11 +32,11 @@ class TestFinanceBook(unittest.TestCase):
 
 
 def create_finance_book():
-	if not frappe.db.exists("Finance Book", "_Test Finance Book"):
-		finance_book = frappe.get_doc(
+	if not nts .db.exists("Finance Book", "_Test Finance Book"):
+		finance_book = nts .get_doc(
 			{"doctype": "Finance Book", "finance_book_name": "_Test Finance Book"}
 		).insert()
 	else:
-		finance_book = frappe.get_doc("Finance Book", "_Test Finance Book")
+		finance_book = nts .get_doc("Finance Book", "_Test Finance Book")
 
 	return finance_book

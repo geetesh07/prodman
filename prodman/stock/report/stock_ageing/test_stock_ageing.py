@@ -1,20 +1,20 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 from prodman.stock.report.stock_ageing.stock_ageing import FIFOSlots, format_report_data
 
 
-class TestStockAgeing(FrappeTestCase):
+class TestStockAgeing(ntsTestCase):
 	def setUp(self) -> None:
-		self.filters = frappe._dict(company="_Test Company", to_date="2021-12-10", ranges=["30", "60", "90"])
+		self.filters = nts._dict(company="_Test Company", to_date="2021-12-10", ranges=["30", "60", "90"])
 
 	def test_normal_inward_outward_queue(self):
 		"Reference: Case 1 in stock_ageing_fifo_logic.md (same wh)"
 		sle = [
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=30,
 				qty_after_transaction=30,
@@ -26,7 +26,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=20,
 				qty_after_transaction=50,
@@ -38,7 +38,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=(-10),
 				qty_after_transaction=40,
@@ -66,7 +66,7 @@ class TestStockAgeing(FrappeTestCase):
 	def test_insufficient_balance(self):
 		"Reference: Case 3 in stock_ageing_fifo_logic.md (same wh)"
 		sle = [
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=(-30),
 				qty_after_transaction=(-30),
@@ -78,7 +78,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=20,
 				qty_after_transaction=(-10),
@@ -90,7 +90,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=20,
 				qty_after_transaction=10,
@@ -102,7 +102,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=10,
 				qty_after_transaction=20,
@@ -131,7 +131,7 @@ class TestStockAgeing(FrappeTestCase):
 		Bal: 40
 		"""
 		sle = [
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=30,
 				qty_after_transaction=30,
@@ -143,7 +143,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=0,
 				qty_after_transaction=50,
@@ -155,7 +155,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=(-10),
 				qty_after_transaction=40,
@@ -186,7 +186,7 @@ class TestStockAgeing(FrappeTestCase):
 		Bal: 390
 		"""
 		sle = [
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=0,
 				qty_after_transaction=1000,
@@ -198,7 +198,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=0,
 				qty_after_transaction=400,
@@ -210,7 +210,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=(-10),
 				qty_after_transaction=390,
@@ -244,7 +244,7 @@ class TestStockAgeing(FrappeTestCase):
 		Bal: WH1 bal + WH2 bal = 990 + 400 = 1390
 		"""
 		sle = [
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=0,
 				qty_after_transaction=1000,
@@ -256,7 +256,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=0,
 				qty_after_transaction=400,
@@ -268,7 +268,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=(-10),
 				qty_after_transaction=990,
@@ -315,7 +315,7 @@ class TestStockAgeing(FrappeTestCase):
 		Case most likely for batch items. Test time bucket computation.
 		"""
 		sle = [
-			frappe._dict(  # stock up item
+			nts._dict(  # stock up item
 				name="Flask Item",
 				actual_qty=500,
 				qty_after_transaction=500,
@@ -327,7 +327,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=(-50),
 				qty_after_transaction=450,
@@ -339,7 +339,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=(-50),
 				qty_after_transaction=400,
@@ -351,7 +351,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=100,
 				qty_after_transaction=500,
@@ -388,7 +388,7 @@ class TestStockAgeing(FrappeTestCase):
 		Case most likely for batch items. Test time bucket computation.
 		"""
 		sle = [
-			frappe._dict(  # stock up item
+			nts._dict(  # stock up item
 				name="Flask Item",
 				actual_qty=500,
 				qty_after_transaction=500,
@@ -400,7 +400,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=(-100),
 				qty_after_transaction=400,
@@ -412,7 +412,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=50,
 				qty_after_transaction=450,
@@ -447,7 +447,7 @@ class TestStockAgeing(FrappeTestCase):
 		Item 1  | 50   | 002 (repack)
 		"""
 		sle = [
-			frappe._dict(  # stock up item
+			nts._dict(  # stock up item
 				name="Flask Item",
 				actual_qty=20,
 				qty_after_transaction=20,
@@ -459,7 +459,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=(-50),
 				qty_after_transaction=(-30),
@@ -471,7 +471,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=(-50),
 				qty_after_transaction=(-80),
@@ -483,7 +483,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=50,
 				qty_after_transaction=(-30),
@@ -521,7 +521,7 @@ class TestStockAgeing(FrappeTestCase):
 		Case most likely for batch items. Test time bucket computation.
 		"""
 		sle = [
-			frappe._dict(  # stock up item
+			nts._dict(  # stock up item
 				name="Flask Item",
 				actual_qty=500,
 				qty_after_transaction=500,
@@ -533,7 +533,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=(-50),
 				qty_after_transaction=450,
@@ -545,7 +545,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=100,
 				qty_after_transaction=550,
@@ -581,7 +581,7 @@ class TestStockAgeing(FrappeTestCase):
 		Item 1  | 50   | 002 (repack)
 		"""
 		sle = [
-			frappe._dict(  # stock up item
+			nts._dict(  # stock up item
 				name="Flask Item",
 				actual_qty=20,
 				qty_after_transaction=20,
@@ -593,7 +593,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=(-50),
 				qty_after_transaction=(-30),
@@ -605,7 +605,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=50,
 				qty_after_transaction=20,
@@ -617,7 +617,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=50,
 				qty_after_transaction=70,
@@ -655,7 +655,7 @@ class TestStockAgeing(FrappeTestCase):
 		Item 1  | 80   | 001
 		"""
 		sle = [
-			frappe._dict(  # stock up item
+			nts._dict(  # stock up item
 				name="Flask Item",
 				actual_qty=(-50),
 				qty_after_transaction=(-50),
@@ -667,7 +667,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(  # stock up item
+			nts._dict(  # stock up item
 				name="Flask Item",
 				actual_qty=(-50),
 				qty_after_transaction=(-100),
@@ -679,7 +679,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(  # stock up item
+			nts._dict(  # stock up item
 				name="Flask Item",
 				actual_qty=30,
 				qty_after_transaction=(-70),
@@ -703,7 +703,7 @@ class TestStockAgeing(FrappeTestCase):
 		self.assertEqual(item_result["fifo_queue"][0][0], -70.0)
 
 		sle.append(
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=80,
 				qty_after_transaction=10,
@@ -727,7 +727,7 @@ class TestStockAgeing(FrappeTestCase):
 	def test_precision(self):
 		"Test if final balance qty is rounded off correctly."
 		sle = [
-			frappe._dict(  # stock up item
+			nts._dict(  # stock up item
 				name="Flask Item",
 				actual_qty=0.3,
 				qty_after_transaction=0.3,
@@ -738,7 +738,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(  # stock up item
+			nts._dict(  # stock up item
 				name="Flask Item",
 				actual_qty=0.6,
 				qty_after_transaction=0.9,
@@ -764,7 +764,7 @@ class TestStockAgeing(FrappeTestCase):
 	def test_ageing_stock_valuation(self):
 		"Test stock valuation for each time bucket."
 		sle = [
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=10,
 				qty_after_transaction=10,
@@ -776,7 +776,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=20,
 				qty_after_transaction=30,
@@ -788,7 +788,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=(-10),
 				qty_after_transaction=20,
@@ -800,7 +800,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=10,
 				qty_after_transaction=30,
@@ -812,7 +812,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=(-15),
 				qty_after_transaction=15,
@@ -824,7 +824,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=10,
 				qty_after_transaction=25,
@@ -836,7 +836,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=5,
 				qty_after_transaction=30,
@@ -848,7 +848,7 @@ class TestStockAgeing(FrappeTestCase):
 				has_serial_no=False,
 				serial_no=None,
 			),
-			frappe._dict(
+			nts._dict(
 				name="Flask Item",
 				actual_qty=5,
 				qty_after_transaction=35,

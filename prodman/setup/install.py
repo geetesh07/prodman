@@ -1,13 +1,13 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import click
-import frappe
-from frappe import _
-from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
-from frappe.desk.page.setup_wizard.setup_wizard import add_all_roles_to
-from frappe.utils import cint
+import nts
+from nts import _
+from nts.custom.doctype.custom_field.custom_field import create_custom_fields
+from nts.desk.page.setup_wizard.setup_wizard import add_all_roles_to
+from nts.utils import cint
 
 import prodman
 from prodman.setup.default_energy_point_rules import get_default_energy_point_rules
@@ -16,12 +16,12 @@ from prodman.setup.doctype.incoterm.incoterm import create_incoterms
 from .default_success_action import get_default_success_action
 
 default_mail_footer = """<div style="padding: 7px; text-align: right; color: #888"><small>Sent via
-	<a style="color: #888" href="http://frappe.io/prodman">prodman</a></div>"""
+	<a style="color: #888" href="http://nts.io/prodman">prodman</a></div>"""
 
 
 def after_install():
-	if not frappe.db.exists("Role", "Analytics"):
-		frappe.get_doc({"doctype": "Role", "role_name": "Analytics"}).insert()
+	if not nts.db.exists("Role", "Analytics"):
+		nts.get_doc({"doctype": "Role", "role_name": "Analytics"}).insert()
 
 	set_single_defaults()
 	create_print_setting_custom_fields()
@@ -35,28 +35,28 @@ def after_install():
 	add_app_name()
 	hide_workspaces()
 	update_roles()
-	frappe.db.commit()
+	nts.db.commit()
 
 
 def check_setup_wizard_not_completed():
-	if cint(frappe.db.get_single_value("System Settings", "setup_complete") or 0):
+	if cint(nts.db.get_single_value("System Settings", "setup_complete") or 0):
 		message = """prodman can only be installed on a fresh site where the setup wizard is not completed.
 You can reinstall this site (after saving your data) using: bench --site [sitename] reinstall"""
-		frappe.throw(message)  # nosemgrep
+		nts.throw(message)  # nosemgrep
 
 
-def check_frappe_version():
+def check_nts_version():
 	def major_version(v: str) -> str:
 		return v.split(".")[0]
 
-	frappe_version = major_version(frappe.__version__)
+	nts_version = major_version(nts.__version__)
 	prodman_version = major_version(prodman.__version__)
 
-	if frappe_version == prodman_version:
+	if nts_version == prodman_version:
 		return
 
 	click.secho(
-		f"You're attempting to install prodman version {prodman_version} with Frappe version {frappe_version}. "
+		f"You're attempting to install prodman version {prodman_version} with nts version {nts_version}. "
 		"This is not supported and will result in broken install. Switch to correct branch before installing.",
 		fg="red",
 	)
@@ -72,28 +72,28 @@ def set_single_defaults():
 		"Selling Settings",
 		"Stock Settings",
 	):
-		default_values = frappe.db.sql(
+		default_values = nts.db.sql(
 			"""select fieldname, `default` from `tabDocField`
 			where parent=%s""",
 			dt,
 		)
 		if default_values:
 			try:
-				doc = frappe.get_doc(dt, dt)
+				doc = nts.get_doc(dt, dt)
 				for fieldname, value in default_values:
 					doc.set(fieldname, value)
 				doc.flags.ignore_mandatory = True
 				doc.save()
-			except frappe.ValidationError:
+			except nts.ValidationError:
 				pass
 
-	frappe.db.set_default("date_format", "dd-mm-yyyy")
+	nts.db.set_default("date_format", "dd-mm-yyyy")
 
 	setup_currency_exchange()
 
 
 def setup_currency_exchange():
-	ces = frappe.get_single("Currency Exchange Settings")
+	ces = nts.get_single("Currency Exchange Settings")
 	try:
 		ces.set("result_key", [])
 		ces.set("req_params", [])
@@ -104,7 +104,7 @@ def setup_currency_exchange():
 		ces.append("req_params", {"key": "base", "value": "{from_currency}"})
 		ces.append("req_params", {"key": "symbols", "value": "{to_currency}"})
 		ces.save()
-	except frappe.ValidationError:
+	except nts.ValidationError:
 		pass
 
 
@@ -140,31 +140,31 @@ def create_print_setting_custom_fields():
 
 def create_default_success_action():
 	for success_action in get_default_success_action():
-		if not frappe.db.exists("Success Action", success_action.get("ref_doctype")):
-			doc = frappe.get_doc(success_action)
+		if not nts.db.exists("Success Action", success_action.get("ref_doctype")):
+			doc = nts.get_doc(success_action)
 			doc.insert(ignore_permissions=True)
 
 
 def create_default_energy_point_rules():
 	for rule in get_default_energy_point_rules():
 		# check if any rule for ref. doctype exists
-		rule_exists = frappe.db.exists(
+		rule_exists = nts.db.exists(
 			"Energy Point Rule", {"reference_doctype": rule.get("reference_doctype")}
 		)
 		if rule_exists:
 			continue
-		doc = frappe.get_doc(rule)
+		doc = nts.get_doc(rule)
 		doc.insert(ignore_permissions=True)
 
 
 def add_company_to_session_defaults():
-	settings = frappe.get_single("Session Default Settings")
+	settings = nts.get_single("Session Default Settings")
 	settings.append("session_defaults", {"ref_doctype": "Company"})
 	settings.save()
 
 
 def add_standard_navbar_items():
-	navbar_settings = frappe.get_single("Navbar Settings")
+	navbar_settings = nts.get_single("Navbar Settings")
 
 	prodman_navbar_items = [
 		{
@@ -206,23 +206,23 @@ def add_standard_navbar_items():
 
 
 def add_app_name():
-	frappe.db.set_single_value("System Settings", "app_name", "prodman")
+	nts.db.set_single_value("System Settings", "app_name", "prodman")
 
 
 def hide_workspaces():
 	for ws in ["Integration", "Settings"]:
-		frappe.db.set_value("Workspace", ws, "public", 0)
+		nts.db.set_value("Workspace", ws, "public", 0)
 
 
 def update_roles():
 	website_user_roles = ("Customer", "Supplier")
 	for role in website_user_roles:
-		frappe.db.set_value("Role", role, "desk_access", 0)
+		nts.db.set_value("Role", role, "desk_access", 0)
 
 
 def create_default_role_profiles():
 	for role_profile_name, roles in DEFAULT_ROLE_PROFILES.items():
-		role_profile = frappe.new_doc("Role Profile")
+		role_profile = nts.new_doc("Role Profile")
 		role_profile.role_profile = role_profile_name
 		for role in roles:
 			role_profile.append("roles", {"role": role})

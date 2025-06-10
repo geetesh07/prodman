@@ -7,7 +7,7 @@
  "docstatus": 0,
  "doctype": "Dashboard Chart",
  "document_type": "Work Order",
- "dynamic_filters_json": "[[\"Work Order\",\"company\",\"=\",\"frappe.defaults.get_user_default(\\\"Company\\\")\"]]",
+ "dynamic_filters_json": "[[\"Work Order\",\"company\",\"=\",\"nts.defaults.get_user_default(\\\"Company\\\")\"]]",
  "filters_json": "[[\"Work Order\",\"docstatus\",\"=\",\"1\",false]]",
  "group_by_type": "Count",
  "idx": 0,

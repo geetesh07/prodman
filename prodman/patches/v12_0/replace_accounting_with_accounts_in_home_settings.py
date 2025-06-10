@@ -1,8 +1,8 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.db.sql(
+	nts.db.sql(
 		"""UPDATE `tabUser` SET `home_settings` = REPLACE(`home_settings`, 'Accounting', 'Accounts')"""
 	)
-	frappe.cache().delete_key("home_settings")
+	nts.cache().delete_key("home_settings")

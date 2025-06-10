@@ -1,11 +1,11 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 from collections import OrderedDict
 
-import frappe
-from frappe import _, qb
-from frappe.query_builder import Criterion
+import nts 
+from nts  import _, qb
+from nts .query_builder import Criterion
 
 
 class PaymentLedger:
@@ -35,7 +35,7 @@ class PaymentLedger:
 				# this if condition will lose unassigned ple entries(against_voucher doc doesn't have ple)
 				# need to somehow include the stray entries as well.
 				if target is not None:
-					entry = frappe._dict(
+					entry = nts ._dict(
 						posting_date=ple.posting_date,
 						account=ple.account,
 						party_type=ple.party_type,
@@ -73,7 +73,7 @@ class PaymentLedger:
 					if self.filters.include_account_currency:
 						total_in_account_currency += x.amount_in_account_currency
 
-				entry = frappe._dict(
+				entry = nts ._dict(
 					against_voucher_no="Outstanding:",
 					amount=total,
 					currency=voucher_data[0].currency,
@@ -85,7 +85,7 @@ class PaymentLedger:
 				voucher_data.append(entry)
 
 				# empty row
-				voucher_data.append(frappe._dict())
+				voucher_data.append(nts ._dict())
 				self.data.extend(voucher_data)
 
 	def build_conditions(self):
@@ -130,7 +130,7 @@ class PaymentLedger:
 		)
 
 	def get_columns(self):
-		company_currency = frappe.get_cached_value("Company", self.filters.get("company"), "default_currency")
+		company_currency = nts .get_cached_value("Company", self.filters.get("company"), "default_currency")
 		options = None
 		self.columns.append(
 			dict(

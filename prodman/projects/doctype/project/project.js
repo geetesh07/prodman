@@ -1,6 +1,6 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
-frappe.ui.form.on("Project", {
+nts.ui.form.on("Project", {
 	setup(frm) {
 		frm.make_methods = {
 			Timesheet: () => {
@@ -97,14 +97,14 @@ frappe.ui.form.on("Project", {
 
 			frm.trigger("set_project_status_button");
 
-			if (frappe.model.can_read("Task")) {
+			if (nts.model.can_read("Task")) {
 				frm.add_custom_button(
 					__("Gantt Chart"),
 					function () {
-						frappe.route_options = {
+						nts.route_options = {
 							project: frm.doc.name,
 						};
-						frappe.set_route("List", "Task", "Gantt");
+						nts.set_route("List", "Task", "Gantt");
 					},
 					__("View")
 				);
@@ -112,7 +112,7 @@ frappe.ui.form.on("Project", {
 				frm.add_custom_button(
 					__("Kanban Board"),
 					() => {
-						frappe
+						nts
 							.call(
 								"prodman.projects.doctype.project.project.create_kanban_board_if_not_exists",
 								{
@@ -120,7 +120,7 @@ frappe.ui.form.on("Project", {
 								}
 							)
 							.then(() => {
-								frappe.set_route("List", "Task", "Kanban", frm.doc.project_name);
+								nts.set_route("List", "Task", "Kanban", frm.doc.project_name);
 							});
 					},
 					__("View")
@@ -130,14 +130,14 @@ frappe.ui.form.on("Project", {
 	},
 
 	update_total_purchase_cost: function (frm) {
-		frappe.call({
+		nts.call({
 			method: "prodman.projects.doctype.project.project.recalculate_project_total_purchase_cost",
 			args: { project: frm.doc.name },
 			freeze: true,
 			freeze_message: __("Recalculating Purchase Cost against this Project..."),
 			callback: function (r) {
 				if (r && !r.exc) {
-					frappe.msgprint(__("Total Purchase Cost has been updated"));
+					nts.msgprint(__("Total Purchase Cost has been updated"));
 					frm.refresh();
 				}
 			},
@@ -153,7 +153,7 @@ frappe.ui.form.on("Project", {
 	},
 
 	get_project_status_dialog: function (frm) {
-		const dialog = new frappe.ui.Dialog({
+		const dialog = new nts.ui.Dialog({
 			title: __("Set Project Status"),
 			fields: [
 				{
@@ -175,15 +175,15 @@ frappe.ui.form.on("Project", {
 
 	create_duplicate: function (frm) {
 		return new Promise((resolve) => {
-			frappe.prompt("Project Name", (data) => {
-				frappe
+			nts.prompt("Project Name", (data) => {
+				nts
 					.xcall("prodman.projects.doctype.project.project.create_duplicate_project", {
 						prev_doc: frm.doc,
 						project_name: data.value,
 					})
 					.then(() => {
-						frappe.set_route("Form", "Project", data.value);
-						frappe.show_alert(__("Duplicate project has been created"));
+						nts.set_route("Form", "Project", data.value);
+						nts.show_alert(__("Duplicate project has been created"));
 					});
 				resolve();
 			});
@@ -191,8 +191,8 @@ frappe.ui.form.on("Project", {
 	},
 
 	set_status: function (frm, status) {
-		frappe.confirm(__("Set Project and all Tasks to status {0}?", [__(status).bold()]), () => {
-			frappe
+		nts.confirm(__("Set Project and all Tasks to status {0}?", [__(status).bold()]), () => {
+			nts
 				.xcall("prodman.projects.doctype.project.project.set_project_status", {
 					project: frm.doc.name,
 					status: status,
@@ -205,11 +205,11 @@ frappe.ui.form.on("Project", {
 });
 
 function open_form(frm, doctype, child_doctype, parentfield) {
-	frappe.model.with_doctype(doctype, () => {
-		let new_doc = frappe.model.get_new_doc(doctype);
+	nts.model.with_doctype(doctype, () => {
+		let new_doc = nts.model.get_new_doc(doctype);
 
 		// add a new row and set the project
-		let new_child_doc = frappe.model.get_new_doc(child_doctype);
+		let new_child_doc = nts.model.get_new_doc(child_doctype);
 		new_child_doc.project = frm.doc.name;
 		new_child_doc.parent = new_doc.name;
 		new_child_doc.parentfield = parentfield;
@@ -217,6 +217,6 @@ function open_form(frm, doctype, child_doctype, parentfield) {
 		new_doc[parentfield] = [new_child_doc];
 		new_doc.project = frm.doc.name;
 
-		frappe.ui.form.make_quick_entry(doctype, null, null, new_doc);
+		nts.ui.form.make_quick_entry(doctype, null, null, new_doc);
 	});
 }

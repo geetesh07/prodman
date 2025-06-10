@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
@@ -6,13 +6,13 @@ import re
 import zipfile
 
 import dateutil
-import frappe
+import nts
 from bs4 import BeautifulSoup as bs
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import flt, get_datetime_str, today
-from frappe.utils.data import format_datetime
-from frappe.utils.file_manager import save_file
+from nts import _
+from nts.model.document import Document
+from nts.utils import flt, get_datetime_str, today
+from nts.utils.data import format_datetime
+from nts.utils.file_manager import save_file
 
 import prodman
 
@@ -24,7 +24,7 @@ class ImportSupplierInvoice(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		company: DF.Link
 		default_buying_price_list: DF.Link
@@ -37,15 +37,15 @@ class ImportSupplierInvoice(Document):
 	# end: auto-generated types
 
 	def validate(self):
-		if not frappe.db.get_value("Stock Settings", fieldname="stock_uom"):
-			frappe.throw(_("Please set default UOM in Stock Settings"))
+		if not nts.db.get_value("Stock Settings", fieldname="stock_uom"):
+			nts.throw(_("Please set default UOM in Stock Settings"))
 
 	def autoname(self):
 		if not self.name:
 			self.name = "Import Invoice on " + format_datetime(self.creation)
 
 	def import_xml_data(self):
-		zip_file = frappe.get_doc(
+		zip_file = nts.get_doc(
 			"File",
 			{"file_url": self.zip_file, "attached_to_doctype": self.doctype, "attached_to_name": self.name},
 		)
@@ -54,7 +54,7 @@ class ImportSupplierInvoice(Document):
 
 		self.file_count = 0
 		self.purchase_invoices_count = 0
-		self.default_uom = frappe.db.get_value("Stock Settings", fieldname="stock_uom")
+		self.default_uom = nts.db.get_value("Stock Settings", fieldname="stock_uom")
 
 		with zipfile.ZipFile(zip_file.get_full_path()) as zf:
 			for file_name in zf.namelist():
@@ -86,7 +86,7 @@ class ImportSupplierInvoice(Document):
 			}
 
 			if not invoices_args.get("bill_no", ""):
-				frappe.throw(_("Numero has not set in the XML file"))
+				nts.throw(_("Numero has not set in the XML file"))
 
 			supp_dict = get_supplier_details(file_content)
 			invoices_args["destination_code"] = get_destination_code_from_file(file_content)
@@ -157,13 +157,13 @@ class ImportSupplierInvoice(Document):
 							(flt(disc_line.Percentuale.text) / 100) * (rate * qty)
 						)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def process_file_data(self):
 		self.db_set("status", "Processing File Data", notify=True, commit=True)
-		frappe.enqueue_doc(self.doctype, self.name, "import_xml_data", queue="long", timeout=3600)
+		nts.enqueue_doc(self.doctype, self.name, "import_xml_data", queue="long", timeout=3600)
 
 	def publish(self, title, message, count, total):
-		frappe.publish_realtime(
+		nts.publish_realtime(
 			"import_invoice_update",
 			{"title": title, "message": message, "count": count, "total": total},
 			user=self.modified_by,
@@ -180,7 +180,7 @@ def get_file_content(file_name, zip_file_object):
 		try:
 			content = encoded_content.decode("utf-16")
 		except UnicodeDecodeError:
-			frappe.log_error("UTF-16 encoding error for File Name: " + file_name)
+			nts.log_error("UTF-16 encoding error for File Name: " + file_name)
 
 	return content
 
@@ -239,7 +239,7 @@ def get_taxes_from_file(file_content, tax_account):
 def get_payment_terms_from_file(file_content):
 	terms = []
 	# Get mode of payment dict from setup
-	mop_options = frappe.get_meta("Mode of Payment").fields[4].options
+	mop_options = nts.get_meta("Mode of Payment").fields[4].options
 	mop_str = re.sub("\n", ",", mop_options)
 	mop_dict = dict(item.split("-") for item in mop_str.split(","))
 	# read file for payment information
@@ -270,15 +270,15 @@ def get_destination_code_from_file(file_content):
 
 
 def create_supplier(supplier_group, args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
-	existing_supplier_name = frappe.db.get_value(
+	existing_supplier_name = nts.db.get_value(
 		"Supplier", filters={"tax_id": args.tax_id}, fieldname="name"
 	)
 	if existing_supplier_name:
 		pass
 	else:
-		existing_supplier_name = frappe.db.get_value(
+		existing_supplier_name = nts.db.get_value(
 			"Supplier", filters={"name": args.supplier}, fieldname="name"
 		)
 
@@ -289,15 +289,15 @@ def create_supplier(supplier_group, args):
 			["Dynamic Link", "parenttype", "=", "Contact"],
 		]
 
-		if not frappe.get_list("Contact", filters):
-			new_contact = frappe.new_doc("Contact")
+		if not nts.get_list("Contact", filters):
+			new_contact = nts.new_doc("Contact")
 			new_contact.first_name = args.supplier[:30]
 			new_contact.append("links", {"link_doctype": "Supplier", "link_name": existing_supplier_name})
 			new_contact.insert(ignore_mandatory=True)
 
 		return existing_supplier_name
 	else:
-		new_supplier = frappe.new_doc("Supplier")
+		new_supplier = nts.new_doc("Supplier")
 		new_supplier.supplier_name = re.sub("&amp", "&", args.supplier)
 		new_supplier.supplier_group = supplier_group
 		new_supplier.tax_id = args.tax_id
@@ -305,7 +305,7 @@ def create_supplier(supplier_group, args):
 		new_supplier.fiscal_regime = args.fiscal_regime
 		new_supplier.save()
 
-		new_contact = frappe.new_doc("Contact")
+		new_contact = nts.new_doc("Contact")
 		new_contact.first_name = args.supplier[:30]
 		new_contact.append("links", {"link_doctype": "Supplier", "link_name": new_supplier.name})
 
@@ -315,7 +315,7 @@ def create_supplier(supplier_group, args):
 
 
 def create_address(supplier_name, args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
 	filters = [
 		["Dynamic Link", "link_doctype", "=", "Supplier"],
@@ -323,10 +323,10 @@ def create_address(supplier_name, args):
 		["Dynamic Link", "parenttype", "=", "Address"],
 	]
 
-	existing_address = frappe.get_list("Address", filters)
+	existing_address = nts.get_list("Address", filters)
 
 	if args.address_line1:
-		new_address_doc = frappe.new_doc("Address")
+		new_address_doc = nts.new_doc("Address")
 		new_address_doc.address_line1 = args.address_line1
 
 		if args.city:
@@ -339,7 +339,7 @@ def create_address(supplier_name, args):
 				new_address_doc.set(field, args.get(field))
 
 		for address in existing_address:
-			address_doc = frappe.get_doc("Address", address["name"])
+			address_doc = nts.get_doc("Address", address["name"])
 			if (
 				address_doc.address_line1 == new_address_doc.address_line1
 				and address_doc.pincode == new_address_doc.pincode
@@ -355,8 +355,8 @@ def create_address(supplier_name, args):
 
 
 def create_purchase_invoice(supplier_name, file_name, args, name):
-	args = frappe._dict(args)
-	pi = frappe.get_doc(
+	args = nts._dict(args)
+	pi = nts.get_doc(
 		{
 			"doctype": "Purchase Invoice",
 			"company": args.company,
@@ -408,25 +408,25 @@ def create_purchase_invoice(supplier_name, file_name, args, name):
 		pi.save()
 		return pi.name
 	except Exception:
-		frappe.db.set_value("Import Supplier Invoice", name, "status", "Error")
+		nts.db.set_value("Import Supplier Invoice", name, "status", "Error")
 		pi.log_error("Unable to create Puchase Invoice")
 		return None
 
 
 def get_country(code):
-	existing_country_name = frappe.db.get_value("Country", filters={"code": code}, fieldname="name")
+	existing_country_name = nts.db.get_value("Country", filters={"code": code}, fieldname="name")
 	if existing_country_name:
 		return existing_country_name
 	else:
-		frappe.throw(_("Country Code in File does not match with country code set up in the system"))
+		nts.throw(_("Country Code in File does not match with country code set up in the system"))
 
 
 def create_uom(uom):
-	existing_uom = frappe.db.get_value("UOM", filters={"uom_name": uom}, fieldname="uom_name")
+	existing_uom = nts.db.get_value("UOM", filters={"uom_name": uom}, fieldname="uom_name")
 	if existing_uom:
 		return existing_uom
 	else:
-		new_uom = frappe.new_doc("UOM")
+		new_uom = nts.new_doc("UOM")
 		new_uom.uom_name = uom
 		new_uom.save()
 		return new_uom.uom_name

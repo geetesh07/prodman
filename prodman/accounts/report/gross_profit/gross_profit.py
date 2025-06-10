@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 from collections import OrderedDict
 
-import frappe
-from frappe import _, qb, scrub
-from frappe.query_builder import Order
-from frappe.utils import cint, flt, formatdate
+import nts 
+from nts  import _, qb, scrub
+from nts .query_builder import Order
+from nts .utils import cint, flt, formatdate
 
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_accounting_dimensions,
@@ -20,14 +20,14 @@ from prodman.stock.utils import get_incoming_rate
 
 def execute(filters=None):
 	if not filters:
-		filters = frappe._dict()
-	filters.currency = frappe.get_cached_value("Company", filters.company, "default_currency")
+		filters = nts ._dict()
+	filters.currency = nts .get_cached_value("Company", filters.company, "default_currency")
 
 	gross_profit_data = GrossProfitGenerator(filters)
 
 	data = []
 
-	group_wise_columns = frappe._dict(
+	group_wise_columns = nts ._dict(
 		{
 			"invoice": [
 				"invoice_or_item",
@@ -186,7 +186,7 @@ def get_data_when_grouped_by_invoice(columns, gross_profit_data, filters, group_
 			total_base_amount += src.base_amount or 0.0
 			total_buying_amount += src.buying_amount or 0.0
 
-		row = frappe._dict()
+		row = nts ._dict()
 		row.indent = src.indent
 		row.parent_invoice = src.parent_invoice
 		row.currency = filters.currency
@@ -198,7 +198,7 @@ def get_data_when_grouped_by_invoice(columns, gross_profit_data, filters, group_
 
 	total_gross_profit = total_base_amount - total_buying_amount
 	data.append(
-		frappe._dict(
+		nts ._dict(
 			{
 				"sales_invoice": "Total",
 				"qty": None,
@@ -209,7 +209,7 @@ def get_data_when_grouped_by_invoice(columns, gross_profit_data, filters, group_
 				"gross_profit": total_gross_profit,
 				"gross_profit_%": flt(
 					(total_gross_profit / total_base_amount) * 100.0,
-					cint(frappe.db.get_default("currency_precision")) or 3,
+					cint(nts .db.get_default("currency_precision")) or 3,
 				)
 				if total_base_amount
 				else 0,
@@ -233,7 +233,7 @@ def get_data_when_not_grouped_by_invoice(gross_profit_data, filters, group_wise_
 		data.append(row)
 
 	total_gross_profit = total_base_amount - total_buying_amount
-	currency_precision = cint(frappe.db.get_default("currency_precision")) or 3
+	currency_precision = cint(nts .db.get_default("currency_precision")) or 3
 	gross_profit_percent = (total_gross_profit / total_base_amount * 100.0) if total_base_amount else 0
 
 	total_row = {
@@ -250,7 +250,7 @@ def get_data_when_not_grouped_by_invoice(gross_profit_data, filters, group_wise_
 
 def get_columns(group_wise_columns, filters):
 	columns = []
-	column_map = frappe._dict(
+	column_map = nts ._dict(
 		{
 			"parent": {
 				"label": _("Sales Invoice"),
@@ -435,7 +435,7 @@ def get_columns(group_wise_columns, filters):
 
 
 def get_column_names():
-	return frappe._dict(
+	return nts ._dict(
 		{
 			"invoice_or_item": "sales_invoice",
 			"customer": "customer",
@@ -464,7 +464,7 @@ class GrossProfitGenerator:
 		self.sle = {}
 		self.data = []
 		self.average_buying_rate = {}
-		self.filters = frappe._dict(filters)
+		self.filters = nts ._dict(filters)
 		self.load_invoice_items()
 		self.get_delivery_notes()
 
@@ -480,8 +480,8 @@ class GrossProfitGenerator:
 		self.grouped = {}
 		self.grouped_data = []
 
-		self.currency_precision = cint(frappe.db.get_default("currency_precision")) or 3
-		self.float_precision = cint(frappe.db.get_default("float_precision")) or 2
+		self.currency_precision = cint(nts .db.get_default("currency_precision")) or 3
+		self.float_precision = cint(nts .db.get_default("float_precision")) or 2
 
 		grouped_by_invoice = True if self.filters.get("group_by") == "Invoice" else False
 
@@ -500,10 +500,10 @@ class GrossProfitGenerator:
 
 			product_bundles = []
 			if row.update_stock:
-				product_bundles = self.product_bundles.get(row.parenttype, {}).get(row.parent, frappe._dict())
+				product_bundles = self.product_bundles.get(row.parenttype, {}).get(row.parent, nts ._dict())
 			elif row.dn_detail:
 				product_bundles = self.product_bundles.get("Delivery Note", {}).get(
-					row.delivery_note, frappe._dict()
+					row.delivery_note, nts ._dict()
 				)
 				row.item_row = row.dn_detail
 				# Update warehouse and base_amount from 'Packed Item' List
@@ -650,7 +650,7 @@ class GrossProfitGenerator:
 		)
 
 	def get_returned_invoice_items(self):
-		returned_invoices = frappe.db.sql(
+		returned_invoices = nts .db.sql(
 			"""
 			select
 				si.name, si_item.item_code, si_item.stock_qty as qty, si_item.base_net_amount as base_amount, si.return_against
@@ -664,9 +664,9 @@ class GrossProfitGenerator:
 			as_dict=1,
 		)
 
-		self.returned_invoices = frappe._dict()
+		self.returned_invoices = nts ._dict()
 		for inv in returned_invoices:
-			self.returned_invoices.setdefault(inv.return_against, frappe._dict()).setdefault(
+			self.returned_invoices.setdefault(inv.return_against, nts ._dict()).setdefault(
 				inv.item_code, []
 			).append(inv)
 
@@ -749,12 +749,12 @@ class GrossProfitGenerator:
 		return flt(row.qty) * self.get_average_buying_rate(row, item_code)
 
 	def get_buying_amount_from_so_dn(self, sales_order, so_detail, item_code):
-		from frappe.query_builder.functions import Avg
+		from nts .query_builder.functions import Avg
 
-		delivery_note_item = frappe.qb.DocType("Delivery Note Item")
+		delivery_note_item = nts .qb.DocType("Delivery Note Item")
 
 		query = (
-			frappe.qb.from_(delivery_note_item)
+			nts .qb.from_(delivery_note_item)
 			.select(Avg(delivery_note_item.incoming_rate))
 			.where(delivery_note_item.docstatus == 1)
 			.where(delivery_note_item.item_code == item_code)
@@ -789,11 +789,11 @@ class GrossProfitGenerator:
 		return self.average_buying_rate[key]
 
 	def get_last_purchase_rate(self, item_code, row):
-		purchase_invoice = frappe.qb.DocType("Purchase Invoice")
-		purchase_invoice_item = frappe.qb.DocType("Purchase Invoice Item")
+		purchase_invoice = nts .qb.DocType("Purchase Invoice")
+		purchase_invoice_item = nts .qb.DocType("Purchase Invoice Item")
 
 		query = (
-			frappe.qb.from_(purchase_invoice_item)
+			nts .qb.from_(purchase_invoice_item)
 			.inner_join(purchase_invoice)
 			.on(purchase_invoice.name == purchase_invoice_item.parent)
 			.select(
@@ -812,7 +812,7 @@ class GrossProfitGenerator:
 		if row.cost_center:
 			query = query.where(purchase_invoice_item.cost_center == row.cost_center)
 
-		query = query.orderby(purchase_invoice.posting_date, order=frappe.qb.desc).limit(1)
+		query = query.orderby(purchase_invoice.posting_date, order=nts .qb.desc).limit(1)
 		last_purchase_rate = query.run()
 
 		return flt(last_purchase_rate[0][0]) if last_purchase_rate else 0
@@ -868,19 +868,19 @@ class GrossProfitGenerator:
 			conditions += " and `tabSales Invoice Item`.item_code = %(item_code)s"
 
 		if self.filters.get("cost_center"):
-			self.filters.cost_center = frappe.parse_json(self.filters.get("cost_center"))
+			self.filters.cost_center = nts .parse_json(self.filters.get("cost_center"))
 			self.filters.cost_center = get_cost_centers_with_children(self.filters.cost_center)
 			conditions += " and `tabSales Invoice Item`.cost_center in %(cost_center)s"
 
 		if self.filters.get("project"):
-			self.filters.project = frappe.parse_json(self.filters.get("project"))
+			self.filters.project = nts .parse_json(self.filters.get("project"))
 			conditions += " and `tabSales Invoice Item`.project in %(project)s"
 
 		accounting_dimensions = get_accounting_dimensions(as_list=False)
 		if accounting_dimensions:
 			for dimension in accounting_dimensions:
 				if self.filters.get(dimension.fieldname):
-					if frappe.get_cached_value("DocType", dimension.document_type, "is_tree"):
+					if nts .get_cached_value("DocType", dimension.document_type, "is_tree"):
 						self.filters[dimension.fieldname] = get_dimension_with_children(
 							dimension.document_type, self.filters.get(dimension.fieldname)
 						)
@@ -893,13 +893,13 @@ class GrossProfitGenerator:
 						)
 
 		if self.filters.get("warehouse"):
-			warehouse_details = frappe.db.get_value(
+			warehouse_details = nts .db.get_value(
 				"Warehouse", self.filters.get("warehouse"), ["lft", "rgt"], as_dict=1
 			)
 			if warehouse_details:
 				conditions += f" and `tabSales Invoice Item`.warehouse in (select name from `tabWarehouse` wh where wh.lft >= {warehouse_details.lft} and wh.rgt <= {warehouse_details.rgt} and warehouse = wh.name)"
 
-		self.si_list = frappe.db.sql(
+		self.si_list = nts .db.sql(
 			"""
 			select
 				`tabSales Invoice Item`.parenttype, `tabSales Invoice Item`.parent,
@@ -940,7 +940,7 @@ class GrossProfitGenerator:
 		)
 
 	def get_delivery_notes(self):
-		self.delivery_notes = frappe._dict({})
+		self.delivery_notes = nts ._dict({})
 		if self.si_list:
 			invoices = [x.parent for x in self.si_list]
 			dni = qb.DocType("Delivery Note Item")
@@ -991,7 +991,7 @@ class GrossProfitGenerator:
 
 	def get_invoice_row(self, row):
 		# header row format
-		return frappe._dict(
+		return nts ._dict(
 			{
 				"parent_invoice": "",
 				"indent": 0.0,
@@ -1020,7 +1020,7 @@ class GrossProfitGenerator:
 		)
 
 	def get_bundle_item_row(self, row, item):
-		return frappe._dict(
+		return nts ._dict(
 			{
 				"parent_invoice": row.item_code,
 				"parenttype": row.parenttype,
@@ -1087,7 +1087,7 @@ class GrossProfitGenerator:
 		pki = qb.DocType("Packed Item")
 
 		pki_query = (
-			frappe.qb.from_(pki)
+			nts .qb.from_(pki)
 			.select(
 				pki.parenttype,
 				pki.parent,
@@ -1104,12 +1104,12 @@ class GrossProfitGenerator:
 		)
 
 		for d in pki_query.run(as_dict=True):
-			self.product_bundles.setdefault(d.parenttype, frappe._dict()).setdefault(
-				d.parent, frappe._dict()
+			self.product_bundles.setdefault(d.parenttype, nts ._dict()).setdefault(
+				d.parent, nts ._dict()
 			).setdefault(d.parent_item, []).append(d)
 
 	def load_non_stock_items(self):
-		self.non_stock_items = frappe.db.sql_list(
+		self.non_stock_items = nts .db.sql_list(
 			"""select name from tabItem
 			where is_stock_item=0"""
 		)

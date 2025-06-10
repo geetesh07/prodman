@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.model.document import Document
-from frappe.query_builder import Case, Order
-from frappe.query_builder.functions import Coalesce, CombineDatetime, Sum
-from frappe.utils import flt
+import nts
+from nts.model.document import Document
+from nts.query_builder import Case, Order
+from nts.query_builder.functions import Coalesce, CombineDatetime, Sum
+from nts.utils import flt
 
 
 class Bin(Document):
@@ -16,7 +16,7 @@ class Bin(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		actual_qty: DF.Float
 		indented_qty: DF.Float
@@ -35,7 +35,7 @@ class Bin(Document):
 		warehouse: DF.Link
 	# end: auto-generated types
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def recalculate_qty(self):
 		from prodman.manufacturing.doctype.work_order.work_order import get_reserved_qty_for_production
 		from prodman.stock.stock_balance import (
@@ -59,7 +59,7 @@ class Bin(Document):
 
 	def before_save(self):
 		if self.get("__islocal") or not self.stock_uom:
-			self.stock_uom = frappe.get_cached_value("Item", self.item_code, "stock_uom")
+			self.stock_uom = nts.get_cached_value("Item", self.item_code, "stock_uom")
 		self.set_projected_qty()
 
 	def set_projected_qty(self):
@@ -143,8 +143,8 @@ class Bin(Document):
 	):
 		# reserved qty
 
-		subcontract_order = frappe.qb.DocType(subcontract_doctype)
-		supplied_item = frappe.qb.DocType(
+		subcontract_order = nts.qb.DocType(subcontract_doctype)
+		supplied_item = nts.qb.DocType(
 			"Purchase Order Item Supplied"
 			if subcontract_doctype == "Purchase Order"
 			else "Subcontracting Order Supplied Item"
@@ -167,16 +167,16 @@ class Bin(Document):
 		)
 
 		reserved_qty_for_sub_contract = (
-			frappe.qb.from_(subcontract_order)
+			nts.qb.from_(subcontract_order)
 			.from_(supplied_item)
 			.select(Sum(Coalesce(supplied_item.required_qty, 0)))
 			.where(conditions)
 		).run()[0][0] or 0.0
 
-		se = frappe.qb.DocType("Stock Entry")
-		se_item = frappe.qb.DocType("Stock Entry Detail")
+		se = nts.qb.DocType("Stock Entry")
+		se_item = nts.qb.DocType("Stock Entry Detail")
 
-		if frappe.db.field_exists("Stock Entry", "is_return"):
+		if nts.db.field_exists("Stock Entry", "is_return"):
 			qty_field = Case().when(se.is_return == 1, se_item.transfer_qty * -1).else_(se_item.transfer_qty)
 		else:
 			qty_field = se_item.transfer_qty
@@ -204,7 +204,7 @@ class Bin(Document):
 		)
 
 		materials_transferred = (
-			frappe.qb.from_(se)
+			nts.qb.from_(se)
 			.from_(se_item)
 			.from_(subcontract_order)
 			.select(Sum(qty_field))
@@ -235,11 +235,11 @@ class Bin(Document):
 
 
 def on_doctype_update():
-	frappe.db.add_unique("Bin", ["item_code", "warehouse"], constraint_name="unique_item_warehouse")
+	nts.db.add_unique("Bin", ["item_code", "warehouse"], constraint_name="unique_item_warehouse")
 
 
 def get_bin_details(bin_name):
-	return frappe.db.get_value(
+	return nts.db.get_value(
 		"Bin",
 		bin_name,
 		[
@@ -284,7 +284,7 @@ def update_qty(bin_name, args):
 		- flt(bin_details.reserved_qty_for_production_plan)
 	)
 
-	frappe.db.set_value(
+	nts.db.set_value(
 		"Bin",
 		bin_name,
 		{
@@ -300,10 +300,10 @@ def update_qty(bin_name, args):
 
 
 def get_actual_qty(item_code, warehouse):
-	sle = frappe.qb.DocType("Stock Ledger Entry")
+	sle = nts.qb.DocType("Stock Ledger Entry")
 
 	last_sle_qty = (
-		frappe.qb.from_(sle)
+		nts.qb.from_(sle)
 		.select(sle.qty_after_transaction)
 		.where((sle.item_code == item_code) & (sle.warehouse == warehouse) & (sle.is_cancelled == 0))
 		.orderby(sle.posting_datetime, order=Order.desc)

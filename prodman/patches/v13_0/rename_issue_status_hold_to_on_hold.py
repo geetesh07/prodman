@@ -1,18 +1,18 @@
-# Copyright (c) 2020, Frappe and Contributors
+# Copyright (c) 2020, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	if frappe.db.exists("DocType", "Issue"):
-		frappe.reload_doc("support", "doctype", "issue")
+	if nts.db.exists("DocType", "Issue"):
+		nts.reload_doc("support", "doctype", "issue")
 		rename_status()
 
 
 def rename_status():
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		UPDATE
 			`tabIssue`

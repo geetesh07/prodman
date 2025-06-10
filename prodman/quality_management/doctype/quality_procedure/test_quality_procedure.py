@@ -1,13 +1,13 @@
-# Copyright (c) 2018, Frappe and Contributors
+# Copyright (c) 2018, nts and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 from .quality_procedure import add_node
 
 
-class TestQualityProcedure(FrappeTestCase):
+class TestQualityProcedure(ntsTestCase):
 	def test_add_node(self):
 		procedure = create_procedure(
 			{
@@ -17,7 +17,7 @@ class TestQualityProcedure(FrappeTestCase):
 			}
 		)
 
-		frappe.local.form_dict = frappe._dict(
+		nts.local.form_dict = nts._dict(
 			doctype="Quality Procedure",
 			quality_procedure_name="Test Child 1",
 			parent_quality_procedure=procedure.name,
@@ -93,9 +93,9 @@ class TestQualityProcedure(FrappeTestCase):
 
 
 def create_procedure(kwargs=None):
-	kwargs = frappe._dict(kwargs or {})
+	kwargs = nts._dict(kwargs or {})
 
-	doc = frappe.new_doc("Quality Procedure")
+	doc = nts.new_doc("Quality Procedure")
 	doc.quality_procedure_name = kwargs.quality_procedure_name or "_Test Procedure"
 	doc.is_group = kwargs.is_group or 0
 

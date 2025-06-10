@@ -1,11 +1,11 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.query_builder import DocType
-from frappe.utils import cstr, flt
+import nts 
+from nts  import _
+from nts .query_builder import DocType
+from nts .utils import cstr, flt
 
 
 def execute(filters=None):
@@ -15,7 +15,7 @@ def execute(filters=None):
 
 def get_data(filters):
 	data = []
-	depreciation_accounts = frappe.db.sql_list(
+	depreciation_accounts = nts .db.sql_list(
 		""" select name from tabAccount
 		where ifnull(account_type, '') = 'Depreciation' """
 	)
@@ -33,7 +33,7 @@ def get_data(filters):
 		filters_data.append(["against_voucher", "=", filters.get("asset")])
 
 	if filters.get("asset_category"):
-		assets = frappe.db.sql_list(
+		assets = nts .db.sql_list(
 			"""select name from tabAsset
 			where asset_category = %s and docstatus=1""",
 			filters.get("asset_category"),
@@ -41,11 +41,11 @@ def get_data(filters):
 
 		filters_data.append(["against_voucher", "in", assets])
 
-	company_fb = frappe.get_cached_value("Company", filters.get("company"), "default_finance_book")
+	company_fb = nts .get_cached_value("Company", filters.get("company"), "default_finance_book")
 
 	if filters.get("include_default_book_assets") and company_fb:
 		if filters.get("finance_book") and cstr(filters.get("finance_book")) != cstr(company_fb):
-			frappe.throw(_("To use a different finance book, please uncheck 'Include Default FB Assets'"))
+			nts .throw(_("To use a different finance book, please uncheck 'Include Default FB Assets'"))
 		else:
 			finance_book = company_fb
 	elif filters.get("finance_book"):
@@ -58,7 +58,7 @@ def get_data(filters):
 	else:
 		or_filters_data = [["finance_book", "in", [""]], ["finance_book", "is", "not set"]]
 
-	gl_entries = frappe.get_all(
+	gl_entries = nts .get_all(
 		"GL Entry",
 		filters=filters_data,
 		or_filters=or_filters_data,
@@ -79,7 +79,7 @@ def get_data(filters):
 				AssetDepreciationSchedule = DocType("Asset Depreciation Schedule")
 				DepreciationSchedule = DocType("Depreciation Schedule")
 				query = (
-					frappe.qb.from_(DepreciationSchedule)
+					nts .qb.from_(DepreciationSchedule)
 					.join(AssetDepreciationSchedule)
 					.on(DepreciationSchedule.parent == AssetDepreciationSchedule.name)
 					.select(DepreciationSchedule.accumulated_depreciation_amount)
@@ -97,7 +97,7 @@ def get_data(filters):
 				asset_data.accumulated_depreciation_amount += d.debit
 			asset_data.opening_accumulated_depreciation = asset_data.accumulated_depreciation_amount - d.debit
 
-			row = frappe._dict(asset_data)
+			row = nts ._dict(asset_data)
 			row.update(
 				{
 					"depreciation_amount": d.debit,
@@ -128,7 +128,7 @@ def get_assets_details(assets):
 		"cost_center",
 	]
 
-	for d in frappe.get_all("Asset", fields=fields, filters={"name": ("in", assets)}):
+	for d in nts .get_all("Asset", fields=fields, filters={"name": ("in", assets)}):
 		assets_details.setdefault(d.asset, d)
 
 	return assets_details

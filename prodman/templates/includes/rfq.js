@@ -1,4 +1,4 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 window.doc={{ doc.as_json() }};
@@ -73,8 +73,8 @@ rfq = class rfq {
 
 	submit_rfq(){
 		$('.btn-sm').click(function(){
-			frappe.freeze();
-			frappe.call({
+			nts.freeze();
+			nts.call({
 				type: "POST",
 				method: "prodman.buying.doctype.request_for_quotation.request_for_quotation.create_supplier_quotation",
 				args: {
@@ -82,7 +82,7 @@ rfq = class rfq {
 				},
 				btn: this,
 				callback: function(r){
-					frappe.unfreeze();
+					nts.unfreeze();
 					if(r.message){
 						$('.btn-sm').hide()
 						window.location.href = "/supplier-quotations/" + encodeURIComponent(r.message);

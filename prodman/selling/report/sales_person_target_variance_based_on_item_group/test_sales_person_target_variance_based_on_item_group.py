@@ -1,6 +1,6 @@
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import flt, nowdate
+import nts
+from nts.tests.utils import ntsTestCase
+from nts.utils import flt, nowdate
 
 from prodman.accounts.utils import get_fiscal_year
 from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
@@ -9,12 +9,12 @@ from prodman.selling.report.sales_person_target_variance_based_on_item_group.sal
 )
 
 
-class TestSalesPersonTargetVarianceBasedOnItemGroup(FrappeTestCase):
+class TestSalesPersonTargetVarianceBasedOnItemGroup(ntsTestCase):
 	def setUp(self):
 		self.fiscal_year = get_fiscal_year(nowdate())[0]
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def test_achieved_target_and_variance(self):
 		# Create a Target Distribution
@@ -53,7 +53,7 @@ class TestSalesPersonTargetVarianceBasedOnItemGroup(FrappeTestCase):
 
 		# Check Achieved Target and Variance
 		result = execute(
-			frappe._dict(
+			nts._dict(
 				{
 					"fiscal_year": self.fiscal_year,
 					"doctype": "Sales Order",
@@ -62,7 +62,7 @@ class TestSalesPersonTargetVarianceBasedOnItemGroup(FrappeTestCase):
 				}
 			)
 		)[1]
-		row = frappe._dict(result[0])
+		row = nts._dict(result[0])
 		self.assertSequenceEqual(
 			[flt(value, 2) for value in (row.total_target, row.total_achieved, row.total_variance)],
 			[50, 10, -40],
@@ -70,7 +70,7 @@ class TestSalesPersonTargetVarianceBasedOnItemGroup(FrappeTestCase):
 
 
 def create_target_distribution(fiscal_year):
-	distribution = frappe.new_doc("Monthly Distribution")
+	distribution = nts.new_doc("Monthly Distribution")
 	distribution.distribution_id = "Target Report Distribution"
 	distribution.fiscal_year = fiscal_year
 	distribution.get_months()
@@ -80,7 +80,7 @@ def create_target_distribution(fiscal_year):
 def create_sales_target_doc(
 	sales_field_dt, sales_field_name, sales_field_value, fiscal_year, distribution_id
 ):
-	sales_target_doc = frappe.new_doc(sales_field_dt)
+	sales_target_doc = nts.new_doc(sales_field_dt)
 	sales_target_doc.set(sales_field_name, sales_field_value)
 	sales_target_doc.append(
 		"targets",

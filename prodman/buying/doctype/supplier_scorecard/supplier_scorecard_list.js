@@ -1,7 +1,7 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.listview_settings["Supplier Scorecard"] = {
+nts.listview_settings["Supplier Scorecard"] = {
 	add_fields: ["indicator_color", "status"],
 	get_indicator: function (doc) {
 		if (doc.indicator_color) {

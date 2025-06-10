@@ -1,16 +1,16 @@
-# Copyright (c) 2017, Frappe and Contributors
+# Copyright (c) 2017, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	if frappe.db.exists("Company", {"country": "India"}):
+	if nts.db.exists("Company", {"country": "India"}):
 		return
 
-	frappe.reload_doc("core", "doctype", "has_role")
-	frappe.db.sql(
+	nts.reload_doc("core", "doctype", "has_role")
+	nts.db.sql(
 		"""
 		delete from
 			`tabHas Role`

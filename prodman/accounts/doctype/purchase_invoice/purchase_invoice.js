@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.accounts");
+nts .provide("prodman.accounts");
 
 cur_frm.cscript.tax_table = "Purchase Taxes and Charges";
 
@@ -178,7 +178,7 @@ prodman.accounts.PurchaseInvoice = class PurchaseInvoice extends prodman.buying.
 			);
 
 			if (!this.frm.doc.is_return) {
-				frappe.db.get_single_value("Buying Settings", "maintain_same_rate").then((value) => {
+				nts .db.get_single_value("Buying Settings", "maintain_same_rate").then((value) => {
 					if (value) {
 						this.frm.doc.items.forEach((item) => {
 							this.frm.fields_dict.items.grid.update_docfield_property(
@@ -194,8 +194,8 @@ prodman.accounts.PurchaseInvoice = class PurchaseInvoice extends prodman.buying.
 		this.frm.toggle_reqd("supplier_warehouse", this.frm.doc.is_subcontracted);
 
 		if (doc.docstatus == 1 && !doc.inter_company_invoice_reference) {
-			frappe.model.with_doc("Supplier", me.frm.doc.supplier, function () {
-				var supplier = frappe.model.get_doc("Supplier", me.frm.doc.supplier);
+			nts .model.with_doc("Supplier", me.frm.doc.supplier, function () {
+				var supplier = nts .model.get_doc("Supplier", me.frm.doc.supplier);
 				var internal = supplier.is_internal_supplier;
 				var disabled = supplier.disabled;
 				if (internal == 1 && disabled == 0) {
@@ -216,7 +216,7 @@ prodman.accounts.PurchaseInvoice = class PurchaseInvoice extends prodman.buying.
 
 	unblock_invoice() {
 		const me = this;
-		frappe.call({
+		nts .call({
 			method: "prodman.accounts.doctype.purchase_invoice.purchase_invoice.unblock_invoice",
 			args: { name: me.frm.doc.name },
 			callback: (r) => me.frm.reload_doc(),
@@ -232,9 +232,9 @@ prodman.accounts.PurchaseInvoice = class PurchaseInvoice extends prodman.buying.
 	}
 
 	can_change_release_date(date) {
-		const diff = frappe.datetime.get_diff(date, frappe.datetime.nowdate());
+		const diff = nts .datetime.get_diff(date, nts .datetime.nowdate());
 		if (diff < 0) {
-			frappe.throw(__("New release date should be in the future"));
+			nts .throw(__("New release date should be in the future"));
 			return false;
 		} else {
 			return true;
@@ -263,14 +263,14 @@ prodman.accounts.PurchaseInvoice = class PurchaseInvoice extends prodman.buying.
 			},
 		];
 
-		this.dialog = new frappe.ui.Dialog({
+		this.dialog = new nts .ui.Dialog({
 			title: title,
 			fields: fields,
 		});
 
 		this.dialog.set_primary_action(__("Save"), function () {
 			const dialog_data = me.dialog.get_values();
-			frappe.call({
+			nts .call({
 				method: "prodman.accounts.doctype.purchase_invoice.purchase_invoice.block_invoice",
 				args: {
 					name: me.frm.doc.name,
@@ -299,7 +299,7 @@ prodman.accounts.PurchaseInvoice = class PurchaseInvoice extends prodman.buying.
 			},
 		];
 
-		this.dialog = new frappe.ui.Dialog({
+		this.dialog = new nts .ui.Dialog({
 			title: title,
 			fields: fields,
 		});
@@ -317,7 +317,7 @@ prodman.accounts.PurchaseInvoice = class PurchaseInvoice extends prodman.buying.
 	}
 
 	set_release_date(data) {
-		return frappe.call({
+		return nts .call({
 			method: "prodman.accounts.doctype.purchase_invoice.purchase_invoice.change_release_date",
 			args: data,
 			callback: (r) => this.frm.reload_doc(),
@@ -392,7 +392,7 @@ prodman.accounts.PurchaseInvoice = class PurchaseInvoice extends prodman.buying.
 		var me = this;
 		if (this.frm.doc.credit_to) {
 			me.frm.call({
-				method: "frappe.client.get_value",
+				method: "nts .client.get_value",
 				args: {
 					doctype: "Account",
 					fieldname: "account_currency",
@@ -409,7 +409,7 @@ prodman.accounts.PurchaseInvoice = class PurchaseInvoice extends prodman.buying.
 	}
 
 	make_inter_company_invoice(frm) {
-		frappe.model.open_mapped_doc({
+		nts .model.open_mapped_doc({
 			method: "prodman.accounts.doctype.purchase_invoice.purchase_invoice.make_inter_company_sales_invoice",
 			frm: frm,
 		});
@@ -423,7 +423,7 @@ prodman.accounts.PurchaseInvoice = class PurchaseInvoice extends prodman.buying.
 			this.frm.set_value("payment_schedule", []);
 			if (!this.frm.doc.company) {
 				this.frm.set_value("is_paid", 0);
-				frappe.msgprint(__("Please specify Company to proceed"));
+				nts .msgprint(__("Please specify Company to proceed"));
 			}
 		} else {
 			this.frm.set_value("paid_amount", 0);
@@ -450,7 +450,7 @@ prodman.accounts.PurchaseInvoice = class PurchaseInvoice extends prodman.buying.
 	}
 
 	items_add(doc, cdt, cdn) {
-		var row = frappe.get_doc(cdt, cdn);
+		var row = nts .get_doc(cdt, cdn);
 		this.frm.script_manager.copy_from_first_row("items", row, [
 			"expense_account",
 			"discount_account",
@@ -463,12 +463,12 @@ prodman.accounts.PurchaseInvoice = class PurchaseInvoice extends prodman.buying.
 		super.on_submit();
 
 		$.each(this.frm.doc["items"] || [], function (i, row) {
-			if (row.purchase_receipt) frappe.model.clear_doc("Purchase Receipt", row.purchase_receipt);
+			if (row.purchase_receipt) nts .model.clear_doc("Purchase Receipt", row.purchase_receipt);
 		});
 	}
 
 	make_debit_note() {
-		frappe.model.open_mapped_doc({
+		nts .model.open_mapped_doc({
 			method: "prodman.accounts.doctype.purchase_invoice.purchase_invoice.make_debit_note",
 			frm: cur_frm,
 		});
@@ -486,7 +486,7 @@ function hide_fields(doc) {
 		hide_field(parent_fields);
 	} else {
 		for (var i in parent_fields) {
-			var docfield = frappe.meta.docfield_map[doc.doctype][parent_fields[i]];
+			var docfield = nts .meta.docfield_map[doc.doctype][parent_fields[i]];
 			if (!docfield.hidden) unhide_field(parent_fields[i]);
 		}
 	}
@@ -582,7 +582,7 @@ cur_frm.fields_dict["items"].grid.get_field("project").get_query = function (doc
 	};
 };
 
-frappe.ui.form.on("Purchase Invoice", {
+nts .ui.form.on("Purchase Invoice", {
 	setup: function (frm) {
 		frm.custom_make_buttons = {
 			"Purchase Invoice": "Return / Debit Note",
@@ -649,11 +649,11 @@ frappe.ui.form.on("Purchase Invoice", {
 			frm.add_custom_button(
 				__("Purchase Receipt"),
 				() => {
-					frappe.route_options = {
+					nts .route_options = {
 						purchase_invoice: frm.doc.name,
 					};
 
-					frappe.set_route("List", "Purchase Receipt", "List");
+					nts .set_route("List", "Purchase Receipt", "List");
 				},
 				__("View")
 			);
@@ -671,7 +671,7 @@ frappe.ui.form.on("Purchase Invoice", {
 	},
 
 	make_lcv(frm) {
-		frappe.call({
+		nts .call({
 			method: "prodman.stock.doctype.purchase_receipt.purchase_receipt.make_lcv",
 			args: {
 				doctype: frm.doc.doctype,
@@ -679,8 +679,8 @@ frappe.ui.form.on("Purchase Invoice", {
 			},
 			callback: (r) => {
 				if (r.message) {
-					var doc = frappe.model.sync(r.message);
-					frappe.set_route("Form", doc[0].doctype, doc[0].name);
+					var doc = nts .model.sync(r.message);
+					nts .set_route("Form", doc[0].doctype, doc[0].name);
 				}
 			},
 		});
@@ -719,7 +719,7 @@ frappe.ui.form.on("Purchase Invoice", {
 	},
 
 	make_purchase_receipt: function (frm) {
-		frappe.model.open_mapped_doc({
+		nts .model.open_mapped_doc({
 			method: "prodman.accounts.doctype.purchase_invoice.purchase_invoice.make_purchase_receipt",
 			frm: frm,
 			freeze_message: __("Creating Purchase Receipt ..."),
@@ -730,7 +730,7 @@ frappe.ui.form.on("Purchase Invoice", {
 		prodman.accounts.dimensions.update_dimension(frm, frm.doctype);
 
 		if (frm.doc.company) {
-			frappe.call({
+			nts .call({
 				method: "prodman.accounts.party.get_party_account",
 				args: {
 					party_type: "Supplier",

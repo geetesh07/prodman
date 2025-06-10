@@ -1,9 +1,9 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2020, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe.model.document import Document
+import nts 
+from nts .model.document import Document
 
 
 class DunningType(Document):
@@ -13,7 +13,7 @@ class DunningType(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.dunning_letter_text.dunning_letter_text import DunningLetterText
 
@@ -28,5 +28,5 @@ class DunningType(Document):
 	# end: auto-generated types
 
 	def autoname(self):
-		company_abbr = frappe.get_value("Company", self.company, "abbr")
+		company_abbr = nts .get_value("Company", self.company, "abbr")
 		self.name = f"{self.dunning_type} - {company_abbr}"

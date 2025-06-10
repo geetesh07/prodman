@@ -15,14 +15,14 @@
 						{% if (notes[i].added_by && notes[i].added_on) %}
 						<div class="row">
 							<div class="col-xs-2">
-								{{ frappe.avatar(notes[i].added_by) }}
+								{{ nts.avatar(notes[i].added_by) }}
 							</div>
 							<div class="col-xs-10">
 								<div class="mr-2 title font-weight-bold ellipsis" title="{{ strip_html(notes[i].added_by) }}">
 									{{ strip_html(notes[i].added_by) }}
 								</div>
 								<div class="time small text-muted">
-									{{ frappe.datetime.global_date_format(notes[i].added_on) }}
+									{{ nts.datetime.global_date_format(notes[i].added_on) }}
 								</div>
 							</div>
 						</div>

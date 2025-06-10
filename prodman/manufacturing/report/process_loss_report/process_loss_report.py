@@ -1,31 +1,31 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import Sum
+import nts
+from nts import _
+from nts.query_builder.functions import Sum
 
-Filters = frappe._dict
-Row = frappe._dict
+Filters = nts._dict
+Row = nts._dict
 Data = list[Row]
 Columns = list[dict[str, str]]
 QueryArgs = dict[str, str]
 
 
 def execute(filters: Filters) -> tuple[Columns, Data]:
-	filters = frappe._dict(filters or {})
+	filters = nts._dict(filters or {})
 	columns = get_columns()
 	data = get_data(filters)
 	return columns, data
 
 
 def get_data(filters: Filters) -> Data:
-	wo = frappe.qb.DocType("Work Order")
-	se = frappe.qb.DocType("Stock Entry")
+	wo = nts.qb.DocType("Work Order")
+	se = nts.qb.DocType("Stock Entry")
 
 	query = (
-		frappe.qb.from_(wo)
+		nts.qb.from_(wo)
 		.inner_join(se)
 		.on(wo.name == se.work_order)
 		.select(

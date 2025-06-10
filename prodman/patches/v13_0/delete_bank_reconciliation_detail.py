@@ -1,12 +1,12 @@
-# Copyright (c) 2019, Frappe and Contributors
+# Copyright (c) 2019, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	if frappe.db.exists("DocType", "Bank Reconciliation Detail") and frappe.db.exists(
+	if nts.db.exists("DocType", "Bank Reconciliation Detail") and nts.db.exists(
 		"DocType", "Bank Clearance Detail"
 	):
-		frappe.delete_doc("DocType", "Bank Reconciliation Detail", force=1)
+		nts.delete_doc("DocType", "Bank Reconciliation Detail", force=1)

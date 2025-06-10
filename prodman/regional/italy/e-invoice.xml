@@ -1,7 +1,7 @@
 {%- macro format_float(value, precision=2) -%}
-{%- if frappe.utils.cint(precision) == 3 %}
+{%- if nts.utils.cint(precision) == 3 %}
 {{ "%.3f" % value|abs }}
-{%- elif frappe.utils.cint(precision) == 4 -%}
+{%- elif nts.utils.cint(precision) == 4 -%}
 {{ "%.4f" % value|abs }}
 {%- else -%}
 {{ "%.2f" % value|abs }}
@@ -164,7 +164,7 @@
         {%- if row.delivery_note %}
           <DatiDDT>
               <NumeroDDT>{{ row.delivery_note }}</NumeroDDT>
-              <DataDDT>{{ frappe.db.get_value('Delivery Note', row.delivery_note, 'posting_date') }}</DataDDT>
+              <DataDDT>{{ nts.db.get_value('Delivery Note', row.delivery_note, 'posting_date') }}</DataDDT>
               <RiferimentoNumeroLinea>{{ row.idx }}</RiferimentoNumeroLinea>
           </DatiDDT>
         {%- endif %}

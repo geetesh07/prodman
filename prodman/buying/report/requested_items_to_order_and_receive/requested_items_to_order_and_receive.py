@@ -1,13 +1,13 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import copy
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import Coalesce, Sum
-from frappe.utils import cint, date_diff, flt, getdate
+import nts
+from nts import _
+from nts.query_builder.functions import Coalesce, Sum
+from nts.utils import cint, date_diff, flt, getdate
 
 
 def execute(filters=None):
@@ -29,17 +29,17 @@ def validate_filters(filters):
 	from_date, to_date = filters.get("from_date"), filters.get("to_date")
 
 	if not from_date and to_date:
-		frappe.throw(_("From and To Dates are required."))
+		nts.throw(_("From and To Dates are required."))
 	elif date_diff(to_date, from_date) < 0:
-		frappe.throw(_("To Date cannot be before From Date."))
+		nts.throw(_("To Date cannot be before From Date."))
 
 
 def get_data(filters):
-	mr = frappe.qb.DocType("Material Request")
-	mr_item = frappe.qb.DocType("Material Request Item")
+	mr = nts.qb.DocType("Material Request")
+	mr_item = nts.qb.DocType("Material Request Item")
 
 	query = (
-		frappe.qb.from_(mr)
+		nts.qb.from_(mr)
 		.join(mr_item)
 		.on(mr_item.parent == mr.name)
 		.select(
@@ -104,7 +104,7 @@ def update_qty_columns(row_to_update, data_row):
 def prepare_data(data, filters):
 	"""Prepare consolidated Report data and Chart data"""
 	material_request_map, item_qty_map = {}, {}
-	precision = cint(frappe.db.get_default("float_precision")) or 2
+	precision = cint(nts.db.get_default("float_precision")) or 2
 
 	for row in data:
 		# item wise map for charts

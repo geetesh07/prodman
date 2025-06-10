@@ -1,8 +1,8 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 from prodman.controllers.queries import item_query
 
@@ -10,7 +10,7 @@ test_dependencies = ["Item", "Customer", "Supplier"]
 
 
 def create_party_specific_item(**args):
-	psi = frappe.new_doc("Party Specific Item")
+	psi = nts.new_doc("Party Specific Item")
 	psi.party_type = args.get("party_type")
 	psi.party = args.get("party")
 	psi.restrict_based_on = args.get("restrict_based_on")
@@ -18,11 +18,11 @@ def create_party_specific_item(**args):
 	psi.insert()
 
 
-class TestPartySpecificItem(FrappeTestCase):
+class TestPartySpecificItem(ntsTestCase):
 	def setUp(self):
-		self.customer = frappe.get_last_doc("Customer")
-		self.supplier = frappe.get_last_doc("Supplier")
-		self.item = frappe.get_last_doc("Item")
+		self.customer = nts.get_last_doc("Customer")
+		self.supplier = nts.get_last_doc("Supplier")
+		self.item = nts.get_last_doc("Item")
 
 	def test_item_query_for_customer(self):
 		create_party_specific_item(

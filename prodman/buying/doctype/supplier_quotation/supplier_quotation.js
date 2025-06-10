@@ -1,4 +1,4 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 prodman.buying.setup_buying_controller();
@@ -24,7 +24,7 @@ prodman.buying.SupplierQuotationController = class SupplierQuotationController e
 		super.refresh();
 
 		if (this.frm.doc.__islocal && !this.frm.doc.valid_till) {
-			this.frm.set_value("valid_till", frappe.datetime.add_months(this.frm.doc.transaction_date, 1));
+			this.frm.set_value("valid_till", nts.datetime.add_months(this.frm.doc.transaction_date, 1));
 		}
 		if (this.frm.doc.docstatus === 1) {
 			cur_frm.add_custom_button(__("Purchase Order"), this.make_purchase_order, __("Create"));
@@ -69,7 +69,7 @@ prodman.buying.SupplierQuotationController = class SupplierQuotationController e
 				__("Request for Quotation"),
 				function () {
 					if (!me.frm.doc.supplier) {
-						frappe.throw({ message: __("Please select a Supplier"), title: __("Mandatory") });
+						nts.throw({ message: __("Please select a Supplier"), title: __("Mandatory") });
 					}
 					prodman.utils.map_current_doc({
 						method: "prodman.buying.doctype.request_for_quotation.request_for_quotation.make_supplier_quotation_from_rfq",
@@ -92,13 +92,13 @@ prodman.buying.SupplierQuotationController = class SupplierQuotationController e
 	}
 
 	make_purchase_order() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.buying.doctype.supplier_quotation.supplier_quotation.make_purchase_order",
 			frm: cur_frm,
 		});
 	}
 	make_quotation() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.buying.doctype.supplier_quotation.supplier_quotation.make_quotation",
 			frm: cur_frm,
 		});

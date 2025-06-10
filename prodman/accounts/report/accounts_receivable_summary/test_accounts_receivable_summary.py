@@ -1,6 +1,6 @@
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import today
+import nts 
+from nts .tests.utils import nts TestCase, change_settings
+from nts .utils import today
 
 from prodman.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
@@ -8,7 +8,7 @@ from prodman.accounts.report.accounts_receivable_summary.accounts_receivable_sum
 from prodman.accounts.test.accounts_mixin import AccountsTestMixin
 
 
-class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
+class TestAccountsReceivable(AccountsTestMixin, nts TestCase):
 	def setUp(self):
 		self.maxDiff = None
 		self.create_company()
@@ -17,7 +17,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 		self.clear_old_entries()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def test_01_receivable_summary_output(self):
 		"""
@@ -42,7 +42,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 			price_list_rate=200,
 		)
 
-		customer_group, customer_territory = frappe.db.get_all(
+		customer_group, customer_territory = nts .db.get_all(
 			"Customer",
 			filters={"name": self.customer},
 			fields=["customer_group", "territory"],
@@ -138,7 +138,7 @@ class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 		pe.references[0].allocated_amount = 150
 		pe.save().submit()
 
-		customer_group, customer_territory = frappe.db.get_all(
+		customer_group, customer_territory = nts .db.get_all(
 			"Customer",
 			filters={"name": self.customer},
 			fields=["customer_group", "territory"],

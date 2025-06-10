@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("assets", "doctype", "Location")
+	nts.reload_doc("assets", "doctype", "Location")
 	for dt in (
 		"Account",
 		"Cost Center",
@@ -18,5 +18,5 @@ def execute():
 		"Sales Person",
 		"Territory",
 	):
-		frappe.reload_doctype(dt)
-		frappe.get_doc("DocType", dt).run_module_method("on_doctype_update")
+		nts.reload_doctype(dt)
+		nts.get_doc("DocType", dt).run_module_method("on_doctype_update")

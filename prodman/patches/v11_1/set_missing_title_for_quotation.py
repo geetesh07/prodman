@@ -1,10 +1,10 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doctype("Quotation")
+	nts.reload_doctype("Quotation")
 	# update customer_name from Customer document if quotation_to is set to Customer
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		update tabQuotation, tabCustomer
 		set
@@ -19,7 +19,7 @@ def execute():
 
 	# update customer_name from Lead document if quotation_to is set to Lead
 
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		update tabQuotation, tabLead
 		set

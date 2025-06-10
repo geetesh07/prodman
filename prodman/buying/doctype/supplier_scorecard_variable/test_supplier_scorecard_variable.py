@@ -1,31 +1,31 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2017, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 from prodman.buying.doctype.supplier_scorecard_variable.supplier_scorecard_variable import (
 	VariablePathNotFound,
 )
 
 
-class TestSupplierScorecardVariable(FrappeTestCase):
+class TestSupplierScorecardVariable(ntsTestCase):
 	def test_variable_exist(self):
 		for d in test_existing_variables:
-			my_doc = frappe.get_doc("Supplier Scorecard Variable", d.get("name"))
+			my_doc = nts.get_doc("Supplier Scorecard Variable", d.get("name"))
 			self.assertEqual(my_doc.param_name, d.get("param_name"))
 			self.assertEqual(my_doc.variable_label, d.get("variable_label"))
 			self.assertEqual(my_doc.path, d.get("path"))
 
 	def test_path_exists(self):
 		for d in test_good_variables:
-			if frappe.db.exists(d):
-				frappe.delete_doc(d.get("doctype"), d.get("name"))
-			frappe.get_doc(d).insert()
+			if nts.db.exists(d):
+				nts.delete_doc(d.get("doctype"), d.get("name"))
+			nts.get_doc(d).insert()
 
 		for d in test_bad_variables:
-			self.assertRaises(VariablePathNotFound, frappe.get_doc(d).insert)
+			self.assertRaises(VariablePathNotFound, nts.get_doc(d).insert)
 
 
 test_existing_variables = [

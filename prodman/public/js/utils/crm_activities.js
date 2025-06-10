@@ -13,8 +13,8 @@ prodman.utils.CRMActivities = class CRMActivities {
 			this.all_activities_wrapper.empty();
 			$(cur_form_footer).appendTo(this.all_activities_wrapper);
 
-			// remove frappe-control class to avoid absolute position for action-btn
-			$(this.all_activities_wrapper).removeClass("frappe-control");
+			// remove nts-control class to avoid absolute position for action-btn
+			$(this.all_activities_wrapper).removeClass("nts-control");
 			// hide new event button
 			$(".timeline-actions").find(".btn-default").hide();
 			// hide new comment box
@@ -24,7 +24,7 @@ prodman.utils.CRMActivities = class CRMActivities {
 		}
 
 		// open activities
-		frappe.call({
+		nts.call({
 			method: "prodman.crm.utils.get_open_activities",
 			args: {
 				ref_doctype: this.frm.doc.doctype,
@@ -32,7 +32,7 @@ prodman.utils.CRMActivities = class CRMActivities {
 			},
 			callback: (r) => {
 				if (!r.exc) {
-					var activities_html = frappe.render_template("crm_activities", {
+					var activities_html = nts.render_template("crm_activities", {
 						tasks: r.message.tasks,
 						events: r.message.events,
 					});
@@ -66,7 +66,7 @@ prodman.utils.CRMActivities = class CRMActivities {
 				frm: me.frm,
 				title: __("New Task"),
 			};
-			let composer = new frappe.views.InteractionComposer(args);
+			let composer = new nts.views.InteractionComposer(args);
 			composer.dialog.get_field("interaction_type").set_value("ToDo");
 			// hide column having interaction type field
 			$(composer.dialog.get_field("interaction_type").wrapper).closest(".form-column").hide();
@@ -84,7 +84,7 @@ prodman.utils.CRMActivities = class CRMActivities {
 				frm: me.frm,
 				title: __("New Event"),
 			};
-			let composer = new frappe.views.InteractionComposer(args);
+			let composer = new nts.views.InteractionComposer(args);
 			composer.dialog.get_field("interaction_type").set_value("Event");
 			$(composer.dialog.get_field("interaction_type").wrapper).hide();
 		};
@@ -95,7 +95,7 @@ prodman.utils.CRMActivities = class CRMActivities {
 		let completed = $(input_field).prop("checked") ? 1 : 0;
 		let docname = $(input_field).attr("name");
 		if (completed) {
-			await frappe.db.set_value(doctype, docname, "status", "Closed");
+			await nts.db.set_value(doctype, docname, "status", "Closed");
 			this.refresh();
 		}
 	}
@@ -115,7 +115,7 @@ prodman.utils.CRMNotes = class CRMNotes {
 			return new Date(b.added_on) - new Date(a.added_on);
 		});
 
-		let notes_html = frappe.render_template("crm_notes", {
+		let notes_html = nts.render_template("crm_notes", {
 			notes: notes,
 		});
 		$(notes_html).appendTo(this.notes_wrapper);
@@ -138,7 +138,7 @@ prodman.utils.CRMNotes = class CRMNotes {
 	add_note() {
 		let me = this;
 		let _add_note = () => {
-			var d = new frappe.ui.Dialog({
+			var d = new nts.ui.Dialog({
 				title: __("Add a Note"),
 				fields: [
 					{
@@ -151,7 +151,7 @@ prodman.utils.CRMNotes = class CRMNotes {
 				],
 				primary_action: function () {
 					var data = d.get_values();
-					frappe.call({
+					nts.call({
 						method: "add_note",
 						doc: me.frm.doc,
 						args: {
@@ -180,7 +180,7 @@ prodman.utils.CRMNotes = class CRMNotes {
 		let row_id = row.attr("name");
 		let row_content = $(row).find(".content").html();
 		if (row_content) {
-			var d = new frappe.ui.Dialog({
+			var d = new nts.ui.Dialog({
 				title: __("Edit Note"),
 				fields: [
 					{
@@ -192,7 +192,7 @@ prodman.utils.CRMNotes = class CRMNotes {
 				],
 				primary_action: function () {
 					var data = d.get_values();
-					frappe.call({
+					nts.call({
 						method: "edit_note",
 						doc: me.frm.doc,
 						args: {
@@ -218,7 +218,7 @@ prodman.utils.CRMNotes = class CRMNotes {
 	delete_note(delete_btn) {
 		var me = this;
 		let row_id = $(delete_btn).closest(".comment-content").attr("name");
-		frappe.call({
+		nts.call({
 			method: "delete_note",
 			doc: me.frm.doc,
 			args: {

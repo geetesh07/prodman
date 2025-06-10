@@ -1,8 +1,8 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
 from prodman.stock.doctype.item.test_item import make_item
@@ -11,12 +11,12 @@ from prodman.stock.report.item_shortage_report.item_shortage_report import (
 )
 
 
-class TestItemShortageReport(FrappeTestCase):
+class TestItemShortageReport(ntsTestCase):
 	def test_item_shortage_report(self):
 		item = make_item().name
 		so = make_sales_order(item_code=item)
 
-		reserved_qty, projected_qty = frappe.db.get_value(
+		reserved_qty, projected_qty = nts.db.get_value(
 			"Bin",
 			{
 				"item_code": item,

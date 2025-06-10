@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import flt, time_diff_in_hours
+import nts
+from nts import _
+from nts.utils import flt, time_diff_in_hours
 
 
 def get_columns():
@@ -44,13 +44,13 @@ def get_columns():
 def get_data(filters):
 	data = []
 	if filters.from_date > filters.to_date:
-		frappe.msgprint(_("From Date can not be greater than To Date"))
+		nts.msgprint(_("From Date can not be greater than To Date"))
 		return data
 
 	timesheets = get_timesheets(filters)
 
-	filters.from_date = frappe.utils.get_datetime(filters.from_date)
-	filters.to_date = frappe.utils.add_to_date(frappe.utils.get_datetime(filters.to_date), days=1, seconds=-1)
+	filters.from_date = nts.utils.get_datetime(filters.from_date)
+	filters.to_date = nts.utils.add_to_date(nts.utils.get_datetime(filters.to_date), days=1, seconds=-1)
 
 	timesheet_details = get_timesheet_details(filters, timesheets.keys())
 
@@ -104,10 +104,10 @@ def get_timesheets(filters):
 	if "employee" in filters:
 		record_filters.append(["employee", "=", filters.employee])
 
-	timesheets = frappe.get_all(
+	timesheets = nts.get_all(
 		"Timesheet", filters=record_filters, fields=["employee", "employee_name", "name"]
 	)
-	timesheet_map = frappe._dict()
+	timesheet_map = nts._dict()
 	for d in timesheets:
 		timesheet_map.setdefault(d.name, d)
 
@@ -120,7 +120,7 @@ def get_timesheet_details(filters, timesheet_list):
 	if "project" in filters:
 		timesheet_details_filter["project"] = filters.project
 
-	timesheet_details = frappe.get_all(
+	timesheet_details = nts.get_all(
 		"Timesheet Detail",
 		filters=timesheet_details_filter,
 		fields=[
@@ -134,7 +134,7 @@ def get_timesheet_details(filters, timesheet_list):
 		],
 	)
 
-	timesheet_details_map = frappe._dict()
+	timesheet_details_map = nts._dict()
 	for d in timesheet_details:
 		timesheet_details_map.setdefault(d.parent, []).append(d)
 
@@ -142,7 +142,7 @@ def get_timesheet_details(filters, timesheet_list):
 
 
 def get_billable_and_total_duration(activity, start_time, end_time):
-	precision = frappe.get_precision("Timesheet Detail", "hours")
+	precision = nts.get_precision("Timesheet Detail", "hours")
 	activity_duration = time_diff_in_hours(end_time, start_time)
 	billing_duration = 0.0
 	if activity.is_billable:

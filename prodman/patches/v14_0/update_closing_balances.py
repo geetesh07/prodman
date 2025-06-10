@@ -1,9 +1,9 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts Technologies Pvt. Ltd. and Contributors
 # License: MIT. See LICENSE
 
 import itertools
 
-import frappe
+import nts
 
 from prodman.accounts.doctype.account_closing_balance.account_closing_balance import (
 	make_closing_entries,
@@ -15,7 +15,7 @@ from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
 
 def execute():
 	# clear balances, they will be recalculated
-	frappe.db.truncate("Account Closing Balance")
+	nts.db.truncate("Account Closing Balance")
 
 	pcv_list = get_period_closing_vouchers()
 
@@ -49,7 +49,7 @@ def process_grouped_pcvs(pcvs, gl_entries):
 
 		# update voucher number
 		gle_to_update = [entry.name for entry in closing_account_entries + pl_account_entries]
-		frappe.db.set_value(
+		nts.db.set_value(
 			"GL Entry",
 			{
 				"name": ("in", gle_to_update),
@@ -61,7 +61,7 @@ def process_grouped_pcvs(pcvs, gl_entries):
 		)
 
 		# mark as cancelled
-		frappe.db.set_value(
+		nts.db.set_value(
 			"Period Closing Voucher",
 			{"name": ("in", to_cancel)},
 			"docstatus",
@@ -69,7 +69,7 @@ def process_grouped_pcvs(pcvs, gl_entries):
 			update_modified=False,
 		)
 
-	pcv_doc = frappe.get_doc("Period Closing Voucher", first_pcv.name)
+	pcv_doc = nts.get_doc("Period Closing Voucher", first_pcv.name)
 	pcv_doc.pl_accounts_reverse_gle = pl_account_entries
 	pcv_doc.closing_account_gle = closing_account_entries
 	closing_entries = pcv_doc.get_account_closing_balances()
@@ -77,7 +77,7 @@ def process_grouped_pcvs(pcvs, gl_entries):
 
 
 def get_period_closing_vouchers():
-	return frappe.db.get_all(
+	return nts.db.get_all(
 		"Period Closing Voucher",
 		fields=["name", "closing_account_head", "period_start_date", "period_end_date", "company"],
 		filters={"docstatus": 1},
@@ -86,7 +86,7 @@ def get_period_closing_vouchers():
 
 
 def get_gl_entries(pcv_list):
-	gl_entries = frappe.get_all(
+	gl_entries = nts.get_all(
 		"GL Entry",
 		filters={"voucher_no": ("in", [pcv.name for pcv in pcv_list]), "is_cancelled": 0},
 		fields=get_gle_fields(),

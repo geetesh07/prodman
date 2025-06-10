@@ -1,10 +1,10 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils.data import (
+import nts 
+from nts .tests.utils import nts TestCase, change_settings
+from nts .utils.data import (
 	add_days,
 	add_months,
 	add_to_date,
@@ -21,15 +21,15 @@ from prodman.accounts.doctype.subscription.subscription import get_prorata_facto
 test_dependencies = ("UOM", "Item Group", "Item")
 
 
-class TestSubscription(FrappeTestCase):
+class TestSubscription(nts TestCase):
 	def setUp(self):
 		make_plans()
 		create_parties()
 		reset_settings()
-		frappe.db.set_single_value("Accounts Settings", "acc_frozen_upto", None)
+		nts .db.set_single_value("Accounts Settings", "acc_frozen_upto", None)
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def test_create_subscription_with_trial_with_correct_period(self):
 		subscription = create_subscription(
@@ -61,7 +61,7 @@ class TestSubscription(FrappeTestCase):
 		subscription = create_subscription(
 			trial_period_start=add_days(nowdate(), 30), trial_period_end=nowdate(), do_not_save=True
 		)
-		self.assertRaises(frappe.ValidationError, subscription.save)
+		self.assertRaises(nts .ValidationError, subscription.save)
 
 	def test_invoice_is_generated_at_end_of_billing_period(self):
 		subscription = create_subscription(start_date="2018-01-01")
@@ -99,7 +99,7 @@ class TestSubscription(FrappeTestCase):
 		self.assertEqual(len(subscription.invoices), 1)
 
 	def test_subscription_cancel_after_grace_period(self):
-		settings = frappe.get_single("Subscription Settings")
+		settings = nts .get_single("Subscription Settings")
 		settings.cancel_after_grace = 1
 		settings.save()
 
@@ -112,7 +112,7 @@ class TestSubscription(FrappeTestCase):
 		self.assertEqual(subscription.status, "Cancelled")
 
 	def test_subscription_unpaid_after_grace_period(self):
-		settings = frappe.get_single("Subscription Settings")
+		settings = nts .get_single("Subscription Settings")
 		default_grace_period_action = settings.cancel_after_grace
 		settings.cancel_after_grace = 0
 		settings.save()
@@ -135,7 +135,7 @@ class TestSubscription(FrappeTestCase):
 		self.assertEqual(subscription.status, "Active")
 
 	def test_subscription_is_past_due_doesnt_change_within_grace_period(self):
-		settings = frappe.get_single("Subscription Settings")
+		settings = nts .get_single("Subscription Settings")
 		grace_period = settings.grace_period
 		settings.grace_period = 1000
 		settings.save()
@@ -185,7 +185,7 @@ class TestSubscription(FrappeTestCase):
 		self.assertEqual(subscription.status, "Cancelled")
 
 	def test_subscription_cancellation_invoices(self):
-		settings = frappe.get_single("Subscription Settings")
+		settings = nts .get_single("Subscription Settings")
 		to_prorate = settings.prorate
 		settings.prorate = 1
 		settings.save()
@@ -221,7 +221,7 @@ class TestSubscription(FrappeTestCase):
 		settings.save()
 
 	def test_subscription_cancellation_invoices_with_prorata_false(self):
-		settings = frappe.get_single("Subscription Settings")
+		settings = nts .get_single("Subscription Settings")
 		to_prorate = settings.prorate
 		settings.prorate = 0
 		settings.save()
@@ -236,7 +236,7 @@ class TestSubscription(FrappeTestCase):
 		settings.save()
 
 	def test_subscription_cancellation_invoices_with_prorata_true(self):
-		settings = frappe.get_single("Subscription Settings")
+		settings = nts .get_single("Subscription Settings")
 		to_prorate = settings.prorate
 		settings.prorate = 1
 		settings.save()
@@ -255,7 +255,7 @@ class TestSubscription(FrappeTestCase):
 		settings.save()
 
 	def test_subscription_cancellation_and_process(self):
-		settings = frappe.get_single("Subscription Settings")
+		settings = nts .get_single("Subscription Settings")
 		default_grace_period_action = settings.cancel_after_grace
 		settings.cancel_after_grace = 1
 		settings.save()
@@ -280,7 +280,7 @@ class TestSubscription(FrappeTestCase):
 		settings.save()
 
 	def test_subscription_restart_and_process(self):
-		settings = frappe.get_single("Subscription Settings")
+		settings = nts .get_single("Subscription Settings")
 		default_grace_period_action = settings.cancel_after_grace
 		settings.grace_period = 0
 		settings.cancel_after_grace = 0
@@ -311,7 +311,7 @@ class TestSubscription(FrappeTestCase):
 		settings.save()
 
 	def test_subscription_unpaid_back_to_active(self):
-		settings = frappe.get_single("Subscription Settings")
+		settings = nts .get_single("Subscription Settings")
 		default_grace_period_action = settings.cancel_after_grace
 		settings.cancel_after_grace = 0
 		settings.save()
@@ -339,7 +339,7 @@ class TestSubscription(FrappeTestCase):
 
 	def test_restart_active_subscription(self):
 		subscription = create_subscription()
-		self.assertRaises(frappe.ValidationError, subscription.restart_subscription)
+		self.assertRaises(nts .ValidationError, subscription.restart_subscription)
 
 	def test_subscription_invoice_discount_percentage(self):
 		subscription = create_subscription(additional_discount_percentage=10)
@@ -375,7 +375,7 @@ class TestSubscription(FrappeTestCase):
 		self.assertEqual(len(subscription.invoices), 1)
 
 	def test_prepaid_subscriptions_with_prorate_true(self):
-		settings = frappe.get_single("Subscription Settings")
+		settings = nts .get_single("Subscription Settings")
 		to_prorate = settings.prorate
 		settings.prorate = 1
 		settings.save()
@@ -397,7 +397,7 @@ class TestSubscription(FrappeTestCase):
 		settings.save()
 
 	def test_subscription_with_follow_calendar_months(self):
-		subscription = frappe.new_doc("Subscription")
+		subscription = nts .new_doc("Subscription")
 		subscription.company = "_Test Company"
 		subscription.party_type = "Supplier"
 		subscription.party = "_Test Supplier"
@@ -454,7 +454,7 @@ class TestSubscription(FrappeTestCase):
 
 	def test_multi_currency_subscription(self):
 		party = "_Test Subscription Customer"
-		frappe.db.set_value("Customer", party, "default_currency", "USD")
+		nts .db.set_value("Customer", party, "default_currency", "USD")
 		subscription = create_subscription(
 			start_date="2018-01-01",
 			generate_invoice_at="Beginning of the current subscription period",
@@ -467,7 +467,7 @@ class TestSubscription(FrappeTestCase):
 		self.assertEqual(subscription.status, "Unpaid")
 
 		# Check the currency of the created invoice
-		currency = frappe.db.get_value("Sales Invoice", subscription.invoices[0].name, "currency")
+		currency = nts .db.get_value("Sales Invoice", subscription.invoices[0].name, "currency")
 		self.assertEqual(currency, "USD")
 
 	@change_settings(
@@ -476,7 +476,7 @@ class TestSubscription(FrappeTestCase):
 	)
 	def test_multi_currency_subscription_with_default_company_currency(self):
 		party = "Test Subscription Customer Multi Currency"
-		frappe.db.set_value("Customer", party, "default_currency", "USD")
+		nts .db.set_value("Customer", party, "default_currency", "USD")
 		subscription = create_subscription(
 			start_date="2018-01-01",
 			generate_invoice_at="Beginning of the current subscription period",
@@ -489,7 +489,7 @@ class TestSubscription(FrappeTestCase):
 		self.assertEqual(subscription.status, "Unpaid")
 
 		# Check the currency of the created invoice
-		currency = frappe.db.get_value("Sales Invoice", subscription.invoices[0].name, "currency")
+		currency = nts .db.get_value("Sales Invoice", subscription.invoices[0].name, "currency")
 		self.assertEqual(currency, "USD")
 
 	def test_subscription_recovery(self):
@@ -508,11 +508,11 @@ class TestSubscription(FrappeTestCase):
 
 		self.assertEqual(len(subscription.invoices), 2)
 		self.assertEqual(
-			getdate(frappe.db.get_value("Sales Invoice", subscription.invoices[0].name, "from_date")),
+			getdate(nts .db.get_value("Sales Invoice", subscription.invoices[0].name, "from_date")),
 			getdate("2021-01-01"),
 		)
 		self.assertEqual(
-			getdate(frappe.db.get_value("Sales Invoice", subscription.invoices[1].name, "from_date")),
+			getdate(nts .db.get_value("Sales Invoice", subscription.invoices[1].name, "from_date")),
 			getdate("2021-02-01"),
 		)
 
@@ -521,11 +521,11 @@ class TestSubscription(FrappeTestCase):
 
 		self.assertEqual(len(subscription.invoices), 2)
 		self.assertEqual(
-			getdate(frappe.db.get_value("Sales Invoice", subscription.invoices[0].name, "from_date")),
+			getdate(nts .db.get_value("Sales Invoice", subscription.invoices[0].name, "from_date")),
 			getdate("2021-01-01"),
 		)
 		self.assertEqual(
-			getdate(frappe.db.get_value("Sales Invoice", subscription.invoices[1].name, "from_date")),
+			getdate(nts .db.get_value("Sales Invoice", subscription.invoices[1].name, "from_date")),
 			getdate("2021-02-01"),
 		)
 
@@ -577,8 +577,8 @@ def make_plans():
 
 
 def create_plan(**kwargs):
-	if not frappe.db.exists("Subscription Plan", kwargs.get("plan_name")):
-		plan = frappe.new_doc("Subscription Plan")
+	if not nts .db.exists("Subscription Plan", kwargs.get("plan_name")):
+		plan = nts .new_doc("Subscription Plan")
 		plan.plan_name = kwargs.get("plan_name") or "_Test Plan Name"
 		plan.item = kwargs.get("item") or "_Test Non Stock Item"
 		plan.price_determination = kwargs.get("price_determination") or "Fixed Rate"
@@ -590,41 +590,41 @@ def create_plan(**kwargs):
 
 
 def create_parties():
-	if not frappe.db.exists("Supplier", "_Test Supplier"):
-		supplier = frappe.new_doc("Supplier")
+	if not nts .db.exists("Supplier", "_Test Supplier"):
+		supplier = nts .new_doc("Supplier")
 		supplier.supplier_name = "_Test Supplier"
 		supplier.supplier_group = "All Supplier Groups"
 		supplier.insert()
 
-	if not frappe.db.exists("Customer", "_Test Subscription Customer"):
-		customer = frappe.new_doc("Customer")
+	if not nts .db.exists("Customer", "_Test Subscription Customer"):
+		customer = nts .new_doc("Customer")
 		customer.customer_name = "_Test Subscription Customer"
 		customer.default_currency = "USD"
 		customer.append("accounts", {"company": "_Test Company", "account": "_Test Receivable USD - _TC"})
 		customer.insert()
 
-	if not frappe.db.exists("Customer", "_Test Subscription Customer Multi Currency"):
-		customer = frappe.new_doc("Customer")
+	if not nts .db.exists("Customer", "_Test Subscription Customer Multi Currency"):
+		customer = nts .new_doc("Customer")
 		customer.customer_name = "Test Subscription Customer Multi Currency"
 		customer.default_currency = "USD"
 		customer.insert()
 
-	if not frappe.db.exists("Customer", "_Test Subscription Customer John Doe"):
-		customer = frappe.new_doc("Customer")
+	if not nts .db.exists("Customer", "_Test Subscription Customer John Doe"):
+		customer = nts .new_doc("Customer")
 		customer.customer_name = "_Test Subscription Customer John Doe"
 		customer.append("accounts", {"company": "_Test Company", "account": "_Test Receivable - _TC"})
 		customer.insert()
 
 
 def reset_settings():
-	settings = frappe.get_single("Subscription Settings")
+	settings = nts .get_single("Subscription Settings")
 	settings.grace_period = 0
 	settings.cancel_after_grace = 0
 	settings.save()
 
 
 def create_subscription(**kwargs):
-	subscription = frappe.new_doc("Subscription")
+	subscription = nts .new_doc("Subscription")
 	subscription.party_type = (kwargs.get("party_type") or "Customer",)
 	subscription.company = kwargs.get("company") or "_Test Company"
 	subscription.party = kwargs.get("party") or "_Test Customer"

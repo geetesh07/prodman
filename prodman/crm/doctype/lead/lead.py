@@ -1,15 +1,15 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe import _
-from frappe.contacts.address_and_contact import (
+import nts
+from nts import _
+from nts.contacts.address_and_contact import (
 	delete_contact_and_address,
 	load_address_and_contact,
 )
-from frappe.email.inbox import link_communication_to_document
-from frappe.model.mapper import get_mapped_doc
-from frappe.utils import comma_and, get_link_to_form, has_gravatar, validate_email_address
+from nts.email.inbox import link_communication_to_document
+from nts.model.mapper import get_mapped_doc
+from nts.utils import comma_and, get_link_to_form, has_gravatar, validate_email_address
 
 from prodman.accounts.party import set_taxes
 from prodman.controllers.selling_controller import SellingController
@@ -24,7 +24,7 @@ class Lead(SellingController, CRMNote):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.crm.doctype.crm_note.crm_note import CRMNote
 
@@ -83,7 +83,7 @@ class Lead(SellingController, CRMNote):
 	# end: auto-generated types
 
 	def onload(self):
-		customer = frappe.db.get_value("Customer", {"lead_name": self.name})
+		customer = nts.db.get_value("Customer", {"lead_name": self.name})
 		self.get("__onload").is_customer = customer
 		load_address_and_contact(self)
 		self.set_onload("linked_prospects", self.get_linked_prospects())
@@ -98,15 +98,15 @@ class Lead(SellingController, CRMNote):
 
 	def before_insert(self):
 		self.contact_doc = None
-		if frappe.db.get_single_value("CRM Settings", "auto_creation_of_contact"):
+		if nts.db.get_single_value("CRM Settings", "auto_creation_of_contact"):
 			if self.source == "Existing Customer" and self.customer:
-				contact = frappe.db.get_value(
+				contact = nts.db.get_value(
 					"Dynamic Link",
 					{"link_doctype": "Customer", "parenttype": "Contact", "link_name": self.customer},
 					"parent",
 				)
 				if contact:
-					self.contact_doc = frappe.get_doc("Contact", contact)
+					self.contact_doc = nts.get_doc("Contact", contact)
 					return
 			self.contact_doc = self.create_contact()
 
@@ -121,7 +121,7 @@ class Lead(SellingController, CRMNote):
 		self.update_prospect()
 
 	def on_trash(self):
-		frappe.db.set_value("Issue", {"lead": self.name}, "lead", None)
+		nts.db.set_value("Issue", {"lead": self.name}, "lead", None)
 		delete_contact_and_address(self.doctype, self.name)
 		self.remove_link_from_prospect()
 
@@ -135,7 +135,7 @@ class Lead(SellingController, CRMNote):
 		if not self.lead_name:
 			# Check for leads being created through data import
 			if not self.company_name and not self.email_id and not self.flags.ignore_mandatory:
-				frappe.throw(_("A Lead requires either a person's name or an organization's name"))
+				nts.throw(_("A Lead requires either a person's name or an organization's name"))
 			elif self.company_name:
 				self.lead_name = self.company_name
 			else:
@@ -147,20 +147,20 @@ class Lead(SellingController, CRMNote):
 	def check_email_id_is_unique(self):
 		if self.email_id:
 			# validate email is unique
-			if not frappe.db.get_single_value("CRM Settings", "allow_lead_duplication_based_on_emails"):
-				duplicate_leads = frappe.get_all(
+			if not nts.db.get_single_value("CRM Settings", "allow_lead_duplication_based_on_emails"):
+				duplicate_leads = nts.get_all(
 					"Lead", filters={"email_id": self.email_id, "name": ["!=", self.name]}
 				)
 				duplicate_leads = [
-					frappe.bold(get_link_to_form("Lead", lead.name)) for lead in duplicate_leads
+					nts.bold(get_link_to_form("Lead", lead.name)) for lead in duplicate_leads
 				]
 
 				if duplicate_leads:
-					frappe.throw(
+					nts.throw(
 						_("Email Address must be unique, it is already used in {0}").format(
 							comma_and(duplicate_leads)
 						),
-						frappe.DuplicateEntryError,
+						nts.DuplicateEntryError,
 					)
 
 	def validate_email_id(self):
@@ -169,7 +169,7 @@ class Lead(SellingController, CRMNote):
 				validate_email_address(self.email_id, throw=True)
 
 			if self.email_id == self.lead_owner:
-				frappe.throw(_("Lead Owner cannot be same as the Lead Email Address"))
+				nts.throw(_("Lead Owner cannot be same as the Lead Email Address"))
 
 			if self.is_new() or not self.image:
 				self.image = has_gravatar(self.email_id)
@@ -183,9 +183,9 @@ class Lead(SellingController, CRMNote):
 			self.contact_doc.save()
 
 	def update_prospect(self):
-		lead_row_name = frappe.db.get_value("Prospect Lead", filters={"lead": self.name}, fieldname="name")
+		lead_row_name = nts.db.get_value("Prospect Lead", filters={"lead": self.name}, fieldname="name")
 		if lead_row_name:
-			lead_row = frappe.get_doc("Prospect Lead", lead_row_name)
+			lead_row = nts.get_doc("Prospect Lead", lead_row_name)
 			lead_row.update(
 				{
 					"lead_name": self.lead_name,
@@ -201,7 +201,7 @@ class Lead(SellingController, CRMNote):
 		prospects = self.get_linked_prospects()
 
 		for d in prospects:
-			prospect = frappe.get_doc("Prospect", d.parent)
+			prospect = nts.get_doc("Prospect", d.parent)
 			if len(prospect.get("leads")) == 1:
 				prospect.delete(ignore_permissions=True)
 			else:
@@ -215,29 +215,29 @@ class Lead(SellingController, CRMNote):
 					prospect.save(ignore_permissions=True)
 
 	def get_linked_prospects(self):
-		return frappe.get_all(
+		return nts.get_all(
 			"Prospect Lead",
 			filters={"lead": self.name},
 			fields=["parent"],
 		)
 
 	def has_customer(self):
-		return frappe.db.get_value("Customer", {"lead_name": self.name})
+		return nts.db.get_value("Customer", {"lead_name": self.name})
 
 	def has_opportunity(self):
-		return frappe.db.get_value("Opportunity", {"party_name": self.name, "status": ["!=", "Lost"]})
+		return nts.db.get_value("Opportunity", {"party_name": self.name, "status": ["!=", "Lost"]})
 
 	def has_quotation(self):
-		return frappe.db.get_value(
+		return nts.db.get_value(
 			"Quotation", {"party_name": self.name, "docstatus": 1, "status": ["!=", "Lost"]}
 		)
 
 	def has_lost_quotation(self):
-		return frappe.db.get_value("Quotation", {"party_name": self.name, "docstatus": 1, "status": "Lost"})
+		return nts.db.get_value("Quotation", {"party_name": self.name, "docstatus": 1, "status": "Lost"})
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def create_prospect_and_contact(self, data):
-		data = frappe._dict(data)
+		data = nts._dict(data)
 		if data.create_contact:
 			self.create_contact()
 
@@ -249,7 +249,7 @@ class Lead(SellingController, CRMNote):
 			self.set_full_name()
 			self.set_lead_name()
 
-		contact = frappe.new_doc("Contact")
+		contact = nts.new_doc("Contact")
 		contact.update(
 			{
 				"first_name": self.first_name or self.lead_name,
@@ -277,7 +277,7 @@ class Lead(SellingController, CRMNote):
 
 	def create_prospect(self, company_name):
 		try:
-			prospect = frappe.new_doc("Prospect")
+			prospect = nts.new_doc("Prospect")
 
 			prospect.company_name = company_name or self.company_name
 			prospect.no_of_employees = self.no_of_employees
@@ -305,11 +305,11 @@ class Lead(SellingController, CRMNote):
 			prospect.flags.ignore_permissions = True
 			prospect.flags.ignore_mandatory = True
 			prospect.save()
-		except frappe.DuplicateEntryError:
-			frappe.throw(_("Prospect {0} already exists").format(company_name or self.company_name))
+		except nts.DuplicateEntryError:
+			nts.throw(_("Prospect {0} already exists").format(company_name or self.company_name))
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_customer(source_name, target_doc=None):
 	return _make_customer(source_name, target_doc)
 
@@ -323,7 +323,7 @@ def _make_customer(source_name, target_doc=None, ignore_permissions=False):
 			target.customer_type = "Individual"
 			target.customer_name = source.lead_name
 
-		target.customer_group = frappe.db.get_default("Customer Group")
+		target.customer_group = nts.db.get_default("Customer Group")
 
 	doclist = get_mapped_doc(
 		"Lead",
@@ -348,7 +348,7 @@ def _make_customer(source_name, target_doc=None, ignore_permissions=False):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_opportunity(source_name, target_doc=None):
 	def set_missing_values(source, target):
 		_set_missing_values(source, target)
@@ -379,7 +379,7 @@ def make_opportunity(source_name, target_doc=None):
 	return target_doc
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_quotation(source_name, target_doc=None):
 	def set_missing_values(source, target):
 		_set_missing_values(source, target)
@@ -401,7 +401,7 @@ def make_quotation(source_name, target_doc=None):
 
 
 def _set_missing_values(source, target):
-	address = frappe.get_all(
+	address = nts.get_all(
 		"Dynamic Link",
 		{
 			"link_doctype": source.doctype,
@@ -412,7 +412,7 @@ def _set_missing_values(source, target):
 		limit=1,
 	)
 
-	contact = frappe.get_all(
+	contact = nts.get_all(
 		"Dynamic Link",
 		{
 			"link_doctype": source.doctype,
@@ -430,16 +430,16 @@ def _set_missing_values(source, target):
 		target.contact_person = contact[0].parent
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_lead_details(lead, posting_date=None, company=None):
 	if not lead:
 		return {}
 
 	from prodman.accounts.party import set_address_details
 
-	out = frappe._dict()
+	out = nts._dict()
 
-	lead_doc = frappe.get_doc("Lead", lead)
+	lead_doc = nts.get_doc("Lead", lead)
 	lead = lead_doc
 
 	out.update(
@@ -469,18 +469,18 @@ def get_lead_details(lead, posting_date=None, company=None):
 	return out
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_lead_from_communication(communication, ignore_communication_links=False):
 	"""raise a issue from email"""
 
-	doc = frappe.get_doc("Communication", communication)
+	doc = nts.get_doc("Communication", communication)
 	lead_name = None
 	if doc.sender:
-		lead_name = frappe.db.get_value("Lead", {"email_id": doc.sender})
+		lead_name = nts.db.get_value("Lead", {"email_id": doc.sender})
 	if not lead_name and doc.phone_no:
-		lead_name = frappe.db.get_value("Lead", {"mobile_no": doc.phone_no})
+		lead_name = nts.db.get_value("Lead", {"mobile_no": doc.phone_no})
 	if not lead_name:
-		lead = frappe.get_doc(
+		lead = nts.get_doc(
 			{
 				"doctype": "Lead",
 				"lead_name": doc.sender_full_name,
@@ -502,7 +502,7 @@ def get_lead_with_phone_number(number):
 	if not number:
 		return
 
-	leads = frappe.get_all(
+	leads = nts.get_all(
 		"Lead",
 		or_filters={
 			"phone": ["like", f"%{number}"],
@@ -518,13 +518,13 @@ def get_lead_with_phone_number(number):
 	return lead
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def add_lead_to_prospect(lead, prospect):
-	prospect = frappe.get_doc("Prospect", prospect)
+	prospect = nts.get_doc("Prospect", prospect)
 	prospect.append("leads", {"lead": lead})
 	prospect.save(ignore_permissions=True)
 
-	carry_forward_communication_and_comments = frappe.db.get_single_value(
+	carry_forward_communication_and_comments = nts.db.get_single_value(
 		"CRM Settings", "carry_forward_communication_and_comments"
 	)
 
@@ -533,8 +533,8 @@ def add_lead_to_prospect(lead, prospect):
 		link_communications("Lead", lead, prospect)
 	link_open_events("Lead", lead, prospect)
 
-	frappe.msgprint(
-		_("Lead {0} has been added to prospect {1}.").format(frappe.bold(lead), frappe.bold(prospect.name)),
+	nts.msgprint(
+		_("Lead {0} has been added to prospect {1}.").format(nts.bold(lead), nts.bold(prospect.name)),
 		title=_("Lead -> Prospect"),
 		indicator="green",
 	)

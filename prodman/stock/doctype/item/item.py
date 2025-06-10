@@ -1,15 +1,15 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 import copy
 import json
 
-import frappe
-from frappe import _, bold
-from frappe.model.document import Document
-from frappe.query_builder import Interval
-from frappe.query_builder.functions import Count, CurDate, UnixTimestamp
-from frappe.utils import (
+import nts
+from nts import _, bold
+from nts.model.document import Document
+from nts.query_builder import Interval
+from nts.query_builder.functions import Count, CurDate, UnixTimestamp
+from nts.utils import (
 	cint,
 	cstr,
 	flt,
@@ -21,7 +21,7 @@ from frappe.utils import (
 	strip,
 	strip_html,
 )
-from frappe.utils.html_utils import clean_html
+from nts.utils.html_utils import clean_html
 from pypika import Order
 
 import prodman
@@ -36,19 +36,19 @@ from prodman.stock.doctype.item_default.item_default import ItemDefault
 from prodman.stock.utils import get_valuation_method
 
 
-class DuplicateReorderRows(frappe.ValidationError):
+class DuplicateReorderRows(nts.ValidationError):
 	pass
 
 
-class StockExistsForTemplate(frappe.ValidationError):
+class StockExistsForTemplate(nts.ValidationError):
 	pass
 
 
-class InvalidBarcode(frappe.ValidationError):
+class InvalidBarcode(nts.ValidationError):
 	pass
 
 
-class DataValidationError(frappe.ValidationError):
+class DataValidationError(nts.ValidationError):
 	pass
 
 
@@ -59,7 +59,7 @@ class Item(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.stock.doctype.item_barcode.item_barcode import ItemBarcode
 		from prodman.stock.doctype.item_customer_detail.item_customer_detail import ItemCustomerDetail
@@ -157,13 +157,13 @@ class Item(Document):
 		self.set_onload("current_valuation_method", get_valuation_method(self.name))
 
 	def autoname(self):
-		if frappe.db.get_default("item_naming_by") == "Naming Series":
+		if nts.db.get_default("item_naming_by") == "Naming Series":
 			if self.variant_of:
 				if not self.item_code:
-					template_item_name = frappe.db.get_value("Item", self.variant_of, "item_name")
+					template_item_name = nts.db.get_value("Item", self.variant_of, "item_name")
 					make_variant_item_code(self.variant_of, template_item_name, self)
 			else:
-				from frappe.model.naming import set_name_by_naming_series
+				from nts.model.naming import set_name_by_naming_series
 
 				set_name_by_naming_series(self)
 				self.item_code = self.name
@@ -174,7 +174,7 @@ class Item(Document):
 	def after_insert(self):
 		"""set opening stock and item price"""
 		if self.standard_rate:
-			for default in self.item_defaults or [frappe._dict()]:
+			for default in self.item_defaults or [nts._dict()]:
 				self.add_price(default.default_price_list)
 
 		if self.opening_stock:
@@ -218,7 +218,7 @@ class Item(Document):
 		self.validate_item_tax_net_rate_range()
 
 		if not self.is_new():
-			self.old_item_group = frappe.db.get_value(self.doctype, self.name, "item_group")
+			self.old_item_group = nts.db.get_value(self.doctype, self.name, "item_group")
 
 	def on_update(self):
 		self.update_variants()
@@ -226,25 +226,25 @@ class Item(Document):
 
 	def validate_description(self):
 		"""Clean HTML description if set"""
-		if cint(frappe.db.get_single_value("Stock Settings", "clean_description_html")):
+		if cint(nts.db.get_single_value("Stock Settings", "clean_description_html")):
 			self.description = clean_html(self.description)
 
 	def validate_customer_provided_part(self):
 		if self.is_customer_provided_item:
 			if self.is_purchase_item:
-				frappe.throw(_('"Customer Provided Item" cannot be Purchase Item also'))
+				nts.throw(_('"Customer Provided Item" cannot be Purchase Item also'))
 			if self.valuation_rate:
-				frappe.throw(_('"Customer Provided Item" cannot have Valuation Rate'))
+				nts.throw(_('"Customer Provided Item" cannot have Valuation Rate'))
 			self.default_material_request_type = "Customer Provided"
 
 	def add_price(self, price_list=None):
 		"""Add a new price"""
 		if not price_list:
-			price_list = frappe.db.get_single_value(
+			price_list = nts.db.get_single_value(
 				"Selling Settings", "selling_price_list"
-			) or frappe.db.get_value("Price List", _("Standard Selling"))
+			) or nts.db.get_value("Price List", _("Standard Selling"))
 		if price_list:
-			item_price = frappe.get_doc(
+			item_price = nts.get_doc(
 				{
 					"doctype": "Item Price",
 					"price_list": price_list,
@@ -263,22 +263,22 @@ class Item(Document):
 			return
 
 		if not self.valuation_rate and not self.standard_rate and not self.is_customer_provided_item:
-			frappe.throw(_("Valuation Rate is mandatory if Opening Stock entered"))
+			nts.throw(_("Valuation Rate is mandatory if Opening Stock entered"))
 
 		from prodman.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
 
 		# default warehouse, or Stores
 		for default in self.item_defaults or [
-			frappe._dict({"company": frappe.defaults.get_defaults().company})
+			nts._dict({"company": nts.defaults.get_defaults().company})
 		]:
-			default_warehouse = default.default_warehouse or frappe.db.get_single_value(
+			default_warehouse = default.default_warehouse or nts.db.get_single_value(
 				"Stock Settings", "default_warehouse"
 			)
 			if default_warehouse:
-				warehouse_company = frappe.db.get_value("Warehouse", default_warehouse, "company")
+				warehouse_company = nts.db.get_value("Warehouse", default_warehouse, "company")
 
 			if not default_warehouse or warehouse_company != default.company:
-				default_warehouse = frappe.db.get_value(
+				default_warehouse = nts.db.get_value(
 					"Warehouse", {"warehouse_name": _("Stores"), "company": default.company}
 				)
 
@@ -298,28 +298,28 @@ class Item(Document):
 	def validate_fixed_asset(self):
 		if self.is_fixed_asset:
 			if self.is_stock_item:
-				frappe.throw(_("Fixed Asset Item must be a non-stock item."))
+				nts.throw(_("Fixed Asset Item must be a non-stock item."))
 
 			if not self.asset_category:
-				frappe.throw(_("Asset Category is mandatory for Fixed Asset item"))
+				nts.throw(_("Asset Category is mandatory for Fixed Asset item"))
 
 			if self.stock_ledger_created():
-				frappe.throw(_("Cannot be a fixed asset item as Stock Ledger is created."))
+				nts.throw(_("Cannot be a fixed asset item as Stock Ledger is created."))
 
 		if not self.is_fixed_asset:
-			asset = frappe.db.get_all("Asset", filters={"item_code": self.name, "docstatus": 1}, limit=1)
+			asset = nts.db.get_all("Asset", filters={"item_code": self.name, "docstatus": 1}, limit=1)
 			if asset:
-				frappe.throw(
+				nts.throw(
 					_('"Is Fixed Asset" cannot be unchecked, as Asset record exists against the item')
 				)
 
 	def validate_retain_sample(self):
-		if self.retain_sample and not frappe.db.get_single_value(
+		if self.retain_sample and not nts.db.get_single_value(
 			"Stock Settings", "sample_retention_warehouse"
 		):
-			frappe.throw(_("Please select Sample Retention Warehouse in Stock Settings first"))
+			nts.throw(_("Please select Sample Retention Warehouse in Stock Settings first"))
 		if self.retain_sample and not self.has_batch_no:
-			frappe.throw(
+			nts.throw(
 				_(
 					"{0} Retain Sample is based on batch, please check Has Batch No to retain sample of item"
 				).format(self.item_code)
@@ -335,7 +335,7 @@ class Item(Document):
 	def add_default_uom_in_conversion_factor_table(self):
 		if not self.is_new() and self.has_value_changed("stock_uom"):
 			self.uoms = []
-			frappe.msgprint(
+			nts.msgprint(
 				_("Successfully changed Stock UOM, please redefine conversion factors for new UOM."),
 				alert=True,
 			)
@@ -348,7 +348,7 @@ class Item(Document):
 	def validate_item_tax_net_rate_range(self):
 		for tax in self.get("taxes"):
 			if flt(tax.maximum_net_rate) < flt(tax.minimum_net_rate):
-				frappe.throw(
+				nts.throw(
 					_("Taxes row #{0}: {1} cannot be smaller than {2}").format(
 						tax.idx,
 						bold(_(tax.meta.get_label("maximum_net_rate"))),
@@ -357,7 +357,7 @@ class Item(Document):
 				)
 
 	def update_template_tables(self):
-		template = frappe.get_cached_doc("Item", self.variant_of)
+		template = nts.get_cached_doc("Item", self.variant_of)
 
 		# add item taxes from template
 		for d in template.get("taxes"):
@@ -380,7 +380,7 @@ class Item(Document):
 		check_list = []
 		for d in self.get("uoms"):
 			if cstr(d.uom) in check_list:
-				frappe.throw(
+				nts.throw(
 					_(
 						"Unit of Measure {0} has been entered more than once in Conversion Factor Table"
 					).format(d.uom)
@@ -389,13 +389,13 @@ class Item(Document):
 				check_list.append(cstr(d.uom))
 
 			if d.uom and cstr(d.uom) == cstr(self.stock_uom) and flt(d.conversion_factor) != 1:
-				frappe.throw(
+				nts.throw(
 					_("Conversion factor for default Unit of Measure must be 1 in row {0}").format(d.idx)
 				)
 
 	def validate_item_type(self):
 		if self.has_serial_no == 1 and self.is_stock_item == 0 and not self.is_fixed_asset:
-			frappe.throw(_("'Has Serial No' can not be 'Yes' for non-stock item"))
+			nts.throw(_("'Has Serial No' can not be 'Yes' for non-stock item"))
 
 		if self.has_serial_no == 0 and self.serial_no_series:
 			self.serial_no_series = None
@@ -404,17 +404,17 @@ class Item(Document):
 		for field in ["serial_no_series", "batch_number_series"]:
 			series = self.get(field)
 			if series and "#" in series and "." not in series:
-				frappe.throw(
+				nts.throw(
 					_("Invalid naming series (. missing) for {0}").format(
-						frappe.bold(self.meta.get_field(field).label)
+						nts.bold(self.meta.get_field(field).label)
 					)
 				)
 
 	def check_for_active_boms(self):
 		if self.default_bom:
-			bom_item = frappe.db.get_value("BOM", self.default_bom, "item")
+			bom_item = nts.db.get_value("BOM", self.default_bom, "item")
 			if bom_item not in (self.name, self.variant_of):
-				frappe.throw(
+				nts.throw(
 					_("Default BOM ({0}) must be active for this item or its template").format(bom_item)
 				)
 
@@ -432,10 +432,10 @@ class Item(Document):
 		for d in self.get("taxes"):
 			if d.item_tax_template:
 				if (d.item_tax_template, d.tax_category) in check_list:
-					frappe.throw(
+					nts.throw(
 						_("{0} entered twice {1} in Item Taxes").format(
-							frappe.bold(d.item_tax_template),
-							f"for tax category {frappe.bold(d.tax_category)}" if d.tax_category else "",
+							nts.bold(d.item_tax_template),
+							f"for tax category {nts.bold(d.tax_category)}" if d.tax_category else "",
 						)
 					)
 				else:
@@ -446,14 +446,14 @@ class Item(Document):
 
 		if len(self.barcodes) > 0:
 			for item_barcode in self.barcodes:
-				options = frappe.get_meta("Item Barcode").get_options("barcode_type").split("\n")
+				options = nts.get_meta("Item Barcode").get_options("barcode_type").split("\n")
 				if item_barcode.barcode:
-					duplicate = frappe.db.sql(
+					duplicate = nts.db.sql(
 						"""select parent from `tabItem Barcode` where barcode = %s and parent != %s""",
 						(item_barcode.barcode, self.name),
 					)
 					if duplicate:
-						frappe.throw(
+						nts.throw(
 							_("Barcode {0} already used in Item {1}").format(
 								item_barcode.barcode, duplicate[0][0]
 							)
@@ -468,7 +468,7 @@ class Item(Document):
 						)
 						if barcode_type in barcodenumber.barcodes():
 							if not barcodenumber.check_code(barcode_type, item_barcode.barcode):
-								frappe.throw(
+								nts.throw(
 									_("Barcode {0} is not a valid {1} code").format(
 										item_barcode.barcode, item_barcode.barcode_type
 									),
@@ -479,7 +479,7 @@ class Item(Document):
 		"""Validate Reorder level table for duplicate and conditional mandatory"""
 		warehouse_material_request_type: list[tuple[str, str]] = []
 
-		_warehouse_before_save = frappe._dict()
+		_warehouse_before_save = nts._dict()
 		if not self.is_new() and self._doc_before_save:
 			_warehouse_before_save = {
 				d.name: d.warehouse for d in self._doc_before_save.get("reorder_levels") or []
@@ -491,7 +491,7 @@ class Item(Document):
 			if (d.get("warehouse"), d.get("material_request_type")) not in warehouse_material_request_type:
 				warehouse_material_request_type += [(d.get("warehouse"), d.get("material_request_type"))]
 			else:
-				frappe.throw(
+				nts.throw(
 					_(
 						"Row #{0}: A reorder entry already exists for warehouse {1} with reorder type {2}."
 					).format(d.idx, d.warehouse, d.material_request_type),
@@ -499,7 +499,7 @@ class Item(Document):
 				)
 
 			if d.warehouse_reorder_level and not d.warehouse_reorder_qty:
-				frappe.throw(_("Row #{0}: Please set reorder quantity").format(d.idx))
+				nts.throw(_("Row #{0}: Please set reorder quantity").format(d.idx))
 
 			if d.warehouse_group and d.warehouse:
 				if _warehouse_before_save.get(d.name) == d.warehouse:
@@ -507,7 +507,7 @@ class Item(Document):
 
 				child_warehouses = get_child_warehouses(d.warehouse_group)
 				if d.warehouse not in child_warehouses:
-					frappe.throw(
+					nts.throw(
 						_(
 							"Row #{0}: The warehouse {1} is not a child warehouse of a group warehouse {2}"
 						).format(d.idx, bold(d.warehouse), bold(d.warehouse_group)),
@@ -517,7 +517,7 @@ class Item(Document):
 	def stock_ledger_created(self):
 		if not hasattr(self, "_stock_ledger_created"):
 			self._stock_ledger_created = len(
-				frappe.db.sql(
+				nts.db.sql(
 					"""select name from `tabStock Ledger Entry`
 				where item_code = %s and is_cancelled = 0 limit 1""",
 					self.name,
@@ -526,7 +526,7 @@ class Item(Document):
 		return self._stock_ledger_created
 
 	def update_item_price(self):
-		frappe.db.sql(
+		nts.db.sql(
 			"""
 				UPDATE `tabItem Price`
 				SET
@@ -544,14 +544,14 @@ class Item(Document):
 		)
 
 	def on_trash(self):
-		frappe.db.sql("""delete from tabBin where item_code=%s""", self.name)
-		frappe.db.sql("delete from `tabItem Price` where item_code=%s", self.name)
-		for variant_of in frappe.get_all("Item", filters={"variant_of": self.name}):
-			frappe.delete_doc("Item", variant_of.name)
+		nts.db.sql("""delete from tabBin where item_code=%s""", self.name)
+		nts.db.sql("delete from `tabItem Price` where item_code=%s", self.name)
+		for variant_of in nts.get_all("Item", filters={"variant_of": self.name}):
+			nts.delete_doc("Item", variant_of.name)
 
 	def before_rename(self, old_name, new_name, merge=False):
 		if self.item_name == old_name:
-			frappe.db.set_value("Item", old_name, "item_name", new_name)
+			nts.db.set_value("Item", old_name, "item_name", new_name)
 
 		if merge:
 			self.validate_properties_before_merge(new_name)
@@ -561,20 +561,20 @@ class Item(Document):
 	def after_rename(self, old_name, new_name, merge):
 		if merge:
 			self.validate_duplicate_item_in_stock_reconciliation(old_name, new_name)
-			frappe.msgprint(
+			nts.msgprint(
 				_("It can take upto few hours for accurate stock values to be visible after merging items."),
 				indicator="orange",
 				title=_("Note"),
 			)
 
-		frappe.db.set_value("Item", new_name, "item_code", new_name)
+		nts.db.set_value("Item", new_name, "item_code", new_name)
 
 		if merge:
 			self.set_last_purchase_rate(new_name)
 			self.recalculate_bin_qty(new_name)
 
 		for dt in ("Sales Taxes and Charges", "Purchase Taxes and Charges"):
-			for d in frappe.db.sql(
+			for d in nts.db.sql(
 				f"""select name, item_wise_tax_detail from `tab{dt}`
 					where ifnull(item_wise_tax_detail, '') != ''""",
 				as_dict=1,
@@ -584,7 +584,7 @@ class Item(Document):
 					item_wise_tax_detail[new_name] = item_wise_tax_detail[old_name]
 					item_wise_tax_detail.pop(old_name)
 
-					frappe.db.set_value(
+					nts.db.set_value(
 						dt,
 						d.name,
 						"item_wise_tax_detail",
@@ -593,10 +593,10 @@ class Item(Document):
 					)
 
 	def delete_old_bins(self, old_name):
-		frappe.db.delete("Bin", {"item_code": old_name})
+		nts.db.delete("Bin", {"item_code": old_name})
 
 	def validate_duplicate_item_in_stock_reconciliation(self, old_name, new_name):
-		records = frappe.db.sql(
+		records = nts.db.sql(
 			""" SELECT parent, COUNT(*) as records
 			FROM `tabStock Reconciliation Item`
 			WHERE item_code = %s and docstatus = 1
@@ -612,7 +612,7 @@ class Item(Document):
 		document = _("Stock Reconciliation") if len(records) == 1 else _("Stock Reconciliations")
 
 		msg = _("The items {0} and {1} are present in the following {2} :").format(
-			frappe.bold(old_name), frappe.bold(new_name), document
+			nts.bold(old_name), nts.bold(new_name), document
 		)
 
 		msg += " <br>"
@@ -620,48 +620,48 @@ class Item(Document):
 
 		msg += _(
 			"Note: To merge the items, create a separate Stock Reconciliation for the old item {0}"
-		).format(frappe.bold(old_name))
+		).format(nts.bold(old_name))
 
-		frappe.throw(_(msg), title=_("Cannot Merge"), exc=DataValidationError)
+		nts.throw(_(msg), title=_("Cannot Merge"), exc=DataValidationError)
 
 	def validate_properties_before_merge(self, new_name):
 		# Validate properties before merging
-		if not frappe.db.exists("Item", new_name):
-			frappe.throw(_("Item {0} does not exist").format(new_name))
+		if not nts.db.exists("Item", new_name):
+			nts.throw(_("Item {0} does not exist").format(new_name))
 
 		field_list = ["stock_uom", "is_stock_item", "has_serial_no", "has_batch_no"]
-		new_properties = [cstr(d) for d in frappe.db.get_value("Item", new_name, field_list)]
+		new_properties = [cstr(d) for d in nts.db.get_value("Item", new_name, field_list)]
 
 		if new_properties != [cstr(self.get(field)) for field in field_list]:
 			msg = _("To merge, following properties must be same for both items")
 			msg += ": \n" + ", ".join([self.meta.get_label(fld) for fld in field_list])
-			frappe.throw(msg, title=_("Cannot Merge"), exc=DataValidationError)
+			nts.throw(msg, title=_("Cannot Merge"), exc=DataValidationError)
 
 	def validate_duplicate_product_bundles_before_merge(self, old_name, new_name):
 		"Block merge if both old and new items have product bundles."
-		old_bundle = frappe.get_value("Product Bundle", filters={"new_item_code": old_name, "disabled": 0})
-		new_bundle = frappe.get_value("Product Bundle", filters={"new_item_code": new_name, "disabled": 0})
+		old_bundle = nts.get_value("Product Bundle", filters={"new_item_code": old_name, "disabled": 0})
+		new_bundle = nts.get_value("Product Bundle", filters={"new_item_code": new_name, "disabled": 0})
 
 		if old_bundle and new_bundle:
 			bundle_link = get_link_to_form("Product Bundle", old_bundle)
-			old_name, new_name = frappe.bold(old_name), frappe.bold(new_name)
+			old_name, new_name = nts.bold(old_name), nts.bold(new_name)
 
 			msg = _("Please delete Product Bundle {0}, before merging {1} into {2}").format(
 				bundle_link, old_name, new_name
 			)
-			frappe.throw(msg, title=_("Cannot Merge"), exc=DataValidationError)
+			nts.throw(msg, title=_("Cannot Merge"), exc=DataValidationError)
 
 	def set_last_purchase_rate(self, new_name):
 		last_purchase_rate = get_last_purchase_details(new_name).get("base_net_rate", 0)
-		frappe.db.set_value("Item", new_name, "last_purchase_rate", last_purchase_rate)
+		nts.db.set_value("Item", new_name, "last_purchase_rate", last_purchase_rate)
 
 	def recalculate_bin_qty(self, new_name):
 		from prodman.stock.stock_balance import repost_stock
 
-		existing_allow_negative_stock = frappe.db.get_value("Stock Settings", None, "allow_negative_stock")
-		frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
+		existing_allow_negative_stock = nts.db.get_value("Stock Settings", None, "allow_negative_stock")
+		nts.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
 
-		repost_stock_for_warehouses = frappe.get_all(
+		repost_stock_for_warehouses = nts.get_all(
 			"Stock Ledger Entry",
 			"warehouse",
 			filters={"item_code": new_name},
@@ -670,19 +670,19 @@ class Item(Document):
 		)
 
 		# Delete all existing bins to avoid duplicate bins for the same item and warehouse
-		frappe.db.delete("Bin", {"item_code": new_name})
+		nts.db.delete("Bin", {"item_code": new_name})
 
 		for warehouse in repost_stock_for_warehouses:
 			repost_stock(new_name, warehouse)
 
-		frappe.db.set_single_value("Stock Settings", "allow_negative_stock", existing_allow_negative_stock)
+		nts.db.set_single_value("Stock Settings", "allow_negative_stock", existing_allow_negative_stock)
 
 	def update_bom_item_desc(self):
 		if self.is_new():
 			return
 
 		if self.db_get("description") != self.description:
-			frappe.db.sql(
+			nts.db.sql(
 				"""
 				update `tabBOM`
 				set description = %s
@@ -691,7 +691,7 @@ class Item(Document):
 				(self.description, self.name),
 			)
 
-			frappe.db.sql(
+			nts.db.sql(
 				"""
 				update `tabBOM Item`
 				set description = %s
@@ -700,7 +700,7 @@ class Item(Document):
 				(self.description, self.name),
 			)
 
-			frappe.db.sql(
+			nts.db.sql(
 				"""
 				update `tabBOM Explosion Item`
 				set description = %s
@@ -713,7 +713,7 @@ class Item(Document):
 		companies = {row.company for row in self.item_defaults}
 
 		if len(companies) != len(self.item_defaults):
-			frappe.throw(_("Cannot set multiple Item Defaults for a company."))
+			nts.throw(_("Cannot set multiple Item Defaults for a company."))
 
 		validate_item_default_company_links(self.item_defaults)
 
@@ -722,7 +722,7 @@ class Item(Document):
 		if self.item_defaults or not self.item_group:
 			return
 
-		item_defaults = frappe.db.get_values(
+		item_defaults = nts.db.get_values(
 			"Item Default",
 			{"parent": self.item_group},
 			[
@@ -753,13 +753,13 @@ class Item(Document):
 					},
 				)
 		else:
-			defaults = frappe.defaults.get_defaults() or {}
+			defaults = nts.defaults.get_defaults() or {}
 
 			# To check default warehouse is belong to the default company
 			if (
 				defaults.get("default_warehouse")
 				and defaults.company
-				and frappe.db.exists(
+				and nts.db.exists(
 					"Warehouse", {"name": defaults.default_warehouse, "company": defaults.company}
 				)
 			):
@@ -769,30 +769,30 @@ class Item(Document):
 				)
 
 	def update_variants(self):
-		if self.flags.dont_update_variants or frappe.db.get_single_value(
+		if self.flags.dont_update_variants or nts.db.get_single_value(
 			"Item Variant Settings", "do_not_update_variants"
 		):
 			return
 		if self.has_variants:
-			variants = frappe.db.get_all("Item", fields=["item_code"], filters={"variant_of": self.name})
+			variants = nts.db.get_all("Item", fields=["item_code"], filters={"variant_of": self.name})
 			if variants:
 				if len(variants) <= 30:
 					update_variants(variants, self, publish_progress=False)
-					frappe.msgprint(_("Item Variants updated"))
+					nts.msgprint(_("Item Variants updated"))
 				else:
-					frappe.enqueue(
+					nts.enqueue(
 						"prodman.stock.doctype.item.item.update_variants",
 						variants=variants,
 						template=self,
-						now=frappe.flags.in_test,
+						now=nts.flags.in_test,
 						timeout=600,
 						enqueue_after_commit=True,
 					)
 
 	def validate_has_variants(self):
-		if not self.has_variants and frappe.db.get_value("Item", self.name, "has_variants"):
-			if frappe.db.exists("Item", {"variant_of": self.name}):
-				frappe.throw(_("Item has variants."))
+		if not self.has_variants and nts.db.get_value("Item", self.name, "has_variants"):
+			if nts.db.exists("Item", {"variant_of": self.name}):
+				nts.throw(_("Item has variants."))
 
 	def validate_attributes_in_variants(self):
 		if not self.has_variants or self.is_new():
@@ -811,13 +811,13 @@ class Item(Document):
 		from collections import defaultdict
 
 		# get all item variants
-		items = [item["name"] for item in frappe.get_all("Item", {"variant_of": self.name})]
+		items = [item["name"] for item in nts.get_all("Item", {"variant_of": self.name})]
 
 		# get all deleted attributes
 		deleted_attribute = list(old_doc_attributes.difference(set(own_attributes)))
 
 		# fetch all attributes of these items
-		item_attributes = frappe.get_all(
+		item_attributes = nts.get_all(
 			"Item Variant Attribute",
 			filters={"parent": ["in", items], "attribute": ["in", deleted_attribute]},
 			fields=["attribute", "parent"],
@@ -843,7 +843,7 @@ class Item(Document):
 
 		rows = ""
 		for docname, attr_list in not_included.items():
-			link = f"<a href='/app/item/{docname}'>{frappe.bold(docname)}</a>"
+			link = f"<a href='/app/item/{docname}'>{nts.bold(docname)}</a>"
 			rows += table_row(link, body(attr_list))
 
 		error_description = _(
@@ -861,7 +861,7 @@ class Item(Document):
 			</table>
 		""".format(error_description, _("Variant Items"), _("Attributes"), rows)
 
-		frappe.throw(message, title=_("Variant Attribute Error"), is_minimizable=True, wide=True)
+		nts.throw(message, title=_("Variant Attribute Error"), is_minimizable=True, wide=True)
 
 	def validate_stock_exists_for_template_item(self):
 		if self.stock_ledger_created() and self._doc_before_save:
@@ -869,7 +869,7 @@ class Item(Document):
 				cint(self._doc_before_save.has_variants) != cint(self.has_variants)
 				or self._doc_before_save.variant_of != self.variant_of
 			):
-				frappe.throw(
+				nts.throw(
 					_(
 						"Cannot change Variant properties after stock transaction. You will have to make a new Item to do this."
 					).format(self.name),
@@ -878,7 +878,7 @@ class Item(Document):
 
 			if self.has_variants or self.variant_of:
 				if not self.is_child_table_same("attributes"):
-					frappe.throw(
+					nts.throw(
 						_(
 							"Cannot change Attributes after stock transaction. Make a new Item and transfer stock to the new Item"
 						)
@@ -886,21 +886,21 @@ class Item(Document):
 
 	def validate_variant_based_on_change(self):
 		if not self.is_new() and (
-			self.variant_of or (self.has_variants and frappe.get_all("Item", {"variant_of": self.name}))
+			self.variant_of or (self.has_variants and nts.get_all("Item", {"variant_of": self.name}))
 		):
-			if self.variant_based_on != frappe.db.get_value("Item", self.name, "variant_based_on"):
-				frappe.throw(_("Variant Based On cannot be changed"))
+			if self.variant_based_on != nts.db.get_value("Item", self.name, "variant_based_on"):
+				nts.throw(_("Variant Based On cannot be changed"))
 
 	def validate_uom(self):
 		if not self.is_new():
 			check_stock_uom_with_bin(self.name, self.stock_uom)
 		if self.has_variants:
-			for d in frappe.db.get_all("Item", filters={"variant_of": self.name}):
+			for d in nts.db.get_all("Item", filters={"variant_of": self.name}):
 				check_stock_uom_with_bin(d.name, self.stock_uom)
 		if self.variant_of:
-			template_uom = frappe.db.get_value("Item", self.variant_of, "stock_uom")
+			template_uom = nts.db.get_value("Item", self.variant_of, "stock_uom")
 			if template_uom != self.stock_uom:
-				frappe.throw(
+				nts.throw(
 					_("Default Unit of Measure for Variant '{0}' must be same as in Template '{1}'").format(
 						self.stock_uom, template_uom
 					)
@@ -923,10 +923,10 @@ class Item(Document):
 		if self.variant_based_on == "Item Attribute":
 			attributes = []
 			if not self.attributes:
-				frappe.throw(_("Attribute table is mandatory"))
+				nts.throw(_("Attribute table is mandatory"))
 			for d in self.attributes:
 				if d.attribute in attributes:
-					frappe.throw(
+					nts.throw(
 						_("Attribute {0} selected multiple times in Attributes Table").format(d.attribute)
 					)
 				else:
@@ -944,7 +944,7 @@ class Item(Document):
 
 			variant = get_variant(self.variant_of, args, self.name)
 			if variant:
-				frappe.throw(
+				nts.throw(
 					_("Item variant {0} exists with same attributes").format(variant), ItemVariantExistsError
 				)
 
@@ -960,13 +960,13 @@ class Item(Document):
 
 		restricted_fields = ("has_serial_no", "is_stock_item", "valuation_method", "has_batch_no")
 
-		values = frappe.db.get_value("Item", self.name, restricted_fields, as_dict=True)
+		values = nts.db.get_value("Item", self.name, restricted_fields, as_dict=True)
 		if not values:
 			return
 
 		if not values.get("valuation_method") and self.get("valuation_method"):
 			values["valuation_method"] = (
-				frappe.db.get_single_value("Stock Settings", "valuation_method") or "FIFO"
+				nts.db.get_single_value("Stock Settings", "valuation_method") or "FIFO"
 			)
 
 		changed_fields = [
@@ -981,7 +981,7 @@ class Item(Document):
 			return
 
 		if linked_doc := self._get_linked_submitted_documents(changed_fields):
-			changed_field_labels = [frappe.bold(self.meta.get_label(f)) for f in changed_fields]
+			changed_field_labels = [nts.bold(self.meta.get_label(f)) for f in changed_fields]
 			msg = _(
 				"As there are existing submitted transactions against item {0}, you can not change the value of {1}."
 			).format(self.name, ", ".join(changed_field_labels))
@@ -989,10 +989,10 @@ class Item(Document):
 			if linked_doc and isinstance(linked_doc, dict):
 				msg += "<br>"
 				msg += _("Example of a linked document: {0}").format(
-					frappe.get_desk_link(linked_doc.doctype, linked_doc.docname)
+					nts.get_desk_link(linked_doc.doctype, linked_doc.docname)
 				)
 
-			frappe.throw(msg, title=_("Linked with submitted documents"))
+			nts.throw(msg, title=_("Linked with submitted documents"))
 
 	def _get_linked_submitted_documents(self, changed_fields: list[str]) -> dict[str, str] | None:
 		linked_doctypes = [
@@ -1027,7 +1027,7 @@ class Item(Document):
 					filters = {"item": self.name, "docstatus": 1}
 					fieldname = "name as docname"
 
-				if linked_doc := frappe.db.get_value(doctype, filters, fieldname, as_dict=True):
+				if linked_doc := nts.db.get_value(doctype, filters, fieldname, as_dict=True):
 					return linked_doc.update({"doctype": doctype})
 
 			elif doctype in (
@@ -1035,7 +1035,7 @@ class Item(Document):
 				"Sales Invoice Item",
 			):
 				# If Invoice has Stock impact, only then consider it.
-				if linked_doc := frappe.db.get_value(
+				if linked_doc := nts.db.get_value(
 					"Stock Ledger Entry",
 					{"item_code": self.name, "is_cancelled": 0},
 					["voucher_no as docname", "voucher_type as doctype"],
@@ -1043,7 +1043,7 @@ class Item(Document):
 				):
 					return linked_doc
 
-			elif linked_doc := frappe.db.get_value(
+			elif linked_doc := nts.db.get_value(
 				doctype,
 				filters,
 				["parent as docname", "parenttype as doctype"],
@@ -1053,9 +1053,9 @@ class Item(Document):
 
 	def validate_auto_reorder_enabled_in_stock_settings(self):
 		if self.reorder_levels:
-			enabled = frappe.db.get_single_value("Stock Settings", "auto_indent")
+			enabled = nts.db.get_single_value("Stock Settings", "auto_indent")
 			if not enabled:
-				frappe.msgprint(
+				nts.msgprint(
 					msg=_("You have to enable auto re-order in Stock Settings to maintain re-order levels."),
 					title=_("Enable Auto Re-Order"),
 					indicator="orange",
@@ -1088,7 +1088,7 @@ def convert_prodman_to_barcodenumber(prodman_number, barcode):
 
 
 def make_item_price(item, price_list_name, item_price):
-	frappe.get_doc(
+	nts.get_doc(
 		{
 			"doctype": "Item Price",
 			"price_list": price_list_name,
@@ -1101,10 +1101,10 @@ def make_item_price(item, price_list_name, item_price):
 def get_timeline_data(doctype: str, name: str) -> dict[int, int]:
 	"""get timeline data based on Stock Ledger Entry. This is displayed as heatmap on the item page."""
 
-	sle = frappe.qb.DocType("Stock Ledger Entry")
+	sle = nts.qb.DocType("Stock Ledger Entry")
 
 	return dict(
-		frappe.qb.from_(sle)
+		nts.qb.from_(sle)
 		.select(UnixTimestamp(sle.posting_date), Count("*"))
 		.where(sle.item_code == name)
 		.where(sle.posting_date > CurDate() - Interval(years=1))
@@ -1115,34 +1115,34 @@ def get_timeline_data(doctype: str, name: str) -> dict[int, int]:
 
 def validate_end_of_life(item_code, end_of_life=None, disabled=None):
 	if (not end_of_life) or (disabled is None):
-		end_of_life, disabled = frappe.db.get_value("Item", item_code, ["end_of_life", "disabled"])
+		end_of_life, disabled = nts.db.get_value("Item", item_code, ["end_of_life", "disabled"])
 
 	if end_of_life and end_of_life != "0000-00-00" and getdate(end_of_life) <= now_datetime().date():
-		frappe.throw(
+		nts.throw(
 			_("Item {0} has reached its end of life on {1}").format(item_code, formatdate(end_of_life))
 		)
 
 	if disabled:
-		frappe.throw(_("Item {0} is disabled").format(item_code))
+		nts.throw(_("Item {0} is disabled").format(item_code))
 
 
 def validate_is_stock_item(item_code, is_stock_item=None):
 	if not is_stock_item:
-		is_stock_item = frappe.db.get_value("Item", item_code, "is_stock_item")
+		is_stock_item = nts.db.get_value("Item", item_code, "is_stock_item")
 
 	if is_stock_item != 1:
-		frappe.throw(_("Item {0} is not a stock Item").format(item_code))
+		nts.throw(_("Item {0} is not a stock Item").format(item_code))
 
 
 def validate_cancelled_item(item_code, docstatus=None):
 	if docstatus is None:
-		docstatus = frappe.db.get_value("Item", item_code, "docstatus")
+		docstatus = nts.db.get_value("Item", item_code, "docstatus")
 
 	if docstatus == 2:
-		frappe.throw(_("Item {0} is cancelled").format(item_code))
+		nts.throw(_("Item {0} is cancelled").format(item_code))
 
 
-@frappe.request_cache
+@nts.request_cache
 def get_last_purchase_details(item_code, doc_name=None, conversion_rate=1.0):
 	"""returns last purchase details in stock uom"""
 	# get last purchase order item details
@@ -1177,10 +1177,10 @@ def get_last_purchase_details(item_code, doc_name=None, conversion_rate=1.0):
 			last_purchase = last_purchase_invoice[0]
 			purchase_date = getdate(last_purchase.posting_date)
 		else:
-			return frappe._dict()
+			return nts._dict()
 
 	conversion_factor = flt(last_purchase.conversion_factor)
-	out = frappe._dict(
+	out = nts._dict(
 		{
 			"base_price_list_rate": flt(last_purchase.base_price_list_rate) / conversion_factor,
 			"base_rate": flt(last_purchase.base_rate) / conversion_factor,
@@ -1204,11 +1204,11 @@ def get_last_purchase_details(item_code, doc_name=None, conversion_rate=1.0):
 
 
 def get_purchase_voucher_details(doctype, item_code, document_name=None):
-	parent_doc = frappe.qb.DocType(doctype)
-	child_doc = frappe.qb.DocType(doctype + " Item")
+	parent_doc = nts.qb.DocType(doctype)
+	child_doc = nts.qb.DocType(doctype + " Item")
 
 	query = (
-		frappe.qb.from_(parent_doc)
+		nts.qb.from_(parent_doc)
 		.inner_join(child_doc)
 		.on(parent_doc.name == child_doc.parent)
 		.select(
@@ -1240,20 +1240,20 @@ def get_purchase_voucher_details(doctype, item_code, document_name=None):
 
 
 def check_stock_uom_with_bin(item, stock_uom):
-	if stock_uom == frappe.db.get_value("Item", item, "stock_uom"):
+	if stock_uom == nts.db.get_value("Item", item, "stock_uom"):
 		return
 
-	ref_uom = frappe.db.get_value("Stock Ledger Entry", {"item_code": item}, "stock_uom")
+	ref_uom = nts.db.get_value("Stock Ledger Entry", {"item_code": item}, "stock_uom")
 
 	if ref_uom:
 		if cstr(ref_uom) != cstr(stock_uom):
-			frappe.throw(
+			nts.throw(
 				_(
 					"Default Unit of Measure for Item {0} cannot be changed directly because you have already made some transaction(s) with another UOM. You will need to create a new Item to use a different Default UOM."
 				).format(item)
 			)
 
-	bin_list = frappe.db.sql(
+	bin_list = nts.db.sql(
 		"""
 			select * from `tabBin` where item_code = %s
 				and (reserved_qty > 0 or ordered_qty > 0 or indented_qty > 0 or planned_qty > 0)
@@ -1264,18 +1264,18 @@ def check_stock_uom_with_bin(item, stock_uom):
 	)
 
 	if bin_list:
-		frappe.throw(
+		nts.throw(
 			_(
 				"Default Unit of Measure for Item {0} cannot be changed directly because you have already made some transaction(s) with another UOM. You need to either cancel the linked documents or create a new Item."
 			).format(item)
 		)
 
 	# No SLE or documents against item. Bin UOM can be changed safely.
-	frappe.db.sql("""update `tabBin` set stock_uom=%s where item_code=%s""", (stock_uom, item))
+	nts.db.sql("""update `tabBin` set stock_uom=%s where item_code=%s""", (stock_uom, item))
 
 
 def get_item_defaults(item_code, company):
-	item = frappe.get_cached_doc("Item", item_code)
+	item = nts.get_cached_doc("Item", item_code)
 
 	out = item.as_dict()
 
@@ -1288,12 +1288,12 @@ def get_item_defaults(item_code, company):
 
 
 def set_item_default(item_code, company, fieldname, value):
-	item = frappe.get_cached_doc("Item", item_code)
+	item = nts.get_cached_doc("Item", item_code)
 
 	for d in item.item_defaults:
 		if d.company == company:
 			if not d.get(fieldname):
-				frappe.db.set_value(d.doctype, d.name, fieldname, value)
+				nts.db.set_value(d.doctype, d.name, fieldname, value)
 			return
 
 	# no row found, add a new row for the company
@@ -1302,19 +1302,19 @@ def set_item_default(item_code, company, fieldname, value):
 	item.clear_cache()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_item_details(item_code, company=None):
-	out = frappe._dict()
+	out = nts._dict()
 	if company:
-		out = get_item_defaults(item_code, company) or frappe._dict()
+		out = get_item_defaults(item_code, company) or nts._dict()
 
-	doc = frappe.get_cached_doc("Item", item_code)
+	doc = nts.get_cached_doc("Item", item_code)
 	out.update(doc.as_dict())
 
 	return out
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_uom_conv_factor(uom, stock_uom):
 	"""Get UOM conversion factor from uom to stock_uom
 	e.g. uom = "Kg", stock_uom = "Gram" then returns 1000.0
@@ -1324,13 +1324,13 @@ def get_uom_conv_factor(uom, stock_uom):
 
 	from_uom, to_uom = uom, stock_uom  # renaming for readability
 
-	exact_match = frappe.db.get_value(
+	exact_match = nts.db.get_value(
 		"UOM Conversion Factor", {"to_uom": to_uom, "from_uom": from_uom}, ["value"], as_dict=1
 	)
 	if exact_match:
 		return exact_match.value
 
-	inverse_match = frappe.db.get_value(
+	inverse_match = nts.db.get_value(
 		"UOM Conversion Factor", {"to_uom": from_uom, "from_uom": to_uom}, ["value"], as_dict=1
 	)
 	if inverse_match:
@@ -1341,7 +1341,7 @@ def get_uom_conv_factor(uom, stock_uom):
 	# 			 g -> mg = 1000
 	# 			 g -> kg = 0.001
 	# therefore	 kg -> mg = 1000  / 0.001 = 1,000,000
-	intermediate_match = frappe.db.sql(
+	intermediate_match = nts.db.sql(
 		"""
 			select (first.value / second.value) as value
 			from `tabUOM Conversion Factor` first
@@ -1360,13 +1360,13 @@ def get_uom_conv_factor(uom, stock_uom):
 		return intermediate_match[0].value
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_item_attribute(parent, attribute_value=""):
 	"""Used for providing auto-completions in child table."""
-	if not frappe.has_permission("Item"):
-		frappe.throw(_("No Permission"))
+	if not nts.has_permission("Item"):
+		nts.throw(_("No Permission"))
 
-	return frappe.get_all(
+	return nts.get_all(
 		"Item Attribute Value",
 		fields=["attribute_value"],
 		filters={"parent": parent, "attribute_value": ("like", f"%{attribute_value}%")},
@@ -1376,11 +1376,11 @@ def get_item_attribute(parent, attribute_value=""):
 def update_variants(variants, template, publish_progress=True):
 	total = len(variants)
 	for count, d in enumerate(variants, start=1):
-		variant = frappe.get_doc("Item", d)
+		variant = nts.get_doc("Item", d)
 		copy_attributes_to_variant(template, variant)
 		variant.save()
 		if publish_progress:
-			frappe.publish_progress(count / total * 100, title=_("Updating Variants..."))
+			nts.publish_progress(count / total * 100, title=_("Updating Variants..."))
 
 
 def validate_item_default_company_links(item_defaults: list[ItemDefault]) -> None:
@@ -1393,28 +1393,28 @@ def validate_item_default_company_links(item_defaults: list[ItemDefault]) -> Non
 			["Account", "income_account"],
 		]:
 			if item_default.get(field):
-				company = frappe.db.get_value(doctype, item_default.get(field), "company", cache=True)
+				company = nts.db.get_value(doctype, item_default.get(field), "company", cache=True)
 				if company and company != item_default.company:
-					frappe.throw(
+					nts.throw(
 						_("Row #{}: {} {} doesn't belong to Company {}. Please select valid {}.").format(
 							item_default.idx,
 							doctype,
-							frappe.bold(item_default.get(field)),
-							frappe.bold(item_default.company),
-							frappe.bold(frappe.unscrub(field)),
+							nts.bold(item_default.get(field)),
+							nts.bold(item_default.company),
+							nts.bold(nts.unscrub(field)),
 						),
 						title=_("Invalid Item Defaults"),
 					)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_asset_naming_series():
 	from prodman.assets.doctype.asset.asset import get_asset_naming_series
 
 	return get_asset_naming_series()
 
 
-@frappe.request_cache
+@nts.request_cache
 def get_child_warehouses(warehouse):
 	from prodman.stock.doctype.warehouse.warehouse import get_child_warehouses
 

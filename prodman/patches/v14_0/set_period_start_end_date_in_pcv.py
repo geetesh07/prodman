@@ -1,13 +1,13 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts Technologies Pvt. Ltd. and Contributors
 # License: MIT. See LICENSE
 
 
-import frappe
+import nts
 
 
 def execute():
 	# nosemgrep
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		UPDATE `tabPeriod Closing Voucher`
 		SET

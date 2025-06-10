@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Total Stock Summary"] = {
+nts.query_reports["Total Stock Summary"] = {
 	filters: [
 		{
 			fieldname: "group_by",
@@ -19,7 +19,7 @@ frappe.query_reports["Total Stock Summary"] = {
 			width: "80",
 			options: "Company",
 			reqd: 1,
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 			depends_on: "eval: doc.group_by != 'Company'",
 		},
 	],

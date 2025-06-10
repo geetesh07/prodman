@@ -1,10 +1,10 @@
-import frappe
+import nts
 
 
 def execute():
-	# not using frappe.qb because https://github.com/frappe/frappe/issues/20292
+	# not using nts.qb because https://github.com/nts/nts/issues/20292
 	# nosemgrep
-	frappe.db.sql(
+	nts.db.sql(
 		"""UPDATE `tabAsset Depreciation Schedule`
         JOIN `tabAsset`
         ON `tabAsset Depreciation Schedule`.`asset`=`tabAsset`.`name`

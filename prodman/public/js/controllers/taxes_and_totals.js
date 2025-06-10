@@ -1,4 +1,4 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
@@ -31,7 +31,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 			item.discount_percentage = 100 * flt(item.discount_amount) / flt(item.rate_with_margin);
 		}
 
-		frappe.model.set_value(item.doctype, item.name, "rate", item_rate);
+		nts.model.set_value(item.doctype, item.name, "rate", item_rate);
 	}
 
 	async calculate_taxes_and_totals(update_paid_amount) {
@@ -87,7 +87,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 	}
 
 	calculate_discount_amount() {
-		if (frappe.meta.get_docfield(this.frm.doc.doctype, "discount_amount")) {
+		if (nts.meta.get_docfield(this.frm.doc.doctype, "discount_amount")) {
 			this.set_discount_amount();
 			this.apply_discount_amount();
 		}
@@ -110,7 +110,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 
 	validate_conversion_rate() {
 		this.frm.doc.conversion_rate = flt(this.frm.doc.conversion_rate, (cur_frm) ? precision("conversion_rate") : 9);
-		var conversion_rate_label = frappe.meta.get_label(this.frm.doc.doctype, "conversion_rate",
+		var conversion_rate_label = nts.meta.get_label(this.frm.doc.doctype, "conversion_rate",
 			this.frm.doc.name);
 		var company_currency = this.get_company_currency();
 
@@ -120,7 +120,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 			} else {
 				const subs =  [conversion_rate_label, this.frm.doc.currency, company_currency];
 				const err_message = __('{0} is mandatory. Maybe Currency Exchange record is not created for {1} to {2}', subs);
-				frappe.throw(err_message);
+				nts.throw(err_message);
 			}
 		}
 	}
@@ -129,7 +129,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 		var me = this;
 		if (!this.discount_amount_applied) {
 			for (const item of this.frm.doc.items || []) {
-				frappe.model.round_floats_in(item);
+				nts.model.round_floats_in(item);
 				item.net_rate = item.rate;
 				item.qty = item.qty === undefined ? (me.frm.doc.is_return ? -1 : 1) : item.qty;
 
@@ -187,33 +187,33 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 				prodman.accounts.taxes.validate_taxes_and_charges(tax.doctype, tax.name);
 				prodman.accounts.taxes.validate_inclusive_tax(tax, this.frm);
 			}
-			frappe.model.round_floats_in(tax);
+			nts.model.round_floats_in(tax);
 		});
 	}
 
 	fetch_round_off_accounts() {
 		let me = this;
-		frappe.flags.round_off_applicable_accounts = [];
+		nts.flags.round_off_applicable_accounts = [];
 
 		if (me.frm.doc.company) {
-			frappe.call({
+			nts.call({
 				"method": "prodman.controllers.taxes_and_totals.get_round_off_applicable_accounts",
 				"args": {
 					"company": me.frm.doc.company,
-					"account_list": frappe.flags.round_off_applicable_accounts
+					"account_list": nts.flags.round_off_applicable_accounts
 				},
 				callback(r) {
 					if (r.message) {
-						frappe.flags.round_off_applicable_accounts.push(...r.message);
+						nts.flags.round_off_applicable_accounts.push(...r.message);
 					}
 				}
 			});
 		}
 
-		frappe.call({
+		nts.call({
 			method: "prodman.controllers.taxes_and_totals.get_rounding_tax_settings",
 			callback: function(r) {
-				frappe.flags.round_off_settings = r.message;
+				nts.flags.round_off_settings = r.message;
 			}
 		});
 	}
@@ -306,7 +306,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 			me.frm.doc.base_net_total += item.base_net_amount;
 		});
 
-		frappe.model.round_floats_in(this.frm.doc, ["total", "base_total", "net_total", "base_net_total"]);
+		nts.model.round_floats_in(this.frm.doc, ["total", "base_total", "net_total", "base_net_total"]);
 	}
 
 	calculate_shipping_charges() {
@@ -315,8 +315,8 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 			return;
 		}
 
-		frappe.model.round_floats_in(this.frm.doc, ["total", "base_total", "net_total", "base_net_total"]);
-		if (frappe.meta.get_docfield(this.frm.doc.doctype, "shipping_rule", this.frm.doc.name)) {
+		nts.model.round_floats_in(this.frm.doc, ["total", "base_total", "net_total", "base_net_total"]);
+		if (nts.meta.get_docfield(this.frm.doc.doctype, "shipping_rule", this.frm.doc.name)) {
 			return this.shipping_rule();
 		}
 	}
@@ -324,7 +324,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 	add_taxes_from_item_tax_template(item_tax_map) {
 		let me = this;
 
-		if (item_tax_map && cint(frappe.defaults.get_default("add_taxes_from_item_tax_template"))) {
+		if (item_tax_map && cint(nts.defaults.get_default("add_taxes_from_item_tax_template"))) {
 			if (typeof (item_tax_map) == "string") {
 				item_tax_map = JSON.parse(item_tax_map);
 			}
@@ -332,7 +332,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 			$.each(item_tax_map, function(tax, rate) {
 				let found = (me.frm.doc.taxes || []).find(d => d.account_head === tax);
 				if (!found) {
-					let child = frappe.model.add_child(me.frm.doc, "taxes");
+					let child = nts.model.add_child(me.frm.doc, "taxes");
 					child.charge_type = "On Net Total";
 					child.account_head = tax;
 					child.rate = 0;
@@ -360,7 +360,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 			$.each(doc.taxes, function(i, tax) {
 				// tax_amount represents the amount of tax for the current step
 				var current_tax_amount = me.get_current_tax_amount(item, tax, item_tax_map);
-				if (frappe.flags.round_row_wise_tax) {
+				if (nts.flags.round_row_wise_tax) {
 					current_tax_amount = flt(current_tax_amount, precision("tax_amount", tax));
 				}
 
@@ -464,7 +464,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 		// To set row_id by default as previous row.
 		if(["On Previous Row Amount", "On Previous Row Total"].includes(tax.charge_type)) {
 			if (tax.idx === 1) {
-				frappe.throw(
+				nts.throw(
 					__("Cannot select charge type as 'On Previous Row Amount' or 'On Previous Row Total' for first row"));
 			}
 			if (!tax.row_id) {
@@ -508,7 +508,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 		}
 
 		let item_wise_tax_amount = current_tax_amount * this.frm.doc.conversion_rate;
-		if (frappe.flags.round_row_wise_tax) {
+		if (nts.flags.round_row_wise_tax) {
 			item_wise_tax_amount = flt(item_wise_tax_amount, precision("tax_amount", tax));
 			if (tax_detail && tax_detail[key]) {
 				item_wise_tax_amount += flt(tax_detail[key][1], precision("tax_amount", tax));
@@ -522,7 +522,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 	}
 
 	round_off_totals(tax) {
-		if (frappe.flags.round_off_applicable_accounts.includes(tax.account_head)) {
+		if (nts.flags.round_off_applicable_accounts.includes(tax.account_head)) {
 			tax.tax_amount= Math.round(tax.tax_amount);
 			tax.tax_amount_after_discount_amount = Math.round(tax.tax_amount_after_discount_amount);
 		}
@@ -532,7 +532,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 	}
 
 	round_off_base_values(tax) {
-		if (frappe.flags.round_off_applicable_accounts.includes(tax.account_head)) {
+		if (nts.flags.round_off_applicable_accounts.includes(tax.account_head)) {
 			tax.base_tax_amount= Math.round(tax.base_tax_amount);
 			tax.base_tax_amount_after_discount_amount = Math.round(tax.base_tax_amount_after_discount_amount);
 		}
@@ -557,7 +557,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 			});
 			if (any_inclusive_tax) {
 				var last_tax = me.frm.doc["taxes"].slice(-1)[0];
-				var non_inclusive_tax_amount = frappe.utils.sum($.map(this.frm.doc.taxes || [],
+				var non_inclusive_tax_amount = nts.utils.sum($.map(this.frm.doc.taxes || [],
 					function(d) {
 						if(!d.included_in_print_rate) {
 							let tax_amount = d.category === "Valuation" ? 0 : d.tax_amount_after_discount_amount;
@@ -609,7 +609,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 					}
 				});
 
-				frappe.model.round_floats_in(this.frm.doc,
+				nts.model.round_floats_in(this.frm.doc,
 					["taxes_and_charges_added", "taxes_and_charges_deducted"]);
 			}
 
@@ -626,7 +626,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 		this.set_in_company_currency(this.frm.doc, ["total_taxes_and_charges"]);
 
 		// Round grand total as per precision
-		frappe.model.round_floats_in(this.frm.doc, ["grand_total", "base_grand_total"]);
+		nts.model.round_floats_in(this.frm.doc, ["grand_total", "base_grand_total"]);
 
 		// rounded totals
 		this.set_rounded_total();
@@ -634,10 +634,10 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 
 	set_rounded_total() {
 		var disable_rounded_total = 0;
-		if(frappe.meta.get_docfield(this.frm.doc.doctype, "disable_rounded_total", this.frm.doc.name)) {
+		if(nts.meta.get_docfield(this.frm.doc.doctype, "disable_rounded_total", this.frm.doc.name)) {
 			disable_rounded_total = this.frm.doc.disable_rounded_total;
-		} else if (frappe.sys_defaults.disable_rounded_total) {
-			disable_rounded_total = frappe.sys_defaults.disable_rounded_total;
+		} else if (nts.sys_defaults.disable_rounded_total) {
+			disable_rounded_total = nts.sys_defaults.disable_rounded_total;
 		}
 
 		if (cint(disable_rounded_total)) {
@@ -647,7 +647,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 			return;
 		}
 
-		if(frappe.meta.get_docfield(this.frm.doc.doctype, "rounded_total", this.frm.doc.name)) {
+		if(nts.meta.get_docfield(this.frm.doc.doctype, "rounded_total", this.frm.doc.name)) {
 			this.frm.doc.rounded_total = round_based_on_smallest_currency_fraction(this.frm.doc.grand_total,
 				this.frm.doc.currency, precision("rounded_total"));
 			this.frm.doc.rounding_adjustment = flt(this.frm.doc.rounded_total - this.frm.doc.grand_total,
@@ -662,7 +662,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 		let items = this.frm.doc.items;
 
 		if(items && items.length) {
-			if(!frappe.meta.get_docfield(items[0].doctype, "item_tax_amount", this.frm.doctype)) {
+			if(!nts.meta.get_docfield(items[0].doctype, "item_tax_amount", this.frm.doctype)) {
 				$.each(items || [], function(i, item) {
 					delete item["item_tax_amount"];
 				});
@@ -673,7 +673,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 			var temporary_fields = ["tax_amount_for_current_item", "grand_total_for_current_item",
 				"tax_fraction_for_current_item", "grand_total_fraction_for_current_item"];
 
-			if(!frappe.meta.get_docfield(this.frm.doc["taxes"][0].doctype, "tax_amount_after_discount_amount", this.frm.doctype)) {
+			if(!nts.meta.get_docfield(this.frm.doc["taxes"][0].doctype, "tax_amount_after_discount_amount", this.frm.doctype)) {
 				temporary_fields.push("tax_amount_after_discount_amount");
 			}
 
@@ -691,7 +691,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 
 	set_discount_amount() {
 		if(this.frm.doc.additional_discount_percentage) {
-			this.frm.doc.discount_amount = flt(flt(this.frm.doc[frappe.scrub(this.frm.doc.apply_discount_on)])
+			this.frm.doc.discount_amount = flt(flt(this.frm.doc[nts.scrub(this.frm.doc.apply_discount_on)])
 				* this.frm.doc.additional_discount_percentage / 100, precision("discount_amount"));
 		}
 	}
@@ -703,7 +703,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 
 		if (this.frm.doc.discount_amount) {
 			if(!this.frm.doc.apply_discount_on)
-				frappe.throw(__("Please select Apply Discount On"));
+				nts.throw(__("Please select Apply Discount On"));
 
 			this.frm.doc.base_discount_amount = flt(this.frm.doc.discount_amount * this.frm.doc.conversion_rate,
 				precision("base_discount_amount"));
@@ -781,7 +781,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 	}
 
 	calculate_total_advance(update_paid_amount) {
-		var total_allocated_amount = frappe.utils.sum($.map(this.frm.doc["advances"] || [], function(adv) {
+		var total_allocated_amount = nts.utils.sum($.map(this.frm.doc["advances"] || [], function(adv) {
 			return flt(adv.allocated_amount, precision("allocated_amount", adv));
 		}));
 		this.frm.doc.total_advance = flt(total_allocated_amount, precision("total_advance"));
@@ -813,7 +813,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 
 		if (this.frm.doc.is_return || (this.frm.doc.docstatus > 0) || this.is_internal_invoice()) return;
 
-		frappe.model.round_floats_in(this.frm.doc, ["grand_total", "total_advance", "write_off_amount"]);
+		nts.model.round_floats_in(this.frm.doc, ["grand_total", "total_advance", "write_off_amount"]);
 
 		if(["Sales Invoice", "POS Invoice", "Purchase Invoice"].includes(this.frm.doc.doctype)) {
 			let grand_total = this.frm.doc.rounded_total || this.frm.doc.grand_total;
@@ -830,7 +830,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 				);
 			}
 
-			frappe.model.round_floats_in(this.frm.doc, ["paid_amount"]);
+			nts.model.round_floats_in(this.frm.doc, ["paid_amount"]);
 			this.set_in_company_currency(this.frm.doc, ["paid_amount"]);
 
 			if(this.frm.refresh_field){
@@ -897,7 +897,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 		*/
 
 		if(this.frm.doc.return_against){
-			let {message : return_against_mop } = await frappe.call({
+			let {message : return_against_mop } = await nts.call({
 				method: 'prodman.controllers.sales_and_purchase_return.get_payment_data',
 				args: {
 					invoice: this.frm.doc.return_against
@@ -932,7 +932,7 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 		var me = this;
 		var payment_status = true;
 		if(this.frm.doc.is_pos && (update_paid_amount===undefined || update_paid_amount)) {
-			let r = await frappe.db.get_value("POS Profile", this.frm.doc.pos_profile, "disable_grand_total_to_default_mop");
+			let r = await nts.db.get_value("POS Profile", this.frm.doc.pos_profile, "disable_grand_total_to_default_mop");
 
 			if (r.message.disable_grand_total_to_default_mop) {
 				return;
@@ -953,12 +953,12 @@ prodman.taxes_and_totals = class TaxesAndTotals extends prodman.payments {
 						amount = flt(total_amount_to_pay / me.frm.doc.conversion_rate, precision("amount", data));
 					}
 
-					frappe.model.set_value(data.doctype, data.name, "base_amount", base_amount);
-					frappe.model.set_value(data.doctype, data.name, "amount", amount);
+					nts.model.set_value(data.doctype, data.name, "base_amount", base_amount);
+					nts.model.set_value(data.doctype, data.name, "amount", amount);
 					payment_status = false;
 
 				} else if(me.frm.doc.paid_amount) {
-					frappe.model.set_value(data.doctype, data.name, "amount", 0.0);
+					nts.model.set_value(data.doctype, data.name, "amount", 0.0);
 				}
 			});
 		}

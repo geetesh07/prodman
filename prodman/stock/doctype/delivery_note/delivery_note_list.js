@@ -1,4 +1,4 @@
-frappe.listview_settings["Delivery Note"] = {
+nts.listview_settings["Delivery Note"] = {
 	add_fields: [
 		"customer",
 		"customer_name",
@@ -32,20 +32,20 @@ frappe.listview_settings["Delivery Note"] = {
 			if (selected_docs.length > 0) {
 				for (let doc of selected_docs) {
 					if (!doc.docstatus) {
-						frappe.throw(__("Cannot create a Delivery Trip from Draft documents."));
+						nts.throw(__("Cannot create a Delivery Trip from Draft documents."));
 					}
 				}
 
-				frappe.new_doc("Delivery Trip").then(() => {
+				nts.new_doc("Delivery Trip").then(() => {
 					// Empty out the child table before inserting new ones
 					cur_frm.set_value("delivery_stops", []);
 
 					// We don't want to use `map_current_doc` since it brings up
 					// the dialog to select more items. We just want the mapper
 					// function to be called.
-					frappe.call({
+					nts.call({
 						type: "POST",
-						method: "frappe.model.mapper.map_docs",
+						method: "nts.model.mapper.map_docs",
 						args: {
 							method: "prodman.stock.doctype.delivery_note.delivery_note.make_delivery_trip",
 							source_names: docnames,
@@ -53,7 +53,7 @@ frappe.listview_settings["Delivery Note"] = {
 						},
 						callback: function (r) {
 							if (!r.exc) {
-								frappe.model.sync(r.message);
+								nts.model.sync(r.message);
 								cur_frm.dirty();
 								cur_frm.refresh();
 							}
@@ -63,17 +63,17 @@ frappe.listview_settings["Delivery Note"] = {
 			}
 		};
 
-		if (frappe.model.can_create("Delivery Trip")) {
+		if (nts.model.can_create("Delivery Trip")) {
 			doclist.page.add_action_item(__("Create Delivery Trip"), action);
 		}
 
-		if (frappe.model.can_create("Sales Invoice")) {
+		if (nts.model.can_create("Sales Invoice")) {
 			doclist.page.add_action_item(__("Sales Invoice"), () => {
 				prodman.bulk_transaction_processing.create(doclist, "Delivery Note", "Sales Invoice");
 			});
 		}
 
-		if (frappe.model.can_create("Packing Slip")) {
+		if (nts.model.can_create("Packing Slip")) {
 			doclist.page.add_action_item(__("Packaging Slip From Delivery Note"), () => {
 				prodman.bulk_transaction_processing.create(doclist, "Delivery Note", "Packing Slip");
 			});

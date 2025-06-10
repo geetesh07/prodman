@@ -1,7 +1,7 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.views.calendar["Work Order"] = {
+nts.views.calendar["Work Order"] = {
 	fields: ["planned_start_date", "planned_end_date", "status", "produced_qty", "qty", "name", "name"],
 	field_map: {
 		start: "planned_start_date",
@@ -44,5 +44,5 @@ frappe.views.calendar["Work Order"] = {
 			label: __("WIP Warehouse"),
 		},
 	],
-	get_events_method: "frappe.desk.calendar.get_events",
+	get_events_method: "nts.desk.calendar.get_events",
 };

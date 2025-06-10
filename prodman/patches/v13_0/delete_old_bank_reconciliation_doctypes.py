@@ -1,9 +1,9 @@
-# Copyright (c) 2019, Frappe and Contributors
+# Copyright (c) 2019, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.model.utils.rename_field import rename_field
+import nts
+from nts.model.utils.rename_field import rename_field
 
 
 def execute():
@@ -18,11 +18,11 @@ def execute():
 	]
 
 	for doctype in doctypes:
-		frappe.delete_doc("DocType", doctype, force=1)
+		nts.delete_doc("DocType", doctype, force=1)
 
-	frappe.delete_doc("Page", "bank-reconciliation", force=1)
+	nts.delete_doc("Page", "bank-reconciliation", force=1)
 
-	frappe.reload_doc("accounts", "doctype", "bank_transaction")
+	nts.reload_doc("accounts", "doctype", "bank_transaction")
 
 	rename_field("Bank Transaction", "debit", "deposit")
 	rename_field("Bank Transaction", "credit", "withdrawal")

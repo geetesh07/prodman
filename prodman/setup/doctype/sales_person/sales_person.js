@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.ui.form.on("Sales Person", {
+nts.ui.form.on("Sales Person", {
 	refresh: function (frm) {
 		if (frm.doc.__onload && frm.doc.__onload.dashboard_info) {
 			let info = frm.doc.__onload.dashboard_info;
@@ -34,7 +34,7 @@ frappe.ui.form.on("Sales Person", {
 
 		frm.make_methods = {
 			"Sales Order": () =>
-				frappe
+				nts
 					.new_doc("Sales Order")
 					.then(() => frm.add_child("sales_team", { sales_person: frm.doc.name })),
 		};

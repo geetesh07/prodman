@@ -7,7 +7,7 @@
 			<div class="col-2"> {{ _(doc.address_type) }} </div>
 			<div class="col-2"> {{ doc.city }} </div>
 			<div class="col-5 text-right small text-muted">
-	            {{ frappe.get_doc(doc).get_display() }}
+	            {{ nts.get_doc(doc).get_display() }}
 	        </div>
 	    </div>
     </a>

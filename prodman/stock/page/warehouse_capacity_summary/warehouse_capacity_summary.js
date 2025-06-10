@@ -1,5 +1,5 @@
-frappe.pages["warehouse-capacity-summary"].on_page_load = function (wrapper) {
-	var page = frappe.ui.make_app_page({
+nts.pages["warehouse-capacity-summary"].on_page_load = function (wrapper) {
+	var page = nts.ui.make_app_page({
 		parent: wrapper,
 		title: "Warehouse Capacity Summary",
 		single_column: true,
@@ -13,7 +13,7 @@ frappe.pages["warehouse-capacity-summary"].on_page_load = function (wrapper) {
 		fieldtype: "Link",
 		options: "Company",
 		reqd: 1,
-		default: frappe.defaults.get_default("company"),
+		default: nts.defaults.get_default("company"),
 		change: function () {
 			page.capacity_dashboard.start = 0;
 			page.capacity_dashboard.refresh();
@@ -60,7 +60,7 @@ frappe.pages["warehouse-capacity-summary"].on_page_load = function (wrapper) {
 		},
 	});
 
-	page.sort_selector = new frappe.ui.SortSelector({
+	page.sort_selector = new nts.ui.SortSelector({
 		parent: page.wrapper.find(".page-form"),
 		args: {
 			sort_by: "stock_capacity",
@@ -79,8 +79,8 @@ frappe.pages["warehouse-capacity-summary"].on_page_load = function (wrapper) {
 		},
 	});
 
-	frappe.require("item-dashboard.bundle.js", function () {
-		$(frappe.render_template("warehouse_capacity_summary_header")).appendTo(page.main);
+	nts.require("item-dashboard.bundle.js", function () {
+		$(nts.render_template("warehouse_capacity_summary_header")).appendTo(page.main);
 
 		page.capacity_dashboard = new prodman.stock.ItemDashboard({
 			page_name: "warehouse-capacity-summary",
@@ -106,7 +106,7 @@ frappe.pages["warehouse-capacity-summary"].on_page_load = function (wrapper) {
 				var name = $(this).attr("data-name");
 				var field = page[doctype.toLowerCase() + "_field"];
 				if (field.get_value() === name) {
-					frappe.set_route("Form", doctype, name);
+					nts.set_route("Form", doctype, name);
 				} else {
 					field.set_input(name);
 					page.capacity_dashboard.refresh();

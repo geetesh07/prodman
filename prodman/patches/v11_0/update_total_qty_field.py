@@ -1,15 +1,15 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("buying", "doctype", "purchase_order")
-	frappe.reload_doc("buying", "doctype", "supplier_quotation")
-	frappe.reload_doc("selling", "doctype", "sales_order")
-	frappe.reload_doc("selling", "doctype", "quotation")
-	frappe.reload_doc("stock", "doctype", "delivery_note")
-	frappe.reload_doc("stock", "doctype", "purchase_receipt")
-	frappe.reload_doc("accounts", "doctype", "sales_invoice")
-	frappe.reload_doc("accounts", "doctype", "purchase_invoice")
+	nts.reload_doc("buying", "doctype", "purchase_order")
+	nts.reload_doc("buying", "doctype", "supplier_quotation")
+	nts.reload_doc("selling", "doctype", "sales_order")
+	nts.reload_doc("selling", "doctype", "quotation")
+	nts.reload_doc("stock", "doctype", "delivery_note")
+	nts.reload_doc("stock", "doctype", "purchase_receipt")
+	nts.reload_doc("accounts", "doctype", "sales_invoice")
+	nts.reload_doc("accounts", "doctype", "purchase_invoice")
 
 	doctypes = [
 		"Sales Order",
@@ -23,7 +23,7 @@ def execute():
 	]
 
 	for doctype in doctypes:
-		total_qty = frappe.db.sql(
+		total_qty = nts.db.sql(
 			f"""
 			SELECT
 				parent, SUM(qty) as qty
@@ -51,9 +51,9 @@ def execute():
 			# This is probably never used anywhere else as of now, but should be
 			values = []
 			for d in batch_transactions:
-				values.append(f"({frappe.db.escape(d.parent)}, {d.qty})")
+				values.append(f"({nts.db.escape(d.parent)}, {d.qty})")
 			conditions = ",".join(values)
-			frappe.db.sql(
+			nts.db.sql(
 				f"""
 				INSERT INTO `tab{doctype}` (name, total_qty) VALUES {conditions}
 				ON DUPLICATE KEY UPDATE name = VALUES(name), total_qty = VALUES(total_qty)

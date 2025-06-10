@@ -24,15 +24,15 @@ class BOMConfigurator {
 			...this.tree_methods(),
 		};
 
-		frappe.views.trees["BOM Configurator"] = new frappe.views.TreeView(options);
-		let node = frappe.views.trees["BOM Configurator"].tree.root_node;
-		frappe.views.trees["BOM Configurator"].tree.show_toolbar(node);
-		frappe.views.trees["BOM Configurator"].tree.load_children(node, true);
-		this.tree_view = frappe.views.trees["BOM Configurator"];
+		nts.views.trees["BOM Configurator"] = new nts.views.TreeView(options);
+		let node = nts.views.trees["BOM Configurator"].tree.root_node;
+		nts.views.trees["BOM Configurator"].tree.show_toolbar(node);
+		nts.views.trees["BOM Configurator"].tree.load_children(node, true);
+		this.tree_view = nts.views.trees["BOM Configurator"];
 	}
 
 	bind_events() {
-		frappe.views.trees["BOM Configurator"].events = {
+		nts.views.trees["BOM Configurator"].events = {
 			frm: this.frm,
 			add_item: this.add_item,
 			add_sub_assembly: this.add_sub_assembly,
@@ -67,7 +67,7 @@ class BOMConfigurator {
 
 	tree_methods() {
 		let frm_obj = this;
-		let view = frappe.views.trees["BOM Configurator"];
+		let view = nts.views.trees["BOM Configurator"];
 
 		return {
 			onload: function (me) {
@@ -86,7 +86,7 @@ class BOMConfigurator {
 					amount = frm_obj.frm.doc.raw_material_cost;
 				}
 
-				amount = frappe.format(amount, { fieldtype: "Currency", currency: frm_obj.frm.doc.currency });
+				amount = nts.format(amount, { fieldtype: "Currency", currency: frm_obj.frm.doc.currency });
 
 				$(`
 					<div class="pill small pull-right bom-qty-pill"
@@ -110,17 +110,17 @@ class BOMConfigurator {
 				this.frm?.doc.docstatus === 0
 					? [
 							{
-								label: `${frappe.utils.icon("edit", "sm")} ${__("Qty")}`,
+								label: `${nts.utils.icon("edit", "sm")} ${__("Qty")}`,
 								click: function (node) {
-									let view = frappe.views.trees["BOM Configurator"];
+									let view = nts.views.trees["BOM Configurator"];
 									view.events.edit_qty(node, view);
 								},
 								btnClass: "hidden-xs",
 							},
 							{
-								label: `${frappe.utils.icon("add", "sm")} ${__("Raw Material")}`,
+								label: `${nts.utils.icon("add", "sm")} ${__("Raw Material")}`,
 								click: function (node) {
-									let view = frappe.views.trees["BOM Configurator"];
+									let view = nts.views.trees["BOM Configurator"];
 									view.events.add_item(node, view);
 								},
 								condition: function (node) {
@@ -129,9 +129,9 @@ class BOMConfigurator {
 								btnClass: "hidden-xs",
 							},
 							{
-								label: `${frappe.utils.icon("add", "sm")} ${__("Sub Assembly")}`,
+								label: `${nts.utils.icon("add", "sm")} ${__("Sub Assembly")}`,
 								click: function (node) {
-									let view = frappe.views.trees["BOM Configurator"];
+									let view = nts.views.trees["BOM Configurator"];
 									view.events.add_sub_assembly(node, view);
 								},
 								condition: function (node) {
@@ -142,7 +142,7 @@ class BOMConfigurator {
 							{
 								label: __("Collapse All"),
 								click: function (node) {
-									let view = frappe.views.trees["BOM Configurator"];
+									let view = nts.views.trees["BOM Configurator"];
 
 									if (!node.expanded) {
 										view.tree.load_children(node, true);
@@ -159,9 +159,9 @@ class BOMConfigurator {
 								btnClass: "hidden-xs expand-all-btn",
 							},
 							{
-								label: `${frappe.utils.icon("move", "sm")} ${__("Sub Assembly")}`,
+								label: `${nts.utils.icon("move", "sm")} ${__("Sub Assembly")}`,
 								click: function (node) {
-									let view = frappe.views.trees["BOM Configurator"];
+									let view = nts.views.trees["BOM Configurator"];
 									view.events.convert_to_sub_assembly(node, view);
 								},
 								condition: function (node) {
@@ -170,9 +170,9 @@ class BOMConfigurator {
 								btnClass: "hidden-xs",
 							},
 							{
-								label: `${frappe.utils.icon("delete", "sm")} ${__("Item")}`,
+								label: `${nts.utils.icon("delete", "sm")} ${__("Item")}`,
 								click: function (node) {
-									let view = frappe.views.trees["BOM Configurator"];
+									let view = nts.views.trees["BOM Configurator"];
 									view.events.delete_node(node, view);
 								},
 								condition: function (node) {
@@ -185,7 +185,7 @@ class BOMConfigurator {
 							{
 								label: __("Expand All"),
 								click: function (node) {
-									let view = frappe.views.trees["BOM Configurator"];
+									let view = nts.views.trees["BOM Configurator"];
 
 									if (!node.expanded) {
 										view.tree.load_children(node, true);
@@ -206,7 +206,7 @@ class BOMConfigurator {
 	}
 
 	add_item(node, view) {
-		frappe.prompt(
+		nts.prompt(
 			[
 				{ label: __("Item"), fieldname: "item_code", fieldtype: "Link", options: "Item", reqd: 1 },
 				{ label: __("Qty"), fieldname: "qty", default: 1.0, fieldtype: "Float", reqd: 1 },
@@ -223,7 +223,7 @@ class BOMConfigurator {
 					node.data.parent_id = this.frm.doc.name;
 				}
 
-				frappe.call({
+				nts.call({
 					method: "prodman.manufacturing.doctype.bom_creator.bom_creator.add_item",
 					args: {
 						parent: node.data.parent_id,
@@ -244,7 +244,7 @@ class BOMConfigurator {
 	}
 
 	add_sub_assembly(node, view) {
-		let dialog = new frappe.ui.Dialog({
+		let dialog = new nts.ui.Dialog({
 			fields: view.events.get_sub_assembly_modal_fields(),
 			title: __("Add Sub Assembly"),
 		});
@@ -259,7 +259,7 @@ class BOMConfigurator {
 				node.data.parent_id = this.frm.doc.name;
 			}
 
-			frappe.call({
+			nts.call({
 				method: "prodman.manufacturing.doctype.bom_creator.bom_creator.add_sub_assembly",
 				args: {
 					parent: node.data.parent_id,
@@ -340,7 +340,7 @@ class BOMConfigurator {
 	}
 
 	convert_to_sub_assembly(node, view) {
-		let dialog = new frappe.ui.Dialog({
+		let dialog = new nts.ui.Dialog({
 			fields: view.events.get_sub_assembly_modal_fields(true),
 			title: __("Add Sub Assembly"),
 		});
@@ -356,7 +356,7 @@ class BOMConfigurator {
 		dialog.set_primary_action(__("Add"), () => {
 			let bom_item = dialog.get_values();
 
-			frappe.call({
+			nts.call({
 				method: "prodman.manufacturing.doctype.bom_creator.bom_creator.add_sub_assembly",
 				args: {
 					parent: node.data.parent_id,
@@ -387,8 +387,8 @@ class BOMConfigurator {
 	}
 
 	delete_node(node, view) {
-		frappe.confirm(__("Are you sure you want to delete this Item?"), () => {
-			frappe.call({
+		nts.confirm(__("Are you sure you want to delete this Item?"), () => {
+			nts.call({
 				method: "prodman.manufacturing.doctype.bom_creator.bom_creator.delete_node",
 				args: {
 					parent: node.data.parent_id,
@@ -405,13 +405,13 @@ class BOMConfigurator {
 
 	edit_qty(node, view) {
 		let qty = node.data.qty || this.frm.doc.qty;
-		frappe.prompt(
+		nts.prompt(
 			[{ label: __("Qty"), fieldname: "qty", default: qty, fieldtype: "Float", reqd: 1 }],
 			(data) => {
 				let doctype = node.data.doctype || this.frm.doc.doctype;
 				let docname = node.data.name || this.frm.doc.name;
 
-				frappe.call({
+				nts.call({
 					method: "prodman.manufacturing.doctype.bom_creator.bom_creator.edit_qty",
 					args: {
 						doctype: doctype,
@@ -448,7 +448,7 @@ class BOMConfigurator {
 		let parent_dom = "";
 		let total_amount = response.message.raw_material_cost;
 
-		frappe.views.trees["BOM Configurator"].tree.load_children(node);
+		nts.views.trees["BOM Configurator"].tree.load_children(node);
 
 		while (node) {
 			item_row = response.message.items.filter((item) => item.name === node.data.name);
@@ -461,7 +461,7 @@ class BOMConfigurator {
 			}
 
 			parent_dom = $(node.parent.get(0));
-			total_amount = frappe.format(total_amount, {
+			total_amount = nts.format(total_amount, {
 				fieldtype: "Currency",
 				currency: this.frm.doc.currency,
 			});
@@ -472,4 +472,4 @@ class BOMConfigurator {
 	}
 }
 
-frappe.ui.BOMConfigurator = BOMConfigurator;
+nts.ui.BOMConfigurator = BOMConfigurator;

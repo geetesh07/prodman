@@ -1,11 +1,11 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2019, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import get_link_to_form
+import nts
+from nts import _
+from nts.model.document import Document
+from nts.utils import get_link_to_form
 
 
 class ProjectTemplate(Document):
@@ -15,7 +15,7 @@ class ProjectTemplate(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.projects.doctype.project_template_task.project_template_task import (
 			ProjectTemplateTask,
@@ -30,15 +30,15 @@ class ProjectTemplate(Document):
 
 	def validate_dependencies(self):
 		for task in self.tasks:
-			task_details = frappe.get_doc("Task", task.task)
+			task_details = nts.get_doc("Task", task.task)
 			if task_details.depends_on:
 				for dependency_task in task_details.depends_on:
 					if not self.check_dependent_task_presence(dependency_task.task):
 						task_details_format = get_link_to_form("Task", task_details.name)
 						dependency_task_format = get_link_to_form("Task", dependency_task.task)
-						frappe.throw(
+						nts.throw(
 							_("Task {0} depends on Task {1}. Please add Task {1} to the Tasks list.").format(
-								frappe.bold(task_details_format), frappe.bold(dependency_task_format)
+								nts.bold(task_details_format), nts.bold(dependency_task_format)
 							)
 						)
 

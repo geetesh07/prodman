@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
@@ -7,10 +7,10 @@ import functools
 import math
 import re
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import Sum
-from frappe.utils import add_days, add_months, cint, cstr, flt, formatdate, get_first_day, getdate
+import nts 
+from nts  import _
+from nts .query_builder.functions import Sum
+from nts .utils import add_days, add_months, cint, cstr, flt, formatdate, get_first_day, getdate
 from pypika.terms import ExistsCriterion
 
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
@@ -54,7 +54,7 @@ def get_period_list(
 	months = get_months(year_start_date, year_end_date)
 
 	for i in range(cint(math.ceil(months / months_to_add))):
-		period = frappe._dict({"from_date": start_date})
+		period = nts ._dict({"from_date": start_date})
 
 		if i == 0 and filter_based_on == "Date Range":
 			to_date = add_months(get_first_day(start_date), months_to_add)
@@ -109,7 +109,7 @@ def get_period_list(
 
 
 def get_fiscal_year_data(from_fiscal_year, to_fiscal_year):
-	fiscal_year = frappe.db.sql(
+	fiscal_year = nts .db.sql(
 		"""select min(year_start_date) as year_start_date,
 		max(year_end_date) as year_end_date from `tabFiscal Year` where
 		name between %(from_fiscal_year)s and %(to_fiscal_year)s""",
@@ -122,18 +122,18 @@ def get_fiscal_year_data(from_fiscal_year, to_fiscal_year):
 
 def validate_fiscal_year(fiscal_year, from_fiscal_year, to_fiscal_year):
 	if not fiscal_year.get("year_start_date") or not fiscal_year.get("year_end_date"):
-		frappe.throw(_("Start Year and End Year are mandatory"))
+		nts .throw(_("Start Year and End Year are mandatory"))
 
 	if getdate(fiscal_year.get("year_end_date")) < getdate(fiscal_year.get("year_start_date")):
-		frappe.throw(_("End Year cannot be before Start Year"))
+		nts .throw(_("End Year cannot be before Start Year"))
 
 
 def validate_dates(from_date, to_date):
 	if not from_date or not to_date:
-		frappe.throw(_("From Date and To Date are mandatory"))
+		nts .throw(_("From Date and To Date are mandatory"))
 
 	if to_date < from_date:
-		frappe.throw(_("To Date cannot be less than From Date"))
+		nts .throw(_("To Date cannot be less than From Date"))
 
 
 def get_months(start_date, end_date):
@@ -174,7 +174,7 @@ def get_data(
 	company_currency = get_appropriate_currency(company, filters)
 
 	gl_entries_by_account = {}
-	for root in frappe.db.sql(
+	for root in nts .db.sql(
 		"""select lft, rgt from tabAccount
 			where root_type=%s and ifnull(parent_account, '') = ''""",
 		root_type,
@@ -219,7 +219,7 @@ def get_appropriate_currency(company, filters=None):
 	if filters and filters.get("presentation_currency"):
 		return filters["presentation_currency"]
 	else:
-		return frappe.get_cached_value("Company", company, "default_currency")
+		return nts .get_cached_value("Company", company, "default_currency")
 
 
 def calculate_values(
@@ -233,7 +233,7 @@ def calculate_values(
 		for entry in entries:
 			d = accounts_by_name.get(entry.account)
 			if not d:
-				frappe.msgprint(
+				nts .msgprint(
 					_("Could not retrieve information for {0}.").format(entry.account),
 					title="Error",
 					raise_exception=1,
@@ -275,7 +275,7 @@ def prepare_data(accounts, balance_must_be, period_list, company_currency, accum
 		# add to output
 		has_value = False
 		total = 0
-		row = frappe._dict(
+		row = nts ._dict(
 			{
 				"account": _(d.name),
 				"parent_account": _(d.parent_account) if d.parent_account else "",
@@ -360,7 +360,7 @@ def add_total_row(out, root_type, balance_must_be, period_list, company_currency
 
 
 def get_accounts(company, root_type):
-	return frappe.db.sql(
+	return nts .db.sql(
 		"""
 		select name, account_number, parent_account, lft, rgt, root_type, report_type, account_name, include_in_gross, account_type, is_group, lft, rgt
 		from `tabAccount`
@@ -435,11 +435,11 @@ def set_gl_entries_by_account(
 	gl_entries = []
 
 	# For balance sheet
-	ignore_closing_balances = frappe.db.get_single_value(
+	ignore_closing_balances = nts .db.get_single_value(
 		"Accounts Settings", "ignore_account_closing_balance"
 	)
 	if not from_date and not ignore_closing_balances:
-		last_period_closing_voucher = frappe.db.get_all(
+		last_period_closing_voucher = nts .db.get_all(
 			"Period Closing Voucher",
 			filters={
 				"docstatus": 1,
@@ -501,9 +501,9 @@ def get_accounting_entries(
 	ignore_opening_entries=False,
 	group_by_account=False,
 ):
-	gl_entry = frappe.qb.DocType(doctype)
+	gl_entry = nts .qb.DocType(doctype)
 	query = (
-		frappe.qb.from_(gl_entry)
+		nts .qb.from_(gl_entry)
 		.select(
 			gl_entry.account,
 			gl_entry.debit if not group_by_account else Sum(gl_entry.debit).as_("debit"),
@@ -519,7 +519,7 @@ def get_accounting_entries(
 		.where(gl_entry.company == filters.company)
 	)
 
-	ignore_is_opening = frappe.db.get_single_value(
+	ignore_is_opening = nts .db.get_single_value(
 		"Accounts Settings", "ignore_is_opening_check_for_reporting"
 	)
 
@@ -540,7 +540,7 @@ def get_accounting_entries(
 		account_filter_query = get_account_filter_query(root_lft, root_rgt, root_type, gl_entry)
 		query = query.where(ExistsCriterion(account_filter_query))
 
-	from frappe.desk.reportview import build_match_conditions
+	from nts .desk.reportview import build_match_conditions
 
 	query, params = query.walk()
 	match_conditions = build_match_conditions(doctype)
@@ -551,13 +551,13 @@ def get_accounting_entries(
 	if group_by_account:
 		query += " GROUP BY `account`"
 
-	return frappe.db.sql(query, params, as_dict=True)
+	return nts .db.sql(query, params, as_dict=True)
 
 
 def get_account_filter_query(root_lft, root_rgt, root_type, gl_entry):
-	acc = frappe.qb.DocType("Account")
+	acc = nts .qb.DocType("Account")
 	exists_query = (
-		frappe.qb.from_(acc).select(acc.name).where(acc.name == gl_entry.account).where(acc.is_group == 0)
+		nts .qb.from_(acc).select(acc.name).where(acc.name == gl_entry.account).where(acc.is_group == 0)
 	)
 	if root_lft and root_rgt:
 		exists_query = exists_query.where(acc.lft >= root_lft).where(acc.rgt <= root_rgt)
@@ -569,7 +569,7 @@ def get_account_filter_query(root_lft, root_rgt, root_type, gl_entry):
 
 
 def apply_additional_conditions(doctype, query, from_date, ignore_closing_entries, filters):
-	gl_entry = frappe.qb.DocType(doctype)
+	gl_entry = nts .qb.DocType(doctype)
 	accounting_dimensions = get_accounting_dimensions(as_list=False)
 
 	if ignore_closing_entries:
@@ -584,7 +584,7 @@ def apply_additional_conditions(doctype, query, from_date, ignore_closing_entrie
 	if filters:
 		if filters.get("project"):
 			if not isinstance(filters.get("project"), list):
-				filters.project = frappe.parse_json(filters.get("project"))
+				filters.project = nts .parse_json(filters.get("project"))
 
 			query = query.where(gl_entry.project.isin(filters.project))
 
@@ -593,10 +593,10 @@ def apply_additional_conditions(doctype, query, from_date, ignore_closing_entrie
 			query = query.where(gl_entry.cost_center.isin(filters.cost_center))
 
 		if filters.get("include_default_book_entries"):
-			company_fb = frappe.get_cached_value("Company", filters.company, "default_finance_book")
+			company_fb = nts .get_cached_value("Company", filters.company, "default_finance_book")
 
 			if filters.finance_book and company_fb and cstr(filters.finance_book) != cstr(company_fb):
-				frappe.throw(
+				nts .throw(
 					_("To use a different finance book, please uncheck 'Include Default FB Entries'")
 				)
 
@@ -613,7 +613,7 @@ def apply_additional_conditions(doctype, query, from_date, ignore_closing_entrie
 	if accounting_dimensions:
 		for dimension in accounting_dimensions:
 			if filters.get(dimension.fieldname):
-				if frappe.get_cached_value("DocType", dimension.document_type, "is_tree"):
+				if nts .get_cached_value("DocType", dimension.document_type, "is_tree"):
 					filters[dimension.fieldname] = get_dimension_with_children(
 						dimension.document_type, filters.get(dimension.fieldname)
 					)
@@ -629,12 +629,12 @@ def get_cost_centers_with_children(cost_centers):
 
 	all_cost_centers = []
 	for d in cost_centers:
-		if frappe.db.exists("Cost Center", d):
-			lft, rgt = frappe.db.get_value("Cost Center", d, ["lft", "rgt"])
-			children = frappe.get_all("Cost Center", filters={"lft": [">=", lft], "rgt": ["<=", rgt]})
+		if nts .db.exists("Cost Center", d):
+			lft, rgt = nts .db.get_value("Cost Center", d, ["lft", "rgt"])
+			children = nts .get_all("Cost Center", filters={"lft": [">=", lft], "rgt": ["<=", rgt]})
 			all_cost_centers += [c.name for c in children]
 		else:
-			frappe.throw(_("Cost Center: {0} does not exist").format(d))
+			nts .throw(_("Cost Center: {0} does not exist").format(d))
 
 	return list(set(all_cost_centers))
 

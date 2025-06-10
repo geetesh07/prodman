@@ -1,33 +1,33 @@
 import json
 
-import frappe
+import nts
 import requests
-from frappe import _
+from nts import _
 from lxml import etree
 
 URL_PREFIXES = ("http://", "https://")
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def import_genericode():
 	doctype = "Code List"
-	docname = frappe.form_dict.docname
-	content = frappe.local.uploaded_file
+	docname = nts.form_dict.docname
+	content = nts.local.uploaded_file
 
 	# recover the content, if it's a link
-	if (file_url := frappe.local.uploaded_file_url) and file_url.startswith(URL_PREFIXES):
+	if (file_url := nts.local.uploaded_file_url) and file_url.startswith(URL_PREFIXES):
 		try:
 			# If it's a URL, fetch the content and make it a local file (for durable audit)
-			response = requests.get(frappe.local.uploaded_file_url)
+			response = requests.get(nts.local.uploaded_file_url)
 			response.raise_for_status()
-			frappe.local.uploaded_file = content = response.content
-			frappe.local.uploaded_filename = frappe.local.uploaded_file_url.split("/")[-1]
-			frappe.local.uploaded_file_url = None
+			nts.local.uploaded_file = content = response.content
+			nts.local.uploaded_filename = nts.local.uploaded_file_url.split("/")[-1]
+			nts.local.uploaded_file_url = None
 		except Exception as e:
-			frappe.throw(f"<pre>{e!s}</pre>", title=_("Fetching Error"))
+			nts.throw(f"<pre>{e!s}</pre>", title=_("Fetching Error"))
 
-	if file_url := frappe.local.uploaded_file_url:
-		file_path = frappe.utils.file_manager.get_file_path(file_url)
+	if file_url := nts.local.uploaded_file_url:
+		file_path = nts.utils.file_manager.get_file_path(file_url)
 		with open(file_path.encode(), mode="rb") as f:
 			content = f.read()
 
@@ -36,33 +36,33 @@ def import_genericode():
 	try:
 		root = etree.fromstring(content, parser=parser)
 	except Exception as e:
-		frappe.throw(f"<pre>{e!s}</pre>", title=_("Parsing Error"))
+		nts.throw(f"<pre>{e!s}</pre>", title=_("Parsing Error"))
 
 	# Extract the name (CanonicalVersionUri) from the parsed XML
 	name = root.find(".//CanonicalVersionUri").text
 	docname = docname or name
 
-	if frappe.db.exists(doctype, docname):
-		code_list = frappe.get_doc(doctype, docname)
+	if nts.db.exists(doctype, docname):
+		code_list = nts.get_doc(doctype, docname)
 		if code_list.name != name:
-			frappe.throw(_("The uploaded file does not match the selected Code List."))
+			nts.throw(_("The uploaded file does not match the selected Code List."))
 	else:
 		# Create a new Code List document with the extracted name
-		code_list = frappe.new_doc(doctype)
+		code_list = nts.new_doc(doctype)
 		code_list.name = name
 
 	code_list.from_genericode(root)
 	code_list.save()
 
 	# Attach the file and provide a recoverable identifier
-	file_doc = frappe.get_doc(
+	file_doc = nts.get_doc(
 		{
 			"doctype": "File",
 			"attached_to_doctype": "Code List",
 			"attached_to_name": code_list.name,
 			"folder": "Home/Attachments",
-			"file_name": frappe.local.uploaded_filename,
-			"file_url": frappe.local.uploaded_file_url,
+			"file_name": nts.local.uploaded_filename,
+			"file_url": nts.local.uploaded_file_url,
 			"is_private": 1,
 			"content": content,
 		}
@@ -81,7 +81,7 @@ def import_genericode():
 	}
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def process_genericode_import(
 	code_list_name: str,
 	file_name: str,

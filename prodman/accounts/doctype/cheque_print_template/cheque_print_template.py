@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
+import nts 
+from nts  import _
+from nts .model.document import Document
 
 
 class ChequePrintTemplate(Document):
@@ -14,7 +14,7 @@ class ChequePrintTemplate(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		acc_no_dist_from_left_edge: DF.Float
 		acc_no_dist_from_top_edge: DF.Float
@@ -46,10 +46,10 @@ class ChequePrintTemplate(Document):
 	pass
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def create_or_update_cheque_print_format(template_name):
-	if not frappe.db.exists("Print Format", template_name):
-		cheque_print = frappe.new_doc("Print Format")
+	if not nts .db.exists("Print Format", template_name):
+		cheque_print = nts .new_doc("Print Format")
 		cheque_print.update(
 			{
 				"doc_type": "Payment Entry",
@@ -60,9 +60,9 @@ def create_or_update_cheque_print_format(template_name):
 			}
 		)
 	else:
-		cheque_print = frappe.get_doc("Print Format", template_name)
+		cheque_print = nts .get_doc("Print Format", template_name)
 
-	doc = frappe.get_doc("Cheque Print Template", template_name)
+	doc = nts .get_doc("Cheque Print Template", template_name)
 
 	cheque_print.html = """
 <style>
@@ -83,7 +83,7 @@ def create_or_update_cheque_print_format(template_name):
 		</span>
 		<span style="top:{date_dist_from_top_edge}cm; left:{date_dist_from_left_edge}cm;
 			position: absolute;">
-			{{{{ frappe.utils.formatdate(doc.reference_date) or '' }}}}
+			{{{{ nts .utils.formatdate(doc.reference_date) or '' }}}}
 		</span>
 		<span style="top:{acc_no_dist_from_top_edge}cm;left:{acc_no_dist_from_left_edge}cm;
 			position: absolute;  min-width: 6cm;">
@@ -96,7 +96,7 @@ def create_or_update_cheque_print_format(template_name):
 		<span style="top:{amt_in_words_from_top_edge}cm; left:{amt_in_words_from_left_edge}cm;
 			position: absolute; display: block; width: {amt_in_word_width}cm;
 			line-height:{amt_in_words_line_spacing}cm; word-wrap: break-word;">
-				{{{{frappe.utils.money_in_words(doc.base_paid_amount or doc.base_received_amount)}}}}
+				{{{{nts .utils.money_in_words(doc.base_paid_amount or doc.base_received_amount)}}}}
 		</span>
 		<span style="top:{amt_in_figures_from_top_edge}cm;left: {amt_in_figures_from_left_edge}cm;
 			position: absolute; min-width: 4cm;">
@@ -134,6 +134,6 @@ def create_or_update_cheque_print_format(template_name):
 
 	cheque_print.save(ignore_permissions=True)
 
-	frappe.db.set_value("Cheque Print Template", template_name, "has_print_format", 1)
+	nts .db.set_value("Cheque Print Template", template_name, "has_print_format", 1)
 
 	return cheque_print

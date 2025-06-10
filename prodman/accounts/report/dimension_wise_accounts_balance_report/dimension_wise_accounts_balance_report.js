@@ -1,14 +1,14 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Dimension-wise Accounts Balance Report"] = {
+nts .query_reports["Dimension-wise Accounts Balance Report"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts .defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -16,16 +16,16 @@ frappe.query_reports["Dimension-wise Accounts Balance Report"] = {
 			label: __("Fiscal Year"),
 			fieldtype: "Link",
 			options: "Fiscal Year",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today()),
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today()),
 			reqd: 1,
 			on_change: function (query_report) {
 				var fiscal_year = query_report.get_values().fiscal_year;
 				if (!fiscal_year) {
 					return;
 				}
-				frappe.model.with_doc("Fiscal Year", fiscal_year, function (r) {
-					var fy = frappe.model.get_doc("Fiscal Year", fiscal_year);
-					frappe.query_report.set_filter_value({
+				nts .model.with_doc("Fiscal Year", fiscal_year, function (r) {
+					var fy = nts .model.get_doc("Fiscal Year", fiscal_year);
+					nts .query_report.set_filter_value({
 						from_date: fy.year_start_date,
 						to_date: fy.year_end_date,
 					});
@@ -36,14 +36,14 @@ frappe.query_reports["Dimension-wise Accounts Balance Report"] = {
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[1],
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today(), true)[1],
 			reqd: 1,
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[2],
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today(), true)[2],
 			reqd: 1,
 		},
 		{
@@ -70,7 +70,7 @@ frappe.query_reports["Dimension-wise Accounts Balance Report"] = {
 
 function get_accounting_dimension_options() {
 	let options = ["Cost Center", "Project"];
-	frappe.db.get_list("Accounting Dimension", { fields: ["document_type"] }).then((res) => {
+	nts .db.get_list("Accounting Dimension", { fields: ["document_type"] }).then((res) => {
 		res.forEach((dimension) => {
 			options.push(dimension.document_type);
 		});

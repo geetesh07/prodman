@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe.test_runner import make_test_records
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.test_runner import make_test_records
+from nts.tests.utils import ntsTestCase
 
 import prodman
 from prodman.accounts.doctype.account.test_account import create_account
@@ -11,23 +11,23 @@ from prodman.stock.doctype.item.test_item import create_item
 from prodman.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
 from prodman.stock.doctype.warehouse.warehouse import convert_to_group_or_ledger, get_children
 
-test_records = frappe.get_test_records("Warehouse")
+test_records = nts.get_test_records("Warehouse")
 
 
-class TestWarehouse(FrappeTestCase):
+class TestWarehouse(ntsTestCase):
 	def setUp(self):
 		super().setUp()
-		if not frappe.get_value("Item", "_Test Item"):
+		if not nts.get_value("Item", "_Test Item"):
 			make_test_records("Item")
 
 	def test_parent_warehouse(self):
-		parent_warehouse = frappe.get_doc("Warehouse", "_Test Warehouse Group - _TC")
+		parent_warehouse = nts.get_doc("Warehouse", "_Test Warehouse Group - _TC")
 		self.assertEqual(parent_warehouse.is_group, 1)
 
 	def test_warehouse_hierarchy(self):
-		p_warehouse = frappe.get_doc("Warehouse", "_Test Warehouse Group - _TC")
+		p_warehouse = nts.get_doc("Warehouse", "_Test Warehouse Group - _TC")
 
-		child_warehouses = frappe.db.sql(
+		child_warehouses = nts.db.sql(
 			"""select name, is_group, parent_warehouse from `tabWarehouse` wh
 			where wh.lft > %s and wh.rgt < %s""",
 			(p_warehouse.lft, p_warehouse.rgt),
@@ -41,11 +41,11 @@ class TestWarehouse(FrappeTestCase):
 	def test_naming(self):
 		company = "Wind Power LLC"
 		warehouse_name = "Named Warehouse - WP"
-		wh = frappe.get_doc(doctype="Warehouse", warehouse_name=warehouse_name, company=company).insert()
+		wh = nts.get_doc(doctype="Warehouse", warehouse_name=warehouse_name, company=company).insert()
 		self.assertEqual(wh.name, warehouse_name)
 
 		warehouse_name = "Unnamed Warehouse"
-		wh = frappe.get_doc(doctype="Warehouse", warehouse_name=warehouse_name, company=company).insert()
+		wh = nts.get_doc(doctype="Warehouse", warehouse_name=warehouse_name, company=company).insert()
 		self.assertIn(warehouse_name, wh.name)
 
 	def test_unlinking_warehouse_from_item_defaults(self):
@@ -63,13 +63,13 @@ class TestWarehouse(FrappeTestCase):
 
 		# Delete warehouses
 		for warehouse in warehouse_ids:
-			frappe.delete_doc("Warehouse", warehouse)
+			nts.delete_doc("Warehouse", warehouse)
 
 		# Check Item existance
 		for item in item_names:
-			self.assertTrue(bool(frappe.db.exists("Item", item)), f"{item} doesn't exist")
+			self.assertTrue(bool(nts.db.exists("Item", item)), f"{item} doesn't exist")
 
-			item_doc = frappe.get_doc("Item", item)
+			item_doc = nts.get_doc("Item", item)
 			for item_default in item_doc.item_defaults:
 				self.assertNotIn(
 					item_default.default_warehouse,
@@ -78,7 +78,7 @@ class TestWarehouse(FrappeTestCase):
 				)
 
 	def test_group_non_group_conversion(self):
-		warehouse = frappe.get_doc("Warehouse", create_warehouse("TestGroupConversion"))
+		warehouse = nts.get_doc("Warehouse", create_warehouse("TestGroupConversion"))
 
 		convert_to_group_or_ledger(warehouse.name)
 		warehouse.reload()
@@ -86,8 +86,8 @@ class TestWarehouse(FrappeTestCase):
 
 		child = create_warehouse("GroupWHChild", {"parent_warehouse": warehouse.name})
 		# chid exists
-		self.assertRaises(frappe.ValidationError, convert_to_group_or_ledger, warehouse.name)
-		frappe.delete_doc("Warehouse", child)
+		self.assertRaises(nts.ValidationError, convert_to_group_or_ledger, warehouse.name)
+		nts.delete_doc("Warehouse", child)
 
 		convert_to_group_or_ledger(warehouse.name)
 		warehouse.reload()
@@ -95,7 +95,7 @@ class TestWarehouse(FrappeTestCase):
 
 		make_stock_entry(item_code="_Test Item", target=warehouse.name, qty=1)
 		# SLE exists
-		self.assertRaises(frappe.ValidationError, convert_to_group_or_ledger, warehouse.name)
+		self.assertRaises(nts.ValidationError, convert_to_group_or_ledger, warehouse.name)
 
 	def test_get_children(self):
 		company = "_Test Company"
@@ -109,8 +109,8 @@ def create_warehouse(warehouse_name, properties=None, company=None):
 		company = "_Test Company"
 
 	warehouse_id = prodman.encode_company_abbr(warehouse_name, company)
-	if not frappe.db.exists("Warehouse", warehouse_id):
-		w = frappe.new_doc("Warehouse")
+	if not nts.db.exists("Warehouse", warehouse_id):
+		w = nts.new_doc("Warehouse")
 		w.warehouse_name = warehouse_name
 		w.parent_warehouse = "_Test Warehouse Group - _TC"
 		w.company = company
@@ -124,11 +124,11 @@ def create_warehouse(warehouse_name, properties=None, company=None):
 
 
 def get_warehouse(**args):
-	args = frappe._dict(args)
-	if frappe.db.exists("Warehouse", args.warehouse_name + " - " + args.abbr):
-		return frappe.get_doc("Warehouse", args.warehouse_name + " - " + args.abbr)
+	args = nts._dict(args)
+	if nts.db.exists("Warehouse", args.warehouse_name + " - " + args.abbr):
+		return nts.get_doc("Warehouse", args.warehouse_name + " - " + args.abbr)
 	else:
-		w = frappe.get_doc(
+		w = nts.get_doc(
 			{
 				"company": args.company or "_Test Company",
 				"doctype": "Warehouse",
@@ -143,9 +143,9 @@ def get_warehouse(**args):
 
 def get_warehouse_account(warehouse_name, company, company_abbr=None):
 	if not company_abbr:
-		company_abbr = frappe.get_cached_value("Company", company, "abbr")
+		company_abbr = nts.get_cached_value("Company", company, "abbr")
 
-	if not frappe.db.exists("Account", warehouse_name + " - " + company_abbr):
+	if not nts.db.exists("Account", warehouse_name + " - " + company_abbr):
 		return create_account(
 			account_name=warehouse_name,
 			parent_account=get_group_stock_account(company, company_abbr),
@@ -157,11 +157,11 @@ def get_warehouse_account(warehouse_name, company, company_abbr=None):
 
 
 def get_group_stock_account(company, company_abbr=None):
-	group_stock_account = frappe.db.get_value(
+	group_stock_account = nts.db.get_value(
 		"Account", filters={"account_type": "Stock", "is_group": 1, "company": company}, fieldname="name"
 	)
 	if not group_stock_account:
 		if not company_abbr:
-			company_abbr = frappe.get_cached_value("Company", company, "abbr")
+			company_abbr = nts.get_cached_value("Company", company, "abbr")
 		group_stock_account = "Current Assets - " + company_abbr
 	return group_stock_account

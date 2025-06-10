@@ -1,5 +1,5 @@
-frappe.pages["stock-balance"].on_page_load = function (wrapper) {
-	var page = frappe.ui.make_app_page({
+nts.pages["stock-balance"].on_page_load = function (wrapper) {
+	var page = nts.ui.make_app_page({
 		parent: wrapper,
 		title: __("Stock Summary"),
 		single_column: true,
@@ -11,7 +11,7 @@ frappe.pages["stock-balance"].on_page_load = function (wrapper) {
 		label: __("Warehouse"),
 		fieldtype: "Link",
 		options: "Warehouse",
-		default: frappe.route_options && frappe.route_options.warehouse,
+		default: nts.route_options && nts.route_options.warehouse,
 		change: function () {
 			page.item_dashboard.start = 0;
 			page.item_dashboard.refresh();
@@ -23,7 +23,7 @@ frappe.pages["stock-balance"].on_page_load = function (wrapper) {
 		label: __("Item"),
 		fieldtype: "Link",
 		options: "Item",
-		default: frappe.route_options && frappe.route_options.item_code,
+		default: nts.route_options && nts.route_options.item_code,
 		change: function () {
 			page.item_dashboard.start = 0;
 			page.item_dashboard.refresh();
@@ -35,14 +35,14 @@ frappe.pages["stock-balance"].on_page_load = function (wrapper) {
 		label: __("Item Group"),
 		fieldtype: "Link",
 		options: "Item Group",
-		default: frappe.route_options && frappe.route_options.item_group,
+		default: nts.route_options && nts.route_options.item_group,
 		change: function () {
 			page.item_dashboard.start = 0;
 			page.item_dashboard.refresh();
 		},
 	});
 
-	page.sort_selector = new frappe.ui.SortSelector({
+	page.sort_selector = new nts.ui.SortSelector({
 		parent: page.wrapper.find(".page-form"),
 		args: {
 			sort_by: "projected_qty",
@@ -65,7 +65,7 @@ frappe.pages["stock-balance"].on_page_load = function (wrapper) {
 
 	// page.sort_selector.wrapper.css({'margin-right': '15px', 'margin-top': '4px'});
 
-	frappe.require("item-dashboard.bundle.js", function () {
+	nts.require("item-dashboard.bundle.js", function () {
 		page.item_dashboard = new prodman.stock.ItemDashboard({
 			parent: page.main,
 			page_length: 20,
@@ -87,7 +87,7 @@ frappe.pages["stock-balance"].on_page_load = function (wrapper) {
 				var name = $(this).attr("data-name");
 				var field = page[doctype.toLowerCase() + "_field"];
 				if (field.get_value() === name) {
-					frappe.set_route("Form", doctype, name);
+					nts.set_route("Form", doctype, name);
 				} else {
 					field.set_input(name);
 					page.item_dashboard.refresh();

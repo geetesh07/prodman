@@ -1,9 +1,9 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe.model.document import Document
+import nts
+from nts.model.document import Document
 
 
 class ProjectUpdate(Document):
@@ -13,7 +13,7 @@ class ProjectUpdate(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.projects.doctype.project_user.project_user import ProjectUser
 
@@ -29,9 +29,9 @@ class ProjectUpdate(Document):
 	pass
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def daily_reminder():
-	project = frappe.db.sql(
+	project = nts.db.sql(
 		"""SELECT `tabProject`.project_name,`tabProject`.frequency,`tabProject`.expected_start_date,`tabProject`.expected_end_date,`tabProject`.percent_complete FROM `tabProject`;"""
 	)
 	for projects in project:
@@ -40,13 +40,13 @@ def daily_reminder():
 		date_start = projects[2]
 		date_end = projects[3]
 		progress = projects[4]
-		draft = frappe.db.sql(
+		draft = nts.db.sql(
 			"""SELECT count(docstatus) from `tabProject Update` WHERE `tabProject Update`.project = %s AND `tabProject Update`.docstatus = 0;""",
 			project_name,
 		)
 		for drafts in draft:
 			number_of_drafts = drafts[0]
-		update = frappe.db.sql(
+		update = nts.db.sql(
 			"""SELECT name,date,time,progress,progress_details FROM `tabProject Update` WHERE `tabProject Update`.project = %s AND date = DATE_ADD(CURRENT_DATE, INTERVAL -1 DAY);""",
 			project_name,
 		)
@@ -54,7 +54,7 @@ def daily_reminder():
 
 
 def email_sending(project_name, frequency, date_start, date_end, progress, number_of_drafts, update):
-	holiday = frappe.db.sql("""SELECT holiday_date FROM `tabHoliday` where holiday_date = CURRENT_DATE;""")
+	holiday = nts.db.sql("""SELECT holiday_date FROM `tabHoliday` where holiday_date = CURRENT_DATE;""")
 	msg = (
 		"<p>Project Name: "
 		+ project_name
@@ -99,8 +99,8 @@ def email_sending(project_name, frequency, date_start, date_end, progress, numbe
 
 	msg += "</table>"
 	if len(holiday) == 0:
-		email = frappe.db.sql("""SELECT user from `tabProject User` WHERE parent = %s;""", project_name)
+		email = nts.db.sql("""SELECT user from `tabProject User` WHERE parent = %s;""", project_name)
 		for emails in email:
-			frappe.sendmail(recipients=emails, subject=frappe._(project_name + " " + "Summary"), message=msg)
+			nts.sendmail(recipients=emails, subject=nts._(project_name + " " + "Summary"), message=msg)
 	else:
 		pass

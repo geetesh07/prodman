@@ -1,10 +1,10 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe.custom.doctype.custom_field.custom_field import create_custom_field
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import nowdate, nowtime
+import nts
+from nts.custom.doctype.custom_field.custom_field import create_custom_field
+from nts.tests.utils import ntsTestCase
+from nts.utils import nowdate, nowtime
 
 from prodman.stock.doctype.delivery_note.test_delivery_note import create_delivery_note
 from prodman.stock.doctype.inventory_dimension.inventory_dimension import (
@@ -20,7 +20,7 @@ from prodman.stock.doctype.stock_ledger_entry.stock_ledger_entry import Inventor
 from prodman.stock.doctype.warehouse.test_warehouse import create_warehouse
 
 
-class TestInventoryDimension(FrappeTestCase):
+class TestInventoryDimension(ntsTestCase):
 	def setUp(self):
 		prepare_test_data()
 		create_store_dimension()
@@ -62,7 +62,7 @@ class TestInventoryDimension(FrappeTestCase):
 
 		inv_dim1.save()
 
-		custom_field = frappe.db.get_value(
+		custom_field = nts.db.get_value(
 			"Custom Field", {"fieldname": "from_shelf", "dt": "Stock Entry Detail"}, "name"
 		)
 
@@ -70,14 +70,14 @@ class TestInventoryDimension(FrappeTestCase):
 
 		delete_dimension(inv_dim1.name)
 
-		custom_field = frappe.db.get_value(
+		custom_field = nts.db.get_value(
 			"Custom Field", {"fieldname": "from_shelf", "dt": "Stock Entry Detail"}, "name"
 		)
 
 		self.assertFalse(custom_field)
 
 	def test_inventory_dimension(self):
-		frappe.local.document_wise_inventory_dimensions = {}
+		nts.local.document_wise_inventory_dimensions = {}
 
 		warehouse = "Shelf Warehouse - _TC"
 		item_code = "_Test Item"
@@ -117,7 +117,7 @@ class TestInventoryDimension(FrappeTestCase):
 		inward.submit()
 		inward.load_from_db()
 
-		sle_data = frappe.db.get_value(
+		sle_data = nts.db.get_value(
 			"Stock Ledger Entry", {"voucher_no": inward.name}, ["shelf", "warehouse"], as_dict=1
 		)
 
@@ -139,7 +139,7 @@ class TestInventoryDimension(FrappeTestCase):
 		outward.submit()
 		outward.load_from_db()
 
-		sle_shelf = frappe.db.get_value("Stock Ledger Entry", {"voucher_no": outward.name}, "shelf")
+		sle_shelf = nts.db.get_value("Stock Ledger Entry", {"voucher_no": outward.name}, "shelf")
 		self.assertEqual(sle_shelf, "Shelf 1")
 
 		inv_dim1.load_from_db()
@@ -149,7 +149,7 @@ class TestInventoryDimension(FrappeTestCase):
 		self.assertRaises(DoNotChangeError, inv_dim1.save)
 
 	def test_inventory_dimension_for_purchase_receipt_and_delivery_note(self):
-		frappe.local.document_wise_inventory_dimensions = {}
+		nts.local.document_wise_inventory_dimensions = {}
 
 		inv_dimension = create_inventory_dimension(
 			reference_document="Rack", dimension_name="Rack", apply_to_all_doctypes=1
@@ -166,8 +166,8 @@ class TestInventoryDimension(FrappeTestCase):
 			"Delivery Note", dict(fieldname="rack", label="Rack", fieldtype="Link", options="Rack")
 		)
 
-		frappe.reload_doc("stock", "doctype", "purchase_receipt_item")
-		frappe.reload_doc("stock", "doctype", "delivery_note_item")
+		nts.reload_doc("stock", "doctype", "purchase_receipt_item")
+		nts.reload_doc("stock", "doctype", "delivery_note_item")
 
 		pr_doc = make_purchase_receipt(qty=2, do_not_submit=True)
 		pr_doc.rack = "Rack 1"
@@ -177,7 +177,7 @@ class TestInventoryDimension(FrappeTestCase):
 		pr_doc.load_from_db()
 
 		self.assertEqual(pr_doc.items[0].rack, "Rack 1")
-		sle_rack = frappe.db.get_value(
+		sle_rack = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_detail_no": pr_doc.items[0].name, "voucher_type": pr_doc.doctype},
 			"rack",
@@ -193,7 +193,7 @@ class TestInventoryDimension(FrappeTestCase):
 		dn_doc.load_from_db()
 
 		self.assertEqual(dn_doc.items[0].rack, "Rack 1")
-		sle_rack = frappe.db.get_value(
+		sle_rack = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_detail_no": dn_doc.items[0].name, "voucher_type": dn_doc.doctype},
 			"rack",
@@ -211,7 +211,7 @@ class TestInventoryDimension(FrappeTestCase):
 		)
 
 		self.assertFalse(
-			frappe.db.get_value("Custom Field", {"fieldname": "project", "dt": "Stock Ledger Entry"}, "name")
+			nts.db.get_value("Custom Field", {"fieldname": "project", "dt": "Stock Ledger Entry"}, "name")
 		)
 
 	def test_check_mandatory_dimensions(self):
@@ -227,7 +227,7 @@ class TestInventoryDimension(FrappeTestCase):
 		doc.save()
 
 		self.assertTrue(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Custom Field", {"fieldname": "pallet", "dt": "Stock Entry Detail", "reqd": 1}, "name"
 			)
 		)
@@ -249,7 +249,7 @@ class TestInventoryDimension(FrappeTestCase):
 		doc.save()
 
 		self.assertTrue(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Custom Field",
 				{"fieldname": "pallet", "dt": "Stock Entry Detail", "mandatory_depends_on": "t_warehouse"},
 				"name",
@@ -271,8 +271,8 @@ class TestInventoryDimension(FrappeTestCase):
 		warehouse = create_warehouse("Store Warehouse")
 		rj_warehouse = create_warehouse("RJ Warehouse")
 
-		if not frappe.db.exists("Store", "Rejected Store"):
-			frappe.get_doc({"doctype": "Store", "store_name": "Rejected Store"}).insert(
+		if not nts.db.exists("Store", "Rejected Store"):
+			nts.get_doc({"doctype": "Store", "store_name": "Rejected Store"}).insert(
 				ignore_permissions=True
 			)
 
@@ -292,7 +292,7 @@ class TestInventoryDimension(FrappeTestCase):
 		pr_doc.save()
 		pr_doc.submit()
 
-		entries = frappe.get_all(
+		entries = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"voucher_no": pr_doc.name, "warehouse": warehouse},
 			fields=["store"],
@@ -301,7 +301,7 @@ class TestInventoryDimension(FrappeTestCase):
 
 		self.assertEqual(entries[0].store, "Store 1")
 
-		entries = frappe.get_all(
+		entries = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"voucher_no": pr_doc.name, "warehouse": rj_warehouse},
 			fields=["store"],
@@ -438,9 +438,9 @@ class TestInventoryDimension(FrappeTestCase):
 				self.assertEqual(d.store, "Inter Transfer Store 2")
 
 	def test_validate_negative_stock_for_inventory_dimension(self):
-		frappe.local.inventory_dimensions = {}
+		nts.local.inventory_dimensions = {}
 		item_code = "Test Negative Inventory Dimension Item"
-		frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
+		nts.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
 		create_item(item_code)
 
 		inv_dimension = create_inventory_dimension(
@@ -469,7 +469,7 @@ class TestInventoryDimension(FrappeTestCase):
 		doc.submit()
 
 		# check inventory dimension value in stock ledger entry
-		site_name = frappe.get_all(
+		site_name = nts.get_all(
 			"Stock Ledger Entry", filters={"voucher_no": doc.name, "is_cancelled": 0}, fields=["inv_site"]
 		)[0].inv_site
 
@@ -487,7 +487,7 @@ class TestInventoryDimension(FrappeTestCase):
 		# disable validate_negative_stock for inventory dimension
 		inv_dimension.reload()
 		inv_dimension.db_set("validate_negative_stock", 0)
-		frappe.local.inventory_dimensions = {}
+		nts.local.inventory_dimensions = {}
 
 		# Try issuing 100 qty, more than available stock against inventory dimension
 		doc = make_stock_entry(item_code=item_code, source=warehouse, qty=100, do_not_submit=True)
@@ -496,7 +496,7 @@ class TestInventoryDimension(FrappeTestCase):
 		self.assertEqual(doc.docstatus, 1)
 
 		# check inventory dimension value in stock ledger entry
-		site_name = frappe.get_all(
+		site_name = nts.get_all(
 			"Stock Ledger Entry", filters={"voucher_no": doc.name, "is_cancelled": 0}, fields=["inv_site"]
 		)[0].inv_site
 
@@ -504,14 +504,14 @@ class TestInventoryDimension(FrappeTestCase):
 
 
 def get_voucher_sl_entries(voucher_no, fields):
-	return frappe.get_all(
+	return nts.get_all(
 		"Stock Ledger Entry", filters={"voucher_no": voucher_no}, fields=fields, order_by="creation"
 	)
 
 
 def create_store_dimension():
-	if not frappe.db.exists("DocType", "Store"):
-		frappe.get_doc(
+	if not nts.db.exists("DocType", "Store"):
+		nts.get_doc(
 			{
 				"doctype": "DocType",
 				"name": "Store",
@@ -534,13 +534,13 @@ def create_store_dimension():
 		).insert(ignore_permissions=True)
 
 	for store in ["Store 1", "Store 2"]:
-		if not frappe.db.exists("Store", store):
-			frappe.get_doc({"doctype": "Store", "store_name": store}).insert(ignore_permissions=True)
+		if not nts.db.exists("Store", store):
+			nts.get_doc({"doctype": "Store", "store_name": store}).insert(ignore_permissions=True)
 
 
 def prepare_test_data():
-	if not frappe.db.exists("DocType", "Shelf"):
-		frappe.get_doc(
+	if not nts.db.exists("DocType", "Shelf"):
+		nts.get_doc(
 			{
 				"doctype": "DocType",
 				"name": "Shelf",
@@ -563,13 +563,13 @@ def prepare_test_data():
 		).insert(ignore_permissions=True)
 
 	for shelf in ["Shelf 1", "Shelf 2"]:
-		if not frappe.db.exists("Shelf", shelf):
-			frappe.get_doc({"doctype": "Shelf", "shelf_name": shelf}).insert(ignore_permissions=True)
+		if not nts.db.exists("Shelf", shelf):
+			nts.get_doc({"doctype": "Shelf", "shelf_name": shelf}).insert(ignore_permissions=True)
 
 	create_warehouse("Shelf Warehouse")
 
-	if not frappe.db.exists("DocType", "Rack"):
-		frappe.get_doc(
+	if not nts.db.exists("DocType", "Rack"):
+		nts.get_doc(
 			{
 				"doctype": "DocType",
 				"name": "Rack",
@@ -592,13 +592,13 @@ def prepare_test_data():
 		).insert(ignore_permissions=True)
 
 	for rack in ["Rack 1"]:
-		if not frappe.db.exists("Rack", rack):
-			frappe.get_doc({"doctype": "Rack", "rack_name": rack}).insert(ignore_permissions=True)
+		if not nts.db.exists("Rack", rack):
+			nts.get_doc({"doctype": "Rack", "rack_name": rack}).insert(ignore_permissions=True)
 
 	create_warehouse("Rack Warehouse")
 
-	if not frappe.db.exists("DocType", "Pallet"):
-		frappe.get_doc(
+	if not nts.db.exists("DocType", "Pallet"):
+		nts.get_doc(
 			{
 				"doctype": "DocType",
 				"name": "Pallet",
@@ -620,8 +620,8 @@ def prepare_test_data():
 			}
 		).insert(ignore_permissions=True)
 
-	if not frappe.db.exists("DocType", "Inv Site"):
-		frappe.get_doc(
+	if not nts.db.exists("DocType", "Inv Site"):
+		nts.get_doc(
 			{
 				"doctype": "DocType",
 				"name": "Inv Site",
@@ -644,17 +644,17 @@ def prepare_test_data():
 		).insert(ignore_permissions=True)
 
 	for site in ["Site 1", "Site 2"]:
-		if not frappe.db.exists("Inv Site", site):
-			frappe.get_doc({"doctype": "Inv Site", "site_name": site}).insert(ignore_permissions=True)
+		if not nts.db.exists("Inv Site", site):
+			nts.get_doc({"doctype": "Inv Site", "site_name": site}).insert(ignore_permissions=True)
 
 
 def create_inventory_dimension(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
-	if frappe.db.exists("Inventory Dimension", args.dimension_name):
-		return frappe.get_doc("Inventory Dimension", args.dimension_name)
+	if nts.db.exists("Inventory Dimension", args.dimension_name):
+		return nts.get_doc("Inventory Dimension", args.dimension_name)
 
-	doc = frappe.new_doc("Inventory Dimension")
+	doc = nts.new_doc("Inventory Dimension")
 	doc.update(args)
 
 	if not args.do_not_save:
@@ -684,8 +684,8 @@ def prepare_data_for_internal_transfer():
 	)
 
 	for store in ["Inter Transfer Store 1", "Inter Transfer Store 2", "Inter Transfer Store 3"]:
-		if not frappe.db.exists("Store", store):
-			frappe.get_doc({"doctype": "Store", "store_name": store}).insert(ignore_permissions=True)
+		if not nts.db.exists("Store", store):
+			nts.get_doc({"doctype": "Store", "store_name": store}).insert(ignore_permissions=True)
 
 	warehouse = create_warehouse("_Test Internal Warehouse New A", company=company)
 
@@ -695,10 +695,10 @@ def prepare_data_for_internal_transfer():
 	pr_doc.items[0].store = "Inter Transfer Store 1"
 	pr_doc.submit()
 
-	if not frappe.db.get_value("Company", company, "unrealized_profit_loss_account"):
+	if not nts.db.get_value("Company", company, "unrealized_profit_loss_account"):
 		account = "Unrealized Profit and Loss - TCP1"
-		if not frappe.db.exists("Account", account):
-			frappe.get_doc(
+		if not nts.db.exists("Account", account):
+			nts.get_doc(
 				{
 					"doctype": "Account",
 					"account_name": "Unrealized Profit and Loss",
@@ -709,17 +709,17 @@ def prepare_data_for_internal_transfer():
 				}
 			).insert()
 
-		frappe.db.set_value("Company", company, "unrealized_profit_loss_account", account)
+		nts.db.set_value("Company", company, "unrealized_profit_loss_account", account)
 
-	cost_center = frappe.db.get_value("Company", company, "cost_center") or frappe.db.get_value(
+	cost_center = nts.db.get_value("Company", company, "cost_center") or nts.db.get_value(
 		"Cost Center", {"company": company}, "name"
 	)
 
-	expene_account = frappe.db.get_value(
+	expene_account = nts.db.get_value(
 		"Company", company, "stock_adjustment_account"
-	) or frappe.db.get_value("Account", {"company": company, "account_type": "Expense Account"}, "name")
+	) or nts.db.get_value("Account", {"company": company, "account_type": "Expense Account"}, "name")
 
-	return frappe._dict(
+	return nts._dict(
 		{
 			"from_warehouse": warehouse,
 			"to_warehouse": to_warehouse,
@@ -728,7 +728,7 @@ def prepare_data_for_internal_transfer():
 			"company": company,
 			"cost_center": cost_center,
 			"expene_account": expene_account,
-			"store_warehouse": frappe.db.get_value(
+			"store_warehouse": nts.db.get_value(
 				"Warehouse", {"name": ("like", "Store%"), "company": company}, "name"
 			),
 		}

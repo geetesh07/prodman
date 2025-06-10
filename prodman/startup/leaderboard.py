@@ -1,5 +1,5 @@
-import frappe
-from frappe.utils.deprecations import deprecated
+import nts
+from nts.utils.deprecations import deprecated
 
 
 def get_leaderboards():
@@ -52,7 +52,7 @@ def get_leaderboards():
 	return leaderboards
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_all_customers(date_range, company, field, limit=None):
 	filters = [["docstatus", "=", "1"], ["company", "=", company]]
 	from_date, to_date = parse_date_range(date_range)
@@ -60,7 +60,7 @@ def get_all_customers(date_range, company, field, limit=None):
 		if from_date and to_date:
 			filters.append(["posting_date", "between", [from_date, to_date]])
 
-		return frappe.get_list(
+		return nts.get_list(
 			"Sales Invoice",
 			fields=["customer as name", "sum(outstanding_amount) as value"],
 			filters=filters,
@@ -77,7 +77,7 @@ def get_all_customers(date_range, company, field, limit=None):
 		if from_date and to_date:
 			filters.append(["transaction_date", "between", [from_date, to_date]])
 
-		return frappe.get_list(
+		return nts.get_list(
 			"Sales Order",
 			fields=["customer as name", f"sum({select_field}) as value"],
 			filters=filters,
@@ -87,18 +87,18 @@ def get_all_customers(date_range, company, field, limit=None):
 		)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_all_items(date_range, company, field, limit=None):
 	if field in ("available_stock_qty", "available_stock_value"):
 		select_field = "sum(actual_qty)" if field == "available_stock_qty" else "sum(stock_value)"
-		results = frappe.db.get_all(
+		results = nts.db.get_all(
 			"Bin",
 			fields=["item_code as name", f"{select_field} as value"],
 			group_by="item_code",
 			order_by="value desc",
 			limit=limit,
 		)
-		readable_active_items = set(frappe.get_list("Item", filters={"disabled": 0}, pluck="name"))
+		readable_active_items = set(nts.get_list("Item", filters={"disabled": 0}, pluck="name"))
 		return [item for item in results if item["name"] in readable_active_items]
 	else:
 		if field == "total_sales_amount":
@@ -120,7 +120,7 @@ def get_all_items(date_range, company, field, limit=None):
 			filters.append(["transaction_date", "between", [from_date, to_date]])
 
 		child_doctype = f"{select_doctype} Item"
-		return frappe.get_list(
+		return nts.get_list(
 			select_doctype,
 			fields=[
 				f"`tab{child_doctype}`.item_code as name",
@@ -133,7 +133,7 @@ def get_all_items(date_range, company, field, limit=None):
 		)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_all_suppliers(date_range, company, field, limit=None):
 	filters = [["docstatus", "=", "1"], ["company", "=", company]]
 	from_date, to_date = parse_date_range(date_range)
@@ -142,7 +142,7 @@ def get_all_suppliers(date_range, company, field, limit=None):
 		if from_date and to_date:
 			filters.append(["posting_date", "between", [from_date, to_date]])
 
-		return frappe.get_list(
+		return nts.get_list(
 			"Purchase Invoice",
 			fields=["supplier as name", "sum(outstanding_amount) as value"],
 			filters=filters,
@@ -159,7 +159,7 @@ def get_all_suppliers(date_range, company, field, limit=None):
 		if from_date and to_date:
 			filters.append(["transaction_date", "between", [from_date, to_date]])
 
-		return frappe.get_list(
+		return nts.get_list(
 			"Purchase Order",
 			fields=["supplier as name", f"sum({select_field}) as value"],
 			filters=filters,
@@ -169,7 +169,7 @@ def get_all_suppliers(date_range, company, field, limit=None):
 		)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_all_sales_partner(date_range, company, field, limit=None):
 	if field == "total_sales_amount":
 		select_field = "base_net_total"
@@ -181,7 +181,7 @@ def get_all_sales_partner(date_range, company, field, limit=None):
 	if from_date and to_date:
 		filters.append(["transaction_date", "between", [from_date, to_date]])
 
-	return frappe.get_list(
+	return nts.get_list(
 		"Sales Order",
 		fields=[
 			"sales_partner as name",
@@ -194,7 +194,7 @@ def get_all_sales_partner(date_range, company, field, limit=None):
 	)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_all_sales_person(date_range, company, field=None, limit=0):
 	filters = [
 		["docstatus", "=", "1"],
@@ -205,7 +205,7 @@ def get_all_sales_person(date_range, company, field=None, limit=0):
 	if from_date and to_date:
 		filters.append(["transaction_date", "between", [from_date, to_date]])
 
-	return frappe.get_list(
+	return nts.get_list(
 		"Sales Order",
 		fields=[
 			"`tabSales Team`.sales_person as name",
@@ -222,15 +222,15 @@ def get_all_sales_person(date_range, company, field=None, limit=0):
 def get_date_condition(date_range, field):
 	date_condition = ""
 	if date_range:
-		date_range = frappe.parse_json(date_range)
+		date_range = nts.parse_json(date_range)
 		from_date, to_date = date_range
-		date_condition = f"and {field} between {frappe.db.escape(from_date)} and {frappe.db.escape(to_date)}"
+		date_condition = f"and {field} between {nts.db.escape(from_date)} and {nts.db.escape(to_date)}"
 	return date_condition
 
 
 def parse_date_range(date_range):
 	if date_range:
-		date_range = frappe.parse_json(date_range)
+		date_range = nts.parse_json(date_range)
 		return date_range[0], date_range[1]
 
 	return None, None

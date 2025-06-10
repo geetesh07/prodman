@@ -1,8 +1,8 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 from prodman.manufacturing.doctype.bom_update_log.bom_update_log import (
 	BOMMissingError,
@@ -13,18 +13,18 @@ from prodman.manufacturing.doctype.bom_update_tool.bom_update_tool import (
 	enqueue_update_cost,
 )
 
-test_records = frappe.get_test_records("BOM")
+test_records = nts.get_test_records("BOM")
 
 
-class TestBOMUpdateLog(FrappeTestCase):
+class TestBOMUpdateLog(ntsTestCase):
 	"Test BOM Update Tool Operations via BOM Update Log."
 
 	def setUp(self):
-		bom_doc = frappe.copy_doc(test_records[0])
+		bom_doc = nts.copy_doc(test_records[0])
 		bom_doc.items[1].item_code = "_Test Item"
 		bom_doc.insert()
 
-		self.boms = frappe._dict(
+		self.boms = nts._dict(
 			current_bom="BOM-_Test Item Home Desktop Manufactured-001",
 			new_bom=bom_doc.name,
 		)
@@ -32,7 +32,7 @@ class TestBOMUpdateLog(FrappeTestCase):
 		self.new_bom_doc = bom_doc
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def test_bom_update_log_validate(self):
 		"""
@@ -44,11 +44,11 @@ class TestBOMUpdateLog(FrappeTestCase):
 		with self.assertRaises(BOMMissingError):
 			enqueue_replace_bom(boms={})
 
-		with self.assertRaises(frappe.ValidationError):
-			enqueue_replace_bom(boms=frappe._dict(current_bom=self.boms.new_bom, new_bom=self.boms.new_bom))
+		with self.assertRaises(nts.ValidationError):
+			enqueue_replace_bom(boms=nts._dict(current_bom=self.boms.new_bom, new_bom=self.boms.new_bom))
 
-		with self.assertRaises(frappe.ValidationError):
-			enqueue_replace_bom(boms=frappe._dict(current_bom=self.boms.new_bom, new_bom="Dummy BOM"))
+		with self.assertRaises(nts.ValidationError):
+			enqueue_replace_bom(boms=nts._dict(current_bom=self.boms.new_bom, new_bom="Dummy BOM"))
 
 	def test_bom_update_log_completion(self):
 		"Test if BOM Update Log handles job completion correctly."
@@ -75,7 +75,7 @@ class TestBOMUpdateLog(FrappeTestCase):
 		items = ["B-Item A", "B-Item B", "B-Item C", "B-Item D", "B-Item E", "B-Item F", "B-Item G"]
 
 		for item_code in items:
-			if not frappe.db.exists("Item", item_code):
+			if not nts.db.exists("Item", item_code):
 				make_item(item_code)
 
 		for item_code in items:
@@ -85,7 +85,7 @@ class TestBOMUpdateLog(FrappeTestCase):
 
 		root_bom = create_nested_bom(bom_tree, prefix="")
 
-		exploded_items = frappe.get_all(
+		exploded_items = nts.get_all(
 			"BOM Explosion Item", filters={"parent": root_bom.name}, fields=["item_code"]
 		)
 
@@ -93,13 +93,13 @@ class TestBOMUpdateLog(FrappeTestCase):
 		expected_exploded_items = ["B-Item C", "B-Item F"]
 		self.assertEqual(sorted(exploded_items), sorted(expected_exploded_items))
 
-		old_bom = frappe.db.get_value("BOM", {"item": "B-Item E"}, "name")
+		old_bom = nts.db.get_value("BOM", {"item": "B-Item E"}, "name")
 		bom_tree = {"B-Item E": {"B-Item G": {}}}
 
 		new_bom = create_nested_bom(bom_tree, prefix="")
-		enqueue_replace_bom(boms=frappe._dict(current_bom=old_bom, new_bom=new_bom.name))
+		enqueue_replace_bom(boms=nts._dict(current_bom=old_bom, new_bom=new_bom.name))
 
-		exploded_items = frappe.get_all(
+		exploded_items = nts.get_all(
 			"BOM Explosion Item", filters={"parent": root_bom.name}, fields=["item_code"]
 		)
 
@@ -109,13 +109,13 @@ class TestBOMUpdateLog(FrappeTestCase):
 
 
 def remove_bom(item_code):
-	boms = frappe.get_all("BOM", fields=["docstatus", "name"], filters={"item": item_code})
+	boms = nts.get_all("BOM", fields=["docstatus", "name"], filters={"item": item_code})
 
 	for row in boms:
 		if row.docstatus == 1:
-			frappe.get_doc("BOM", row.name).cancel()
+			nts.get_doc("BOM", row.name).cancel()
 
-		frappe.delete_doc("BOM", row.name)
+		nts.delete_doc("BOM", row.name)
 
 
 def update_cost_in_all_boms_in_test():

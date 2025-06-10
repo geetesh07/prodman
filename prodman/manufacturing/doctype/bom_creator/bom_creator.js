@@ -1,8 +1,8 @@
-// Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2023, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
-frappe.provide("prodman.bom");
+nts.provide("prodman.bom");
 
-frappe.ui.form.on("BOM Creator", {
+nts.ui.form.on("BOM Creator", {
 	setup(frm) {
 		frm.trigger("set_queries");
 	},
@@ -11,7 +11,7 @@ frappe.ui.form.on("BOM Creator", {
 		frm.dashboard.clear_comment();
 
 		if (!frm.is_new()) {
-			if (!frappe.bom_configurator || frappe.bom_configurator.bom_configurator !== frm.doc.name) {
+			if (!nts.bom_configurator || nts.bom_configurator.bom_configurator !== frm.doc.name) {
 				frm.trigger("build_tree");
 			}
 		} else if (!frm.doc.items?.length) {
@@ -26,8 +26,8 @@ frappe.ui.form.on("BOM Creator", {
 		$parent.empty();
 		frm.toggle_enable("item_code", false);
 
-		frappe.require("bom_configurator.bundle.js").then(() => {
-			frappe.bom_configurator = new frappe.ui.BOMConfigurator({
+		nts.require("bom_configurator.bundle.js").then(() => {
+			nts.bom_configurator = new nts.ui.BOMConfigurator({
 				wrapper: $parent,
 				page: $parent,
 				frm: frm,
@@ -37,7 +37,7 @@ frappe.ui.form.on("BOM Creator", {
 	},
 
 	make_new_entry(frm) {
-		let dialog = new frappe.ui.Dialog({
+		let dialog = new nts.ui.Dialog({
 			title: __("Multi-level BOM Creator"),
 			fields: [
 				{
@@ -53,7 +53,7 @@ frappe.ui.form.on("BOM Creator", {
 					fieldname: "company",
 					options: "Company",
 					reqd: 1,
-					default: frappe.defaults.get_user_default("Company"),
+					default: nts.defaults.get_user_default("Company"),
 				},
 				{ fieldtype: "Section Break" },
 				{
@@ -78,7 +78,7 @@ frappe.ui.form.on("BOM Creator", {
 					fieldname: "currency",
 					options: "Currency",
 					reqd: 1,
-					default: frappe.defaults.get_global_default("currency"),
+					default: nts.defaults.get_global_default("currency"),
 				},
 				{ fieldtype: "Column Break" },
 				{
@@ -92,8 +92,8 @@ frappe.ui.form.on("BOM Creator", {
 			primary_action_label: __("Create"),
 			primary_action: (values) => {
 				values.doctype = frm.doc.doctype;
-				frappe.db.insert(values).then((doc) => {
-					frappe.set_route("Form", doc.doctype, doc.name);
+				nts.db.insert(values).then((doc) => {
+					nts.set_route("Form", doc.doctype, doc.name);
 				});
 			},
 		});
@@ -104,7 +104,7 @@ frappe.ui.form.on("BOM Creator", {
 
 	set_queries(frm) {
 		frm.set_query("bom_no", "items", function (doc, cdt, cdn) {
-			let item = frappe.get_doc(cdt, cdn);
+			let item = nts.get_doc(cdt, cdn);
 			return {
 				filters: {
 					item: item.item_code,
@@ -131,7 +131,7 @@ frappe.ui.form.on("BOM Creator", {
 
 	set_root_item(frm) {
 		if (frm.is_new() && frm.doc.items?.length) {
-			frappe.model.set_value(frm.doc.items[0].doctype, frm.doc.items[0].name, "is_root", 1);
+			nts.model.set_value(frm.doc.items[0].doctype, frm.doc.items[0].name, "is_root", 1);
 		}
 	},
 
@@ -157,16 +157,16 @@ frappe.ui.form.on("BOM Creator", {
 	},
 });
 
-frappe.ui.form.on("BOM Creator Item", {
+nts.ui.form.on("BOM Creator Item", {
 	item_code(frm, cdt, cdn) {
-		let item = frappe.get_doc(cdt, cdn);
+		let item = nts.get_doc(cdt, cdn);
 		if (item.item_code && item.is_root) {
-			frappe.model.set_value(cdt, cdn, "fg_item", item.item_code);
+			nts.model.set_value(cdt, cdn, "fg_item", item.item_code);
 		}
 	},
 
 	do_not_explode(frm, cdt, cdn) {
-		let item = frappe.get_doc(cdt, cdn);
+		let item = nts.get_doc(cdt, cdn);
 		if (!item.do_not_explode) {
 			frm.call({
 				method: "get_default_bom",
@@ -176,12 +176,12 @@ frappe.ui.form.on("BOM Creator Item", {
 				},
 				callback(r) {
 					if (r.message) {
-						frappe.model.set_value(cdt, cdn, "bom_no", r.message);
+						nts.model.set_value(cdt, cdn, "bom_no", r.message);
 					}
 				},
 			});
 		} else {
-			frappe.model.set_value(cdt, cdn, "bom_no", "");
+			nts.model.set_value(cdt, cdn, "bom_no", "");
 		}
 	},
 });
@@ -206,9 +206,9 @@ prodman.bom.BomConfigurator = class BomConfigurator extends prodman.TransactionC
 	}
 
 	conversion_factor(doc, cdt, cdn) {
-		if (frappe.meta.get_docfield(cdt, "stock_qty", cdn)) {
-			var item = frappe.get_doc(cdt, cdn);
-			frappe.model.round_floats_in(item, ["qty", "conversion_factor"]);
+		if (nts.meta.get_docfield(cdt, "stock_qty", cdn)) {
+			var item = nts.get_doc(cdt, cdn);
+			nts.model.round_floats_in(item, ["qty", "conversion_factor"]);
 			item.stock_qty = flt(item.qty * item.conversion_factor, precision("stock_qty", item));
 			refresh_field("stock_qty", item.name, item.parentfield);
 			this.toggle_conversion_factor(item);

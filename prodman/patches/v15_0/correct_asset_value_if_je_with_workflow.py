@@ -1,6 +1,6 @@
-import frappe
-from frappe.model.workflow import get_workflow_name
-from frappe.query_builder.functions import IfNull, Sum
+import nts
+from nts.model.workflow import get_workflow_name
+from nts.query_builder.functions import IfNull, Sum
 
 
 def execute():
@@ -10,7 +10,7 @@ def execute():
 
 	correct_value_for_assets_with_manual_depr_entries()
 
-	finance_books = frappe.db.get_all("Finance Book", pluck="name")
+	finance_books = nts.db.get_all("Finance Book", pluck="name")
 
 	if finance_books:
 		for fb_name in finance_books:
@@ -20,13 +20,13 @@ def execute():
 
 
 def correct_value_for_assets_with_manual_depr_entries():
-	asset = frappe.qb.DocType("Asset")
-	gle = frappe.qb.DocType("GL Entry")
-	aca = frappe.qb.DocType("Asset Category Account")
-	company = frappe.qb.DocType("Company")
+	asset = nts.qb.DocType("Asset")
+	gle = nts.qb.DocType("GL Entry")
+	aca = nts.qb.DocType("Asset Category Account")
+	company = nts.qb.DocType("Company")
 
 	asset_details_and_depr_amount_map = (
-		frappe.qb.from_(gle)
+		nts.qb.from_(gle)
 		.join(asset)
 		.on(gle.against_voucher == asset.name)
 		.join(aca)
@@ -47,7 +47,7 @@ def correct_value_for_assets_with_manual_depr_entries():
 		.groupby(asset.name)
 	)
 
-	frappe.qb.update(asset).join(asset_details_and_depr_amount_map).on(
+	nts.qb.update(asset).join(asset_details_and_depr_amount_map).on(
 		asset_details_and_depr_amount_map.asset_name == asset.name
 	).set(
 		asset.value_after_depreciation,
@@ -58,14 +58,14 @@ def correct_value_for_assets_with_manual_depr_entries():
 
 
 def correct_value_for_assets_with_auto_depr(fb_name=None):
-	asset = frappe.qb.DocType("Asset")
-	gle = frappe.qb.DocType("GL Entry")
-	aca = frappe.qb.DocType("Asset Category Account")
-	company = frappe.qb.DocType("Company")
-	afb = frappe.qb.DocType("Asset Finance Book")
+	asset = nts.qb.DocType("Asset")
+	gle = nts.qb.DocType("GL Entry")
+	aca = nts.qb.DocType("Asset Category Account")
+	company = nts.qb.DocType("Company")
+	afb = nts.qb.DocType("Asset Finance Book")
 
 	asset_details_and_depr_amount_map = (
-		frappe.qb.from_(gle)
+		nts.qb.from_(gle)
 		.join(asset)
 		.on(gle.against_voucher == asset.name)
 		.join(aca)
@@ -96,7 +96,7 @@ def correct_value_for_assets_with_auto_depr(fb_name=None):
 		)
 
 	query = (
-		frappe.qb.update(afb)
+		nts.qb.update(afb)
 		.join(asset_details_and_depr_amount_map)
 		.on(asset_details_and_depr_amount_map.asset_name == afb.parent)
 		.set(

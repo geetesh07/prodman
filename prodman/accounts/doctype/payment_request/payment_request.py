@@ -1,11 +1,11 @@
 import json
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.query_builder.functions import Sum
-from frappe.utils import flt, nowdate
-from frappe.utils.background_jobs import enqueue
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .query_builder.functions import Sum
+from nts .utils import flt, nowdate
+from nts .utils.background_jobs import enqueue
 
 from prodman import get_company_currency
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
@@ -43,7 +43,7 @@ class PaymentRequest(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.subscription_plan_detail.subscription_plan_detail import (
 			SubscriptionPlanDetail,
@@ -110,46 +110,46 @@ class PaymentRequest(Document):
 
 	def validate_reference_document(self):
 		if not self.reference_doctype or not self.reference_name:
-			frappe.throw(_("To create a Payment Request reference document is required"))
+			nts .throw(_("To create a Payment Request reference document is required"))
 
 	def validate_payment_request_amount(self):
 		if self.grand_total == 0:
-			frappe.throw(
+			nts .throw(
 				_("{0} cannot be zero").format(self.get_label_from_fieldname("grand_total")),
 				title=_("Invalid Amount"),
 			)
 
-		ref_doc = frappe.get_doc(self.reference_doctype, self.reference_name)
+		ref_doc = nts .get_doc(self.reference_doctype, self.reference_name)
 		if not hasattr(ref_doc, "order_type") or ref_doc.order_type != "Shopping Cart":
 			ref_amount = get_amount(ref_doc, self.payment_account)
 			if not ref_amount:
-				frappe.throw(_("Payment Entry is already created"))
+				nts .throw(_("Payment Entry is already created"))
 
 			existing_payment_request_amount = flt(get_existing_payment_request_amount(ref_doc))
 
 			if existing_payment_request_amount + flt(self.grand_total) > ref_amount:
-				frappe.throw(
+				nts .throw(
 					_("Total Payment Request amount cannot be greater than {0} amount").format(
 						self.reference_doctype
 					)
 				)
 
 	def validate_currency(self):
-		ref_doc = frappe.get_doc(self.reference_doctype, self.reference_name)
-		if self.payment_account and ref_doc.currency != frappe.get_cached_value(
+		ref_doc = nts .get_doc(self.reference_doctype, self.reference_name)
+		if self.payment_account and ref_doc.currency != nts .get_cached_value(
 			"Account", self.payment_account, "account_currency"
 		):
-			frappe.throw(_("Transaction currency must be same as Payment Gateway currency"))
+			nts .throw(_("Transaction currency must be same as Payment Gateway currency"))
 
 	def validate_subscription_details(self):
 		if self.is_a_subscription:
 			amount = 0
 			for subscription_plan in self.subscription_plans:
-				payment_gateway = frappe.db.get_value(
+				payment_gateway = nts .db.get_value(
 					"Subscription Plan", subscription_plan.plan, "payment_gateway"
 				)
 				if payment_gateway != self.payment_gateway_account:
-					frappe.throw(
+					nts .throw(
 						_(
 							"The payment gateway account in plan {0} is different from the payment gateway account in this payment request"
 						).format(subscription_plan.name)
@@ -160,7 +160,7 @@ class PaymentRequest(Document):
 				amount += rate
 
 			if amount != self.grand_total:
-				frappe.msgprint(
+				nts .msgprint(
 					_(
 						"The amount of {0} set in this payment request is different from the calculated amount of all payment plans: {1}. Make sure this is correct before submitting the document."
 					).format(self.grand_total, amount)
@@ -172,7 +172,7 @@ class PaymentRequest(Document):
 			and self.party_account_currency == get_company_currency(self.company)
 		):
 			# set outstanding amount in party account currency
-			invoice = frappe.get_value(
+			invoice = nts .get_value(
 				self.reference_doctype,
 				self.reference_name,
 				["rounded_total", "grand_total", "base_rounded_total", "base_grand_total"],
@@ -196,7 +196,7 @@ class PaymentRequest(Document):
 			self.db_set("status", "Requested")
 
 		send_mail = self.payment_gateway_validation() if self.payment_gateway else None
-		ref_doc = frappe.get_doc(self.reference_doctype, self.reference_name)
+		ref_doc = nts .get_doc(self.reference_doctype, self.reference_name)
 
 		if (
 			hasattr(ref_doc, "order_type") and ref_doc.order_type == "Shopping Cart"
@@ -230,7 +230,7 @@ class PaymentRequest(Document):
 		controller.request_for_payment(**payment_record)
 
 	def get_request_amount(self):
-		data_of_completed_requests = frappe.get_all(
+		data_of_completed_requests = nts .get_all(
 			"Integration Request",
 			filters={
 				"reference_doctype": self.doctype,
@@ -251,7 +251,7 @@ class PaymentRequest(Document):
 		self.set_as_cancelled()
 
 	def make_invoice(self):
-		ref_doc = frappe.get_doc(self.reference_doctype, self.reference_name)
+		ref_doc = nts .get_doc(self.reference_doctype, self.reference_name)
 		if hasattr(ref_doc, "order_type") and ref_doc.order_type == "Shopping Cart":
 			from prodman.selling.doctype.sales_order.sales_order import make_sales_invoice
 
@@ -286,14 +286,14 @@ class PaymentRequest(Document):
 
 	def get_payment_url(self):
 		if self.reference_doctype != "Fees":
-			data = frappe.db.get_value(
+			data = nts .db.get_value(
 				self.reference_doctype, self.reference_name, ["company", "customer_name"], as_dict=1
 			)
 		else:
-			data = frappe.db.get_value(
+			data = nts .db.get_value(
 				self.reference_doctype, self.reference_name, ["student_name"], as_dict=1
 			)
-			data.update({"company": frappe.defaults.get_defaults().company})
+			data.update({"company": nts .defaults.get_defaults().company})
 
 		controller = _get_payment_gateway_controller(self.payment_gateway)
 		controller.validate_transaction_currency(self.currency)
@@ -308,7 +308,7 @@ class PaymentRequest(Document):
 				"description": self.subject,
 				"reference_doctype": "Payment Request",
 				"reference_docname": self.name,
-				"payer_email": self.email_to or frappe.session.user,
+				"payer_email": self.email_to or nts .session.user,
 				"payer_name": data.customer_name,
 				"order_id": self.name,
 				"currency": self.currency,
@@ -328,9 +328,9 @@ class PaymentRequest(Document):
 
 	def create_payment_entry(self, submit=True):
 		"""create entry"""
-		frappe.flags.ignore_account_permission = True
+		nts .flags.ignore_account_permission = True
 
-		ref_doc = frappe.get_doc(self.reference_doctype, self.reference_name)
+		ref_doc = nts .get_doc(self.reference_doctype, self.reference_name)
 
 		if self.reference_doctype in ["Sales Invoice", "POS Invoice"]:
 			party_account = ref_doc.debit_to
@@ -412,7 +412,7 @@ class PaymentRequest(Document):
 			"message": self.get_message(),
 			"now": True,
 			"attachments": [
-				frappe.attach_print(
+				nts .attach_print(
 					self.reference_doctype,
 					self.reference_name,
 					file_name=self.reference_name,
@@ -420,18 +420,18 @@ class PaymentRequest(Document):
 				)
 			],
 		}
-		enqueue(method=frappe.sendmail, queue="short", timeout=300, is_async=True, **email_args)
+		enqueue(method=nts .sendmail, queue="short", timeout=300, is_async=True, **email_args)
 
 	def get_message(self):
 		"""return message with payment gateway link"""
 
 		context = {
-			"doc": frappe.get_doc(self.reference_doctype, self.reference_name),
+			"doc": nts .get_doc(self.reference_doctype, self.reference_name),
 			"payment_url": self.payment_url,
 		}
 
 		if self.message:
-			return frappe.render_template(self.message, context)
+			return nts .render_template(self.message, context)
 
 	def set_failed(self):
 		pass
@@ -441,17 +441,17 @@ class PaymentRequest(Document):
 
 	def check_if_payment_entry_exists(self):
 		if self.status == "Paid":
-			if frappe.get_all(
+			if nts .get_all(
 				"Payment Entry Reference",
 				filters={"reference_name": self.reference_name, "docstatus": ["<", 2]},
 				fields=["parent"],
 				limit=1,
 			):
-				frappe.throw(_("Payment Entry already exists"), title=_("Error"))
+				nts .throw(_("Payment Entry already exists"), title=_("Error"))
 
 	def make_communication_entry(self):
 		"""Make communication entry"""
-		comm = frappe.get_doc(
+		comm = nts .get_doc(
 			{
 				"doctype": "Communication",
 				"subject": self.subject,
@@ -518,7 +518,7 @@ class PaymentRequest(Document):
 				outstanding_amount = 0
 
 				# create a new row without PR for remaining unallocated amount
-				new_row = frappe.copy_doc(row)
+				new_row = nts .copy_doc(row)
 				references.insert(row_number, new_row)
 
 				# update new row
@@ -530,29 +530,29 @@ class PaymentRequest(Document):
 				row_number += TO_SKIP_NEW_ROW
 
 
-@frappe.whitelist(allow_guest=True)
+@nts .whitelist(allow_guest=True)
 def make_payment_request(**args):
 	"""Make payment request"""
 
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 
 	if args.dt not in ALLOWED_DOCTYPES_FOR_PAYMENT_REQUEST:
-		frappe.throw(_("Payment Requests cannot be created against: {0}").format(frappe.bold(args.dt)))
+		nts .throw(_("Payment Requests cannot be created against: {0}").format(nts .bold(args.dt)))
 
-	ref_doc = frappe.get_doc(args.dt, args.dn)
-	gateway_account = get_gateway_details(args) or frappe._dict()
+	ref_doc = nts .get_doc(args.dt, args.dn)
+	gateway_account = get_gateway_details(args) or nts ._dict()
 
 	grand_total = get_amount(ref_doc, gateway_account.get("payment_account"))
 	if not grand_total:
-		frappe.throw(_("Payment Entry is already created"))
+		nts .throw(_("Payment Entry is already created"))
 	if args.loyalty_points and args.dt == "Sales Order":
 		from prodman.accounts.doctype.loyalty_program.loyalty_program import validate_loyalty_points
 
 		loyalty_amount = validate_loyalty_points(ref_doc, int(args.loyalty_points))
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Sales Order", args.dn, "loyalty_points", int(args.loyalty_points), update_modified=False
 		)
-		frappe.db.set_value("Sales Order", args.dn, "loyalty_amount", loyalty_amount, update_modified=False)
+		nts .db.set_value("Sales Order", args.dn, "loyalty_amount", loyalty_amount, update_modified=False)
 		grand_total = grand_total - loyalty_amount
 
 	# fetches existing payment request `grand_total` amount
@@ -561,7 +561,7 @@ def make_payment_request(**args):
 	def validate_and_calculate_grand_total(grand_total, existing_payment_request_amount):
 		grand_total -= existing_payment_request_amount
 		if not grand_total:
-			frappe.throw(_("Payment Request is already created"))
+			nts .throw(_("Payment Request is already created"))
 		return grand_total
 
 	if existing_payment_request_amount:
@@ -577,23 +577,23 @@ def make_payment_request(**args):
 		else:
 			grand_total = validate_and_calculate_grand_total(grand_total, existing_payment_request_amount)
 
-	draft_payment_request = frappe.db.get_value(
+	draft_payment_request = nts .db.get_value(
 		"Payment Request",
 		{"reference_doctype": ref_doc.doctype, "reference_name": ref_doc.name, "docstatus": 0},
 	)
 
 	if draft_payment_request:
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Payment Request", draft_payment_request, "grand_total", grand_total, update_modified=False
 		)
-		pr = frappe.get_doc("Payment Request", draft_payment_request)
+		pr = nts .get_doc("Payment Request", draft_payment_request)
 	else:
 		bank_account = (
 			get_party_bank_account(args.get("party_type"), args.get("party"))
 			if args.get("party_type")
 			else ""
 		)
-		pr = frappe.new_doc("Payment Request")
+		pr = nts .new_doc("Payment Request")
 
 		if not args.get("payment_request_type"):
 			args["payment_request_type"] = (
@@ -646,7 +646,7 @@ def make_payment_request(**args):
 		if args.order_type == "Shopping Cart" or args.mute_email:
 			pr.flags.mute_email = True
 
-		if frappe.db.get_single_value("Accounts Settings", "create_pr_in_draft_status", cache=True):
+		if nts .db.get_single_value("Accounts Settings", "create_pr_in_draft_status", cache=True):
 			pr.insert(ignore_permissions=True)
 		if args.submit_doc:
 			if pr.get("__unsaved"):
@@ -654,9 +654,9 @@ def make_payment_request(**args):
 			pr.submit()
 
 	if args.order_type == "Shopping Cart":
-		frappe.db.commit()
-		frappe.local.response["type"] = "redirect"
-		frappe.local.response["location"] = pr.get_payment_url()
+		nts .db.commit()
+		nts .local.response["type"] = "redirect"
+		nts .local.response["location"] = pr.get_payment_url()
 
 	if args.return_doc:
 		return pr
@@ -712,11 +712,11 @@ def get_amount(ref_doc, payment_account=None):
 
 
 def get_irequest_status(payment_requests: None | list = None) -> list:
-	IR = frappe.qb.DocType("Integration Request")
+	IR = nts .qb.DocType("Integration Request")
 	res = []
 	if payment_requests:
 		res = (
-			frappe.qb.from_(IR)
+			nts .qb.from_(IR)
 			.select(IR.name)
 			.where(IR.reference_doctype.eq("Payment Request"))
 			.where(IR.reference_docname.isin(payment_requests))
@@ -727,10 +727,10 @@ def get_irequest_status(payment_requests: None | list = None) -> list:
 
 
 def cancel_old_payment_requests(ref_dt, ref_dn):
-	PR = frappe.qb.DocType("Payment Request")
+	PR = nts .qb.DocType("Payment Request")
 
 	if res := (
-		frappe.qb.from_(PR)
+		nts .qb.from_(PR)
 		.select(PR.name)
 		.where(PR.reference_doctype == ref_dt)
 		.where(PR.reference_name == ref_dn)
@@ -739,26 +739,26 @@ def cancel_old_payment_requests(ref_dt, ref_dn):
 		.run(as_dict=True)
 	):
 		if get_irequest_status([x.name for x in res]):
-			frappe.throw(_("Another Payment Request is already processed"))
+			nts .throw(_("Another Payment Request is already processed"))
 		else:
 			for x in res:
-				doc = frappe.get_doc("Payment Request", x.name)
+				doc = nts .get_doc("Payment Request", x.name)
 				doc.flags.ignore_permissions = True
 				doc.cancel()
 
 				if ireqs := get_irequests_of_payment_request(doc.name):
 					for ireq in ireqs:
-						frappe.db.set_value("Integration Request", ireq.name, "status", "Cancelled")
+						nts .db.set_value("Integration Request", ireq.name, "status", "Cancelled")
 
 
 def get_existing_payment_request_amount(ref_doc, statuses: list | None = None) -> list:
 	"""
 	Return the total amount of Payment Requests against a reference document.
 	"""
-	PR = frappe.qb.DocType("Payment Request")
+	PR = nts .qb.DocType("Payment Request")
 
 	query = (
-		frappe.qb.from_(PR)
+		nts .qb.from_(PR)
 		.select(Sum(PR.outstanding_amount))
 		.where(PR.reference_doctype == ref_doc.doctype)
 		.where(PR.reference_name == ref_doc.name)
@@ -792,7 +792,7 @@ def get_gateway_details(args):  # nosemgrep
 
 
 def get_payment_gateway_account(args):
-	return frappe.db.get_value(
+	return nts .db.get_value(
 		"Payment Gateway Account",
 		args,
 		["name", "payment_gateway", "payment_account", "message"],
@@ -800,25 +800,25 @@ def get_payment_gateway_account(args):
 	)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_print_format_list(ref_doctype):
 	print_format_list = ["Standard"]
 
 	print_format_list.extend(
-		[p.name for p in frappe.get_all("Print Format", filters={"doc_type": ref_doctype})]
+		[p.name for p in nts .get_all("Print Format", filters={"doc_type": ref_doctype})]
 	)
 
 	return {"print_format": print_format_list}
 
 
-@frappe.whitelist(allow_guest=True)
+@nts .whitelist(allow_guest=True)
 def resend_payment_email(docname):
-	return frappe.get_doc("Payment Request", docname).send_email()
+	return nts .get_doc("Payment Request", docname).send_email()
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def make_payment_entry(docname):
-	doc = frappe.get_doc("Payment Request", docname)
+	doc = nts .get_doc("Payment Request", docname)
 	return doc.create_payment_entry(submit=False).as_dict()
 
 
@@ -831,7 +831,7 @@ def update_payment_requests_as_per_pe_references(references=None, cancel=False):
 
 	precision = references[0].precision("allocated_amount")
 
-	referenced_payment_requests = frappe.get_all(
+	referenced_payment_requests = nts .get_all(
 		"Payment Request",
 		filters={"name": ["in", {row.payment_request for row in references if row.payment_request}]},
 		fields=[
@@ -861,7 +861,7 @@ def update_payment_requests_as_per_pe_references(references=None, cancel=False):
 		payment_request["outstanding_amount"] = new_outstanding_amount
 
 		if not cancel and new_outstanding_amount < 0:
-			frappe.throw(
+			nts .throw(
 				msg=_(
 					"The allocated amount is greater than the outstanding amount of Payment Request {0}"
 				).format(ref.payment_request),
@@ -877,7 +877,7 @@ def update_payment_requests_as_per_pe_references(references=None, cancel=False):
 			status = "Partially Paid"
 
 		# update database
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Payment Request",
 			ref.payment_request,
 			{"outstanding_amount": new_outstanding_amount, "status": status},
@@ -885,7 +885,7 @@ def update_payment_requests_as_per_pe_references(references=None, cancel=False):
 
 
 def get_dummy_message(doc):
-	return frappe.render_template(
+	return nts .render_template(
 		"""{% if doc.contact_person -%}
 <p>Dear {{ doc.contact_person }},</p>
 {%- else %}<p>Hello,</p>{% endif %}
@@ -903,25 +903,25 @@ def get_dummy_message(doc):
 	)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_subscription_details(reference_doctype, reference_name):
 	if reference_doctype == "Sales Invoice":
-		subscriptions = frappe.db.sql(
+		subscriptions = nts .db.sql(
 			"""SELECT parent as sub_name FROM `tabSubscription Invoice` WHERE invoice=%s""",
 			reference_name,
 			as_dict=1,
 		)
 		subscription_plans = []
 		for subscription in subscriptions:
-			plans = frappe.get_doc("Subscription", subscription.sub_name).plans
+			plans = nts .get_doc("Subscription", subscription.sub_name).plans
 			for plan in plans:
 				subscription_plans.append(plan)
 		return subscription_plans
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def make_payment_order(source_name, target_doc=None):
-	from frappe.model.mapper import get_mapped_doc
+	from nts .model.mapper import get_mapped_doc
 
 	def set_missing_values(source, target):
 		target.payment_order_type = "Payment Request"
@@ -956,21 +956,21 @@ def make_payment_order(source_name, target_doc=None):
 
 def validate_payment(doc, method=None):
 	if doc.reference_doctype != "Payment Request" or (
-		frappe.db.get_value(doc.reference_doctype, doc.reference_docname, "status") != "Paid"
+		nts .db.get_value(doc.reference_doctype, doc.reference_docname, "status") != "Paid"
 	):
 		return
 
-	frappe.throw(
+	nts .throw(
 		_("The Payment Request {0} is already paid, cannot process payment twice").format(
 			doc.reference_docname
 		)
 	)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_open_payment_requests_query(doctype, txt, searchfield, start, page_len, filters):
 	# permission checks in `get_list()`
-	filters = frappe._dict(filters)
+	filters = nts ._dict(filters)
 
 	if not filters.reference_doctype or not filters.reference_name:
 		return []
@@ -978,7 +978,7 @@ def get_open_payment_requests_query(doctype, txt, searchfield, start, page_len, 
 	if txt:
 		filters.name = ["like", f"%{txt}%"]
 
-	open_payment_requests = frappe.get_list(
+	open_payment_requests = nts .get_list(
 		"Payment Request",
 		filters=filters,
 		fields=["name", "grand_total", "outstanding_amount"],
@@ -998,7 +998,7 @@ def get_open_payment_requests_query(doctype, txt, searchfield, start, page_len, 
 def get_irequests_of_payment_request(doc: str | None = None) -> list:
 	res = []
 	if doc:
-		res = frappe.db.get_all(
+		res = nts .db.get_all(
 			"Integration Request",
 			{
 				"reference_doctype": "Payment Request",

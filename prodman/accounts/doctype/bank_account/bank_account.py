@@ -1,15 +1,15 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.contacts.address_and_contact import (
+import nts 
+from nts  import _
+from nts .contacts.address_and_contact import (
 	delete_contact_and_address,
 	load_address_and_contact,
 )
-from frappe.model.document import Document
-from frappe.utils import comma_and, get_link_to_form
+from nts .model.document import Document
+from nts .utils import comma_and, get_link_to_form
 
 
 class BankAccount(Document):
@@ -19,7 +19,7 @@ class BankAccount(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		account: DF.Link | None
 		account_name: DF.Data
@@ -58,19 +58,19 @@ class BankAccount(Document):
 
 	def validate_account(self):
 		if self.account:
-			if accounts := frappe.db.get_all(
+			if accounts := nts .db.get_all(
 				"Bank Account", filters={"account": self.account, "name": ["!=", self.name]}, as_list=1
 			):
-				frappe.throw(
+				nts .throw(
 					_("'{0}' account is already used by {1}. Use another account.").format(
-						frappe.bold(self.account),
-						frappe.bold(comma_and([get_link_to_form(self.doctype, x[0]) for x in accounts])),
+						nts .bold(self.account),
+						nts .bold(comma_and([get_link_to_form(self.doctype, x[0]) for x in accounts])),
 					)
 				)
 
 	def validate_company(self):
 		if self.is_company_account and not self.company:
-			frappe.throw(_("Company is manadatory for company account"))
+			nts .throw(_("Company is manadatory for company account"))
 
 	def validate_iban(self):
 		"""
@@ -96,14 +96,14 @@ class BankAccount(Document):
 		try:
 			to_check = int("".join(encoded))
 		except ValueError:
-			frappe.throw(_("IBAN is not valid"))
+			nts .throw(_("IBAN is not valid"))
 
 		if to_check % 97 != 1:
-			frappe.throw(_("IBAN is not valid"))
+			nts .throw(_("IBAN is not valid"))
 
 	def update_default_bank_account(self):
 		if self.is_default and not self.disabled:
-			frappe.db.set_value(
+			nts .db.set_value(
 				"Bank Account",
 				{
 					"party_type": self.party_type,
@@ -117,9 +117,9 @@ class BankAccount(Document):
 			)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def make_bank_account(doctype, docname):
-	doc = frappe.new_doc("Bank Account")
+	doc = nts .new_doc("Bank Account")
 	doc.party_type = doctype
 	doc.party = docname
 
@@ -127,7 +127,7 @@ def make_bank_account(doctype, docname):
 
 
 def get_party_bank_account(party_type, party):
-	return frappe.db.get_value(
+	return nts .db.get_value(
 		"Bank Account",
 		{"party_type": party_type, "party": party, "is_default": 1, "disabled": 0},
 		"name",
@@ -135,21 +135,21 @@ def get_party_bank_account(party_type, party):
 
 
 def get_default_company_bank_account(company, party_type, party):
-	default_company_bank_account = frappe.db.get_value(party_type, party, "default_bank_account")
+	default_company_bank_account = nts .db.get_value(party_type, party, "default_bank_account")
 	if default_company_bank_account:
-		if company != frappe.get_cached_value("Bank Account", default_company_bank_account, "company"):
+		if company != nts .get_cached_value("Bank Account", default_company_bank_account, "company"):
 			default_company_bank_account = None
 
 	if not default_company_bank_account:
-		default_company_bank_account = frappe.db.get_value(
+		default_company_bank_account = nts .db.get_value(
 			"Bank Account", {"company": company, "is_company_account": 1, "is_default": 1}
 		)
 
 	return default_company_bank_account
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_bank_account_details(bank_account):
-	return frappe.get_cached_value(
+	return nts .get_cached_value(
 		"Bank Account", bank_account, ["account", "bank", "bank_account_no"], as_dict=1
 	)

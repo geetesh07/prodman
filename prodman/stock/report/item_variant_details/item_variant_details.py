@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -17,12 +17,12 @@ def get_data(item):
 		return []
 	item_dicts = []
 
-	variant_results = frappe.db.get_all(
+	variant_results = nts.db.get_all(
 		"Item", fields=["name"], filters={"variant_of": ["=", item], "disabled": 0}
 	)
 
 	if not variant_results:
-		frappe.msgprint(_("There aren't any item variants for the selected item"))
+		nts.msgprint(_("There aren't any item variants for the selected item"))
 		return []
 	else:
 		variant_list = [variant["name"] for variant in variant_results]
@@ -33,7 +33,7 @@ def get_data(item):
 	selling_price_map = get_selling_price_map(variant_list)
 	attr_val_map = get_attribute_values_map(variant_list)
 
-	attributes = frappe.db.get_all(
+	attributes = nts.db.get_all(
 		"Item Variant Attribute",
 		fields=["attribute"],
 		filters={"parent": ["in", variant_list]},
@@ -49,7 +49,7 @@ def get_data(item):
 		for attribute in attribute_list:
 			attr_dict = attr_val_map.get(name)
 			if attr_dict and attr_dict.get(attribute):
-				item_dict[frappe.scrub(attribute)] = attr_val_map.get(name).get(attribute)
+				item_dict[nts.scrub(attribute)] = attr_val_map.get(name).get(attribute)
 
 		item_dict["open_orders"] = order_count_map.get(name) or 0
 
@@ -78,12 +78,12 @@ def get_columns(item):
 		}
 	]
 
-	item_doc = frappe.get_doc("Item", item)
+	item_doc = nts.get_doc("Item", item)
 
 	for entry in item_doc.attributes:
 		columns.append(
 			{
-				"fieldname": frappe.scrub(entry.attribute),
+				"fieldname": nts.scrub(entry.attribute),
 				"label": entry.attribute,
 				"fieldtype": "Data",
 				"width": 100,
@@ -118,7 +118,7 @@ def get_columns(item):
 
 
 def get_open_sales_orders_count(variants_list):
-	open_sales_orders = frappe.db.get_list(
+	open_sales_orders = nts.db.get_list(
 		"Sales Order",
 		fields=["name", "`tabSales Order Item`.item_code"],
 		filters=[
@@ -140,7 +140,7 @@ def get_open_sales_orders_count(variants_list):
 
 
 def get_stock_details_map(variant_list):
-	stock_details = frappe.db.get_all(
+	stock_details = nts.db.get_all(
 		"Bin",
 		fields=[
 			"sum(planned_qty) as planned_qty",
@@ -164,7 +164,7 @@ def get_stock_details_map(variant_list):
 
 
 def get_buying_price_map(variant_list):
-	buying = frappe.db.get_all(
+	buying = nts.db.get_all(
 		"Item Price",
 		fields=[
 			"avg(price_list_rate) as avg_rate",
@@ -182,7 +182,7 @@ def get_buying_price_map(variant_list):
 
 
 def get_selling_price_map(variant_list):
-	selling = frappe.db.get_all(
+	selling = nts.db.get_all(
 		"Item Price",
 		fields=[
 			"avg(price_list_rate) as avg_rate",
@@ -200,7 +200,7 @@ def get_selling_price_map(variant_list):
 
 
 def get_attribute_values_map(variant_list):
-	attribute_list = frappe.db.get_all(
+	attribute_list = nts.db.get_all(
 		"Item Variant Attribute",
 		fields=["attribute", "attribute_value", "parent"],
 		filters={"parent": ["in", variant_list]},

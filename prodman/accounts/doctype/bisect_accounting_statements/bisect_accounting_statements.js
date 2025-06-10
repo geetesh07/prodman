@@ -1,7 +1,7 @@
-// Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Bisect Accounting Statements", {
+nts .ui.form.on("Bisect Accounting Statements", {
 	onload(frm) {
 		frm.trigger("render_heatmap");
 	},
@@ -42,7 +42,7 @@ frappe.ui.form.on("Bisect Accounting Statements", {
 			}
 		}
 
-		new frappe.Chart(".bisect_heatmap_location", {
+		new nts .Chart(".bisect_heatmap_location", {
 			type: "heatmap",
 			data: {
 				dataPoints: datapoints,

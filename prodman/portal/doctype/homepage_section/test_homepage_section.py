@@ -1,17 +1,17 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2019, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts
 from bs4 import BeautifulSoup
-from frappe.utils import set_request
-from frappe.website.serve import get_response
+from nts.utils import set_request
+from nts.website.serve import get_response
 
 
 class TestHomepageSection(unittest.TestCase):
 	def test_homepage_section_custom_html(self):
-		frappe.get_doc(
+		nts.get_doc(
 			{
 				"doctype": "Homepage Section",
 				"name": "Custom HTML Section",
@@ -25,7 +25,7 @@ class TestHomepageSection(unittest.TestCase):
 
 		self.assertEqual(response.status_code, 200)
 
-		html = frappe.safe_decode(response.get_data())
+		html = nts.safe_decode(response.get_data())
 
 		soup = BeautifulSoup(html, "html.parser")
 		sections = soup.find("main").find_all(class_="custom-section")
@@ -35,4 +35,4 @@ class TestHomepageSection(unittest.TestCase):
 		self.assertEqual(homepage_section.text, "My custom html")
 
 		# cleanup
-		frappe.db.rollback()
+		nts.db.rollback()

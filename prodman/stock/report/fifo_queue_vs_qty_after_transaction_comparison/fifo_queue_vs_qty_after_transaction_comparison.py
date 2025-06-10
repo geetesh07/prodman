@@ -1,12 +1,12 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import json
 
-import frappe
-from frappe import _
-from frappe.utils import flt
-from frappe.utils.nestedset import get_descendants_of
+import nts
+from nts import _
+from nts.utils import flt
+from nts.utils.nestedset import get_descendants_of
 
 SLE_FIELDS = (
 	"name",
@@ -34,7 +34,7 @@ def execute(filters=None):
 
 def get_data(filters):
 	if not any([filters.warehouse, filters.item_code, filters.item_group]):
-		frappe.throw(_("Any one of following filters required: warehouse, Item Code, Item Group"))
+		nts.throw(_("Any one of following filters required: warehouse, Item Code, Item Group"))
 	sles = get_stock_ledger_entries(filters)
 	return find_first_bad_queue(sles)
 
@@ -54,7 +54,7 @@ def get_stock_ledger_entries(filters):
 		item_group_filter = {"item_group": ("in", [*children, item_group])}
 		sle_filters["item_code"] = (
 			"in",
-			frappe.get_all("Item", filters=item_group_filter, pluck="name", order_by=None),
+			nts.get_all("Item", filters=item_group_filter, pluck="name", order_by=None),
 		)
 
 	if filters.from_date:
@@ -62,7 +62,7 @@ def get_stock_ledger_entries(filters):
 	if filters.to_date:
 		sle_filters["posting_date"] = ("<=", filters.to_date)
 
-	return frappe.get_all(
+	return nts.get_all(
 		"Stock Ledger Entry",
 		fields=SLE_FIELDS,
 		filters=sle_filters,
@@ -91,7 +91,7 @@ def find_first_bad_queue(sles):
 			sle.fifo_value_diff = sle.stock_value - sle.fifo_stock_value
 
 			if sle.batch_no:
-				sle.use_batchwise_valuation = frappe.db.get_value(
+				sle.use_batchwise_valuation = nts.db.get_value(
 					"Batch", sle.batch_no, "use_batchwise_valuation", cache=True
 				)
 

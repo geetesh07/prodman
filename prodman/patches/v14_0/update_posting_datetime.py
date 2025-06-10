@@ -1,8 +1,8 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		UPDATE `tabStock Ledger Entry`
 			SET posting_datetime = timestamp(posting_date, posting_time)

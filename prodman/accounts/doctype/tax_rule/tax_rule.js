@@ -1,9 +1,9 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.ui.form.on("Tax Rule", "customer", function (frm) {
+nts .ui.form.on("Tax Rule", "customer", function (frm) {
 	if (frm.doc.customer) {
-		frappe.call({
+		nts .call({
 			method: "prodman.accounts.doctype.tax_rule.tax_rule.get_party_details",
 			args: {
 				party: frm.doc.customer,
@@ -20,9 +20,9 @@ frappe.ui.form.on("Tax Rule", "customer", function (frm) {
 	}
 });
 
-frappe.ui.form.on("Tax Rule", "supplier", function (frm) {
+nts .ui.form.on("Tax Rule", "supplier", function (frm) {
 	if (frm.doc.supplier) {
-		frappe.call({
+		nts .call({
 			method: "prodman.accounts.doctype.tax_rule.tax_rule.get_party_details",
 			args: {
 				party: frm.doc.supplier,

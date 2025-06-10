@@ -1,17 +1,17 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 from collections import defaultdict
 from itertools import chain
 
-import frappe
-from frappe import _
-from frappe.query_builder import Interval
-from frappe.query_builder.functions import Count, CurDate, UnixTimestamp
-from frappe.utils import flt
-from frappe.utils.data import get_url_to_list
-from frappe.utils.nestedset import NestedSet, get_root_of
+import nts
+from nts import _
+from nts.query_builder import Interval
+from nts.query_builder.functions import Count, CurDate, UnixTimestamp
+from nts.utils import flt
+from nts.utils.data import get_url_to_list
+from nts.utils.nestedset import NestedSet, get_root_of
 
 from prodman import get_default_currency
 
@@ -23,7 +23,7 @@ class SalesPerson(NestedSet):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.setup.doctype.target_detail.target_detail import TargetDetail
 
@@ -51,7 +51,7 @@ class SalesPerson(NestedSet):
 
 		for d in self.get("targets") or []:
 			if not flt(d.target_qty) and not flt(d.target_amount):
-				frappe.throw(_("Either target qty or target amount is mandatory."))
+				nts.throw(_("Either target qty or target amount is mandatory."))
 		self.validate_employee_id()
 
 	def onload(self):
@@ -61,7 +61,7 @@ class SalesPerson(NestedSet):
 		company_default_currency = get_default_currency()
 
 		allocated_amount_against_order = flt(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Sales Team",
 				{"docstatus": 1, "parenttype": "Sales Order", "sales_person": self.sales_person_name},
 				"sum(allocated_amount)",
@@ -69,7 +69,7 @@ class SalesPerson(NestedSet):
 		)
 
 		allocated_amount_against_invoice = flt(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Sales Team",
 				{"docstatus": 1, "parenttype": "Sales Invoice", "sales_person": self.sales_person_name},
 				"sum(allocated_amount)",
@@ -88,19 +88,19 @@ class SalesPerson(NestedSet):
 		self.validate_one_root()
 
 	def validate_sales_person(self):
-		sales_team = frappe.qb.DocType("Sales Team")
+		sales_team = nts.qb.DocType("Sales Team")
 
 		query = (
-			frappe.qb.from_(sales_team)
+			nts.qb.from_(sales_team)
 			.select(sales_team.sales_person)
 			.where((sales_team.sales_person == self.name) & (sales_team.parenttype == "Customer"))
 			.groupby(sales_team.sales_person)
 		).run(as_dict=True)
 
 		if query:
-			frappe.throw(
+			nts.throw(
 				_("The Sales Person is linked with {0}").format(
-					frappe.bold(
+					nts.bold(
 						f"""<a href="{get_url_to_list("Customer")}?sales_person={self.name}">{"Customers"}</a>"""
 					)
 				)
@@ -108,33 +108,33 @@ class SalesPerson(NestedSet):
 
 	def get_email_id(self):
 		if self.employee:
-			user = frappe.db.get_value("Employee", self.employee, "user_id")
+			user = nts.db.get_value("Employee", self.employee, "user_id")
 			if not user:
-				frappe.throw(_("User ID not set for Employee {0}").format(self.employee))
+				nts.throw(_("User ID not set for Employee {0}").format(self.employee))
 			else:
-				return frappe.db.get_value("User", user, "email") or user
+				return nts.db.get_value("User", user, "email") or user
 
 	def validate_employee_id(self):
 		if self.employee:
-			sales_person = frappe.db.get_value("Sales Person", {"employee": self.employee})
+			sales_person = nts.db.get_value("Sales Person", {"employee": self.employee})
 
 			if sales_person and sales_person != self.name:
-				frappe.throw(
+				nts.throw(
 					_("Another Sales Person {0} exists with the same Employee id").format(sales_person)
 				)
 
 
 def on_doctype_update():
-	frappe.db.add_index("Sales Person", ["lft", "rgt"])
+	nts.db.add_index("Sales Person", ["lft", "rgt"])
 
 
 def get_timeline_data(doctype: str, name: str) -> dict[int, int]:
 	def _fetch_activity(doctype: str, date_field: str):
-		sales_team = frappe.qb.DocType("Sales Team")
-		transaction = frappe.qb.DocType(doctype)
+		sales_team = nts.qb.DocType("Sales Team")
+		transaction = nts.qb.DocType(doctype)
 
 		return dict(
-			frappe.qb.from_(transaction)
+			nts.qb.from_(transaction)
 			.join(sales_team)
 			.on(transaction.name == sales_team.parent)
 			.select(UnixTimestamp(transaction[date_field]), Count("*"))

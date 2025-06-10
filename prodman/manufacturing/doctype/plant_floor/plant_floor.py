@@ -1,10 +1,10 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe.model.document import Document
-from frappe.query_builder import Order
-from frappe.utils import get_link_to_form, nowdate, nowtime
+import nts
+from nts.model.document import Document
+from nts.query_builder import Order
+from nts.utils import get_link_to_form, nowdate, nowtime
 
 
 class PlantFloor(Document):
@@ -14,22 +14,22 @@ class PlantFloor(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		company: DF.Link | None
 		floor_name: DF.Data | None
 		warehouse: DF.Link | None
 	# end: auto-generated types
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def make_stock_entry(self, kwargs):
 		if isinstance(kwargs, str):
-			kwargs = frappe.parse_json(kwargs)
+			kwargs = nts.parse_json(kwargs)
 
 		if isinstance(kwargs, dict):
-			kwargs = frappe._dict(kwargs)
+			kwargs = nts._dict(kwargs)
 
-		stock_entry = frappe.new_doc("Stock Entry")
+		stock_entry = nts.new_doc("Stock Entry")
 		stock_entry.update(
 			{
 				"company": kwargs.company,
@@ -48,7 +48,7 @@ class PlantFloor(Document):
 		return stock_entry
 
 	def get_item_details(self, kwargs) -> list[dict]:
-		item_details = frappe.db.get_value(
+		item_details = nts.db.get_value(
 			"Item", kwargs.item_code, ["item_name", "stock_uom", "item_group", "description"], as_dict=True
 		)
 		item_details.update(
@@ -65,7 +65,7 @@ class PlantFloor(Document):
 		return [item_details]
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_stock_summary(warehouse, start=0, item_code=None, item_group=None):
 	stock_details = get_stock_details(warehouse, start=start, item_code=item_code, item_group=item_group)
 
@@ -87,11 +87,11 @@ def get_stock_summary(warehouse, start=0, item_code=None, item_group=None):
 
 
 def get_stock_details(warehouse, start=0, item_code=None, item_group=None):
-	item_table = frappe.qb.DocType("Item")
-	bin_table = frappe.qb.DocType("Bin")
+	item_table = nts.qb.DocType("Item")
+	bin_table = nts.qb.DocType("Bin")
 
 	query = (
-		frappe.qb.from_(bin_table)
+		nts.qb.from_(bin_table)
 		.inner_join(item_table)
 		.on(bin_table.item_code == item_table.name)
 		.select(

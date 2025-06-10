@@ -1,4 +1,4 @@
-frappe.listview_settings["Quality Review"] = {
+nts.listview_settings["Quality Review"] = {
 	add_fields: ["action"],
 	get_indicator: function (doc) {
 		if (doc.action == "No Action") {

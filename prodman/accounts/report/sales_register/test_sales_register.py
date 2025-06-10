@@ -1,13 +1,13 @@
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import getdate, today
+import nts 
+from nts .tests.utils import nts TestCase
+from nts .utils import getdate, today
 
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
 from prodman.accounts.report.sales_register.sales_register import execute
 from prodman.accounts.test.accounts_mixin import AccountsTestMixin
 
 
-class TestItemWiseSalesRegister(AccountsTestMixin, FrappeTestCase):
+class TestItemWiseSalesRegister(AccountsTestMixin, nts TestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_customer()
@@ -15,15 +15,15 @@ class TestItemWiseSalesRegister(AccountsTestMixin, FrappeTestCase):
 		self.create_child_cost_center()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def create_child_cost_center(self):
 		cc_name = "South Wing"
-		if frappe.db.exists("Cost Center", cc_name):
-			cc = frappe.get_doc("Cost Center", cc_name)
+		if nts .db.exists("Cost Center", cc_name):
+			cc = nts .get_doc("Cost Center", cc_name)
 		else:
-			parent = frappe.db.get_value("Cost Center", self.cost_center, "parent_cost_center")
-			cc = frappe.get_doc(
+			parent = nts .db.get_value("Cost Center", self.cost_center, "parent_cost_center")
+			cc = nts .get_doc(
 				{
 					"doctype": "Cost Center",
 					"company": self.company,
@@ -56,7 +56,7 @@ class TestItemWiseSalesRegister(AccountsTestMixin, FrappeTestCase):
 	def test_basic_report_output(self):
 		si = self.create_sales_invoice(rate=98)
 
-		filters = frappe._dict({"from_date": today(), "to_date": today(), "company": self.company})
+		filters = nts ._dict({"from_date": today(), "to_date": today(), "company": self.company})
 		report = execute(filters)
 
 		res = [x for x in report[1] if x.get("voucher_no") == si.name]
@@ -76,7 +76,7 @@ class TestItemWiseSalesRegister(AccountsTestMixin, FrappeTestCase):
 		self.assertDictEqual(report_output, expected_result)
 
 	def test_journal_with_cost_center_filter(self):
-		je1 = frappe.get_doc(
+		je1 = nts .get_doc(
 			{
 				"doctype": "Journal Entry",
 				"voucher_type": "Journal Entry",
@@ -102,7 +102,7 @@ class TestItemWiseSalesRegister(AccountsTestMixin, FrappeTestCase):
 		)
 		je1.submit()
 
-		je2 = frappe.get_doc(
+		je2 = nts .get_doc(
 			{
 				"doctype": "Journal Entry",
 				"voucher_type": "Journal Entry",
@@ -128,7 +128,7 @@ class TestItemWiseSalesRegister(AccountsTestMixin, FrappeTestCase):
 		)
 		je2.submit()
 
-		filters = frappe._dict(
+		filters = nts ._dict(
 			{
 				"from_date": today(),
 				"to_date": today(),
@@ -153,7 +153,7 @@ class TestItemWiseSalesRegister(AccountsTestMixin, FrappeTestCase):
 		result_fields = {k: v for k, v in filtered_output[0].items() if k in expected_result}
 		self.assertDictEqual(result_fields, expected_result)
 
-		filters = frappe._dict(
+		filters = nts ._dict(
 			{
 				"from_date": today(),
 				"to_date": today(),

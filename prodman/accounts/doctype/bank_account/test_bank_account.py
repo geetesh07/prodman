@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe import ValidationError
+import nts 
+from nts  import ValidationError
 
-# test_records = frappe.get_test_records('Bank Account')
+# test_records = nts .get_test_records('Bank Account')
 
 
 class TestBankAccount(unittest.TestCase):
@@ -24,7 +24,7 @@ class TestBankAccount(unittest.TestCase):
 			"FR66 3000 6000 0112 3456 7890 189",
 		]
 
-		bank_account = frappe.get_doc({"doctype": "Bank Account"})
+		bank_account = nts .get_doc({"doctype": "Bank Account"})
 
 		try:
 			bank_account.validate_iban()

@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 import prodman
 
@@ -40,21 +40,21 @@ def get_level():
 	}
 
 	for doctype, min_count in doctypes.items():
-		count = frappe.db.count(doctype)
+		count = nts.db.count(doctype)
 		if count > min_count:
 			activation_level += 1
 		sales_data.append({doctype: count})
 
-	if frappe.db.get_single_value("System Settings", "setup_complete"):
+	if nts.db.get_single_value("System Settings", "setup_complete"):
 		activation_level += 1
 
-	communication_number = frappe.db.count("Communication", dict(communication_medium="Email"))
+	communication_number = nts.db.count("Communication", dict(communication_medium="Email"))
 	if communication_number > 10:
 		activation_level += 1
 	sales_data.append({"Communication": communication_number})
 
 	# recent login
-	if frappe.db.sql("select name from tabUser where last_login > date_sub(now(), interval 2 day) limit 1"):
+	if nts.db.sql("select name from tabUser where last_login > date_sub(now(), interval 2 day) limit 1"):
 		activation_level += 1
 
 	level = {"activation_level": activation_level, "sales_data": sales_data}
@@ -67,11 +67,11 @@ def get_help_messages():
 	if get_level() > 6:
 		return []
 
-	domain = frappe.get_cached_value("Company", prodman.get_default_company(), "domain")
+	domain = nts.get_cached_value("Company", prodman.get_default_company(), "domain")
 	messages = []
 
 	message_settings = [
-		frappe._dict(
+		nts._dict(
 			doctype="Lead",
 			title=_("Create Leads"),
 			description=_("Leads help you get business, add all your contacts and more as your leads"),
@@ -80,7 +80,7 @@ def get_help_messages():
 			domain=("Manufacturing", "Retail", "Services", "Distribution"),
 			target=3,
 		),
-		frappe._dict(
+		nts._dict(
 			doctype="Quotation",
 			title=_("Create customer quotes"),
 			description=_("Quotations are proposals, bids you have sent to your customers"),
@@ -89,7 +89,7 @@ def get_help_messages():
 			domain=("Manufacturing", "Retail", "Services", "Distribution"),
 			target=3,
 		),
-		frappe._dict(
+		nts._dict(
 			doctype="Sales Order",
 			title=_("Manage your orders"),
 			description=_("Create Sales Orders to help you plan your work and deliver on-time"),
@@ -98,7 +98,7 @@ def get_help_messages():
 			domain=("Manufacturing", "Retail", "Services", "Distribution"),
 			target=3,
 		),
-		frappe._dict(
+		nts._dict(
 			doctype="Purchase Order",
 			title=_("Create Purchase Orders"),
 			description=_("Purchase orders help you plan and follow up on your purchases"),
@@ -107,7 +107,7 @@ def get_help_messages():
 			domain=("Manufacturing", "Retail", "Services", "Distribution"),
 			target=3,
 		),
-		frappe._dict(
+		nts._dict(
 			doctype="User",
 			title=_("Create Users"),
 			description=_(
@@ -118,7 +118,7 @@ def get_help_messages():
 			domain=("Manufacturing", "Retail", "Services", "Distribution"),
 			target=3,
 		),
-		frappe._dict(
+		nts._dict(
 			doctype="Timesheet",
 			title=_("Add Timesheets"),
 			description=_(
@@ -129,7 +129,7 @@ def get_help_messages():
 			domain=("Services",),
 			target=5,
 		),
-		frappe._dict(
+		nts._dict(
 			doctype="Employee",
 			title=_("Create Employee Records"),
 			description=_("Create Employee records."),
@@ -141,7 +141,7 @@ def get_help_messages():
 
 	for m in message_settings:
 		if not m.domain or domain in m.domain:
-			m.count = frappe.db.count(m.doctype)
+			m.count = nts.db.count(m.doctype)
 			if m.count < m.target:
 				messages.append(m)
 

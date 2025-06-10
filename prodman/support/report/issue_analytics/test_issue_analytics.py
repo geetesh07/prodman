@@ -1,8 +1,8 @@
 import unittest
 
-import frappe
-from frappe.desk.form.assign_to import add as add_assignment
-from frappe.utils import add_months, getdate
+import nts
+from nts.desk.form.assign_to import add as add_assignment
+from nts.utils import add_months, getdate
 
 from prodman.support.doctype.issue.test_issue import create_customer, make_issue
 from prodman.support.doctype.service_level_agreement.test_service_level_agreement import (
@@ -16,8 +16,8 @@ months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", 
 class TestIssueAnalytics(unittest.TestCase):
 	@classmethod
 	def setUpClass(self):
-		frappe.db.sql("delete from `tabIssue` where company='_Test Company'")
-		frappe.db.set_single_value("Support Settings", "track_service_level_agreement", 1)
+		nts.db.sql("delete from `tabIssue` where company='_Test Company'")
+		nts.db.set_single_value("Support Settings", "track_service_level_agreement", 1)
 
 		current_month_date = getdate()
 		last_month_date = add_months(current_month_date, -1)
@@ -119,8 +119,8 @@ class TestIssueAnalytics(unittest.TestCase):
 
 def create_issue_types():
 	for entry in ["Bug", "Service Request", "Discomfort"]:
-		if not frappe.db.exists("Issue Type", entry):
-			frappe.get_doc({"doctype": "Issue Type", "__newname": entry}).insert()
+		if not nts.db.exists("Issue Type", entry):
+			nts.get_doc({"doctype": "Issue Type", "__newname": entry}).insert()
 
 
 def create_records():

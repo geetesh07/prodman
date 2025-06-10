@@ -1,10 +1,10 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2020, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import add_years, cint, flt, getdate
+import nts
+from nts import _
+from nts.utils import add_years, cint, flt, getdate
 
 import prodman
 from prodman.accounts.report.financial_statements import get_period_list
@@ -38,7 +38,7 @@ class ExponentialSmoothingForecast:
 
 class ForecastingReport(ExponentialSmoothingForecast):
 	def __init__(self, filters=None):
-		self.filters = frappe._dict(filters or {})
+		self.filters = nts._dict(filters or {})
 		self.data = []
 		self.doctype = self.filters.based_on_document
 		self.child_doctype = self.doctype + " Item"
@@ -96,15 +96,15 @@ class ForecastingReport(ExponentialSmoothingForecast):
 					value["avg"] = flt(sum(list_of_period_value)) / flt(sum(total_qty))
 
 	def get_data_for_forecast(self):
-		parent = frappe.qb.DocType(self.doctype)
-		child = frappe.qb.DocType(self.child_doctype)
+		parent = nts.qb.DocType(self.doctype)
+		child = nts.qb.DocType(self.child_doctype)
 
 		date_field = (
 			"posting_date" if self.doctype in ("Delivery Note", "Sales Invoice") else "transaction_date"
 		)
 
 		query = (
-			frappe.qb.from_(parent)
+			nts.qb.from_(parent)
 			.from_(child)
 			.select(
 				parent[date_field].as_("posting_date"),

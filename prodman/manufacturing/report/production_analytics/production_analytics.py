@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _, scrub
-from frappe.utils import getdate, today
+import nts
+from nts import _, scrub
+from nts.utils import getdate, today
 
 from prodman.stock.report.stock_analytics.stock_analytics import get_period, get_period_date_ranges
 
@@ -76,7 +76,7 @@ def update_periodic_data(periodic_data, status, period):
 
 def get_data(filters, columns):
 	data = []
-	entry = frappe.get_all(
+	entry = nts.get_all(
 		"Work Order",
 		fields=[
 			"creation",

@@ -1,4 +1,4 @@
-frappe.listview_settings["Stock Entry"] = {
+nts.listview_settings["Stock Entry"] = {
 	add_fields: [
 		"`tabStock Entry`.`from_warehouse`",
 		"`tabStock Entry`.`to_warehouse`",

@@ -1,10 +1,10 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import getdate
+import nts 
+from nts .tests.utils import nts TestCase
+from nts .utils import getdate
 
 from prodman.accounts.doctype.bank_transaction.test_bank_transaction import (
 	create_bank_account,
@@ -17,17 +17,17 @@ from prodman.accounts.doctype.payment_entry.payment_entry import (
 from prodman.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
 
 
-class TestPaymentOrder(FrappeTestCase):
+class TestPaymentOrder(nts TestCase):
 	def setUp(self):
 		# generate and use a uniq hash identifier for 'Bank Account' and it's linked GL 'Account' to avoid validation error
-		uniq_identifier = frappe.generate_hash(length=10)
+		uniq_identifier = nts .generate_hash(length=10)
 		self.gl_account = create_gl_account("_Test Bank " + uniq_identifier)
 		self.bank_account = create_bank_account(
 			gl_account=self.gl_account, bank_account_name="Checking Account " + uniq_identifier
 		)
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def test_payment_order_creation_against_payment_entry(self):
 		purchase_invoice = make_purchase_invoice()
@@ -49,7 +49,7 @@ class TestPaymentOrder(FrappeTestCase):
 
 
 def create_payment_order_against_payment_entry(ref_doc, order_type, bank_account):
-	payment_order = frappe.get_doc(
+	payment_order = nts .get_doc(
 		dict(
 			doctype="Payment Order",
 			company="_Test Company",

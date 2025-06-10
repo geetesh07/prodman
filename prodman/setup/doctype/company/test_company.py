@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 import json
 import unittest
 
-import frappe
-from frappe import _
-from frappe.utils import random_string
+import nts
+from nts import _
+from nts.utils import random_string
 
 from prodman.accounts.doctype.account.chart_of_accounts.chart_of_accounts import (
 	get_charts_for_country,
@@ -15,12 +15,12 @@ from prodman.setup.doctype.company.company import get_default_company_address
 
 test_ignore = ["Account", "Cost Center", "Payment Terms Template", "Salary Component", "Warehouse"]
 test_dependencies = ["Fiscal Year"]
-test_records = frappe.get_test_records("Company")
+test_records = nts.get_test_records("Company")
 
 
 class TestCompany(unittest.TestCase):
 	def test_coa_based_on_existing_company(self):
-		company = frappe.new_doc("Company")
+		company = nts.new_doc("Company")
 		company.company_name = "COA from Existing Company"
 		company.abbr = "CFEC"
 		company.default_currency = "INR"
@@ -44,12 +44,12 @@ class TestCompany(unittest.TestCase):
 		}
 
 		for account, acc_property in expected_results.items():
-			acc = frappe.get_doc("Account", account)
+			acc = nts.get_doc("Account", account)
 			for prop, val in acc_property.items():
 				self.assertEqual(acc.get(prop), val)
 
 		self.delete_mode_of_payment("COA from Existing Company")
-		frappe.delete_doc("Company", "COA from Existing Company")
+		nts.delete_doc("Company", "COA from Existing Company")
 
 	def test_coa_based_on_country_template(self):
 		countries = ["Canada", "Germany", "France"]
@@ -63,7 +63,7 @@ class TestCompany(unittest.TestCase):
 
 			for template in templates:
 				try:
-					company = frappe.new_doc("Company")
+					company = nts.new_doc("Company")
 					company.company_name = template
 					company.abbr = random_string(3)
 					company.default_currency = "USD"
@@ -90,16 +90,16 @@ class TestCompany(unittest.TestCase):
 						if account_type in ["Bank", "Cash"]:
 							filters["is_group"] = 1
 
-						has_matching_accounts = frappe.get_all("Account", filters)
+						has_matching_accounts = nts.get_all("Account", filters)
 						error_message = _("No Account matched these filters: {}").format(json.dumps(filters))
 
 						self.assertTrue(has_matching_accounts, msg=error_message)
 				finally:
 					self.delete_mode_of_payment(template)
-					frappe.delete_doc("Company", template)
+					nts.delete_doc("Company", template)
 
 	def delete_mode_of_payment(self, company):
-		frappe.db.sql(
+		nts.db.sql(
 			""" delete from `tabMode of Payment Account`
 			where company =%s """,
 			(company),
@@ -107,18 +107,18 @@ class TestCompany(unittest.TestCase):
 
 	def test_basic_tree(self, records=None):
 		min_lft = 1
-		max_rgt = frappe.db.sql("select max(rgt) from `tabCompany`")[0][0]
+		max_rgt = nts.db.sql("select max(rgt) from `tabCompany`")[0][0]
 
 		if not records:
 			records = test_records[2:]
 
 		for company in records:
-			lft, rgt, parent_company = frappe.db.get_value(
+			lft, rgt, parent_company = nts.db.get_value(
 				"Company", company["company_name"], ["lft", "rgt", "parent_company"]
 			)
 
 			if parent_company:
-				parent_lft, parent_rgt = frappe.db.get_value("Company", parent_company, ["lft", "rgt"])
+				parent_lft, parent_rgt = nts.db.get_value("Company", parent_company, ["lft", "rgt"])
 			else:
 				# root
 				parent_lft = min_lft - 1
@@ -136,7 +136,7 @@ class TestCompany(unittest.TestCase):
 	def test_primary_address(self):
 		company = "_Test Company"
 
-		secondary = frappe.get_doc(
+		secondary = nts.get_doc(
 			{
 				"address_title": "Non Primary",
 				"doctype": "Address",
@@ -158,7 +158,7 @@ class TestCompany(unittest.TestCase):
 		secondary.insert()
 		self.addCleanup(secondary.delete)
 
-		primary = frappe.copy_doc(secondary)
+		primary = nts.copy_doc(secondary)
 		primary.is_primary_address = 1
 		primary.insert()
 		self.addCleanup(primary.delete)
@@ -169,7 +169,7 @@ class TestCompany(unittest.TestCase):
 		def get_no_of_children(companies, no_of_children):
 			children = []
 			for company in companies:
-				children += frappe.db.sql_list(
+				children += nts.db.sql_list(
 					"""select name from `tabCompany`
 				where ifnull(parent_company, '')=%s""",
 					company or "",
@@ -183,7 +183,7 @@ class TestCompany(unittest.TestCase):
 		return get_no_of_children([company], 0)
 
 	def test_change_parent_company(self):
-		child_company = frappe.get_doc("Company", "_Test Company 5")
+		child_company = nts.get_doc("Company", "_Test Company 5")
 
 		# changing parent of company
 		child_company.parent_company = "_Test Company 3"
@@ -199,21 +199,21 @@ class TestCompany(unittest.TestCase):
 		from prodman.setup.demo import clear_demo_data, setup_demo_data
 
 		setup_demo_data()
-		company_name = frappe.db.get_value("Company", {"name": ("like", "%(Demo)")})
+		company_name = nts.db.get_value("Company", {"name": ("like", "%(Demo)")})
 		self.assertTrue(company_name)
 
-		for transaction in frappe.get_hooks("demo_transaction_doctypes"):
-			self.assertTrue(frappe.db.exists(frappe.unscrub(transaction), {"company": company_name}))
+		for transaction in nts.get_hooks("demo_transaction_doctypes"):
+			self.assertTrue(nts.db.exists(nts.unscrub(transaction), {"company": company_name}))
 
 		clear_demo_data()
-		company_name = frappe.db.get_value("Company", {"name": ("like", "%(Demo)")})
+		company_name = nts.db.get_value("Company", {"name": ("like", "%(Demo)")})
 		self.assertFalse(company_name)
-		for transaction in frappe.get_hooks("demo_transaction_doctypes"):
-			self.assertFalse(frappe.db.exists(frappe.unscrub(transaction), {"company": company_name}))
+		for transaction in nts.get_hooks("demo_transaction_doctypes"):
+			self.assertFalse(nts.db.exists(nts.unscrub(transaction), {"company": company_name}))
 
 
 def create_company_communication(doctype, docname):
-	comm = frappe.get_doc(
+	comm = nts.get_doc(
 		{
 			"doctype": "Communication",
 			"communication_type": "Communication",
@@ -227,9 +227,9 @@ def create_company_communication(doctype, docname):
 
 
 def create_child_company():
-	child_company = frappe.db.exists("Company", "Test Company")
+	child_company = nts.db.exists("Company", "Test Company")
 	if not child_company:
-		child_company = frappe.get_doc(
+		child_company = nts.get_doc(
 			{
 				"doctype": "Company",
 				"company_name": "Test Company",
@@ -239,20 +239,20 @@ def create_child_company():
 		)
 		child_company.insert()
 	else:
-		child_company = frappe.get_doc("Company", child_company)
+		child_company = nts.get_doc("Company", child_company)
 
 	return child_company.name
 
 
 def create_test_lead_in_company(company):
-	lead = frappe.db.exists("Lead", "Test Lead in new company")
+	lead = nts.db.exists("Lead", "Test Lead in new company")
 	if not lead:
-		lead = frappe.get_doc(
+		lead = nts.get_doc(
 			{"doctype": "Lead", "lead_name": "Test Lead in new company", "scompany": company}
 		)
 		lead.insert()
 	else:
-		lead = frappe.get_doc("Lead", lead)
+		lead = nts.get_doc("Lead", lead)
 		lead.company = company
 		lead.save()
 	return lead.name

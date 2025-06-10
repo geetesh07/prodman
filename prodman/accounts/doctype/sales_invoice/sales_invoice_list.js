@@ -1,8 +1,8 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 // render
-frappe.listview_settings["Sales Invoice"] = {
+nts .listview_settings["Sales Invoice"] = {
 	add_fields: [
 		"customer",
 		"customer_name",
@@ -32,13 +32,13 @@ frappe.listview_settings["Sales Invoice"] = {
 	right_column: "grand_total",
 
 	onload: function (listview) {
-		if (frappe.model.can_create("Delivery Note")) {
+		if (nts .model.can_create("Delivery Note")) {
 			listview.page.add_action_item(__("Delivery Note"), () => {
 				prodman.bulk_transaction_processing.create(listview, "Sales Invoice", "Delivery Note");
 			});
 		}
 
-		if (frappe.model.can_create("Payment Entry")) {
+		if (nts .model.can_create("Payment Entry")) {
 			listview.page.add_action_item(__("Payment"), () => {
 				prodman.bulk_transaction_processing.create(listview, "Sales Invoice", "Payment Entry");
 			});

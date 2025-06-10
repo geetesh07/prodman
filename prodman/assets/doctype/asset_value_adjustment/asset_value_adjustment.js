@@ -1,9 +1,9 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.provide("prodman.accounts.dimensions");
+nts .provide("prodman.accounts.dimensions");
 
-frappe.ui.form.on("Asset Value Adjustment", {
+nts .ui.form.on("Asset Value Adjustment", {
 	setup: function (frm) {
 		frm.set_query("cost_center", function () {
 			return {

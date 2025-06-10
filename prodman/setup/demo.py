@@ -1,13 +1,13 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 import json
 import os
 from random import randint
 
-import frappe
-from frappe import _
-from frappe.utils import add_days, getdate
+import nts
+from nts import _
+from nts.utils import add_days, getdate
 
 from prodman.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from prodman.accounts.utils import get_fiscal_year
@@ -17,51 +17,51 @@ from prodman.setup.setup_wizard.operations.install_fixtures import create_bank_a
 
 
 def setup_demo_data():
-	from frappe.utils.telemetry import capture
+	from nts.utils.telemetry import capture
 
 	capture("demo_data_creation_started", "prodman")
 	try:
 		company = create_demo_company()
 		process_masters()
 		make_transactions(company)
-		frappe.cache.delete_keys("bootinfo")
-		frappe.publish_realtime("demo_data_complete")
+		nts.cache.delete_keys("bootinfo")
+		nts.publish_realtime("demo_data_complete")
 	except Exception:
-		frappe.log_error("Failed to create demo data")
-		capture("demo_data_creation_failed", "prodman", properties={"exception": frappe.get_traceback()})
+		nts.log_error("Failed to create demo data")
+		capture("demo_data_creation_failed", "prodman", properties={"exception": nts.get_traceback()})
 		raise
 	capture("demo_data_creation_completed", "prodman")
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def clear_demo_data():
-	from frappe.utils.telemetry import capture
+	from nts.utils.telemetry import capture
 
-	frappe.only_for("System Manager")
+	nts.only_for("System Manager")
 
 	capture("demo_data_erased", "prodman")
 	try:
-		company = frappe.db.get_single_value("Global Defaults", "demo_company")
+		company = nts.db.get_single_value("Global Defaults", "demo_company")
 		create_transaction_deletion_record(company)
 		clear_masters()
 		delete_company(company)
-		default_company = frappe.db.get_single_value("Global Defaults", "default_company")
-		frappe.db.set_default("company", default_company)
+		default_company = nts.db.get_single_value("Global Defaults", "default_company")
+		nts.db.set_default("company", default_company)
 	except Exception:
-		frappe.db.rollback()
-		frappe.log_error("Failed to erase demo data")
-		frappe.throw(
+		nts.db.rollback()
+		nts.log_error("Failed to erase demo data")
+		nts.throw(
 			_("Failed to erase demo data, please delete the demo company manually."),
 			title=_("Could Not Delete Demo Data"),
 		)
 
 
 def create_demo_company():
-	company = frappe.db.get_all("Company")[0].name
-	company_doc = frappe.get_doc("Company", company)
+	company = nts.db.get_all("Company")[0].name
+	company_doc = nts.get_doc("Company", company)
 
 	# Make a dummy company
-	new_company = frappe.new_doc("Company")
+	new_company = nts.new_doc("Company")
 	new_company.company_name = company_doc.company_name + " (Demo)"
 	new_company.abbr = company_doc.abbr + "D"
 	new_company.enable_perpetual_inventory = 1
@@ -72,17 +72,17 @@ def create_demo_company():
 	new_company.insert()
 
 	# Set Demo Company as default to
-	frappe.db.set_single_value("Global Defaults", "demo_company", new_company.name)
-	frappe.db.set_default("company", new_company.name)
+	nts.db.set_single_value("Global Defaults", "demo_company", new_company.name)
+	nts.db.set_default("company", new_company.name)
 
 	bank_account = create_bank_account({"company_name": new_company.name})
-	frappe.db.set_value("Company", new_company.name, "default_bank_account", bank_account.name)
+	nts.db.set_value("Company", new_company.name, "default_bank_account", bank_account.name)
 
 	return new_company.name
 
 
 def process_masters():
-	for doctype in frappe.get_hooks("demo_master_doctypes"):
+	for doctype in nts.get_hooks("demo_master_doctypes"):
 		data = read_data_file_using_hooks(doctype)
 		if data:
 			for item in json.loads(data):
@@ -90,31 +90,31 @@ def process_masters():
 
 
 def create_demo_record(doctype):
-	frappe.get_doc(doctype).insert(ignore_permissions=True)
+	nts.get_doc(doctype).insert(ignore_permissions=True)
 
 
 def make_transactions(company):
-	frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
+	nts.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
 	from prodman.accounts.utils import FiscalYearError
 
 	try:
 		start_date = get_fiscal_year(date=getdate())[1]
 	except FiscalYearError:
 		# User might have setup fiscal year for previous or upcoming years
-		active_fiscal_years = frappe.db.get_all("Fiscal Year", filters={"disabled": 0}, as_list=1)
+		active_fiscal_years = nts.db.get_all("Fiscal Year", filters={"disabled": 0}, as_list=1)
 		if active_fiscal_years:
-			start_date = frappe.db.get_value("Fiscal Year", active_fiscal_years[0][0], "year_start_date")
+			start_date = nts.db.get_value("Fiscal Year", active_fiscal_years[0][0], "year_start_date")
 		else:
-			frappe.throw(_("There are no active Fiscal Years for which Demo Data can be generated."))
+			nts.throw(_("There are no active Fiscal Years for which Demo Data can be generated."))
 
-	for doctype in frappe.get_hooks("demo_transaction_doctypes"):
+	for doctype in nts.get_hooks("demo_transaction_doctypes"):
 		data = read_data_file_using_hooks(doctype)
 		if data:
 			for item in json.loads(data):
 				create_transaction(item, company, start_date)
 
 	convert_order_to_invoices()
-	frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 0)
+	nts.db.set_single_value("Stock Settings", "allow_negative_stock", 0)
 
 
 def create_transaction(doctype, company, start_date):
@@ -137,7 +137,7 @@ def create_transaction(doctype, company, start_date):
 		}
 	)
 
-	doc = frappe.get_doc(doctype)
+	doc = nts.get_doc(doctype)
 	doc.save(ignore_permissions=True)
 	doc.submit()
 
@@ -146,7 +146,7 @@ def convert_order_to_invoices():
 	for document in ["Purchase Order", "Sales Order"]:
 		# Keep some orders intentionally unbilled/unpaid
 		for i, order in enumerate(
-			frappe.db.get_all(
+			nts.db.get_all(
 				document, filters={"docstatus": 1}, fields=["name", "transaction_date"], limit=6
 			)
 		):
@@ -178,7 +178,7 @@ def get_random_date(start_date, start_range, end_range):
 
 
 def create_transaction_deletion_record(company):
-	transaction_deletion_record = frappe.new_doc("Transaction Deletion Record")
+	transaction_deletion_record = nts.new_doc("Transaction Deletion Record")
 	transaction_deletion_record.company = company
 	transaction_deletion_record.process_in_single_transaction = True
 	transaction_deletion_record.save(ignore_permissions=True)
@@ -187,7 +187,7 @@ def create_transaction_deletion_record(company):
 
 
 def clear_masters():
-	for doctype in frappe.get_hooks("demo_master_doctypes")[::-1]:
+	for doctype in nts.get_hooks("demo_master_doctypes")[::-1]:
 		data = read_data_file_using_hooks(doctype)
 		if data:
 			for item in json.loads(data):
@@ -198,7 +198,7 @@ def clear_demo_record(document):
 	document_type = document.get("doctype")
 	del document["doctype"]
 
-	valid_columns = frappe.get_meta(document_type).get_valid_columns()
+	valid_columns = nts.get_meta(document_type).get_valid_columns()
 
 	filters = document
 	for key in list(filters):
@@ -206,15 +206,15 @@ def clear_demo_record(document):
 			filters.pop(key, None)
 
 	try:
-		doc = frappe.get_doc(document_type, filters)
+		doc = nts.get_doc(document_type, filters)
 		doc.delete(ignore_permissions=True)
-	except frappe.exceptions.DoesNotExistError:
+	except nts.exceptions.DoesNotExistError:
 		pass
 
 
 def delete_company(company):
-	frappe.db.set_single_value("Global Defaults", "demo_company", "")
-	frappe.delete_doc("Company", company, ignore_permissions=True)
+	nts.db.set_single_value("Global Defaults", "demo_company", "")
+	nts.delete_doc("Company", company, ignore_permissions=True)
 
 
 def read_data_file_using_hooks(doctype):
@@ -226,5 +226,5 @@ def read_data_file_using_hooks(doctype):
 
 
 def get_warehouse(company):
-	warehouses = frappe.db.get_all("Warehouse", {"company": company, "is_group": 0})
+	warehouses = nts.db.get_all("Warehouse", {"company": company, "is_group": 0})
 	return warehouses[randint(0, 3)].name

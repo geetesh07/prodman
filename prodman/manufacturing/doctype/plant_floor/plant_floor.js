@@ -1,17 +1,17 @@
-// Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2023, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Plant Floor", {
+nts.ui.form.on("Plant Floor", {
 	setup(frm) {
 		frm.trigger("setup_queries");
 	},
 
 	add_workstation(frm) {
 		frm.add_custom_button(__("Create Workstation"), () => {
-			var doc = frappe.model.get_new_doc("Workstation");
+			var doc = nts.model.get_new_doc("Workstation");
 			doc.plant_floor = frm.doc.name;
 			doc.status = "Off";
-			frappe.ui.form.make_quick_entry(
+			nts.ui.form.make_quick_entry(
 				"Workstation",
 				() => {
 					frm.trigger("prepare_workstation_dashboard");
@@ -25,7 +25,7 @@ frappe.ui.form.on("Plant Floor", {
 	setup_queries(frm) {
 		frm.set_query("warehouse", (doc) => {
 			if (!doc.company) {
-				frappe.throw(__("Please select Company first"));
+				nts.throw(__("Please select Company first"));
 			}
 
 			return {
@@ -51,7 +51,7 @@ frappe.ui.form.on("Plant Floor", {
 		let wrapper = $(frm.fields_dict["plant_dashboard"].wrapper);
 		wrapper.empty();
 
-		frappe.visual_plant_floor = new frappe.ui.VisualPlantFloor({
+		nts.visual_plant_floor = new nts.ui.VisualPlantFloor({
 			wrapper: wrapper,
 			skip_filters: true,
 			plant_floor: frm.doc.name,
@@ -66,7 +66,7 @@ frappe.ui.form.on("Plant Floor", {
 		let wrapper = $(frm.fields_dict["stock_summary"].wrapper);
 		wrapper.empty();
 
-		frappe.visual_stock = new VisualStock({
+		nts.visual_stock = new VisualStock({
 			wrapper: wrapper,
 			frm: frm,
 		});
@@ -95,7 +95,7 @@ class VisualStock {
 			</div>
 		`);
 
-		this.item_filter = frappe.ui.form.make_control({
+		this.item_filter = nts.ui.form.make_control({
 			df: {
 				fieldtype: "Link",
 				fieldname: "item_code",
@@ -114,7 +114,7 @@ class VisualStock {
 		this.item_filter.$wrapper.addClass("form-column col-sm-3");
 		this.item_filter.$wrapper.find(".clearfix").hide();
 
-		this.item_group_filter = frappe.ui.form.make_control({
+		this.item_group_filter = nts.ui.form.make_control({
 			df: {
 				fieldtype: "Link",
 				fieldname: "item_group",
@@ -149,7 +149,7 @@ class VisualStock {
 	}
 
 	async get_stock_summary(start, item_code, item_group) {
-		let stock_summary = await frappe.call({
+		let stock_summary = await nts.call({
 			method: "prodman.manufacturing.doctype.plant_floor.plant_floor.get_stock_summary",
 			args: {
 				warehouse: this.frm.doc.warehouse,
@@ -163,7 +163,7 @@ class VisualStock {
 	}
 
 	render_stock_summary() {
-		let template = frappe.render_template("stock_summary_template", {
+		let template = nts.render_template("stock_summary_template", {
 			stock_summary: this.stock_summary,
 		});
 
@@ -236,7 +236,7 @@ class VisualStock {
 	}
 
 	make_stock_entry(fields, title, stock_entry_type) {
-		frappe.prompt(
+		nts.prompt(
 			fields,
 			(values) => {
 				this.values = values;
@@ -251,8 +251,8 @@ class VisualStock {
 					},
 					callback: (r) => {
 						if (!r.exc) {
-							var doc = frappe.model.sync(r.message);
-							frappe.set_route("Form", r.message.doctype, r.message.name);
+							var doc = nts.model.sync(r.message);
+							nts.set_route("Form", r.message.doctype, r.message.name);
 						}
 					},
 				});
@@ -264,7 +264,7 @@ class VisualStock {
 
 	update_values() {
 		if (!this.values.qty) {
-			frappe.throw(__("Quantity is required"));
+			nts.throw(__("Quantity is required"));
 		}
 
 		let from_warehouse = "";

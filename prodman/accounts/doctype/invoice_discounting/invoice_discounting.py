@@ -1,12 +1,12 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2019, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import json
 
-import frappe
-from frappe import _
-from frappe.utils import add_days, flt, getdate, nowdate
+import nts 
+from nts  import _
+from nts .utils import add_days, flt, getdate, nowdate
 
 import prodman
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
@@ -23,7 +23,7 @@ class InvoiceDiscounting(AccountsController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.discounted_invoice.discounted_invoice import DiscountedInvoice
 
@@ -58,32 +58,32 @@ class InvoiceDiscounting(AccountsController):
 
 	def validate_mandatory(self):
 		if self.docstatus == 1 and not (self.loan_start_date and self.loan_period):
-			frappe.throw(_("Loan Start Date and Loan Period are mandatory to save the Invoice Discounting"))
+			nts .throw(_("Loan Start Date and Loan Period are mandatory to save the Invoice Discounting"))
 
 	def validate_invoices(self):
 		discounted_invoices = [
 			record.sales_invoice
-			for record in frappe.get_all(
+			for record in nts .get_all(
 				"Discounted Invoice", fields=["sales_invoice"], filters={"docstatus": 1}
 			)
 		]
 
 		for record in self.invoices:
 			if record.sales_invoice in discounted_invoices:
-				frappe.throw(
+				nts .throw(
 					_("Row({0}): {1} is already discounted in {2}").format(
-						record.idx, frappe.bold(record.sales_invoice), frappe.bold(record.parent)
+						record.idx, nts .bold(record.sales_invoice), nts .bold(record.parent)
 					)
 				)
 
-			actual_outstanding = frappe.db.get_value(
+			actual_outstanding = nts .db.get_value(
 				"Sales Invoice", record.sales_invoice, "outstanding_amount"
 			)
 			if record.outstanding_amount > actual_outstanding:
-				frappe.throw(
+				nts .throw(
 					_(
 						"Row({0}): Outstanding Amount cannot be greater than actual Outstanding Amount {1} in {2}"
-					).format(record.idx, frappe.bold(actual_outstanding), frappe.bold(record.sales_invoice))
+					).format(record.idx, nts .bold(actual_outstanding), nts .bold(record.sales_invoice))
 				)
 
 	def calculate_total_amount(self):
@@ -103,7 +103,7 @@ class InvoiceDiscounting(AccountsController):
 			self.status = status
 			self.db_set("status", status)
 			for d in self.invoices:
-				frappe.get_doc("Sales Invoice", d.sales_invoice).set_status(
+				nts .get_doc("Sales Invoice", d.sales_invoice).set_status(
 					update=True, update_modified=False
 				)
 		else:
@@ -121,14 +121,14 @@ class InvoiceDiscounting(AccountsController):
 			if self.docstatus == 1:
 				is_discounted = 1
 			else:
-				discounted_invoice = frappe.db.exists(
+				discounted_invoice = nts .db.exists(
 					{"doctype": "Discounted Invoice", "sales_invoice": d.sales_invoice, "docstatus": 1}
 				)
 				is_discounted = 1 if discounted_invoice else 0
-			frappe.db.set_value("Sales Invoice", d.sales_invoice, "is_discounted", is_discounted)
+			nts .db.set_value("Sales Invoice", d.sales_invoice, "is_discounted", is_discounted)
 
 	def make_gl_entries(self):
-		company_currency = frappe.get_cached_value("Company", self.company, "default_currency")
+		company_currency = nts .get_cached_value("Company", self.company, "default_currency")
 
 		gl_entries = []
 		invoice_fields = ["debit_to", "party_account_currency", "conversion_rate", "cost_center"]
@@ -137,13 +137,13 @@ class InvoiceDiscounting(AccountsController):
 		invoice_fields.extend(accounting_dimensions)
 
 		for d in self.invoices:
-			inv = frappe.db.get_value("Sales Invoice", d.sales_invoice, invoice_fields, as_dict=1)
+			inv = nts .db.get_value("Sales Invoice", d.sales_invoice, invoice_fields, as_dict=1)
 
 			if d.outstanding_amount:
 				outstanding_in_company_currency = flt(
 					d.outstanding_amount * inv.conversion_rate, d.precision("outstanding_amount")
 				)
-				ar_credit_account_currency = frappe.get_cached_value(
+				ar_credit_account_currency = nts .get_cached_value(
 					"Account", self.accounts_receivable_credit, "currency"
 				)
 
@@ -189,9 +189,9 @@ class InvoiceDiscounting(AccountsController):
 
 		make_gl_entries(gl_entries, cancel=(self.docstatus == 2), update_outstanding="No")
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def create_disbursement_entry(self):
-		je = frappe.new_doc("Journal Entry")
+		je = nts .new_doc("Journal Entry")
 		je.voucher_type = "Journal Entry"
 		je.company = self.company
 		je.remark = "Loan Disbursement entry against Invoice Discounting: " + self.name
@@ -254,9 +254,9 @@ class InvoiceDiscounting(AccountsController):
 
 		return je
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def close_loan(self):
-		je = frappe.new_doc("Journal Entry")
+		je = nts .new_doc("Journal Entry")
 		je.voucher_type = "Journal Entry"
 		je.company = self.company
 		je.remark = "Loan Settlement entry against Invoice Discounting: " + self.name
@@ -283,7 +283,7 @@ class InvoiceDiscounting(AccountsController):
 
 		if getdate(self.loan_end_date) > getdate(nowdate()):
 			for d in self.invoices:
-				outstanding_amount = frappe.db.get_value(
+				outstanding_amount = nts .db.get_value(
 					"Sales Invoice", d.sales_invoice, "outstanding_amount"
 				)
 				if flt(outstanding_amount) > 0:
@@ -316,9 +316,9 @@ class InvoiceDiscounting(AccountsController):
 		return je
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_invoices(filters):
-	filters = frappe._dict(json.loads(filters))
+	filters = nts ._dict(json.loads(filters))
 	cond = []
 	if filters.customer:
 		cond.append("customer=%(customer)s")
@@ -335,7 +335,7 @@ def get_invoices(filters):
 	if cond:
 		where_condition += " and " + " and ".join(cond)
 
-	return frappe.db.sql(
+	return nts .db.sql(
 		"""
 		select
 			name as sales_invoice,
@@ -359,7 +359,7 @@ def get_invoices(filters):
 
 def get_party_account_based_on_invoice_discounting(sales_invoice):
 	party_account = None
-	invoice_discounting = frappe.db.sql(
+	invoice_discounting = nts .db.sql(
 		"""
 		select par.accounts_receivable_discounted, par.accounts_receivable_unpaid, par.status
 		from `tabInvoice Discounting` par, `tabDiscounted Invoice` ch

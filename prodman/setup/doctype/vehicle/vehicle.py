@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import getdate
+import nts
+from nts import _
+from nts.model.document import Document
+from nts.utils import getdate
 
 
 class Vehicle(Document):
@@ -15,7 +15,7 @@ class Vehicle(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		acquisition_date: DF.Date | None
 		amended_from: DF.Link | None
@@ -41,6 +41,6 @@ class Vehicle(Document):
 
 	def validate(self):
 		if getdate(self.start_date) > getdate(self.end_date):
-			frappe.throw(_("Insurance Start date should be less than Insurance End date"))
+			nts.throw(_("Insurance Start date should be less than Insurance End date"))
 		if getdate(self.carbon_check_date) > getdate():
-			frappe.throw(_("Last carbon check date cannot be a future date"))
+			nts.throw(_("Last carbon check date cannot be a future date"))

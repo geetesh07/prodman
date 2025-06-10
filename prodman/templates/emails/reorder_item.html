@@ -1,7 +1,7 @@
 <p>{{ _("Following Material Requests have been raised automatically based on Item's re-order level") + ":" }}<p>
 {% for mr in mr_list -%}
 <div style="margin-bottom: 30px;">
-	<h4 style="margin-bottom: 5px;">{{ frappe.utils.get_link_to_form("Material Request", mr.name) }}</h4>
+	<h4 style="margin-bottom: 5px;">{{ nts.utils.get_link_to_form("Material Request", mr.name) }}</h4>
 	<table style="width: 100%; border-spacing: 0; border-collapse: collapse;">
 		<thead>
 			<tr>
@@ -22,7 +22,7 @@
 				<td style="border: 1px solid #d1d8dd; text-align: left; padding: 5px;">{{ item.warehouse }}</td>
 				<td style="border: 1px solid #d1d8dd; text-align: right; padding: 5px;">{{ item.qty }}</td>
 				<td style="border: 1px solid #d1d8dd; text-align: left; padding: 5px;">{{ item.uom }}</td>
-				<td style="border: 1px solid #d1d8dd; text-align: left; padding: 5px;">{{ frappe.utils.flt(item.projected_qty) + frappe.utils.flt(item.qty) }}</td>
+				<td style="border: 1px solid #d1d8dd; text-align: left; padding: 5px;">{{ nts.utils.flt(item.projected_qty) + nts.utils.flt(item.qty) }}</td>
 			</tr>
 			{%- endfor %}
 		</tbody>

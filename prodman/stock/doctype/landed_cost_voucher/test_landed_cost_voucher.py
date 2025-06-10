@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days, add_to_date, flt, now, nowtime, today
+import nts
+from nts.tests.utils import ntsTestCase
+from nts.utils import add_days, add_to_date, flt, now, nowtime, today
 
 from prodman.accounts.doctype.account.test_account import create_account, get_inventory_account
 from prodman.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
@@ -21,9 +21,9 @@ from prodman.stock.doctype.serial_and_batch_bundle.test_serial_and_batch_bundle 
 from prodman.stock.serial_batch_bundle import SerialNoValuation
 
 
-class TestLandedCostVoucher(FrappeTestCase):
+class TestLandedCostVoucher(ntsTestCase):
 	def test_landed_cost_voucher(self):
-		frappe.db.set_single_value("Buying Settings", "allow_multiple_items", 1)
+		nts.db.set_single_value("Buying Settings", "allow_multiple_items", 1)
 
 		pr = make_purchase_receipt(
 			company="_Test Company with perpetual inventory",
@@ -33,7 +33,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 			get_taxes_and_charges=True,
 		)
 
-		last_sle = frappe.db.get_value(
+		last_sle = nts.db.get_value(
 			"Stock Ledger Entry",
 			{
 				"voucher_type": pr.doctype,
@@ -48,12 +48,12 @@ class TestLandedCostVoucher(FrappeTestCase):
 
 		create_landed_cost_voucher("Purchase Receipt", pr.name, pr.company)
 
-		pr_lc_value = frappe.db.get_value(
+		pr_lc_value = nts.db.get_value(
 			"Purchase Receipt Item", {"parent": pr.name}, "landed_cost_voucher_amount"
 		)
 		self.assertEqual(pr_lc_value, 25.0)
 
-		last_sle_after_landed_cost = frappe.db.get_value(
+		last_sle_after_landed_cost = nts.db.get_value(
 			"Stock Ledger Entry",
 			{
 				"voucher_type": pr.doctype,
@@ -74,7 +74,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 
 		# Mess up cancelled SLE modified timestamp to check
 		# if they aren't effective in any business logic.
-		frappe.db.set_value(
+		nts.db.set_value(
 			"Stock Ledger Entry",
 			{"is_cancelled": 1, "voucher_type": pr.doctype, "voucher_no": pr.name},
 			"is_cancelled",
@@ -133,17 +133,17 @@ class TestLandedCostVoucher(FrappeTestCase):
 			warehouse=warehouse,
 			qty=500,
 			rate=80,
-			posting_date=add_days(frappe.utils.nowdate(), -2),
+			posting_date=add_days(nts.utils.nowdate(), -2),
 		)
 		pr2 = make_purchase_receipt(
 			item_code=item.name,
 			warehouse=warehouse,
 			qty=100,
 			rate=80,
-			posting_date=frappe.utils.nowdate(),
+			posting_date=nts.utils.nowdate(),
 		)
 
-		last_sle = frappe.db.get_value(  # SLE of second PR
+		last_sle = nts.db.get_value(  # SLE of second PR
 			"Stock Ledger Entry",
 			{
 				"voucher_type": pr2.doctype,
@@ -158,7 +158,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 
 		create_landed_cost_voucher("Purchase Receipt", pr1.name, pr1.company)
 
-		last_sle_after_landed_cost = frappe.db.get_value(  # SLE of second PR after LCV's effect
+		last_sle_after_landed_cost = nts.db.get_value(  # SLE of second PR after LCV's effect
 			"Stock Ledger Entry",
 			{
 				"voucher_type": pr2.doctype,
@@ -186,11 +186,11 @@ class TestLandedCostVoucher(FrappeTestCase):
 			warehouse=warehouse,
 			qty=10,
 			rate=0,
-			posting_date=add_days(frappe.utils.nowdate(), -2),
+			posting_date=add_days(nts.utils.nowdate(), -2),
 		)
 
 		self.assertEqual(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Stock Ledger Entry",
 				{"voucher_type": "Purchase Receipt", "voucher_no": pr.name, "is_cancelled": 0},
 				"stock_value_difference",
@@ -213,13 +213,13 @@ class TestLandedCostVoucher(FrappeTestCase):
 		lcv.submit()
 
 		self.assertTrue(
-			frappe.db.exists(
+			nts.db.exists(
 				"Stock Ledger Entry",
 				{"voucher_type": "Purchase Receipt", "voucher_no": pr.name, "is_cancelled": 0},
 			)
 		)
 		self.assertEqual(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Stock Ledger Entry",
 				{"voucher_type": "Purchase Receipt", "voucher_no": pr.name, "is_cancelled": 0},
 				"stock_value_difference",
@@ -230,8 +230,8 @@ class TestLandedCostVoucher(FrappeTestCase):
 	def test_landed_cost_voucher_against_purchase_invoice(self):
 		pi = make_purchase_invoice(
 			update_stock=1,
-			posting_date=frappe.utils.nowdate(),
-			posting_time=frappe.utils.nowtime(),
+			posting_date=nts.utils.nowdate(),
+			posting_time=nts.utils.nowtime(),
 			cash_bank_account="Cash - TCP1",
 			company="_Test Company with perpetual inventory",
 			supplier_warehouse="Work In Progress - TCP1",
@@ -240,7 +240,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 			expense_account="_Test Account Cost for Goods Sold - TCP1",
 		)
 
-		last_sle = frappe.db.get_value(
+		last_sle = nts.db.get_value(
 			"Stock Ledger Entry",
 			{
 				"voucher_type": pi.doctype,
@@ -254,13 +254,13 @@ class TestLandedCostVoucher(FrappeTestCase):
 
 		create_landed_cost_voucher("Purchase Invoice", pi.name, pi.company)
 
-		pi_lc_value = frappe.db.get_value(
+		pi_lc_value = nts.db.get_value(
 			"Purchase Invoice Item", {"parent": pi.name}, "landed_cost_voucher_amount"
 		)
 
 		self.assertEqual(pi_lc_value, 50.0)
 
-		last_sle_after_landed_cost = frappe.db.get_value(
+		last_sle_after_landed_cost = nts.db.get_value(
 			"Stock Ledger Entry",
 			{
 				"voucher_type": pi.doctype,
@@ -293,7 +293,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 				self.assertEqual(expected_values[gle.account][1], gle.credit)
 
 	def test_landed_cost_voucher_for_serialized_item(self):
-		frappe.db.set_value("Item", "_Test Serialized Item", "serial_no_series", "SNJJ.###")
+		nts.db.set_value("Item", "_Test Serialized Item", "serial_no_series", "SNJJ.###")
 
 		pr = make_purchase_receipt(
 			company="_Test Company with perpetual inventory",
@@ -311,7 +311,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 		serial_no = get_serial_nos_from_bundle(pr.items[0].serial_and_batch_bundle)[0]
 
 		sn_obj = SerialNoValuation(
-			sle=frappe._dict(
+			sle=nts._dict(
 				{
 					"posting_date": today(),
 					"posting_time": nowtime(),
@@ -327,7 +327,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 		create_landed_cost_voucher("Purchase Receipt", pr.name, pr.company)
 
 		sn_obj = SerialNoValuation(
-			sle=frappe._dict(
+			sle=nts._dict(
 				{
 					"posting_date": today(),
 					"posting_time": nowtime(),
@@ -357,8 +357,8 @@ class TestLandedCostVoucher(FrappeTestCase):
 		item_code = "_Test Serialized Item"
 		warehouse = "Stores - TCP1"
 
-		if not frappe.db.exists("Serial No", serial_no):
-			frappe.get_doc(
+		if not nts.db.exists("Serial No", serial_no):
+			nts.get_doc(
 				{
 					"doctype": "Serial No",
 					"item_code": item_code,
@@ -376,7 +376,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 		)
 
 		sn_obj = SerialNoValuation(
-			sle=frappe._dict(
+			sle=nts._dict(
 				{
 					"posting_date": today(),
 					"posting_time": nowtime(),
@@ -405,7 +405,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 		create_landed_cost_voucher("Purchase Receipt", pr.name, pr.company, charges=charges)
 		new_purchase_rate = serial_no_rate + charges
 
-		stock_value_difference = frappe.db.get_value(
+		stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry",
 			filters={
 				"voucher_no": dn.name,
@@ -541,7 +541,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 		self.assertEqual(lcv.total_taxes_and_charges, 729)
 		self.assertEqual(pr.items[0].landed_cost_voucher_amount, 729)
 
-		gl_entries = frappe.get_all(
+		gl_entries = nts.get_all(
 			"GL Entry",
 			fields=["account", "credit", "credit_in_account_currency"],
 			filters={
@@ -562,20 +562,20 @@ class TestLandedCostVoucher(FrappeTestCase):
 
 	def test_asset_lcv(self):
 		"Check if LCV for an Asset updates the Assets Gross Purchase Amount correctly."
-		frappe.db.set_value(
+		nts.db.set_value(
 			"Company", "_Test Company", "capital_work_in_progress_account", "CWIP Account - _TC"
 		)
 
-		if not frappe.db.exists("Asset Category", "Computers"):
+		if not nts.db.exists("Asset Category", "Computers"):
 			create_asset_category()
 
-		if not frappe.db.exists("Item", "Macbook Pro"):
+		if not nts.db.exists("Item", "Macbook Pro"):
 			create_fixed_asset_item()
 
 		pr = make_purchase_receipt(item_code="Macbook Pro", qty=1, rate=50000)
 
 		# check if draft asset was created
-		assets = frappe.db.get_all("Asset", filters={"purchase_receipt": pr.name})
+		assets = nts.db.get_all("Asset", filters={"purchase_receipt": pr.name})
 		self.assertEqual(len(assets), 1)
 
 		lcv = make_landed_cost_voucher(
@@ -590,7 +590,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 		lcv.submit()
 
 		# lcv updates amount in draft asset
-		self.assertEqual(frappe.db.get_value("Asset", assets[0].name, "gross_purchase_amount"), 50080)
+		self.assertEqual(nts.db.get_value("Asset", assets[0].name, "gross_purchase_amount"), 50080)
 
 		# tear down
 		lcv.cancel()
@@ -599,8 +599,8 @@ class TestLandedCostVoucher(FrappeTestCase):
 	def test_landed_cost_voucher_with_serial_batch_for_legacy_pr(self):
 		from prodman.stock.doctype.item.test_item import make_item
 
-		frappe.flags.ignore_serial_batch_bundle_validation = True
-		frappe.flags.use_serial_and_batch_fields = True
+		nts.flags.ignore_serial_batch_bundle_validation = True
+		nts.flags.use_serial_and_batch_fields = True
 		sn_item = "Test Landed Cost Voucher Serial NO for Legacy PR"
 		batch_item = "Test Landed Cost Voucher Batch NO for Legacy PR"
 		sn_item_doc = make_item(
@@ -631,8 +631,8 @@ class TestLandedCostVoucher(FrappeTestCase):
 		]
 
 		for sn in serial_nos:
-			if not frappe.db.exists("Serial No", sn):
-				sn_doc = frappe.get_doc(
+			if not nts.db.exists("Serial No", sn):
+				sn_doc = nts.get_doc(
 					{
 						"doctype": "Serial No",
 						"item_code": sn_item,
@@ -641,8 +641,8 @@ class TestLandedCostVoucher(FrappeTestCase):
 				)
 				sn_doc.insert()
 
-		if not frappe.db.exists("Batch", "BATCH-TLCVSNO-0001"):
-			batch_doc = frappe.get_doc(
+		if not nts.db.exists("Batch", "BATCH-TLCVSNO-0001"):
+			batch_doc = nts.get_doc(
 				{
 					"doctype": "Batch",
 					"item": batch_item,
@@ -652,7 +652,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 			batch_doc.insert()
 
 		warehouse = "_Test Warehouse - _TC"
-		company = frappe.db.get_value("Warehouse", warehouse, "company")
+		company = nts.db.get_value("Warehouse", warehouse, "company")
 
 		pr = make_purchase_receipt(
 			company=company,
@@ -694,7 +694,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 				row.db_set("batch_no", "BATCH-TLCVSNO-0001")
 
 		for sn in serial_nos:
-			sn_doc = frappe.get_doc("Serial No", sn)
+			sn_doc = nts.get_doc("Serial No", sn)
 			sn_doc.db_set(
 				{
 					"warehouse": warehouse,
@@ -708,8 +708,8 @@ class TestLandedCostVoucher(FrappeTestCase):
 			}
 		)
 
-		frappe.flags.ignore_serial_batch_bundle_validation = False
-		frappe.flags.use_serial_and_batch_fields = False
+		nts.flags.ignore_serial_batch_bundle_validation = False
+		nts.flags.use_serial_and_batch_fields = False
 
 		lcv = make_landed_cost_voucher(
 			company=pr.company,
@@ -731,7 +731,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 			self.assertTrue(row.serial_and_batch_bundle)
 			self.assertEqual(
 				row.valuation_rate,
-				frappe.db.get_value("Serial and Batch Bundle", row.serial_and_batch_bundle, "avg_rate"),
+				nts.db.get_value("Serial and Batch Bundle", row.serial_and_batch_bundle, "avg_rate"),
 			)
 
 		lcv.cancel()
@@ -742,15 +742,15 @@ class TestLandedCostVoucher(FrappeTestCase):
 			self.assertTrue(row.serial_and_batch_bundle)
 			self.assertEqual(
 				row.valuation_rate,
-				frappe.db.get_value("Serial and Batch Bundle", row.serial_and_batch_bundle, "avg_rate"),
+				nts.db.get_value("Serial and Batch Bundle", row.serial_and_batch_bundle, "avg_rate"),
 			)
 
 	def test_do_not_validate_landed_cost_voucher_with_serial_batch_for_legacy_pr(self):
 		from prodman.stock.doctype.item.test_item import make_item
 		from prodman.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle import get_auto_batch_nos
 
-		frappe.flags.ignore_serial_batch_bundle_validation = True
-		frappe.flags.use_serial_and_batch_fields = True
+		nts.flags.ignore_serial_batch_bundle_validation = True
+		nts.flags.use_serial_and_batch_fields = True
 		sn_item = "Test Don't Validate Landed Cost Voucher Serial NO for Legacy PR"
 		batch_item = "Test Don't Validate Landed Cost Voucher Batch NO for Legacy PR"
 		sn_item_doc = make_item(
@@ -781,8 +781,8 @@ class TestLandedCostVoucher(FrappeTestCase):
 		]
 
 		for sn in serial_nos:
-			if not frappe.db.exists("Serial No", sn):
-				sn_doc = frappe.get_doc(
+			if not nts.db.exists("Serial No", sn):
+				sn_doc = nts.get_doc(
 					{
 						"doctype": "Serial No",
 						"item_code": sn_item,
@@ -791,8 +791,8 @@ class TestLandedCostVoucher(FrappeTestCase):
 				)
 				sn_doc.insert()
 
-		if not frappe.db.exists("Batch", "BATCH-TDVLCVSNO-0001"):
-			batch_doc = frappe.get_doc(
+		if not nts.db.exists("Batch", "BATCH-TDVLCVSNO-0001"):
+			batch_doc = nts.get_doc(
 				{
 					"doctype": "Batch",
 					"item": batch_item,
@@ -802,7 +802,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 			batch_doc.insert()
 
 		warehouse = "_Test Warehouse - _TC"
-		company = frappe.db.get_value("Warehouse", warehouse, "company")
+		company = nts.db.get_value("Warehouse", warehouse, "company")
 
 		pr = make_purchase_receipt(
 			company=company,
@@ -833,7 +833,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 		pr.reload()
 
 		for sn in serial_nos:
-			sn_doc = frappe.get_doc("Serial No", sn)
+			sn_doc = nts.get_doc("Serial No", sn)
 			sn_doc.db_set(
 				{
 					"warehouse": warehouse,
@@ -853,9 +853,9 @@ class TestLandedCostVoucher(FrappeTestCase):
 			else:
 				row.db_set("batch_no", "BATCH-TDVLCVSNO-0001")
 
-		stock_ledger_entries = frappe.get_all("Stock Ledger Entry", filters={"voucher_no": pr.name})
+		stock_ledger_entries = nts.get_all("Stock Ledger Entry", filters={"voucher_no": pr.name})
 		for sle in stock_ledger_entries:
-			doc = frappe.get_doc("Stock Ledger Entry", sle.name)
+			doc = nts.get_doc("Stock Ledger Entry", sle.name)
 			if doc.item_code == sn_item:
 				doc.db_set("serial_no", ", ".join(serial_nos))
 			else:
@@ -888,16 +888,16 @@ class TestLandedCostVoucher(FrappeTestCase):
 
 		dn.submit()
 
-		stock_ledger_entries = frappe.get_all("Stock Ledger Entry", filters={"voucher_no": dn.name})
+		stock_ledger_entries = nts.get_all("Stock Ledger Entry", filters={"voucher_no": dn.name})
 		for sle in stock_ledger_entries:
-			doc = frappe.get_doc("Stock Ledger Entry", sle.name)
+			doc = nts.get_doc("Stock Ledger Entry", sle.name)
 			if doc.item_code == sn_item:
 				doc.db_set("serial_no", ", ".join(serial_nos))
 			else:
 				doc.db_set("batch_no", "BATCH-TDVLCVSNO-0001")
 
 		available_batches = get_auto_batch_nos(
-			frappe._dict(
+			nts._dict(
 				{
 					"item_code": batch_item,
 					"warehouse": warehouse,
@@ -909,8 +909,8 @@ class TestLandedCostVoucher(FrappeTestCase):
 
 		self.assertFalse(available_batches.get("qty"))
 
-		frappe.flags.ignore_serial_batch_bundle_validation = False
-		frappe.flags.use_serial_and_batch_fields = False
+		nts.flags.ignore_serial_batch_bundle_validation = False
+		nts.flags.use_serial_and_batch_fields = False
 
 		lcv = make_landed_cost_voucher(
 			company=pr.company,
@@ -932,7 +932,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 			self.assertTrue(row.serial_and_batch_bundle)
 			self.assertEqual(
 				row.valuation_rate,
-				frappe.db.get_value("Serial and Batch Bundle", row.serial_and_batch_bundle, "avg_rate"),
+				nts.db.get_value("Serial and Batch Bundle", row.serial_and_batch_bundle, "avg_rate"),
 			)
 
 		lcv.cancel()
@@ -943,15 +943,15 @@ class TestLandedCostVoucher(FrappeTestCase):
 			self.assertTrue(row.serial_and_batch_bundle)
 			self.assertEqual(
 				row.valuation_rate,
-				frappe.db.get_value("Serial and Batch Bundle", row.serial_and_batch_bundle, "avg_rate"),
+				nts.db.get_value("Serial and Batch Bundle", row.serial_and_batch_bundle, "avg_rate"),
 			)
 
 	def test_do_not_validate_against_landed_cost_voucher_for_serial_for_legacy_pr(self):
 		from prodman.stock.doctype.item.test_item import make_item
 		from prodman.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle import get_auto_batch_nos
 
-		frappe.flags.ignore_serial_batch_bundle_validation = True
-		frappe.flags.use_serial_and_batch_fields = True
+		nts.flags.ignore_serial_batch_bundle_validation = True
+		nts.flags.use_serial_and_batch_fields = True
 		sn_item = "Test Don't Validate Against LCV For Serial NO for Legacy PR"
 		sn_item_doc = make_item(
 			sn_item,
@@ -971,8 +971,8 @@ class TestLandedCostVoucher(FrappeTestCase):
 		]
 
 		for sn in serial_nos:
-			if not frappe.db.exists("Serial No", sn):
-				sn_doc = frappe.get_doc(
+			if not nts.db.exists("Serial No", sn):
+				sn_doc = nts.get_doc(
 					{
 						"doctype": "Serial No",
 						"item_code": sn_item,
@@ -982,7 +982,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 				sn_doc.insert()
 
 		warehouse = "_Test Warehouse - _TC"
-		company = frappe.db.get_value("Warehouse", warehouse, "company")
+		company = nts.db.get_value("Warehouse", warehouse, "company")
 
 		pr = make_purchase_receipt(
 			company=company,
@@ -997,7 +997,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 		pr.reload()
 
 		for sn in serial_nos:
-			sn_doc = frappe.get_doc("Serial No", sn)
+			sn_doc = nts.get_doc("Serial No", sn)
 			sn_doc.db_set(
 				{
 					"warehouse": warehouse,
@@ -1009,9 +1009,9 @@ class TestLandedCostVoucher(FrappeTestCase):
 			if row.item_code == sn_item:
 				row.db_set("serial_no", ", ".join(serial_nos))
 
-		stock_ledger_entries = frappe.get_all("Stock Ledger Entry", filters={"voucher_no": pr.name})
+		stock_ledger_entries = nts.get_all("Stock Ledger Entry", filters={"voucher_no": pr.name})
 		for sle in stock_ledger_entries:
-			doc = frappe.get_doc("Stock Ledger Entry", sle.name)
+			doc = nts.get_doc("Stock Ledger Entry", sle.name)
 			if doc.item_code == sn_item:
 				doc.db_set("serial_no", ", ".join(serial_nos))
 
@@ -1025,14 +1025,14 @@ class TestLandedCostVoucher(FrappeTestCase):
 			stock_uom=sn_item_doc.stock_uom,
 		)
 
-		stock_ledger_entries = frappe.get_all("Stock Ledger Entry", filters={"voucher_no": dn.name})
+		stock_ledger_entries = nts.get_all("Stock Ledger Entry", filters={"voucher_no": dn.name})
 		for sle in stock_ledger_entries:
-			doc = frappe.get_doc("Stock Ledger Entry", sle.name)
+			doc = nts.get_doc("Stock Ledger Entry", sle.name)
 			if doc.item_code == sn_item:
 				doc.db_set("serial_no", ", ".join(serial_nos))
 
-		frappe.flags.ignore_serial_batch_bundle_validation = False
-		frappe.flags.use_serial_and_batch_fields = False
+		nts.flags.ignore_serial_batch_bundle_validation = False
+		nts.flags.use_serial_and_batch_fields = False
 
 		lcv = make_landed_cost_voucher(
 			company=pr.company,
@@ -1054,7 +1054,7 @@ class TestLandedCostVoucher(FrappeTestCase):
 			self.assertTrue(row.serial_and_batch_bundle)
 			self.assertEqual(
 				row.valuation_rate,
-				frappe.db.get_value("Serial and Batch Bundle", row.serial_and_batch_bundle, "avg_rate"),
+				nts.db.get_value("Serial and Batch Bundle", row.serial_and_batch_bundle, "avg_rate"),
 			)
 
 		lcv.cancel()
@@ -1065,15 +1065,15 @@ class TestLandedCostVoucher(FrappeTestCase):
 			self.assertTrue(row.serial_and_batch_bundle)
 			self.assertEqual(
 				row.valuation_rate,
-				frappe.db.get_value("Serial and Batch Bundle", row.serial_and_batch_bundle, "avg_rate"),
+				nts.db.get_value("Serial and Batch Bundle", row.serial_and_batch_bundle, "avg_rate"),
 			)
 
 
 def make_landed_cost_voucher(**args):
-	args = frappe._dict(args)
-	ref_doc = frappe.get_doc(args.receipt_document_type, args.receipt_document)
+	args = nts._dict(args)
+	ref_doc = nts.get_doc(args.receipt_document_type, args.receipt_document)
 
-	lcv = frappe.new_doc("Landed Cost Voucher")
+	lcv = nts.new_doc("Landed Cost Voucher")
 	lcv.company = args.company or "_Test Company"
 	lcv.distribute_charges_based_on = args.distribute_charges_based_on or "Amount"
 
@@ -1110,9 +1110,9 @@ def make_landed_cost_voucher(**args):
 
 
 def create_landed_cost_voucher(receipt_document_type, receipt_document, company, charges=50):
-	ref_doc = frappe.get_doc(receipt_document_type, receipt_document)
+	ref_doc = nts.get_doc(receipt_document_type, receipt_document)
 
-	lcv = frappe.new_doc("Landed Cost Voucher")
+	lcv = nts.new_doc("Landed Cost Voucher")
 	lcv.company = company
 	lcv.distribute_charges_based_on = "Amount"
 
@@ -1158,4 +1158,4 @@ def distribute_landed_cost_on_items(lcv):
 		item.applicable_charges = flt(item.applicable_charges, lcv.precision("applicable_charges", item))
 
 
-test_records = frappe.get_test_records("Landed Cost Voucher")
+test_records = nts.get_test_records("Landed Cost Voucher")

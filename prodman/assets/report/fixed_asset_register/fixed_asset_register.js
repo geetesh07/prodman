@@ -1,14 +1,14 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Fixed Asset Register"] = {
+nts.query_reports["Fixed Asset Register"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -66,14 +66,14 @@ frappe.query_reports["Fixed Asset Register"] = {
 			fieldname: "from_date",
 			label: __("Start Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.add_months(frappe.datetime.nowdate(), -12),
+			default: nts.datetime.add_months(nts.datetime.nowdate(), -12),
 			depends_on: "eval: doc.filter_based_on == 'Date Range'",
 		},
 		{
 			fieldname: "to_date",
 			label: __("End Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.nowdate(),
+			default: nts.datetime.nowdate(),
 			depends_on: "eval: doc.filter_based_on == 'Date Range'",
 		},
 		{
@@ -81,7 +81,7 @@ frappe.query_reports["Fixed Asset Register"] = {
 			label: __("Start Year"),
 			fieldtype: "Link",
 			options: "Fiscal Year",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today()),
+			default: prodman.utils.get_fiscal_year(nts.datetime.get_today()),
 			depends_on: "eval: doc.filter_based_on == 'Fiscal Year'",
 		},
 		{
@@ -89,7 +89,7 @@ frappe.query_reports["Fixed Asset Register"] = {
 			label: __("End Year"),
 			fieldtype: "Link",
 			options: "Fiscal Year",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today()),
+			default: prodman.utils.get_fiscal_year(nts.datetime.get_today()),
 			depends_on: "eval: doc.filter_based_on == 'Fiscal Year'",
 		},
 		{

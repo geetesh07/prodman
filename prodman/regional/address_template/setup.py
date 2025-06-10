@@ -1,7 +1,7 @@
 """Import Address Templates from ./templates directory."""
 import os
 
-import frappe
+import nts
 
 
 def set_up_address_templates(default_country=None):
@@ -41,14 +41,14 @@ def get_address_templates():
 
 def update_address_template(country, html, is_default=0):
 	"""Update existing Address Template or create a new one."""
-	if not frappe.db.exists("Country", country):
-		frappe.log_error(f"Country {country} for regional Address Template does not exist.")
+	if not nts.db.exists("Country", country):
+		nts.log_error(f"Country {country} for regional Address Template does not exist.")
 		return
 
-	if frappe.db.exists("Address Template", country):
-		frappe.db.set_value("Address Template", country, "template", html)
-		frappe.db.set_value("Address Template", country, "is_default", is_default)
+	if nts.db.exists("Address Template", country):
+		nts.db.set_value("Address Template", country, "template", html)
+		nts.db.set_value("Address Template", country, "is_default", is_default)
 	else:
-		frappe.get_doc(
+		nts.get_doc(
 			dict(doctype="Address Template", country=country, is_default=is_default, template=html)
 		).insert()

@@ -1,14 +1,14 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("stock", "doctype", "item_price")
+	nts.reload_doc("stock", "doctype", "item_price")
 
-	frappe.db.sql(
+	nts.db.sql(
 		""" update `tabItem Price`, `tabItem`
 		set
 			`tabItem Price`.brand = `tabItem`.brand

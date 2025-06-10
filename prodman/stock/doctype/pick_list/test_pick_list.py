@@ -1,9 +1,9 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2019, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe import _dict
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts import _dict
+from nts.tests.utils import ntsTestCase
 
 from prodman.selling.doctype.sales_order.sales_order import create_pick_list
 from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
@@ -24,11 +24,11 @@ from prodman.stock.doctype.stock_reconciliation.stock_reconciliation import (
 test_dependencies = ["Item", "Sales Invoice", "Stock Entry", "Batch"]
 
 
-class TestPickList(FrappeTestCase):
+class TestPickList(ntsTestCase):
 	def test_pick_list_picks_warehouse_for_each_item(self):
 		item_code = make_item().name
 		try:
-			frappe.get_doc(
+			nts.get_doc(
 				{
 					"doctype": "Stock Reconciliation",
 					"company": "_Test Company",
@@ -47,7 +47,7 @@ class TestPickList(FrappeTestCase):
 		except EmptyStockReconciliationItemsError:
 			pass
 
-		pick_list = frappe.get_doc(
+		pick_list = nts.get_doc(
 			{
 				"doctype": "Pick List",
 				"company": "_Test Company",
@@ -74,7 +74,7 @@ class TestPickList(FrappeTestCase):
 
 	def test_pick_list_splits_row_according_to_warehouse_availability(self):
 		try:
-			frappe.get_doc(
+			nts.get_doc(
 				{
 					"doctype": "Stock Reconciliation",
 					"company": "_Test Company",
@@ -94,7 +94,7 @@ class TestPickList(FrappeTestCase):
 			pass
 
 		try:
-			frappe.get_doc(
+			nts.get_doc(
 				{
 					"doctype": "Stock Reconciliation",
 					"company": "_Test Company",
@@ -113,7 +113,7 @@ class TestPickList(FrappeTestCase):
 		except EmptyStockReconciliationItemsError:
 			pass
 
-		pick_list = frappe.get_doc(
+		pick_list = nts.get_doc(
 			{
 				"doctype": "Pick List",
 				"company": "_Test Company",
@@ -147,8 +147,8 @@ class TestPickList(FrappeTestCase):
 		serial_nos = ["SADD-0001", "SADD-0002", "SADD-0003", "SADD-0004", "SADD-0005"]
 
 		for serial_no in serial_nos:
-			if not frappe.db.exists("Serial No", serial_no):
-				frappe.get_doc(
+			if not nts.db.exists("Serial No", serial_no):
+				nts.get_doc(
 					{
 						"doctype": "Serial No",
 						"company": "_Test Company",
@@ -157,7 +157,7 @@ class TestPickList(FrappeTestCase):
 					}
 				).insert()
 
-		stock_reconciliation = frappe.get_doc(
+		stock_reconciliation = nts.get_doc(
 			{
 				"doctype": "Stock Reconciliation",
 				"purpose": "Stock Reconciliation",
@@ -170,7 +170,7 @@ class TestPickList(FrappeTestCase):
 						"reconcile_all_serial_batch": 1,
 						"qty": 5,
 						"serial_and_batch_bundle": make_serial_batch_bundle(
-							frappe._dict(
+							nts._dict(
 								{
 									"item_code": "_Test Serialized Item",
 									"warehouse": "_Test Warehouse - _TC",
@@ -197,7 +197,7 @@ class TestPickList(FrappeTestCase):
 			item_code="_Test Serialized Item", warehouse="_Test Warehouse - _TC", qty=5, rate=1000
 		)
 
-		pick_list = frappe.get_doc(
+		pick_list = nts.get_doc(
 			{
 				"doctype": "Pick List",
 				"company": "_Test Company",
@@ -229,7 +229,7 @@ class TestPickList(FrappeTestCase):
 
 	def test_pick_list_shows_batch_no_for_batched_item(self):
 		# check if oldest batch no is picked
-		item = frappe.db.exists("Item", {"item_name": "Batched Item"})
+		item = nts.db.exists("Item", {"item_name": "Batched Item"})
 		if not item:
 			item = create_item("Batched Item")
 			item.has_batch_no = 1
@@ -237,7 +237,7 @@ class TestPickList(FrappeTestCase):
 			item.batch_number_series = "B-BATCH-.##"
 			item.save()
 		else:
-			item = frappe.get_doc("Item", {"item_name": "Batched Item"})
+			item = nts.get_doc("Item", {"item_name": "Batched Item"})
 
 		pr1 = make_purchase_receipt(item_code="Batched Item", qty=1, rate=100.0)
 
@@ -246,7 +246,7 @@ class TestPickList(FrappeTestCase):
 
 		pr2 = make_purchase_receipt(item_code="Batched Item", qty=2, rate=100.0)
 
-		pick_list = frappe.get_doc(
+		pick_list = nts.get_doc(
 			{
 				"doctype": "Pick List",
 				"company": "_Test Company",
@@ -269,7 +269,7 @@ class TestPickList(FrappeTestCase):
 
 	def test_pick_list_for_batched_and_serialised_item(self):
 		# check if oldest batch no and serial nos are picked
-		item = frappe.db.exists("Item", {"item_name": "Batched and Serialised Item"})
+		item = nts.db.exists("Item", {"item_name": "Batched and Serialised Item"})
 		if not item:
 			item = create_item("Batched and Serialised Item")
 			item.has_batch_no = 1
@@ -279,7 +279,7 @@ class TestPickList(FrappeTestCase):
 			item.serial_no_series = "S-.####"
 			item.save()
 		else:
-			item = frappe.get_doc("Item", {"item_name": "Batched and Serialised Item"})
+			item = nts.get_doc("Item", {"item_name": "Batched and Serialised Item"})
 
 		pr1 = make_purchase_receipt(item_code="Batched and Serialised Item", qty=2, rate=100.0)
 
@@ -289,7 +289,7 @@ class TestPickList(FrappeTestCase):
 
 		pr2 = make_purchase_receipt(item_code="Batched and Serialised Item", qty=2, rate=100.0)
 
-		pick_list = frappe.get_doc(
+		pick_list = nts.get_doc(
 			{
 				"doctype": "Pick List",
 				"company": "_Test Company",
@@ -322,7 +322,7 @@ class TestPickList(FrappeTestCase):
 	def test_pick_list_for_items_from_multiple_sales_orders(self):
 		item_code = make_item().name
 		try:
-			frappe.get_doc(
+			nts.get_doc(
 				{
 					"doctype": "Stock Reconciliation",
 					"company": "_Test Company",
@@ -341,7 +341,7 @@ class TestPickList(FrappeTestCase):
 		except EmptyStockReconciliationItemsError:
 			pass
 
-		sales_order = frappe.get_doc(
+		sales_order = nts.get_doc(
 			{
 				"doctype": "Sales Order",
 				"customer": "_Test Customer",
@@ -350,7 +350,7 @@ class TestPickList(FrappeTestCase):
 					{
 						"item_code": item_code,
 						"qty": 10,
-						"delivery_date": frappe.utils.today(),
+						"delivery_date": nts.utils.today(),
 						"warehouse": "_Test Warehouse - _TC",
 					}
 				],
@@ -358,7 +358,7 @@ class TestPickList(FrappeTestCase):
 		)
 		sales_order.submit()
 
-		pick_list = frappe.get_doc(
+		pick_list = nts.get_doc(
 			{
 				"doctype": "Pick List",
 				"company": "_Test Company",
@@ -402,7 +402,7 @@ class TestPickList(FrappeTestCase):
 		purchase_receipt = make_purchase_receipt(item_code=item_code, qty=10)
 		purchase_receipt.submit()
 
-		sales_order = frappe.get_doc(
+		sales_order = nts.get_doc(
 			{
 				"doctype": "Sales Order",
 				"customer": "_Test Customer",
@@ -413,14 +413,14 @@ class TestPickList(FrappeTestCase):
 						"qty": 1,
 						"conversion_factor": 5,
 						"stock_qty": 5,
-						"delivery_date": frappe.utils.today(),
+						"delivery_date": nts.utils.today(),
 						"warehouse": "_Test Warehouse - _TC",
 					},
 					{
 						"item_code": item_code,
 						"qty": 1,
 						"conversion_factor": 1,
-						"delivery_date": frappe.utils.today(),
+						"delivery_date": nts.utils.today(),
 						"warehouse": "_Test Warehouse - _TC",
 					},
 				],
@@ -428,7 +428,7 @@ class TestPickList(FrappeTestCase):
 		).insert()
 		sales_order.submit()
 
-		pick_list = frappe.get_doc(
+		pick_list = nts.get_doc(
 			{
 				"doctype": "Pick List",
 				"company": "_Test Company",
@@ -476,7 +476,7 @@ class TestPickList(FrappeTestCase):
 				self.assertEqual(b.get(key), value, msg=f"{key} doesn't match")
 
 		# nothing should be grouped
-		pl = frappe.get_doc(
+		pl = nts.get_doc(
 			doctype="Pick List",
 			group_same_items=True,
 			locations=[
@@ -490,7 +490,7 @@ class TestPickList(FrappeTestCase):
 		self.assertEqual(len(pl.locations), 4)
 
 		# grouping should not happen if group_same_items is False
-		pl = frappe.get_doc(
+		pl = nts.get_doc(
 			doctype="Pick List",
 			group_same_items=False,
 			locations=[
@@ -516,7 +516,7 @@ class TestPickList(FrappeTestCase):
 			_compare_dicts(expected_item, created_item)
 
 	def test_multiple_dn_creation(self):
-		sales_order_1 = frappe.get_doc(
+		sales_order_1 = nts.get_doc(
 			{
 				"doctype": "Sales Order",
 				"customer": "_Test Customer",
@@ -526,13 +526,13 @@ class TestPickList(FrappeTestCase):
 						"item_code": "_Test Item",
 						"qty": 1,
 						"conversion_factor": 1,
-						"delivery_date": frappe.utils.today(),
+						"delivery_date": nts.utils.today(),
 					}
 				],
 			}
 		).insert()
 		sales_order_1.submit()
-		sales_order_2 = frappe.get_doc(
+		sales_order_2 = nts.get_doc(
 			{
 				"doctype": "Sales Order",
 				"customer": "_Test Customer 1",
@@ -542,13 +542,13 @@ class TestPickList(FrappeTestCase):
 						"item_code": "_Test Item 2",
 						"qty": 1,
 						"conversion_factor": 1,
-						"delivery_date": frappe.utils.today(),
+						"delivery_date": nts.utils.today(),
 					},
 				],
 			}
 		).insert()
 		sales_order_2.submit()
-		pick_list = frappe.get_doc(
+		pick_list = nts.get_doc(
 			{
 				"doctype": "Pick List",
 				"company": "_Test Company",
@@ -578,26 +578,26 @@ class TestPickList(FrappeTestCase):
 		pick_list.set_item_locations()
 		pick_list.submit()
 		create_delivery_note(pick_list.name)
-		for dn in frappe.get_all(
+		for dn in nts.get_all(
 			"Delivery Note",
 			filters={"pick_list": pick_list.name, "customer": "_Test Customer"},
 			fields={"name"},
 		):
-			for dn_item in frappe.get_doc("Delivery Note", dn.name).get("items"):
+			for dn_item in nts.get_doc("Delivery Note", dn.name).get("items"):
 				self.assertEqual(dn_item.item_code, "_Test Item")
 				self.assertEqual(dn_item.against_sales_order, sales_order_1.name)
 				self.assertEqual(dn_item.pick_list_item, pick_list.locations[dn_item.idx - 1].name)
 
-		for dn in frappe.get_all(
+		for dn in nts.get_all(
 			"Delivery Note",
 			filters={"pick_list": pick_list.name, "customer": "_Test Customer 1"},
 			fields={"name"},
 		):
-			for dn_item in frappe.get_doc("Delivery Note", dn.name).get("items"):
+			for dn_item in nts.get_doc("Delivery Note", dn.name).get("items"):
 				self.assertEqual(dn_item.item_code, "_Test Item 2")
 				self.assertEqual(dn_item.against_sales_order, sales_order_2.name)
 		# test DN creation without so
-		pick_list_1 = frappe.get_doc(
+		pick_list_1 = nts.get_doc(
 			{
 				"doctype": "Pick List",
 				"company": "_Test Company",
@@ -622,8 +622,8 @@ class TestPickList(FrappeTestCase):
 		pick_list_1.set_item_locations()
 		pick_list_1.submit()
 		create_delivery_note(pick_list_1.name)
-		for dn in frappe.get_all("Delivery Note", filters={"pick_list": pick_list_1.name}, fields={"name"}):
-			for dn_item in frappe.get_doc("Delivery Note", dn.name).get("items"):
+		for dn in nts.get_all("Delivery Note", filters={"pick_list": pick_list_1.name}, fields={"name"}):
+			for dn_item in nts.get_doc("Delivery Note", dn.name).get("items"):
 				if dn_item.item_code == "_Test Item":
 					self.assertEqual(dn_item.qty, 1)
 				if dn_item.item_code == "_Test Item 2":
@@ -653,8 +653,8 @@ class TestPickList(FrappeTestCase):
 
 		# create batch
 		for batch_id in ["PICKLT-000001", "PICKLT-000002"]:
-			if not frappe.db.exists("Batch", batch_id):
-				frappe.get_doc(
+			if not nts.db.exists("Batch", batch_id):
+				nts.get_doc(
 					{
 						"doctype": "Batch",
 						"batch_id": batch_id,
@@ -667,7 +667,7 @@ class TestPickList(FrappeTestCase):
 			to_warehouse=warehouse,
 			qty=50,
 			basic_rate=100,
-			batches=frappe._dict({"PICKLT-000001": 30, "PICKLT-000002": 20}),
+			batches=nts._dict({"PICKLT-000001": 30, "PICKLT-000002": 20}),
 		)
 
 		so = make_sales_order(item_code=item, qty=25.0, rate=100)
@@ -690,7 +690,7 @@ class TestPickList(FrappeTestCase):
 			self.assertEqual(loc.qty, 5.0)
 			self.assertTrue(loc.serial_and_batch_bundle)
 
-			data = frappe.get_all(
+			data = nts.get_all(
 				"Serial and Batch Entry",
 				fields=["qty", "batch_no"],
 				filters={"parent": loc.serial_and_batch_bundle},
@@ -723,7 +723,7 @@ class TestPickList(FrappeTestCase):
 			self.assertEqual(loc.qty, 25.0)
 			self.assertTrue(loc.serial_and_batch_bundle)
 
-			data = frappe.get_all(
+			data = nts.get_all(
 				"Serial and Batch Entry",
 				fields=["serial_no"],
 				filters={"parent": loc.serial_and_batch_bundle},
@@ -740,7 +740,7 @@ class TestPickList(FrappeTestCase):
 			self.assertEqual(loc.qty, 10.0)
 			self.assertTrue(loc.serial_and_batch_bundle)
 
-			data = frappe.get_all(
+			data = nts.get_all(
 				"Serial and Batch Entry",
 				fields=["qty", "batch_no"],
 				filters={"parent": loc.serial_and_batch_bundle},
@@ -1174,7 +1174,7 @@ class TestPickList(FrappeTestCase):
 			row.qty = row.qty + 10
 			row.picked_qty = row.qty
 
-		self.assertRaises(frappe.ValidationError, pl.save)
+		self.assertRaises(nts.ValidationError, pl.save)
 
 	def test_over_allowance_picking(self):
 		warehouse = "_Test Warehouse - _TC"
@@ -1198,17 +1198,17 @@ class TestPickList(FrappeTestCase):
 		pl_doc.save()
 
 		self.assertEqual(pl_doc.locations[0].qty, 15)
-		self.assertRaises(frappe.ValidationError, pl_doc.submit)
+		self.assertRaises(nts.ValidationError, pl_doc.submit)
 
-		frappe.db.set_single_value("Stock Settings", "over_picking_allowance", 50)
+		nts.db.set_single_value("Stock Settings", "over_picking_allowance", 50)
 
 		pl_doc.reload()
 		pl_doc.submit()
 
-		frappe.db.set_single_value("Stock Settings", "over_picking_allowance", 0)
+		nts.db.set_single_value("Stock Settings", "over_picking_allowance", 0)
 
 	def test_ignore_pricing_rule_in_pick_list(self):
-		frappe.flags.print_stmt = False
+		nts.flags.print_stmt = False
 		warehouse = "_Test Warehouse - _TC"
 		item = make_item(
 			properties={
@@ -1226,7 +1226,7 @@ class TestPickList(FrappeTestCase):
 			basic_rate=100,
 		)
 
-		pricing_rule = frappe.get_doc(
+		pricing_rule = nts.get_doc(
 			{
 				"doctype": "Pricing Rule",
 				"title": "Same Free Item",
@@ -1249,7 +1249,7 @@ class TestPickList(FrappeTestCase):
 		)
 
 		pricing_rule.save()
-		frappe.flags.print_stmt = True
+		nts.flags.print_stmt = True
 
 		so = make_sales_order(item_code=item, qty=2, rate=100, do_not_save=True)
 		so.set_warehouse = warehouse

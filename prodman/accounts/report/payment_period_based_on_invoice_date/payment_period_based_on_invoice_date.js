@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.query_reports["Payment Period Based On Invoice Date"] = {
+nts .query_reports["Payment Period Based On Invoice Date"] = {
 	filters: [
 		{
 			fieldname: "company",
@@ -9,19 +9,19 @@ frappe.query_reports["Payment Period Based On Invoice Date"] = {
 			fieldtype: "Link",
 			options: "Company",
 			reqd: 1,
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts .defaults.get_user_default("Company"),
 		},
 		{
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[1],
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today(), true)[1],
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.get_today(),
+			default: nts .datetime.get_today(),
 		},
 		{
 			fieldname: "payment_type",
@@ -46,10 +46,10 @@ frappe.query_reports["Payment Period Based On Invoice Date"] = {
 			label: __("Party"),
 			fieldtype: "Dynamic Link",
 			get_options: function () {
-				var party_type = frappe.query_report.get_filter_value("party_type");
-				var party = frappe.query_report.get_filter_value("party");
+				var party_type = nts .query_report.get_filter_value("party_type");
+				var party = nts .query_report.get_filter_value("party");
 				if (party && !party_type) {
-					frappe.throw(__("Please select Party Type first"));
+					nts .throw(__("Please select Party Type first"));
 				}
 				return party_type;
 			},

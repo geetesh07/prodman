@@ -1,4 +1,4 @@
-frappe.ready(function () {
+nts.ready(function () {
 	$(".task-status-switch").on("click", function () {
 		var $btn = $(this);
 		if ($btn.attr("data-status") === "Open") {
@@ -35,7 +35,7 @@ frappe.ready(function () {
 	});
 
 	$(".file-size").each(function () {
-		$(this).text(frappe.form.formatters.FileSize($(this).text()));
+		$(this).text(nts.form.formatters.FileSize($(this).text()));
 	});
 
 	var reload_items = function (item_status, item, $btn) {
@@ -99,14 +99,14 @@ frappe.ready(function () {
 			project: "{{ doc.name }}",
 			item_name: item_name,
 		};
-		frappe.call({
+		nts.call({
 			btn: this,
 			type: "POST",
 			method: "prodman.templates.pages.projects.set_" + item + "_status",
 			args: args,
 			callback: function (r) {
 				if (r.exc) {
-					if (r._server_messages) frappe.msgprint(r._server_messages);
+					if (r._server_messages) nts.msgprint(r._server_messages);
 				} else {
 					$(this).remove();
 				}

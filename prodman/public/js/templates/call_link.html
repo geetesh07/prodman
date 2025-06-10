@@ -3,7 +3,7 @@
 		<div>
 			<span class="bold"> {{ type }} Call</span>
 			{% if (duration) %}
-			<span class="text-muted"> • {{ frappe.format(duration, { fieldtype: "Duration" }) }}</span>
+			<span class="text-muted"> • {{ nts.format(duration, { fieldtype: "Duration" }) }}</span>
 			{% endif %}
 			<span class="text-muted"> • {{ comment_when(creation) }}</span>
 		</div>

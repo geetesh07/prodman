@@ -1,8 +1,8 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.pages["sales-funnel"].on_page_load = function (wrapper) {
-	frappe.ui.make_app_page({
+nts.pages["sales-funnel"].on_page_load = function (wrapper) {
+	nts.ui.make_app_page({
 		parent: wrapper,
 		title: __("Sales Funnel"),
 		single_column: true,
@@ -10,7 +10,7 @@ frappe.pages["sales-funnel"].on_page_load = function (wrapper) {
 
 	wrapper.sales_funnel = new prodman.SalesFunnel(wrapper);
 
-	frappe.breadcrumbs.add("Selling");
+	nts.breadcrumbs.add("Selling");
 };
 
 prodman.SalesFunnel = class SalesFunnel {
@@ -32,9 +32,9 @@ prodman.SalesFunnel = class SalesFunnel {
 			options: "Company",
 			label: __("Company"),
 			reqd: 1,
-			default: frappe.defaults.get_user_default("company"),
+			default: nts.defaults.get_user_default("company"),
 			change: function () {
-				me.company = this.value || frappe.defaults.get_user_default("company");
+				me.company = this.value || nts.defaults.get_user_default("company");
 				me.get_data();
 			},
 		})),
@@ -64,17 +64,17 @@ prodman.SalesFunnel = class SalesFunnel {
 			this.elements.layout
 		);
 
-		this.company = frappe.defaults.get_user_default("company");
+		this.company = nts.defaults.get_user_default("company");
 		this.options = {
-			from_date: frappe.datetime.add_months(frappe.datetime.get_today(), -1),
-			to_date: frappe.datetime.get_today(),
+			from_date: nts.datetime.add_months(nts.datetime.get_today(), -1),
+			to_date: nts.datetime.get_today(),
 			chart: "sales_funnel",
 		};
 
 		// set defaults and bind on change
 		$.each(this.options, function (k, v) {
 			if (["from_date", "to_date"].includes(k)) {
-				me.elements[k].val(frappe.datetime.str_to_user(v));
+				me.elements[k].val(nts.datetime.str_to_user(v));
 			} else {
 				me.elements[k].val(v);
 			}
@@ -82,9 +82,9 @@ prodman.SalesFunnel = class SalesFunnel {
 			me.elements[k].on("change", function () {
 				if (["from_date", "to_date"].includes(k)) {
 					me.options[k] =
-						frappe.datetime.user_to_str($(this).val()) != "Invalid date"
-							? frappe.datetime.user_to_str($(this).val())
-							: frappe.datetime.get_today();
+						nts.datetime.user_to_str($(this).val()) != "Invalid date"
+							? nts.datetime.user_to_str($(this).val())
+							: nts.datetime.get_today();
 				} else {
 					me.options.chart = $(this).val();
 				}
@@ -106,7 +106,7 @@ prodman.SalesFunnel = class SalesFunnel {
 	get_data(btn) {
 		var me = this;
 		if (!this.company) {
-			frappe.throw(__("Please Select a Company."));
+			nts.throw(__("Please Select a Company."));
 		}
 
 		const method_map = {
@@ -114,7 +114,7 @@ prodman.SalesFunnel = class SalesFunnel {
 			opp_by_lead_source: "prodman.selling.page.sales_funnel.sales_funnel.get_opp_by_lead_source",
 			sales_pipeline: "prodman.selling.page.sales_funnel.sales_funnel.get_pipeline_data",
 		};
-		frappe.call({
+		nts.call({
 			method: method_map[this.options.chart],
 			args: {
 				from_date: this.options.from_date,
@@ -256,12 +256,12 @@ prodman.SalesFunnel = class SalesFunnel {
 
 	render_chart(title) {
 		let me = this;
-		let currency = frappe.defaults.get_default("currency");
+		let currency = nts.defaults.get_default("currency");
 
 		let chart_data = me.options.data ? me.options.data : null;
 
 		const parent = me.elements.funnel_wrapper[0];
-		this.chart = new frappe.Chart(parent, {
+		this.chart = new nts.Chart(parent, {
 			title: title,
 			height: 400,
 			data: chart_data,

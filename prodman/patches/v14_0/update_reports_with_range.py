@@ -1,6 +1,6 @@
 import json
 
-import frappe
+import nts
 
 REFERENCE_REPORTS = [
 	"Accounts Receivable",
@@ -17,7 +17,7 @@ def execute():
 
 
 def update_reference_reports(reference_report):
-	reports = frappe.get_all(
+	reports = nts.get_all(
 		"Report", filters={"reference_report": reference_report}, fields={"json", "name"}
 	)
 
@@ -36,4 +36,4 @@ def update_report_json(report):
 	keys_to_pop = [key for key in report_filter if key.startswith("range")]
 	report_filter["range"] = ", ".join(str(report_filter.pop(key)) for key in keys_to_pop)
 
-	frappe.db.set_value("Report", report.name, "json", json.dumps(report_json))
+	nts.db.set_value("Report", report.name, "json", json.dumps(report_json))

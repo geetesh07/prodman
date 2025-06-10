@@ -1,20 +1,20 @@
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import getdate, today
+import nts 
+from nts .tests.utils import nts TestCase
+from nts .utils import getdate, today
 
 from prodman.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
 from prodman.accounts.report.item_wise_purchase_register.item_wise_purchase_register import execute
 from prodman.accounts.test.accounts_mixin import AccountsTestMixin
 
 
-class TestItemWisePurchaseRegister(AccountsTestMixin, FrappeTestCase):
+class TestItemWisePurchaseRegister(AccountsTestMixin, nts TestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_supplier()
 		self.create_item()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def create_purchase_invoice(self, do_not_submit=False):
 		pi = make_purchase_invoice(
@@ -37,7 +37,7 @@ class TestItemWisePurchaseRegister(AccountsTestMixin, FrappeTestCase):
 	def test_basic_report_output(self):
 		pi = self.create_purchase_invoice()
 
-		filters = frappe._dict({"from_date": today(), "to_date": today(), "company": self.company})
+		filters = nts ._dict({"from_date": today(), "to_date": today(), "company": self.company})
 		report = execute(filters)
 
 		self.assertEqual(len(report[1]), 1)

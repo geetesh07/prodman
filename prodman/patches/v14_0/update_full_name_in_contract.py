@@ -1,5 +1,5 @@
-import frappe
-from frappe import qb
+import nts
+from nts import qb
 
 
 def execute():
@@ -11,5 +11,5 @@ def execute():
 		.run(as_dict=True)
 	):
 		field = c.party_type.lower() + "_name"
-		if res := frappe.db.get_value(c.party_type, c.party_name, field):
-			frappe.db.set_value("Contract", c.name, "party_full_name", res)
+		if res := nts.db.get_value(c.party_type, c.party_name, field):
+			nts.db.set_value("Contract", c.name, "party_full_name", res)

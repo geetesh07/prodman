@@ -1,10 +1,10 @@
 import datetime
 import json
 
-import frappe
+import nts
 import pytz
-from frappe import _
-from frappe.utils.data import get_system_timezone
+from nts import _
+from nts.utils.data import get_system_timezone
 
 WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -12,22 +12,22 @@ no_cache = 1
 
 
 def get_context(context):
-	is_enabled = frappe.db.get_single_value("Appointment Booking Settings", "enable_scheduling")
+	is_enabled = nts.db.get_single_value("Appointment Booking Settings", "enable_scheduling")
 	if is_enabled:
 		return context
 	else:
-		frappe.redirect_to_message(
+		nts.redirect_to_message(
 			_("Appointment Scheduling Disabled"),
 			_("Appointment Scheduling has been disabled for this site"),
 			http_status_code=302,
 			indicator_color="red",
 		)
-		raise frappe.Redirect
+		raise nts.Redirect
 
 
-@frappe.whitelist(allow_guest=True)
+@nts.whitelist(allow_guest=True)
 def get_appointment_settings():
-	settings = frappe.get_cached_value(
+	settings = nts.get_cached_value(
 		"Appointment Booking Settings",
 		None,
 		["advance_booking_days", "appointment_duration", "success_redirect_url"],
@@ -36,14 +36,14 @@ def get_appointment_settings():
 	return settings
 
 
-@frappe.whitelist(allow_guest=True)
+@nts.whitelist(allow_guest=True)
 def get_timezones():
 	import pytz
 
 	return pytz.all_timezones
 
 
-@frappe.whitelist(allow_guest=True)
+@nts.whitelist(allow_guest=True)
 def get_appointment_slots(date, timezone):
 	# Convert query to local timezones
 	format_string = "%Y-%m-%d %H:%M:%S"
@@ -54,8 +54,8 @@ def get_appointment_slots(date, timezone):
 	now = convert_to_guest_timezone(timezone, datetime.datetime.now())
 
 	# Database queries
-	settings = frappe.get_doc("Appointment Booking Settings")
-	holiday_list = frappe.get_doc("Holiday List", settings.holiday_list)
+	settings = nts.get_doc("Appointment Booking Settings")
+	holiday_list = nts.get_doc("Holiday List", settings.holiday_list)
 	timeslots = get_available_slots_between(query_start_time, query_end_time, settings)
 
 	# Filter and convert timeslots
@@ -93,7 +93,7 @@ def get_available_slots_between(query_start_time, query_end_time, settings):
 	return timeslots
 
 
-@frappe.whitelist(allow_guest=True)
+@nts.whitelist(allow_guest=True)
 def create_appointment(date, time, tz, contact):
 	format_string = "%Y-%m-%d %H:%M:%S"
 	scheduled_time = datetime.datetime.strptime(date + " " + time, format_string)
@@ -102,7 +102,7 @@ def create_appointment(date, time, tz, contact):
 	scheduled_time = convert_to_system_timezone(tz, scheduled_time)
 	scheduled_time = scheduled_time.replace(tzinfo=None)
 	# Create a appointment document from form
-	appointment = frappe.new_doc("Appointment")
+	appointment = nts.new_doc("Appointment")
 	appointment.scheduled_time = scheduled_time
 	contact = json.loads(contact)
 	appointment.customer_name = contact.get("name", None)
@@ -141,7 +141,7 @@ def convert_to_system_timezone(guest_tz, datetimeobject):
 
 
 def check_availabilty(timeslot, settings):
-	return frappe.db.count("Appointment", {"scheduled_time": timeslot}) < settings.number_of_agents
+	return nts.db.count("Appointment", {"scheduled_time": timeslot}) < settings.number_of_agents
 
 
 def _is_holiday(date, holiday_list):

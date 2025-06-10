@@ -1,7 +1,7 @@
-// Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2019, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Project Template", {
+nts.ui.form.on("Project Template", {
 	// refresh: function(frm) {
 
 	// }
@@ -16,10 +16,10 @@ frappe.ui.form.on("Project Template", {
 	},
 });
 
-frappe.ui.form.on("Project Template Task", {
+nts.ui.form.on("Project Template Task", {
 	task: function (frm, cdt, cdn) {
 		var row = locals[cdt][cdn];
-		frappe.db.get_value("Task", row.task, "subject", (value) => {
+		nts.db.get_value("Task", row.task, "subject", (value) => {
 			row.subject = value.subject;
 			refresh_field("tasks");
 		});

@@ -1,7 +1,7 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Routing", {
+nts.ui.form.on("Routing", {
 	refresh: function (frm) {
 		frm.trigger("display_sequence_id_column");
 	},
@@ -19,29 +19,29 @@ frappe.ui.form.on("Routing", {
 			(flt(child.hour_rate) * flt(child.time_in_mins)) / 60,
 			precision("operating_cost", child)
 		);
-		frappe.model.set_value(child.doctype, child.name, "operating_cost", operating_cost);
+		nts.model.set_value(child.doctype, child.name, "operating_cost", operating_cost);
 	},
 });
 
-frappe.ui.form.on("BOM Operation", {
+nts.ui.form.on("BOM Operation", {
 	operation: function (frm, cdt, cdn) {
 		const d = locals[cdt][cdn];
 
 		if (!d.operation) return;
 
-		frappe.call({
-			method: "frappe.client.get",
+		nts.call({
+			method: "nts.client.get",
 			args: {
 				doctype: "Operation",
 				name: d.operation,
 			},
 			callback: function (data) {
 				if (data.message.description) {
-					frappe.model.set_value(d.doctype, d.name, "description", data.message.description);
+					nts.model.set_value(d.doctype, d.name, "description", data.message.description);
 				}
 
 				if (data.message.workstation) {
-					frappe.model.set_value(d.doctype, d.name, "workstation", data.message.workstation);
+					nts.model.set_value(d.doctype, d.name, "workstation", data.message.workstation);
 				}
 
 				frm.events.calculate_operating_cost(frm, d);
@@ -52,14 +52,14 @@ frappe.ui.form.on("BOM Operation", {
 	workstation: function (frm, cdt, cdn) {
 		const d = locals[cdt][cdn];
 		if (!d.workstation) return;
-		frappe.call({
-			method: "frappe.client.get",
+		nts.call({
+			method: "nts.client.get",
 			args: {
 				doctype: "Workstation",
 				name: d.workstation,
 			},
 			callback: function (data) {
-				frappe.model.set_value(d.doctype, d.name, "hour_rate", data.message.hour_rate);
+				nts.model.set_value(d.doctype, d.name, "hour_rate", data.message.hour_rate);
 				frm.events.calculate_operating_cost(frm, d);
 			},
 		});
@@ -71,7 +71,7 @@ frappe.ui.form.on("BOM Operation", {
 	},
 });
 
-frappe.tour["Routing"] = [
+nts.tour["Routing"] = [
 	{
 		fieldname: "routing_name",
 		title: "Routing Name",

@@ -4,7 +4,7 @@
 		{% if(row.image) { %}
 			<img style="width:50px;height:50px;" src="{{row.image}}">
 		{% } else { %}
-			<div style="width:50px;height:50px;background-color:var(--control-bg);text-align:center;padding-top:15px">{{frappe.get_abbr(row.item_code, 2)}}</div>
+			<div style="width:50px;height:50px;background-color:var(--control-bg);text-align:center;padding-top:15px">{{nts.get_abbr(row.item_code, 2)}}</div>
 		{% } %}
 	</div>
 	<div class="col-sm-3">
@@ -19,10 +19,10 @@
 
 	</div>
 	<div class="col-sm-1" title="{{ __('Actual Qty') }}">
-		{{ frappe.format(row.actual_qty, { fieldtype: "Float"})}}
+		{{ nts.format(row.actual_qty, { fieldtype: "Float"})}}
 	</div>
 	<div class="col-sm-1" title="{{ __('Reserved Stock') }}">
-		{{ frappe.format(row.reserved_stock, { fieldtype: "Float"})}}
+		{{ nts.format(row.reserved_stock, { fieldtype: "Float"})}}
 	</div>
 	<div class="col-sm-4 small">
 		<span class="inline-graph">

@@ -1,17 +1,17 @@
-# Copyright (c) 2017, Frappe and Contributors
+# Copyright (c) 2017, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 parentfield = {"item_code": "items", "item_group": "item_groups", "brand": "brands"}
 
 
 def execute():
-	if not frappe.get_all("Pricing Rule", limit=1):
+	if not nts.get_all("Pricing Rule", limit=1):
 		return
 
-	frappe.reload_doc("accounts", "doctype", "pricing_rule_detail")
+	nts.reload_doc("accounts", "doctype", "pricing_rule_detail")
 	doctypes = {
 		"Supplier Quotation": "buying",
 		"Purchase Order": "buying",
@@ -24,20 +24,20 @@ def execute():
 	}
 
 	for doctype, module in doctypes.items():
-		frappe.reload_doc(module, "doctype", frappe.scrub(doctype))
+		nts.reload_doc(module, "doctype", nts.scrub(doctype))
 
-		child_doc = frappe.scrub(doctype) + "_item"
-		frappe.reload_doc(module, "doctype", child_doc, force=True)
+		child_doc = nts.scrub(doctype) + "_item"
+		nts.reload_doc(module, "doctype", child_doc, force=True)
 
 		child_doctype = doctype + " Item"
 
-		frappe.db.sql(
+		nts.db.sql(
 			f""" UPDATE `tab{child_doctype}` SET pricing_rules = pricing_rule
 			WHERE docstatus < 2 and pricing_rule is not null and pricing_rule != ''
 		"""
 		)
 
-		data = frappe.db.sql(
+		data = nts.db.sql(
 			f""" SELECT pricing_rule, name, parent,
 				parenttype, creation, modified, docstatus, modified_by, owner, name
 			FROM `tab{child_doctype}` where docstatus < 2 and pricing_rule is not null
@@ -59,12 +59,12 @@ def execute():
 					d.docstatus,
 					d.modified_by,
 					d.owner,
-					frappe.generate_hash("", 10),
+					nts.generate_hash("", 10),
 				)
 			)
 
 		if values:
-			frappe.db.sql(
+			nts.db.sql(
 				""" INSERT INTO
 				`tabPricing Rule Detail` (`pricing_rule`, `child_docname`, `parent`, `parentfield`, `parenttype`,
 				`creation`, `modified`, `docstatus`, `modified_by`, `owner`, `name`)
@@ -72,17 +72,17 @@ def execute():
 				tuple(values),
 			)
 
-	frappe.reload_doc("accounts", "doctype", "pricing_rule")
+	nts.reload_doc("accounts", "doctype", "pricing_rule")
 
 	for doctype, apply_on in {
 		"Pricing Rule Item Code": "Item Code",
 		"Pricing Rule Item Group": "Item Group",
 		"Pricing Rule Brand": "Brand",
 	}.items():
-		frappe.reload_doc("accounts", "doctype", frappe.scrub(doctype))
+		nts.reload_doc("accounts", "doctype", nts.scrub(doctype))
 
-		field = frappe.scrub(apply_on)
-		data = frappe.get_all(
+		field = nts.scrub(apply_on)
+		data = nts.get_all(
 			"Pricing Rule",
 			fields=[field, "name", "creation", "modified", "owner", "modified_by"],
 			filters={"apply_on": apply_on},
@@ -100,12 +100,12 @@ def execute():
 					d.modified,
 					d.owner,
 					d.modified_by,
-					frappe.generate_hash("", 10),
+					nts.generate_hash("", 10),
 				)
 			)
 
 		if values:
-			frappe.db.sql(
+			nts.db.sql(
 				""" INSERT INTO
 				`tab{doctype}` ({field}, parent, parentfield, parenttype, creation, modified,
 					owner, modified_by, name)

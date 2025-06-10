@@ -1,14 +1,14 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Batch Item Expiry Status"] = {
+nts.query_reports["Batch Item Expiry Status"] = {
 	filters: [
 		{
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
 			width: "80",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[1],
+			default: prodman.utils.get_fiscal_year(nts.datetime.get_today(), true)[1],
 			reqd: 1,
 		},
 		{
@@ -16,7 +16,7 @@ frappe.query_reports["Batch Item Expiry Status"] = {
 			label: __("To Date"),
 			fieldtype: "Date",
 			width: "80",
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 			reqd: 1,
 		},
 		{

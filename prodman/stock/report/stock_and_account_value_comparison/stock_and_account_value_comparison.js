@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Stock and Account Value Comparison"] = {
+nts.query_reports["Stock and Account Value Comparison"] = {
 	filters: [
 		{
 			label: __("Company"),
@@ -9,7 +9,7 @@ frappe.query_reports["Stock and Account Value Comparison"] = {
 			fieldtype: "Link",
 			options: "Company",
 			reqd: 1,
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 		},
 		{
 			label: __("Account"),
@@ -17,7 +17,7 @@ frappe.query_reports["Stock and Account Value Comparison"] = {
 			fieldtype: "Link",
 			options: "Account",
 			get_query: function () {
-				var company = frappe.query_report.get_filter_value("company");
+				var company = nts.query_report.get_filter_value("company");
 				return {
 					filters: {
 						account_type: "Stock",
@@ -30,7 +30,7 @@ frappe.query_reports["Stock and Account Value Comparison"] = {
 			label: __("As On Date"),
 			fieldname: "as_on_date",
 			fieldtype: "Date",
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 		},
 	],
 
@@ -52,19 +52,19 @@ frappe.query_reports["Stock and Account Value Comparison"] = {
 				<p>Are you sure you want to create Reposting Entries?</p>
 				</div>
 			`;
-			let indexes = frappe.query_report.datatable.rowmanager.getCheckedRows();
-			let selected_rows = indexes.map((i) => frappe.query_report.data[i]);
+			let indexes = nts.query_report.datatable.rowmanager.getCheckedRows();
+			let selected_rows = indexes.map((i) => nts.query_report.data[i]);
 
 			if (!selected_rows.length) {
-				frappe.throw(__("Please select rows to create Reposting Entries"));
+				nts.throw(__("Please select rows to create Reposting Entries"));
 			}
 
-			frappe.confirm(__(message), () => {
-				frappe.call({
+			nts.confirm(__(message), () => {
+				nts.call({
 					method: "prodman.stock.report.stock_and_account_value_comparison.stock_and_account_value_comparison.create_reposting_entries",
 					args: {
 						rows: selected_rows,
-						company: frappe.query_report.get_filter_values().company,
+						company: nts.query_report.get_filter_values().company,
 					},
 				});
 			});

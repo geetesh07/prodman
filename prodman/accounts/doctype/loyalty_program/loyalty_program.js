@@ -1,9 +1,9 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.provide("prodman.accounts.dimensions");
+nts .provide("prodman.accounts.dimensions");
 
-frappe.ui.form.on("Loyalty Program", {
+nts .ui.form.on("Loyalty Program", {
 	setup: function (frm) {
 		var help_content = `<table class="table table-bordered" style="background-color: var(--scrollbar-track-color);">
 				<tr><td>
@@ -55,13 +55,13 @@ frappe.ui.form.on("Loyalty Program", {
 			};
 		});
 
-		frm.set_value("company", frappe.defaults.get_user_default("Company"));
+		frm.set_value("company", nts .defaults.get_user_default("Company"));
 		prodman.accounts.dimensions.setup_dimension_filters(frm, frm.doctype);
 	},
 
 	refresh: function (frm) {
 		if (frm.doc.loyalty_program_type === "Single Tier Program" && frm.doc.collection_rules.length > 1) {
-			frappe.throw(
+			nts .throw(
 				__("Please select the Multiple Tier Program type for more than one collection rules.")
 			);
 		}

@@ -1,12 +1,12 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _, scrub
-from frappe.query_builder import DocType
-from frappe.query_builder.functions import IfNull
-from frappe.utils import add_days, add_to_date, flt, getdate
+import nts
+from nts import _, scrub
+from nts.query_builder import DocType
+from nts.query_builder.functions import IfNull
+from nts.utils import add_days, add_to_date, flt, getdate
 
 from prodman.accounts.utils import get_fiscal_year
 
@@ -17,7 +17,7 @@ def execute(filters=None):
 
 class Analytics:
 	def __init__(self, filters=None):
-		self.filters = frappe._dict(filters or {})
+		self.filters = nts._dict(filters or {})
 		self.date_field = (
 			"transaction_date"
 			if self.filters.doc_type in ["Sales Order", "Purchase Order"]
@@ -46,10 +46,10 @@ class Analytics:
 		if (
 			selected_company
 			and self.filters.get("show_aggregate_value_from_subsidiary_companies")
-			and frappe.db.get_value("Company", selected_company, "is_group")
+			and nts.db.get_value("Company", selected_company, "is_group")
 		):
-			lft, rgt = frappe.db.get_value("Company", selected_company, ["lft", "rgt"])
-			child_companies = frappe.db.get_list(
+			lft, rgt = nts.db.get_value("Company", selected_company, ["lft", "rgt"])
+			child_companies = nts.db.get_list(
 				"Company", filters={"lft": [">", lft], "rgt": ["<", rgt]}, pluck="name"
 			)
 
@@ -147,7 +147,7 @@ class Analytics:
 		doctype = DocType(self.filters.doc_type)
 
 		self.entries = (
-			frappe.qb.from_(doctype)
+			nts.qb.from_(doctype)
 			.select(
 				doctype.order_type.as_("entity"),
 				doctype[self.date_field],
@@ -186,7 +186,7 @@ class Analytics:
 		if self.filters.doc_type in ["Sales Invoice", "Purchase Invoice", "Payment Entry"]:
 			filters.update({"is_opening": "No"})
 
-		self.entries = frappe.get_all(
+		self.entries = nts.get_all(
 			self.filters.doc_type, fields=[entity, entity_name, value_field, self.date_field], filters=filters
 		)
 
@@ -204,7 +204,7 @@ class Analytics:
 		doctype_item = DocType(f"{self.filters.doc_type} Item")
 
 		self.entries = (
-			frappe.qb.from_(doctype_item)
+			nts.qb.from_(doctype_item)
 			.join(doctype)
 			.on(doctype.name == doctype_item.parent)
 			.select(
@@ -248,7 +248,7 @@ class Analytics:
 		if self.filters.doc_type in ["Sales Invoice", "Purchase Invoice", "Payment Entry"]:
 			filters.update({"is_opening": "No"})
 
-		self.entries = frappe.get_all(
+		self.entries = nts.get_all(
 			self.filters.doc_type,
 			fields=[entity_field, value_field, self.date_field],
 			filters=filters,
@@ -265,7 +265,7 @@ class Analytics:
 		doctype_item = DocType(f"{self.filters.doc_type} Item")
 
 		self.entries = (
-			frappe.qb.from_(doctype_item)
+			nts.qb.from_(doctype_item)
 			.join(doctype)
 			.on(doctype.name == doctype_item.parent)
 			.select(
@@ -300,7 +300,7 @@ class Analytics:
 		if self.filters.doc_type in ["Sales Invoice", "Purchase Invoice", "Payment Entry"]:
 			filters.update({"is_opening": "No"})
 
-		self.entries = frappe.get_all(
+		self.entries = nts.get_all(
 			self.filters.doc_type, fields=[entity, value_field, self.date_field], filters=filters
 		)
 
@@ -339,7 +339,7 @@ class Analytics:
 				amount = flt(self.entity_periodic_data.get(d.name, {}).get(period, 0.0))
 				row[scrub(period)] = amount
 				if d.parent and (self.filters.tree_type != "Order Type" or d.parent == "Order Types"):
-					self.entity_periodic_data.setdefault(d.parent, frappe._dict()).setdefault(period, 0.0)
+					self.entity_periodic_data.setdefault(d.parent, nts._dict()).setdefault(period, 0.0)
 					self.entity_periodic_data[d.parent][period] += amount
 				total += amount
 
@@ -349,13 +349,13 @@ class Analytics:
 		self.data = out
 
 	def get_periodic_data(self):
-		self.entity_periodic_data = frappe._dict()
+		self.entity_periodic_data = nts._dict()
 
 		for d in self.entries:
 			if self.filters.tree_type == "Supplier Group":
 				d.entity = self.parent_child_map.get(d.entity)
 			period = self.get_period(d.get(self.date_field))
-			self.entity_periodic_data.setdefault(d.entity, frappe._dict()).setdefault(period, 0.0)
+			self.entity_periodic_data.setdefault(d.entity, nts._dict()).setdefault(period, 0.0)
 			self.entity_periodic_data[d.entity][period] += flt(d.value_field)
 
 			if self.filters.tree_type == "Item":
@@ -415,9 +415,9 @@ class Analytics:
 		if self.filters.tree_type == "Supplier Group":
 			parent = "parent_supplier_group"
 
-		self.depth_map = frappe._dict()
+		self.depth_map = nts._dict()
 
-		self.group_entries = frappe.db.sql(
+		self.group_entries = nts.db.sql(
 			f"""select name, lft, rgt , {parent} as parent
 			from `tab{self.filters.tree_type}` order by lft""",
 			as_dict=1,
@@ -430,9 +430,9 @@ class Analytics:
 				self.depth_map.setdefault(d.name, 0)
 
 	def get_teams(self):
-		self.depth_map = frappe._dict()
+		self.depth_map = nts._dict()
 
-		self.group_entries = frappe.db.sql(
+		self.group_entries = nts.db.sql(
 			f""" select * from (select "Order Types" as name, 0 as lft,
 			2 as rgt, '' as parent union select distinct order_type as name, 1 as lft, 1 as rgt, "Order Types" as parent
 			from `tab{self.filters.doc_type}` where ifnull(order_type, '') != '') as b order by lft, name
@@ -447,8 +447,8 @@ class Analytics:
 				self.depth_map.setdefault(d.name, 0)
 
 	def get_supplier_parent_child_map(self):
-		self.parent_child_map = frappe._dict(
-			frappe.db.sql(""" select name, supplier_group from `tabSupplier`""")
+		self.parent_child_map = nts._dict(
+			nts.db.sql(""" select name, supplier_group from `tabSupplier`""")
 		)
 
 	def get_chart_data(self):

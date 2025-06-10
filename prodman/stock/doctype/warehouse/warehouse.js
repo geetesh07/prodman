@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.ui.form.on("Warehouse", {
+nts.ui.form.on("Warehouse", {
 	setup: function (frm) {
 		frm.set_query("default_in_transit_warehouse", function (doc) {
 			return {
@@ -38,7 +38,7 @@ frappe.ui.form.on("Warehouse", {
 		frm.toggle_display(["address_html", "contact_html"], !frm.doc.__islocal);
 
 		if (!frm.is_new()) {
-			frappe.contacts.render_address_and_contact(frm);
+			nts.contacts.render_address_and_contact(frm);
 
 			if (frm.has_perm("write")) {
 				let enable_toggle = frm.doc.disabled ? "Enable" : "Disable";
@@ -57,29 +57,29 @@ frappe.ui.form.on("Warehouse", {
 				);
 			}
 
-			if ("Stock Balance" in frappe.boot.user.all_reports) {
+			if ("Stock Balance" in nts.boot.user.all_reports) {
 				frm.add_custom_button(__("Stock Balance"), function () {
-					frappe.set_route("query-report", "Stock Balance", {
+					nts.set_route("query-report", "Stock Balance", {
 						warehouse: frm.doc.name,
 						company: frm.doc.company,
 					});
 				});
 			}
 		} else {
-			frappe.contacts.clear_address_and_contact(frm);
+			nts.contacts.clear_address_and_contact(frm);
 		}
 
 		if (
 			!frm.doc.is_group &&
 			frm.doc.__onload?.account &&
-			"General Ledger" in frappe.boot.user.all_reports
+			"General Ledger" in nts.boot.user.all_reports
 		) {
 			frm.add_custom_button(__("General Ledger", null, "Warehouse"), function () {
-				frappe.route_options = {
+				nts.route_options = {
 					account: frm.doc.__onload.account,
 					company: frm.doc.company,
 				};
-				frappe.set_route("query-report", "General Ledger");
+				nts.set_route("query-report", "General Ledger");
 			});
 		}
 
@@ -88,7 +88,7 @@ frappe.ui.form.on("Warehouse", {
 });
 
 function convert_to_group_or_ledger(frm) {
-	frappe.call({
+	nts.call({
 		method: "prodman.stock.doctype.warehouse.warehouse.convert_to_group_or_ledger",
 		args: {
 			docname: frm.doc.name,

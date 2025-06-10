@@ -1,14 +1,14 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.contacts.doctype.address.address import get_company_address
-from frappe.desk.notifications import clear_doctype_notifications
-from frappe.model.mapper import get_mapped_doc
-from frappe.model.utils import get_fetch_values
-from frappe.utils import cint, flt
+import nts
+from nts import _
+from nts.contacts.doctype.address.address import get_company_address
+from nts.desk.notifications import clear_doctype_notifications
+from nts.model.mapper import get_mapped_doc
+from nts.model.utils import get_fetch_values
+from nts.utils import cint, flt
 
 from prodman.controllers.accounts_controller import get_taxes_and_charges, merge_taxes
 from prodman.controllers.selling_controller import SellingController
@@ -23,7 +23,7 @@ class DeliveryNote(SellingController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.accounts.doctype.pricing_rule_detail.pricing_rule_detail import PricingRuleDetail
 		from prodman.accounts.doctype.sales_taxes_and_charges.sales_taxes_and_charges import (
@@ -221,7 +221,7 @@ class DeliveryNote(SellingController):
 			else:
 				df.delete_key("__print_hide")
 
-		item_meta = frappe.get_meta("Delivery Note Item")
+		item_meta = nts.get_meta("Delivery Note Item")
 		print_hide_fields = {
 			"parent": ["grand_total", "rounded_total", "in_words", "currency", "total", "taxes"],
 			"items": ["rate", "amount", "discount_amount", "price_list_rate", "discount_percentage"],
@@ -236,7 +236,7 @@ class DeliveryNote(SellingController):
 	def set_actual_qty(self):
 		for d in self.get("items"):
 			if d.item_code and d.warehouse:
-				actual_qty = frappe.db.sql(
+				actual_qty = nts.db.sql(
 					"""select actual_qty from `tabBin`
 					where item_code = %s and warehouse = %s""",
 					(d.item_code, d.warehouse),
@@ -245,10 +245,10 @@ class DeliveryNote(SellingController):
 
 	def so_required(self):
 		"""check in manage account if sales order required or not"""
-		if frappe.db.get_single_value("Selling Settings", "so_required") == "Yes":
+		if nts.db.get_single_value("Selling Settings", "so_required") == "Yes":
 			for d in self.get("items"):
 				if not d.against_sales_order:
-					frappe.throw(_("Sales Order required for Item {0}").format(d.item_code))
+					nts.throw(_("Sales Order required for Item {0}").format(d.item_code))
 
 	def validate(self):
 		self.validate_posting_time()
@@ -312,7 +312,7 @@ class DeliveryNote(SellingController):
 		)
 
 		if (
-			cint(frappe.db.get_single_value("Selling Settings", "maintain_same_sales_rate"))
+			cint(nts.db.get_single_value("Selling Settings", "maintain_same_sales_rate"))
 			and not self.is_return
 			and not self.is_internal_customer
 		):
@@ -341,7 +341,7 @@ class DeliveryNote(SellingController):
 					"voucher_detail_no": item.pick_list_item,
 				}
 
-				bundle_id = frappe.db.get_value("Serial and Batch Bundle", filters, "name")
+				bundle_id = nts.db.get_value("Serial and Batch Bundle", filters, "name")
 
 				if bundle_id:
 					cls_obj = SerialBatchCreation(
@@ -383,24 +383,24 @@ class DeliveryNote(SellingController):
 			if missing_label and missing_label != "No Label":
 				errors.append(
 					_("The field {0} in row {1} is not set").format(
-						frappe.bold(_(missing_label)), frappe.bold(item.idx)
+						nts.bold(_(missing_label)), nts.bold(item.idx)
 					)
 				)
 
 		if errors:
-			frappe.throw("<br>".join(errors), title=error_title)
+			nts.throw("<br>".join(errors), title=error_title)
 
 	def validate_proj_cust(self):
 		"""check for does customer belong to same project as entered.."""
 		if self.project and self.customer:
-			res = frappe.db.sql(
+			res = nts.db.sql(
 				"""select name from `tabProject`
 				where name = %s and (customer = %s or
 					ifnull(customer,'')='')""",
 				(self.project, self.customer),
 			)
 			if not res:
-				frappe.throw(
+				nts.throw(
 					_("Customer {0} does not belong to project {1}").format(self.customer, self.project)
 				)
 
@@ -408,18 +408,18 @@ class DeliveryNote(SellingController):
 		super().validate_warehouse()
 
 		for d in self.get_item_list():
-			if not d["warehouse"] and frappe.get_cached_value("Item", d["item_code"], "is_stock_item") == 1:
-				frappe.throw(_("Warehouse required for stock Item {0}").format(d["item_code"]))
+			if not d["warehouse"] and nts.get_cached_value("Item", d["item_code"], "is_stock_item") == 1:
+				nts.throw(_("Warehouse required for stock Item {0}").format(d["item_code"]))
 
 	def update_current_stock(self):
 		if self.get("_action") and self._action != "update_after_submit":
 			for d in self.get("items"):
-				d.actual_qty = frappe.db.get_value(
+				d.actual_qty = nts.db.get_value(
 					"Bin", {"item_code": d.item_code, "warehouse": d.warehouse}, "actual_qty"
 				)
 
 			for d in self.get("packed_items"):
-				bin_qty = frappe.db.get_value(
+				bin_qty = nts.db.get_value(
 					"Bin",
 					{"item_code": d.item_code, "warehouse": d.warehouse},
 					["actual_qty", "projected_qty"],
@@ -434,7 +434,7 @@ class DeliveryNote(SellingController):
 		self.update_pick_list_status()
 
 		# Check for Approving Authority
-		frappe.get_doc("Authorization Control").validate_approving_authority(
+		nts.get_doc("Authorization Control").validate_approving_authority(
 			self.doctype, self.company, self.base_grand_total, self
 		)
 
@@ -523,15 +523,15 @@ class DeliveryNote(SellingController):
 				if item.warehouse not in reserved_warehouses:
 					msg = _("Row #{0}: Stock is reserved for item {1} in warehouse {2}.").format(
 						item.idx,
-						frappe.bold(item.item_code),
-						frappe.bold(reserved_warehouses[0])
+						nts.bold(item.item_code),
+						nts.bold(reserved_warehouses[0])
 						if len(reserved_warehouses) == 1
 						else _("{0} and {1}").format(
-							frappe.bold(", ".join(reserved_warehouses[:-1])),
-							frappe.bold(reserved_warehouses[-1]),
+							nts.bold(", ".join(reserved_warehouses[:-1])),
+							nts.bold(reserved_warehouses[-1]),
 						),
 					)
-					frappe.throw(msg, title=_("Stock Reservation Warehouse Mismatch"))
+					nts.throw(msg, title=_("Stock Reservation Warehouse Mismatch"))
 
 	def check_credit_limit(self):
 		from prodman.selling.doctype.customer.customer import check_credit_limit
@@ -542,7 +542,7 @@ class DeliveryNote(SellingController):
 		extra_amount = 0
 		validate_against_credit_limit = False
 		bypass_credit_limit_check_at_sales_order = cint(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Customer Credit Limit",
 				filters={"parent": self.customer, "parenttype": "Customer", "company": self.company},
 				fieldname="bypass_credit_limit_check",
@@ -569,7 +569,7 @@ class DeliveryNote(SellingController):
 	def validate_packed_qty(self):
 		"""Validate that if packed qty exists, it should be equal to qty"""
 
-		if frappe.db.exists("Packing Slip", {"docstatus": 1, "delivery_note": self.name}):
+		if nts.db.exists("Packing Slip", {"docstatus": 1, "delivery_note": self.name}):
 			product_bundle_list = self.get_product_bundle_list()
 			for item in self.items + self.packed_items:
 				if (
@@ -577,9 +577,9 @@ class DeliveryNote(SellingController):
 					and flt(item.packed_qty)
 					and flt(item.packed_qty) != flt(item.qty)
 				):
-					frappe.throw(
+					nts.throw(
 						_("Row {0}: Packed Qty must be equal to {1} Qty.").format(
-							item.idx, frappe.bold(item.doctype)
+							item.idx, nts.bold(item.doctype)
 						)
 					)
 
@@ -589,29 +589,29 @@ class DeliveryNote(SellingController):
 		update_pick_list_status(self.pick_list)
 
 	def check_next_docstatus(self):
-		submit_rv = frappe.db.sql(
+		submit_rv = nts.db.sql(
 			"""select t1.name
 			from `tabSales Invoice` t1,`tabSales Invoice Item` t2
 			where t1.name = t2.parent and t2.delivery_note = %s and t1.docstatus = 1""",
 			(self.name),
 		)
 		if submit_rv:
-			frappe.throw(_("Sales Invoice {0} has already been submitted").format(submit_rv[0][0]))
+			nts.throw(_("Sales Invoice {0} has already been submitted").format(submit_rv[0][0]))
 
-		submit_in = frappe.db.sql(
+		submit_in = nts.db.sql(
 			"""select t1.name
 			from `tabInstallation Note` t1, `tabInstallation Note Item` t2
 			where t1.name = t2.parent and t2.prevdoc_docname = %s and t1.docstatus = 1""",
 			(self.name),
 		)
 		if submit_in:
-			frappe.throw(_("Installation Note {0} has already been submitted").format(submit_in[0][0]))
+			nts.throw(_("Installation Note {0} has already been submitted").format(submit_in[0][0]))
 
 	def cancel_packing_slips(self):
 		"""
 		Cancel submitted packing slips related to this delivery note
 		"""
-		res = frappe.db.sql(
+		res = nts.db.sql(
 			"""SELECT name FROM `tabPacking Slip` WHERE delivery_note = %s
 			AND docstatus = 1""",
 			self.name,
@@ -619,9 +619,9 @@ class DeliveryNote(SellingController):
 
 		if res:
 			for r in res:
-				ps = frappe.get_doc("Packing Slip", r[0])
+				ps = nts.get_doc("Packing Slip", r[0])
 				ps.cancel()
-			frappe.msgprint(_("Packing Slip(s) cancelled"))
+			nts.msgprint(_("Packing Slip(s) cancelled"))
 
 	def update_status(self, status):
 		self.set_status(update=True, status=status)
@@ -637,7 +637,7 @@ class DeliveryNote(SellingController):
 				updated_delivery_notes += update_billed_amount_based_on_so(d.so_detail, update_modified)
 
 		for dn in set(updated_delivery_notes):
-			dn_doc = self if (dn == self.name) else frappe.get_doc("Delivery Note", dn)
+			dn_doc = self if (dn == self.name) else nts.get_doc("Delivery Note", dn)
 			dn_doc.update_billing_percentage(update_modified=update_modified)
 
 		self.load_from_db()
@@ -649,11 +649,11 @@ class DeliveryNote(SellingController):
 			return_invoice.save()
 			return_invoice.submit()
 
-			credit_note_link = frappe.utils.get_link_to_form("Sales Invoice", return_invoice.name)
+			credit_note_link = nts.utils.get_link_to_form("Sales Invoice", return_invoice.name)
 
-			frappe.msgprint(_("Credit Note {0} has been created automatically").format(credit_note_link))
+			nts.msgprint(_("Credit Note {0} has been created automatically").format(credit_note_link))
 		except Exception:
-			frappe.throw(
+			nts.throw(
 				_(
 					"Could not create Credit Note automatically, please uncheck 'Issue Credit Note' and submit again"
 				)
@@ -670,7 +670,7 @@ class DeliveryNote(SellingController):
 
 	def get_product_bundle_list(self):
 		items_list = [item.item_code for item in self.items]
-		return frappe.db.get_all(
+		return nts.db.get_all(
 			"Product Bundle",
 			filters={"new_item_code": ["in", items_list], "disabled": 0},
 			pluck="name",
@@ -678,15 +678,15 @@ class DeliveryNote(SellingController):
 
 
 def update_billed_amount_based_on_so(so_detail, update_modified=True):
-	from frappe.query_builder.functions import Sum
+	from nts.query_builder.functions import Sum
 
 	# Billed against Sales Order directly
-	si = frappe.qb.DocType("Sales Invoice").as_("si")
-	si_item = frappe.qb.DocType("Sales Invoice Item").as_("si_item")
+	si = nts.qb.DocType("Sales Invoice").as_("si")
+	si_item = nts.qb.DocType("Sales Invoice Item").as_("si_item")
 	sum_amount = Sum(si_item.amount).as_("amount")
 
 	billed_against_so = (
-		frappe.qb.from_(si_item)
+		nts.qb.from_(si_item)
 		.join(si)
 		.on(si.name == si_item.parent)
 		.select(sum_amount)
@@ -701,11 +701,11 @@ def update_billed_amount_based_on_so(so_detail, update_modified=True):
 	billed_against_so = billed_against_so and billed_against_so[0][0] or 0
 
 	# Get all Delivery Note Item rows against the Sales Order Item row
-	dn = frappe.qb.DocType("Delivery Note").as_("dn")
-	dn_item = frappe.qb.DocType("Delivery Note Item").as_("dn_item")
+	dn = nts.qb.DocType("Delivery Note").as_("dn")
+	dn_item = nts.qb.DocType("Delivery Note Item").as_("dn_item")
 
 	dn_details = (
-		frappe.qb.from_(dn)
+		nts.qb.from_(dn)
 		.from_(dn_item)
 		.select(dn_item.name, dn_item.amount, dn_item.si_detail, dn_item.parent)
 		.where(
@@ -728,7 +728,7 @@ def update_billed_amount_based_on_so(so_detail, update_modified=True):
 			billed_against_so -= billed_amt_agianst_dn
 		else:
 			# Get billed amount directly against Delivery Note
-			billed_amt_agianst_dn = frappe.db.sql(
+			billed_amt_agianst_dn = nts.db.sql(
 				"""select sum(amount) from `tabSales Invoice Item`
 				where dn_detail=%s and docstatus=1""",
 				dnd.name,
@@ -745,7 +745,7 @@ def update_billed_amount_based_on_so(so_detail, update_modified=True):
 				billed_amt_agianst_dn += billed_against_so
 				billed_against_so = 0
 
-		frappe.db.set_value(
+		nts.db.set_value(
 			"Delivery Note Item",
 			dnd.name,
 			"billed_amt",
@@ -777,7 +777,7 @@ def get_invoiced_qty_map(delivery_note):
 	"""returns a map: {dn_detail: invoiced_qty}"""
 	invoiced_qty_map = {}
 
-	for dn_detail, qty in frappe.db.sql(
+	for dn_detail, qty in nts.db.sql(
 		"""select dn_detail, qty from `tabSales Invoice Item`
 		where delivery_note=%s and docstatus=1""",
 		delivery_note,
@@ -791,8 +791,8 @@ def get_invoiced_qty_map(delivery_note):
 
 def get_returned_qty_map(delivery_note):
 	"""returns a map: {so_detail: returned_qty}"""
-	returned_qty_map = frappe._dict(
-		frappe.db.sql(
+	returned_qty_map = nts._dict(
+		nts.db.sql(
 			"""select dn_item.dn_detail, abs(dn_item.qty) as qty
 		from `tabDelivery Note Item` dn_item, `tabDelivery Note` dn
 		where dn.name = dn_item.parent
@@ -807,9 +807,9 @@ def get_returned_qty_map(delivery_note):
 	return returned_qty_map
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_sales_invoice(source_name, target_doc=None, args=None):
-	doc = frappe.get_doc("Delivery Note", source_name)
+	doc = nts.get_doc("Delivery Note", source_name)
 
 	to_make_invoice_qty_map = {}
 	returned_qty_map = get_returned_qty_map(source_name)
@@ -820,7 +820,7 @@ def make_sales_invoice(source_name, target_doc=None, args=None):
 		target.run_method("set_po_nos")
 
 		if len(target.get("items")) == 0:
-			frappe.throw(_("All these items have already been Invoiced/Returned"))
+			nts.throw(_("All these items have already been Invoiced/Returned"))
 
 		if args and args.get("merge_taxes"):
 			merge_taxes(source.get("taxes") or [], target)
@@ -899,7 +899,7 @@ def make_sales_invoice(source_name, target_doc=None, args=None):
 	)
 
 	automatically_fetch_payment_terms = cint(
-		frappe.db.get_single_value("Accounts Settings", "automatically_fetch_payment_terms")
+		nts.db.get_single_value("Accounts Settings", "automatically_fetch_payment_terms")
 	)
 	if automatically_fetch_payment_terms and not doc.is_return:
 		doc.set_payment_schedule()
@@ -907,7 +907,7 @@ def make_sales_invoice(source_name, target_doc=None, args=None):
 	return doc
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_delivery_trip(source_name, target_doc=None, kwargs=None):
 	def update_stop_details(source_doc, target_doc, source_parent):
 		target_doc.customer = source_parent.customer
@@ -940,7 +940,7 @@ def make_delivery_trip(source_name, target_doc=None, kwargs=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_installation_note(source_name, target_doc=None, kwargs=None):
 	def update_item(obj, target, source_parent):
 		target.qty = flt(obj.qty) - flt(obj.installed_qty)
@@ -968,7 +968,7 @@ def make_installation_note(source_name, target_doc=None, kwargs=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_packing_slip(source_name, target_doc=None):
 	def set_missing_values(source, target):
 		target.run_method("set_missing_values")
@@ -998,7 +998,7 @@ def make_packing_slip(source_name, target_doc=None):
 				},
 				"postprocess": update_item,
 				"condition": lambda item: (
-					not frappe.db.exists("Product Bundle", {"new_item_code": item.item_code, "disabled": 0})
+					not nts.db.exists("Product Bundle", {"new_item_code": item.item_code, "disabled": 0})
 					and flt(item.packed_qty) < flt(item.qty)
 				),
 			},
@@ -1023,11 +1023,11 @@ def make_packing_slip(source_name, target_doc=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_shipment(source_name, target_doc=None):
 	def postprocess(source, target):
-		user = frappe.db.get_value(
-			"User", frappe.session.user, ["email", "full_name", "phone", "mobile_no"], as_dict=1
+		user = nts.db.get_value(
+			"User", nts.session.user, ["email", "full_name", "phone", "mobile_no"], as_dict=1
 		)
 		target.pickup_contact_email = user.email
 		pickup_contact_display = f"{user.full_name}"
@@ -1041,10 +1041,10 @@ def make_shipment(source_name, target_doc=None):
 		target.pickup_contact = pickup_contact_display
 
 		# As we are using session user details in the pickup_contact then pickup_contact_person will be session user
-		target.pickup_contact_person = frappe.session.user
+		target.pickup_contact_person = nts.session.user
 
 		if source.contact_person:
-			contact = frappe.db.get_value(
+			contact = nts.db.get_value(
 				"Contact", source.contact_person, ["email_id", "phone", "mobile_no"], as_dict=1
 			)
 			delivery_contact_display = f"{source.contact_display}"
@@ -1098,20 +1098,20 @@ def make_shipment(source_name, target_doc=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_sales_return(source_name, target_doc=None):
 	from prodman.controllers.sales_and_purchase_return import make_return_doc
 
 	return make_return_doc("Delivery Note", source_name, target_doc)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def update_delivery_note_status(docname, status):
-	dn = frappe.get_doc("Delivery Note", docname)
+	dn = nts.get_doc("Delivery Note", docname)
 	dn.update_status(status)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_inter_company_purchase_receipt(source_name, target_doc=None):
 	return make_inter_company_transaction("Delivery Note", source_name, target_doc)
 
@@ -1126,12 +1126,12 @@ def make_inter_company_transaction(doctype, source_name, target_doc=None):
 	)
 
 	if doctype == "Delivery Note":
-		source_doc = frappe.get_doc(doctype, source_name)
+		source_doc = nts.get_doc(doctype, source_name)
 		target_doctype = "Purchase Receipt"
 		source_document_warehouse_field = "target_warehouse"
 		target_document_warehouse_field = "from_warehouse"
 	else:
-		source_doc = frappe.get_doc(doctype, source_name)
+		source_doc = nts.get_doc(doctype, source_name)
 		target_doctype = "Delivery Note"
 		source_document_warehouse_field = "from_warehouse"
 		target_document_warehouse_field = "target_warehouse"
@@ -1153,11 +1153,11 @@ def make_inter_company_transaction(doctype, source_name, target_doc=None):
 				target.append("taxes", tax)
 
 		if not target.get("items"):
-			frappe.throw(_("All items have already been received"))
+			nts.throw(_("All items have already been received"))
 
 	def update_details(source_doc, target_doc, source_parent):
 		def _validate_address_link(address, link_doctype, link_name):
-			return frappe.db.get_value(
+			return nts.db.get_value(
 				"Dynamic Link",
 				{
 					"parent": address,

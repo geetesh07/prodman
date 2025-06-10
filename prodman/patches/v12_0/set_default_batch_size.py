@@ -1,11 +1,11 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("manufacturing", "doctype", "bom_operation")
-	frappe.reload_doc("manufacturing", "doctype", "work_order_operation")
+	nts.reload_doc("manufacturing", "doctype", "bom_operation")
+	nts.reload_doc("manufacturing", "doctype", "work_order_operation")
 
-	frappe.db.sql(
+	nts.db.sql(
 		"""
         UPDATE
             `tabBOM Operation` bo
@@ -13,7 +13,7 @@ def execute():
             bo.batch_size = 1
     """
 	)
-	frappe.db.sql(
+	nts.db.sql(
 		"""
         UPDATE
             `tabWork Order Operation` wop

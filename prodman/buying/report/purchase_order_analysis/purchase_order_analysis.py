@@ -1,13 +1,13 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import copy
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import IfNull, Sum
-from frappe.utils import date_diff, flt, getdate
+import nts
+from nts import _
+from nts.query_builder.functions import IfNull, Sum
+from nts.utils import date_diff, flt, getdate
 
 
 def execute(filters=None):
@@ -33,18 +33,18 @@ def validate_filters(filters):
 	from_date, to_date = filters.get("from_date"), filters.get("to_date")
 
 	if not from_date and to_date:
-		frappe.throw(_("From and To Dates are required."))
+		nts.throw(_("From and To Dates are required."))
 	elif date_diff(to_date, from_date) < 0:
-		frappe.throw(_("To Date cannot be before From Date."))
+		nts.throw(_("To Date cannot be before From Date."))
 
 
 def get_data(filters):
-	po = frappe.qb.DocType("Purchase Order")
-	po_item = frappe.qb.DocType("Purchase Order Item")
-	pi_item = frappe.qb.DocType("Purchase Invoice Item")
+	po = nts.qb.DocType("Purchase Order")
+	po_item = nts.qb.DocType("Purchase Order Item")
+	pi_item = nts.qb.DocType("Purchase Invoice Item")
 
 	query = (
-		frappe.qb.from_(po)
+		nts.qb.from_(po)
 		.inner_join(po_item)
 		.on(po_item.parent == po.name)
 		.left_join(pi_item)
@@ -103,16 +103,16 @@ def update_received_amount(data):
 
 
 def get_received_amount_data(data):
-	pr = frappe.qb.DocType("Purchase Receipt")
-	pr_item = frappe.qb.DocType("Purchase Receipt Item")
+	pr = nts.qb.DocType("Purchase Receipt")
+	pr_item = nts.qb.DocType("Purchase Receipt Item")
 
 	po_items = [row.name for row in data]
 
 	if not po_items:
-		return frappe._dict()
+		return nts._dict()
 
 	query = (
-		frappe.qb.from_(pr)
+		nts.qb.from_(pr)
 		.inner_join(pr_item)
 		.on(pr_item.parent == pr.name)
 		.select(
@@ -126,9 +126,9 @@ def get_received_amount_data(data):
 	data = query.run()
 
 	if not data:
-		return frappe._dict()
+		return nts._dict()
 
-	return frappe._dict(data)
+	return nts._dict(data)
 
 
 def prepare_data(data, filters):

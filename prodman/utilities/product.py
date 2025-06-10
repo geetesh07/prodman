@@ -1,31 +1,31 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe.utils import cint, flt, fmt_money
+import nts
+from nts.utils import cint, flt, fmt_money
 
 from prodman.accounts.doctype.pricing_rule.pricing_rule import get_pricing_rule_for_item
 
 
 def get_price(item_code, price_list, customer_group, company, qty=1, party=None):
-	template_item_code = frappe.db.get_value("Item", item_code, "variant_of")
+	template_item_code = nts.db.get_value("Item", item_code, "variant_of")
 
 	if price_list:
-		price = frappe.get_all(
+		price = nts.get_all(
 			"Item Price",
 			fields=["price_list_rate", "currency"],
 			filters={"price_list": price_list, "item_code": item_code},
 		)
 
 		if template_item_code and not price:
-			price = frappe.get_all(
+			price = nts.get_all(
 				"Item Price",
 				fields=["price_list_rate", "currency"],
 				filters={"price_list": price_list, "item_code": template_item_code},
 			)
 
 		if price:
-			pricing_rule_dict = frappe._dict(
+			pricing_rule_dict = nts._dict(
 				{
 					"item_code": item_code,
 					"qty": qty,
@@ -36,7 +36,7 @@ def get_price(item_code, price_list, customer_group, company, qty=1, party=None)
 					"company": company,
 					"conversion_rate": 1,
 					"for_shopping_cart": True,
-					"currency": frappe.db.get_value("Price List", price_list, "currency"),
+					"currency": nts.db.get_value("Price List", price_list, "currency"),
 					"doctype": "Quotation",
 				}
 			)
@@ -74,15 +74,15 @@ def get_price(item_code, price_list, customer_group, company, qty=1, party=None)
 					price_obj["formatted_mrp"] = fmt_money(mrp, currency=price_obj["currency"])
 
 				price_obj["currency_symbol"] = (
-					not cint(frappe.db.get_default("hide_currency_symbol"))
+					not cint(nts.db.get_default("hide_currency_symbol"))
 					and (
-						frappe.db.get_value("Currency", price_obj.currency, "symbol", cache=True)
+						nts.db.get_value("Currency", price_obj.currency, "symbol", cache=True)
 						or price_obj.currency
 					)
 					or ""
 				)
 
-				uom_conversion_factor = frappe.db.sql(
+				uom_conversion_factor = nts.db.sql(
 					"""select	C.conversion_factor
 					from `tabUOM Conversion Detail` C
 					inner join `tabItem` I on C.parent = I.name and C.uom = I.sales_uom
@@ -158,7 +158,7 @@ def get_item_codes_by_attributes(attribute_filters, template_item_code=None):
 				NULL
 		"""
 
-		item_codes = set([r[0] for r in frappe.db.sql(query, query_values)])
+		item_codes = set([r[0] for r in nts.db.sql(query, query_values)])
 		items.append(item_codes)
 
 	res = list(set.intersection(*items))

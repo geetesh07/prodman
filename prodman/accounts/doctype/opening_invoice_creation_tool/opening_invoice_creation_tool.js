@@ -1,7 +1,7 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Opening Invoice Creation Tool", {
+nts .ui.form.on("Opening Invoice Creation Tool", {
 	setup: function (frm) {
 		frm.set_query("party_type", "invoices", function (doc, cdt, cdn) {
 			return {
@@ -15,7 +15,7 @@ frappe.ui.form.on("Opening Invoice Creation Tool", {
 			frm.trigger("setup_company_filters");
 		}
 
-		frappe.realtime.on("opening_invoice_creation_progress", (data) => {
+		nts .realtime.on("opening_invoice_creation_progress", (data) => {
 			if (!frm.doc.import_in_progress) {
 				frm.dashboard.reset();
 				frm.doc.import_in_progress = true;
@@ -30,9 +30,9 @@ frappe.ui.form.on("Opening Invoice Creation Tool", {
 						frm.dashboard.hide_progress();
 
 						if (frm.doc.invoice_type == "Sales") {
-							frappe.msgprint(__("Opening Sales Invoices have been created."));
+							nts .msgprint(__("Opening Sales Invoices have been created."));
 						} else {
-							frappe.msgprint(__("Opening Purchase Invoices have been created."));
+							nts .msgprint(__("Opening Purchase Invoices have been created."));
 						}
 					},
 					1500,
@@ -104,7 +104,7 @@ frappe.ui.form.on("Opening Invoice Creation Tool", {
 		if (frm.doc.company) {
 			frm.trigger("setup_company_filters");
 
-			frappe.call({
+			nts .call({
 				method: "prodman.accounts.doctype.opening_invoice_creation_tool.opening_invoice_creation_tool.get_temporary_opening_account",
 				args: {
 					company: frm.doc.company,
@@ -133,7 +133,7 @@ frappe.ui.form.on("Opening Invoice Creation Tool", {
 		let opening_invoices_summary = frm.doc.__onload.opening_invoices_summary;
 		if (!$.isEmptyObject(opening_invoices_summary)) {
 			let section = frm.dashboard.add_section(
-				frappe.render_template("opening_invoice_creation_tool_dashboard", {
+				nts .render_template("opening_invoice_creation_tool_dashboard", {
 					data: opening_invoices_summary,
 					max_count: max_count,
 				}),
@@ -143,7 +143,7 @@ frappe.ui.form.on("Opening Invoice Creation Tool", {
 			section.on("click", ".invoice-link", function () {
 				let doctype = $(this).attr("data-type");
 				let company = $(this).attr("data-company");
-				frappe.set_route("List", doctype, { is_opening: "Yes", company: company, docstatus: 1 });
+				nts .set_route("List", doctype, { is_opening: "Yes", company: company, docstatus: 1 });
 			});
 			frm.dashboard.show();
 		}
@@ -164,7 +164,7 @@ frappe.ui.form.on("Opening Invoice Creation Tool", {
 	},
 });
 
-frappe.ui.form.on("Opening Invoice Creation Tool Item", {
+nts .ui.form.on("Opening Invoice Creation Tool Item", {
 	invoices_add: (frm) => {
 		frm.trigger("update_invoice_table");
 	},

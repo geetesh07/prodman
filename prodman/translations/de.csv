@@ -5671,7 +5671,7 @@ Enable Shopify,Aktivieren Sie Shopify,
 App Type,App-Typ,
 Last Sync Datetime,Letztes Sync-Datum,
 Shop URL,Shop-URL,
-eg: frappe.myshopify.com,z.B.: frappe.myshopify.com,
+eg: nts.myshopify.com,z.B.: nts.myshopify.com,
 Shared secret,Geteiltes Geheimnis,
 Webhooks Details,Webhooks Details,
 Webhooks,Webhooks,
@@ -9414,7 +9414,7 @@ Sie können <a href=""https://jinja.palletsprojects.com/en/2.11.x/"" target=""_b
 <p>Beispiel: Wenn Ihr Endpunkt exchange.com/2021-08-01 lautet, dann müssen Sie exchange.com/{transaction_date} eingeben.</p>",
 "<h4>Body Text and Closing Text Example</h4>
 
-<div>We have noticed that you have not yet paid invoice {{sales_invoice}} for {{frappe.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}. This is a friendly reminder that the invoice was due on {{due_date}}. Please pay the amount due immediately to avoid any further dunning cost.</div>
+<div>We have noticed that you have not yet paid invoice {{sales_invoice}} for {{nts.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}. This is a friendly reminder that the invoice was due on {{due_date}}. Please pay the amount due immediately to avoid any further dunning cost.</div>
 
 <h4>How to get fieldnames</h4>
 
@@ -9424,7 +9424,7 @@ Sie können <a href=""https://jinja.palletsprojects.com/en/2.11.x/"" target=""_b
 
 <p>Templates are compiled using the Jinja Templating Language. To learn more about Jinja, <a class=""strong"" href=""http://jinja.pocoo.org/docs/dev/templates/"">read this documentation.</a></p>","<h4>Textkörper und Schlusstext Beispiel</h4>
 
-<div>Wir haben festgestellt, dass Sie die Rechnung {{sales_invoice}} für {{frappe.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}} noch nicht bezahlt haben. Dies ist eine freundliche Erinnerung daran, dass die Rechnung am {{due_date}}fällig war. Bitte zahlen Sie den fälligen Betrag sofort, um weitere Mahngebühren zu vermeiden.</div>
+<div>Wir haben festgestellt, dass Sie die Rechnung {{sales_invoice}} für {{nts.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}} noch nicht bezahlt haben. Dies ist eine freundliche Erinnerung daran, dass die Rechnung am {{due_date}}fällig war. Bitte zahlen Sie den fälligen Betrag sofort, um weitere Mahngebühren zu vermeiden.</div>
 
 <h4>Feldnamen herausfinden</h4>
 

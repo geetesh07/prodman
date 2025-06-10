@@ -1,11 +1,11 @@
-// Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.provide("prodman.buying");
+nts.provide("prodman.buying");
 
 prodman.landed_cost_taxes_and_charges.setup_triggers("Subcontracting Receipt");
 
-frappe.ui.form.on("Subcontracting Receipt", {
+nts.ui.form.on("Subcontracting Receipt", {
 	setup: (frm) => {
 		frm.ignore_doctypes_on_cancel_all = ["Serial and Batch Bundle"];
 		frm.get_field("supplied_items").grid.cannot_add_rows = true;
@@ -22,26 +22,26 @@ frappe.ui.form.on("Subcontracting Receipt", {
 	},
 
 	refresh_serial_batch_bundle_field(frm) {
-		frappe.route_hooks.after_submit = (frm_obj) => {
+		nts.route_hooks.after_submit = (frm_obj) => {
 			frm_obj.reload_doc();
 		};
 	},
 
 	refresh: (frm) => {
-		frappe.dynamic_link = { doc: frm.doc, fieldname: "supplier", doctype: "Supplier" };
+		nts.dynamic_link = { doc: frm.doc, fieldname: "supplier", doctype: "Supplier" };
 
 		if (frm.doc.docstatus === 1) {
 			frm.add_custom_button(
 				__("Stock Ledger"),
 				() => {
-					frappe.route_options = {
+					nts.route_options = {
 						voucher_no: frm.doc.name,
 						from_date: frm.doc.posting_date,
 						to_date: moment(frm.doc.modified).format("YYYY-MM-DD"),
 						company: frm.doc.company,
 						show_cancelled_entries: frm.doc.docstatus === 2,
 					};
-					frappe.set_route("query-report", "Stock Ledger");
+					nts.set_route("query-report", "Stock Ledger");
 				},
 				__("View")
 			);
@@ -49,7 +49,7 @@ frappe.ui.form.on("Subcontracting Receipt", {
 			frm.add_custom_button(
 				__("Accounting Ledger"),
 				() => {
-					frappe.route_options = {
+					nts.route_options = {
 						voucher_no: frm.doc.name,
 						from_date: frm.doc.posting_date,
 						to_date: moment(frm.doc.modified).format("YYYY-MM-DD"),
@@ -57,7 +57,7 @@ frappe.ui.form.on("Subcontracting Receipt", {
 						categorize_by: "Categorize by Voucher (Consolidated)",
 						show_cancelled_entries: frm.doc.docstatus === 2,
 					};
-					frappe.set_route("query-report", "General Ledger");
+					nts.set_route("query-report", "General Ledger");
 				},
 				__("View")
 			);
@@ -66,7 +66,7 @@ frappe.ui.form.on("Subcontracting Receipt", {
 				frm.add_custom_button(
 					__("Purchase Receipt"),
 					() => {
-						frappe.model.open_mapped_doc({
+						nts.model.open_mapped_doc({
 							method: "prodman.subcontracting.doctype.subcontracting_receipt.subcontracting_receipt.make_purchase_receipt",
 							frm: frm,
 							freeze: true,
@@ -82,7 +82,7 @@ frappe.ui.form.on("Subcontracting Receipt", {
 			frm.add_custom_button(
 				__("Subcontract Return"),
 				() => {
-					frappe.model.open_mapped_doc({
+					nts.model.open_mapped_doc({
 						method: "prodman.subcontracting.doctype.subcontracting_receipt.subcontracting_receipt.make_subcontract_return",
 						frm: frm,
 					});
@@ -97,7 +97,7 @@ frappe.ui.form.on("Subcontracting Receipt", {
 				__("Subcontracting Order"),
 				() => {
 					if (!frm.doc.supplier) {
-						frappe.throw({
+						nts.throw({
 							title: __("Mandatory"),
 							message: __("Please Select a Supplier"),
 						});
@@ -141,7 +141,7 @@ frappe.ui.form.on("Subcontracting Receipt", {
 	},
 
 	get_scrap_items: (frm) => {
-		frappe.call({
+		nts.call({
 			doc: frm.doc,
 			method: "get_scrap_items",
 			args: {
@@ -350,7 +350,7 @@ frappe.ui.form.on("Subcontracting Receipt", {
 	},
 });
 
-frappe.ui.form.on("Landed Cost Taxes and Charges", {
+nts.ui.form.on("Landed Cost Taxes and Charges", {
 	amount: (frm, cdt, cdn) => {
 		set_missing_values(frm);
 		frm.events.set_base_amount(frm, cdt, cdn);
@@ -365,7 +365,7 @@ frappe.ui.form.on("Landed Cost Taxes and Charges", {
 	},
 });
 
-frappe.ui.form.on("Subcontracting Receipt Item", {
+nts.ui.form.on("Subcontracting Receipt Item", {
 	item_code(frm) {
 		set_missing_values(frm);
 	},
@@ -385,7 +385,7 @@ frappe.ui.form.on("Subcontracting Receipt Item", {
 	add_serial_batch_bundle(frm, cdt, cdn) {
 		let item = locals[cdt][cdn];
 
-		frappe.db.get_value("Item", item.item_code, ["has_batch_no", "has_serial_no"]).then((r) => {
+		nts.db.get_value("Item", item.item_code, ["has_batch_no", "has_serial_no"]).then((r) => {
 			if (r.message && (r.message.has_batch_no || r.message.has_serial_no)) {
 				item.has_serial_no = r.message.has_serial_no;
 				item.has_batch_no = r.message.has_batch_no;
@@ -409,7 +409,7 @@ frappe.ui.form.on("Subcontracting Receipt Item", {
 							update_values["warehouse"] = r.warehouse;
 						}
 
-						frappe.model.set_value(item.doctype, item.name, update_values);
+						nts.model.set_value(item.doctype, item.name, update_values);
 					}
 				});
 			}
@@ -419,7 +419,7 @@ frappe.ui.form.on("Subcontracting Receipt Item", {
 	add_serial_batch_for_rejected_qty(frm, cdt, cdn) {
 		let item = locals[cdt][cdn];
 
-		frappe.db.get_value("Item", item.item_code, ["has_batch_no", "has_serial_no"]).then((r) => {
+		nts.db.get_value("Item", item.item_code, ["has_batch_no", "has_serial_no"]).then((r) => {
 			if (r.message && (r.message.has_batch_no || r.message.has_serial_no)) {
 				item.has_serial_no = r.message.has_serial_no;
 				item.has_batch_no = r.message.has_batch_no;
@@ -444,7 +444,7 @@ frappe.ui.form.on("Subcontracting Receipt Item", {
 							update_values["rejected_warehouse"] = r.warehouse;
 						}
 
-						frappe.model.set_value(item.doctype, item.name, update_values);
+						nts.model.set_value(item.doctype, item.name, update_values);
 					}
 				});
 			}
@@ -452,7 +452,7 @@ frappe.ui.form.on("Subcontracting Receipt Item", {
 	},
 });
 
-frappe.ui.form.on("Subcontracting Receipt Supplied Item", {
+nts.ui.form.on("Subcontracting Receipt Supplied Item", {
 	consumed_qty(frm) {
 		set_missing_values(frm);
 	},
@@ -463,7 +463,7 @@ frappe.ui.form.on("Subcontracting Receipt Supplied Item", {
 		item.item_code = item.rm_item_code;
 		item.qty = item.consumed_qty;
 		item.warehouse = frm.doc.supplier_warehouse;
-		frappe.db.get_value("Item", item.item_code, ["has_batch_no", "has_serial_no"]).then((r) => {
+		nts.db.get_value("Item", item.item_code, ["has_batch_no", "has_serial_no"]).then((r) => {
 			if (r.message && (r.message.has_batch_no || r.message.has_serial_no)) {
 				item.has_serial_no = r.message.has_serial_no;
 				item.has_batch_no = r.message.has_batch_no;
@@ -484,7 +484,7 @@ frappe.ui.form.on("Subcontracting Receipt Supplied Item", {
 								qty / flt(item.conversion_factor || 1, precision("conversion_factor", item)),
 						};
 
-						frappe.model.set_value(item.doctype, item.name, update_values);
+						nts.model.set_value(item.doctype, item.name, update_values);
 					}
 				});
 			}
@@ -498,7 +498,7 @@ let set_warehouse_in_children = (child_table, warehouse_field, warehouse) => {
 };
 
 let set_missing_values = (frm) => {
-	frappe.call({
+	nts.call({
 		doc: frm.doc,
 		method: "set_missing_values",
 		callback: (r) => {

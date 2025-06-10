@@ -1,7 +1,7 @@
-// Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2020, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Repost Item Valuation", {
+nts.ui.form.on("Repost Item Valuation", {
 	setup: function (frm) {
 		frm.set_query("warehouse", () => {
 			let filters = {
@@ -61,7 +61,7 @@ frappe.ui.form.on("Repost Item Valuation", {
 	},
 
 	setup_realtime_progress: function (frm) {
-		frappe.realtime.on("item_reposting_progress", (data) => {
+		nts.realtime.on("item_reposting_progress", (data) => {
 			if (frm.doc.name !== data.name) {
 				return;
 			}
@@ -93,10 +93,10 @@ frappe.ui.form.on("Repost Item Valuation", {
 
 	execute_reposting(frm) {
 		frm.add_custom_button(__("Start Reposting"), () => {
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.doctype.repost_item_valuation.repost_item_valuation.execute_repost_item_valuation",
 				callback: function () {
-					frappe.msgprint(__("Reposting has been started in the background."));
+					nts.msgprint(__("Reposting has been started in the background."));
 				},
 			});
 		});
@@ -124,7 +124,7 @@ frappe.ui.form.on("Repost Item Valuation", {
 	},
 
 	restart_reposting: function (frm) {
-		frappe.call({
+		nts.call({
 			method: "restart_reposting",
 			doc: frm.doc,
 			callback: function (r) {

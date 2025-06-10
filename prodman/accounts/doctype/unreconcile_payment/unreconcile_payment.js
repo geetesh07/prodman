@@ -1,7 +1,7 @@
-// Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Unreconcile Payment", {
+nts .ui.form.on("Unreconcile Payment", {
 	refresh(frm) {
 		frm.set_query("voucher_type", function () {
 			return {
@@ -22,7 +22,7 @@ frappe.ui.form.on("Unreconcile Payment", {
 	},
 	get_allocations: function (frm) {
 		frm.clear_table("allocations");
-		frappe.call({
+		nts .call({
 			method: "get_allocations_from_payment",
 			doc: frm.doc,
 			callback: function (r) {

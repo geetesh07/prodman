@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.ui.form.on("Batch", {
+nts.ui.form.on("Batch", {
 	setup: (frm) => {
 		frm.set_query("item", () => {
 			return {
@@ -16,19 +16,19 @@ frappe.ui.form.on("Batch", {
 	refresh: (frm) => {
 		if (!frm.is_new()) {
 			frm.add_custom_button(__("View Ledger"), () => {
-				frappe.route_options = {
+				nts.route_options = {
 					batch_no: frm.doc.name,
 				};
-				frappe.set_route("query-report", "Stock Ledger");
+				nts.set_route("query-report", "Stock Ledger");
 			});
 			frm.trigger("make_dashboard");
 		}
 	},
 	item: (frm) => {
-		// frappe.db.get_value('Item', {name: frm.doc.item}, 'has_expiry_date', (r) => {
+		// nts.db.get_value('Item', {name: frm.doc.item}, 'has_expiry_date', (r) => {
 		// 	frm.toggle_reqd('expiry_date', r.has_expiry_date);
 		// });
-		frappe.db.get_value(
+		nts.db.get_value(
 			"Item",
 			{ name: frm.doc.item },
 			["shelf_life_in_days", "has_expiry_date"],
@@ -37,7 +37,7 @@ frappe.ui.form.on("Batch", {
 					// Calculate expiry date based on shelf_life_in_days
 					frm.set_value(
 						"expiry_date",
-						frappe.datetime.add_days(frm.doc.manufacturing_date, r.shelf_life_in_days)
+						nts.datetime.add_days(frm.doc.manufacturing_date, r.shelf_life_in_days)
 					);
 				} else if (r.has_expiry_date) {
 					frm.toggle_reqd("expiry_date", r.has_expiry_date);
@@ -52,7 +52,7 @@ frappe.ui.form.on("Batch", {
 				for_stock_levels = 1;
 			}
 
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.doctype.batch.batch.get_batch_qty",
 				args: {
 					batch_no: frm.doc.name,
@@ -106,10 +106,10 @@ frappe.ui.form.on("Batch", {
 							},
 						];
 
-						frappe.prompt(
+						nts.prompt(
 							fields,
 							(data) => {
-								frappe.call({
+								nts.call({
 									method: "prodman.stock.doctype.stock_entry.stock_entry_utils.make_stock_entry",
 									args: {
 										item_code: frm.doc.item,
@@ -121,7 +121,7 @@ frappe.ui.form.on("Batch", {
 										reference_doctype: frm.doc.reference_doctype,
 									},
 									callback: (r) => {
-										frappe.show_alert(
+										nts.show_alert(
 											__("Stock Entry {0} created", [
 												'<a href="/app/stock-entry/' +
 													r.message.name +
@@ -143,7 +143,7 @@ frappe.ui.form.on("Batch", {
 					// and make stock entry via batch.batch_split
 					rows.find(".btn-split").on("click", function () {
 						const $btn = $(this);
-						frappe.prompt(
+						nts.prompt(
 							[
 								{
 									fieldname: "qty",
@@ -158,7 +158,7 @@ frappe.ui.form.on("Batch", {
 								},
 							],
 							(data) => {
-								frappe
+								nts
 									.xcall("prodman.stock.doctype.batch.batch.split_batch", {
 										item_code: frm.doc.item,
 										batch_no: frm.doc.name,
@@ -180,13 +180,13 @@ frappe.ui.form.on("Batch", {
 	},
 });
 
-frappe.ui.form.on("Batch", "manufacturing_date", function (frm) {
-	frappe.db.get_value("Item", { name: frm.doc.item }, ["shelf_life_in_days", "has_expiry_date"], (r) => {
+nts.ui.form.on("Batch", "manufacturing_date", function (frm) {
+	nts.db.get_value("Item", { name: frm.doc.item }, ["shelf_life_in_days", "has_expiry_date"], (r) => {
 		if (r.has_expiry_date && r.shelf_life_in_days) {
 			// Calculate expiry date based on shelf_life_in_days
 			frm.set_value(
 				"expiry_date",
-				frappe.datetime.add_days(frm.doc.manufacturing_date, r.shelf_life_in_days)
+				nts.datetime.add_days(frm.doc.manufacturing_date, r.shelf_life_in_days)
 			);
 		}
 	});

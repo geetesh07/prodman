@@ -1,17 +1,17 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts
 
 from prodman.projects.doctype.activity_cost.activity_cost import DuplicationError
 
 
 class TestActivityCost(unittest.TestCase):
 	def test_duplication(self):
-		frappe.db.sql("delete from `tabActivity Cost`")
-		activity_cost1 = frappe.new_doc("Activity Cost")
+		nts.db.sql("delete from `tabActivity Cost`")
+		activity_cost1 = nts.new_doc("Activity Cost")
 		activity_cost1.update(
 			{
 				"employee": "_T-Employee-00001",
@@ -22,6 +22,6 @@ class TestActivityCost(unittest.TestCase):
 			}
 		)
 		activity_cost1.insert()
-		activity_cost2 = frappe.copy_doc(activity_cost1)
+		activity_cost2 = nts.copy_doc(activity_cost1)
 		self.assertRaises(DuplicationError, activity_cost2.insert)
-		frappe.db.sql("delete from `tabActivity Cost`")
+		nts.db.sql("delete from `tabActivity Cost`")

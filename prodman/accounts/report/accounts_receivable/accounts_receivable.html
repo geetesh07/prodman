@@ -22,7 +22,7 @@
 	<h5 class="text-center">
 		{%= __(filters.ageing_based_on) %}
 		{%= __("Until") %}
-		{%= frappe.datetime.str_to_user(filters.report_date) %}
+		{%= nts .datetime.str_to_user(filters.report_date) %}
 	</h5>
 
 	<div class="clearfix">
@@ -169,7 +169,7 @@
 				<tr>
 				{% if(report.report_name === "Accounts Receivable" || report.report_name === "Accounts Payable") { %}
 					{% if(data[i]["party"]) { %}
-						<td>{%= frappe.datetime.str_to_user(data[i]["posting_date"]) %}</td>
+						<td>{%= nts .datetime.str_to_user(data[i]["posting_date"]) %}</td>
 						<td style="text-align: right">{%= data[i]["age"] %}</td>
 						<td>
 							{% if(!filters.show_future_payments) { %}
@@ -282,4 +282,4 @@
 			{% } %}
 		</tbody>
 	</table>
-	<p class="text-right text-muted">{%= __("Printed on {0}", [frappe.datetime.str_to_user(frappe.datetime.get_datetime_as_string())]) %}</p>
+	<p class="text-right text-muted">{%= __("Printed on {0}", [nts .datetime.str_to_user(nts .datetime.get_datetime_as_string())]) %}</p>

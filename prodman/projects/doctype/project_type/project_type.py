@@ -1,10 +1,10 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
+import nts
+from nts import _
+from nts.model.document import Document
 
 
 class ProjectType(Document):
@@ -14,7 +14,7 @@ class ProjectType(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		description: DF.Text | None
 		project_type: DF.Data
@@ -22,4 +22,4 @@ class ProjectType(Document):
 
 	def on_trash(self):
 		if self.name == "External":
-			frappe.throw(_("You cannot delete Project Type 'External'"))
+			nts.throw(_("You cannot delete Project Type 'External'"))

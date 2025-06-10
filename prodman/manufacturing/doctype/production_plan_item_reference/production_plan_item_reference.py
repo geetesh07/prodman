@@ -1,9 +1,9 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-# import frappe
-from frappe.model.document import Document
+# import nts
+from nts.model.document import Document
 
 
 class ProductionPlanItemReference(Document):
@@ -13,7 +13,7 @@ class ProductionPlanItemReference(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		item_reference: DF.Data | None
 		parent: DF.Data

@@ -1,7 +1,7 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("accounts", "doctype", "pos_closing_entry")
+	nts.reload_doc("accounts", "doctype", "pos_closing_entry")
 
-	frappe.db.sql("update `tabPOS Closing Entry` set `status` = 'Failed' where `status` = 'Queued'")
+	nts.db.sql("update `tabPOS Closing Entry` set `status` = 'Failed' where `status` = 'Queued'")

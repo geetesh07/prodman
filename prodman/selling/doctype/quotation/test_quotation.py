@@ -1,16 +1,16 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, add_months, flt, getdate, nowdate
+import nts
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import add_days, add_months, flt, getdate, nowdate
 
 from prodman.controllers.accounts_controller import InvalidQtyError
 
 test_dependencies = ["Product Bundle"]
 
 
-class TestQuotation(FrappeTestCase):
+class TestQuotation(ntsTestCase):
 	def test_quotation_qty(self):
 		qo = make_quotation(qty=0, do_not_save=True)
 		with self.assertRaises(InvalidQtyError):
@@ -41,7 +41,7 @@ class TestQuotation(FrappeTestCase):
 	def test_make_sales_order_terms_copied(self):
 		from prodman.selling.doctype.quotation.quotation import make_sales_order
 
-		quotation = frappe.copy_doc(test_records[0])
+		quotation = nts.copy_doc(test_records[0])
 		quotation.transaction_date = nowdate()
 		quotation.valid_till = add_months(quotation.transaction_date, 1)
 		quotation.insert()
@@ -92,10 +92,10 @@ class TestQuotation(FrappeTestCase):
 		item_code = item_doc.name
 		make_stock_entry(item_code=item_code, qty=10, rate=100, target="_Test Warehouse - _TC")
 
-		selling_price_list = frappe.get_all("Price List", filters={"selling": 1}, limit=1)[0].name
-		frappe.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 1)
+		selling_price_list = nts.get_all("Price List", filters={"selling": 1}, limit=1)[0].name
+		nts.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 1)
 		insert_item_price(
-			frappe._dict(
+			nts._dict(
 				{
 					"item_code": item_code,
 					"price_list": selling_price_list,
@@ -103,7 +103,7 @@ class TestQuotation(FrappeTestCase):
 					"rate": 300,
 					"conversion_factor": 1,
 					"discount_amount": 0.0,
-					"currency": frappe.db.get_value("Price List", selling_price_list, "currency"),
+					"currency": nts.db.get_value("Price List", selling_price_list, "currency"),
 					"uom": item_doc.stock_uom,
 				}
 			)
@@ -114,15 +114,15 @@ class TestQuotation(FrappeTestCase):
 		)
 		self.assertEqual(quotation.items[0].valuation_rate, 100)
 		self.assertEqual(quotation.items[0].gross_profit, 200)
-		frappe.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 0)
+		nts.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 0)
 
 	def test_maintain_rate_in_sales_cycle_is_enforced(self):
 		from prodman.selling.doctype.quotation.quotation import make_sales_order
 
-		maintain_rate = frappe.db.get_single_value("Selling Settings", "maintain_same_sales_rate")
-		frappe.db.set_single_value("Selling Settings", "maintain_same_sales_rate", 1)
+		maintain_rate = nts.db.get_single_value("Selling Settings", "maintain_same_sales_rate")
+		nts.db.set_single_value("Selling Settings", "maintain_same_sales_rate", 1)
 
-		quotation = frappe.copy_doc(test_records[0])
+		quotation = nts.copy_doc(test_records[0])
 		quotation.transaction_date = nowdate()
 		quotation.valid_till = add_months(quotation.transaction_date, 1)
 		quotation.insert()
@@ -130,14 +130,14 @@ class TestQuotation(FrappeTestCase):
 
 		sales_order = make_sales_order(quotation.name)
 		sales_order.items[0].rate = 1
-		self.assertRaises(frappe.ValidationError, sales_order.save)
+		self.assertRaises(nts.ValidationError, sales_order.save)
 
-		frappe.db.set_single_value("Selling Settings", "maintain_same_sales_rate", maintain_rate)
+		nts.db.set_single_value("Selling Settings", "maintain_same_sales_rate", maintain_rate)
 
 	def test_make_sales_order_with_different_currency(self):
 		from prodman.selling.doctype.quotation.quotation import make_sales_order
 
-		quotation = frappe.copy_doc(test_records[0])
+		quotation = nts.copy_doc(test_records[0])
 		quotation.transaction_date = nowdate()
 		quotation.valid_till = add_months(quotation.transaction_date, 1)
 		quotation.insert()
@@ -157,12 +157,12 @@ class TestQuotation(FrappeTestCase):
 	def test_make_sales_order(self):
 		from prodman.selling.doctype.quotation.quotation import make_sales_order
 
-		quotation = frappe.copy_doc(test_records[0])
+		quotation = nts.copy_doc(test_records[0])
 		quotation.transaction_date = nowdate()
 		quotation.valid_till = add_months(quotation.transaction_date, 1)
 		quotation.insert()
 
-		self.assertRaises(frappe.ValidationError, make_sales_order, quotation.name)
+		self.assertRaises(nts.ValidationError, make_sales_order, quotation.name)
 		quotation.submit()
 
 		sales_order = make_sales_order(quotation.name)
@@ -181,13 +181,13 @@ class TestQuotation(FrappeTestCase):
 	def test_make_sales_order_with_terms(self):
 		from prodman.selling.doctype.quotation.quotation import make_sales_order
 
-		quotation = frappe.copy_doc(test_records[0])
+		quotation = nts.copy_doc(test_records[0])
 		quotation.transaction_date = nowdate()
 		quotation.valid_till = add_months(quotation.transaction_date, 1)
 		quotation.update({"payment_terms_template": "_Test Payment Term Template"})
 		quotation.insert()
 
-		self.assertRaises(frappe.ValidationError, make_sales_order, quotation.name)
+		self.assertRaises(nts.ValidationError, make_sales_order, quotation.name)
 		quotation.save()
 		quotation.submit()
 
@@ -221,23 +221,23 @@ class TestQuotation(FrappeTestCase):
 		)
 
 	def test_valid_till_before_transaction_date(self):
-		quotation = frappe.copy_doc(test_records[0])
+		quotation = nts.copy_doc(test_records[0])
 		quotation.valid_till = add_days(quotation.transaction_date, -1)
-		self.assertRaises(frappe.ValidationError, quotation.validate)
+		self.assertRaises(nts.ValidationError, quotation.validate)
 
 	def test_so_from_expired_quotation(self):
 		from prodman.selling.doctype.quotation.quotation import make_sales_order
 
-		frappe.db.set_single_value("Selling Settings", "allow_sales_order_creation_for_expired_quotation", 0)
+		nts.db.set_single_value("Selling Settings", "allow_sales_order_creation_for_expired_quotation", 0)
 
-		quotation = frappe.copy_doc(test_records[0])
+		quotation = nts.copy_doc(test_records[0])
 		quotation.valid_till = add_days(nowdate(), -1)
 		quotation.insert()
 		quotation.submit()
 
-		self.assertRaises(frappe.ValidationError, make_sales_order, quotation.name)
+		self.assertRaises(nts.ValidationError, make_sales_order, quotation.name)
 
-		frappe.db.set_single_value("Selling Settings", "allow_sales_order_creation_for_expired_quotation", 1)
+		nts.db.set_single_value("Selling Settings", "allow_sales_order_creation_for_expired_quotation", 1)
 
 		make_sales_order(quotation.name)
 
@@ -254,13 +254,13 @@ class TestQuotation(FrappeTestCase):
 		test_records[0]["items"][0]["margin_type"] = "Percentage"
 		test_records[0]["items"][0]["margin_rate_or_amount"] = 18.75
 
-		quotation = frappe.copy_doc(test_records[0])
+		quotation = nts.copy_doc(test_records[0])
 		quotation.transaction_date = nowdate()
 		quotation.valid_till = add_months(quotation.transaction_date, 1)
 		quotation.insert()
 
 		self.assertEqual(quotation.get("items")[0].rate, rate_with_margin)
-		self.assertRaises(frappe.ValidationError, make_sales_order, quotation.name)
+		self.assertRaises(nts.ValidationError, make_sales_order, quotation.name)
 		quotation.submit()
 
 		sales_order = make_sales_order(quotation.name)
@@ -663,7 +663,7 @@ class TestQuotation(FrappeTestCase):
 		from prodman.selling.doctype.quotation.quotation import make_sales_order
 		from prodman.stock.doctype.item.test_item import make_item
 
-		frappe.flags.args = frappe._dict()
+		nts.flags.args = nts._dict()
 		item_list = []
 		stock_items = {
 			"_Test Simple Item 1": 100,
@@ -686,7 +686,7 @@ class TestQuotation(FrappeTestCase):
 
 		quotation = make_quotation(item_list=item_list)
 
-		frappe.flags.args.selected_items = [quotation.items[2]]
+		nts.flags.args.selected_items = [quotation.items[2]]
 		sales_order = make_sales_order(quotation.name)
 		sales_order.delivery_date = add_days(sales_order.transaction_date, 10)
 		sales_order.save()
@@ -705,21 +705,21 @@ class TestQuotation(FrappeTestCase):
 		item = "_Test Item FOR UOM Validation"
 		make_item(item, {"is_stock_item": 1})
 
-		if not frappe.db.exists("UOM", "lbs"):
-			frappe.get_doc({"doctype": "UOM", "uom_name": "lbs", "must_be_whole_number": 1}).insert()
+		if not nts.db.exists("UOM", "lbs"):
+			nts.get_doc({"doctype": "UOM", "uom_name": "lbs", "must_be_whole_number": 1}).insert()
 		else:
-			frappe.db.set_value("UOM", "lbs", "must_be_whole_number", 1)
+			nts.db.set_value("UOM", "lbs", "must_be_whole_number", 1)
 
 		quotation = make_quotation(item_code=item, qty=1, rate=100, do_not_submit=1)
 		quotation.items[0].uom = "lbs"
 		quotation.items[0].conversion_factor = 2.23
-		self.assertRaises(frappe.ValidationError, quotation.save)
+		self.assertRaises(nts.ValidationError, quotation.save)
 
 	def test_item_tax_template_for_quotation(self):
 		from prodman.stock.doctype.item.test_item import make_item
 
-		if not frappe.db.exists("Account", {"account_name": "_Test Vat", "company": "_Test Company"}):
-			frappe.get_doc(
+		if not nts.db.exists("Account", {"account_name": "_Test Vat", "company": "_Test Company"}):
+			nts.get_doc(
 				{
 					"doctype": "Account",
 					"account_name": "_Test Vat",
@@ -732,8 +732,8 @@ class TestQuotation(FrappeTestCase):
 				}
 			).insert()
 
-		if not frappe.db.exists("Item Tax Template", "Vat Template - _TC"):
-			frappe.get_doc(
+		if not nts.db.exists("Item Tax Template", "Vat Template - _TC"):
+			nts.get_doc(
 				{
 					"doctype": "Item Tax Template",
 					"name": "Vat Template",
@@ -749,7 +749,7 @@ class TestQuotation(FrappeTestCase):
 			).insert()
 
 		item_doc = make_item("_Test Item Tax Template QTN", {"is_stock_item": 1})
-		if not frappe.db.exists(
+		if not nts.db.exists(
 			"Item Tax", {"parent": item_doc.name, "item_tax_template": "Vat Template - _TC"}
 		):
 			item_doc.append("taxes", {"item_tax_template": "Vat Template - _TC"})
@@ -862,11 +862,11 @@ class TestQuotation(FrappeTestCase):
 		self.assertEqual(quotation.status, "Ordered")
 
 
-test_records = frappe.get_test_records("Quotation")
+test_records = nts.get_test_records("Quotation")
 
 
 def enable_calculate_bundle_price(enable=1):
-	selling_settings = frappe.get_doc("Selling Settings")
+	selling_settings = nts.get_doc("Selling Settings")
 	selling_settings.editable_bundle_item_rates = enable
 	selling_settings.save()
 
@@ -885,8 +885,8 @@ def get_quotation_dict(party_name=None, item_code=None):
 
 
 def make_quotation(**args):
-	qo = frappe.new_doc("Quotation")
-	args = frappe._dict(args)
+	qo = nts.new_doc("Quotation")
+	args = nts._dict(args)
 	if args.transaction_date:
 		qo.transaction_date = args.transaction_date
 

@@ -1,12 +1,12 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2017, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 
-class TestSupplierScorecard(FrappeTestCase):
+class TestSupplierScorecard(ntsTestCase):
 	def test_create_scorecard(self):
 		doc = make_supplier_scorecard().insert()
 		self.assertEqual(doc.name, valid_scorecard[0].get("supplier"))
@@ -16,40 +16,40 @@ class TestSupplierScorecard(FrappeTestCase):
 		my_doc = make_supplier_scorecard()
 		for d in my_doc.criteria:
 			d.weight = 0
-		self.assertRaises(frappe.ValidationError, my_doc.insert)
+		self.assertRaises(nts.ValidationError, my_doc.insert)
 
 
 def make_supplier_scorecard():
-	my_doc = frappe.get_doc(valid_scorecard[0])
+	my_doc = nts.get_doc(valid_scorecard[0])
 
 	# Make sure the criteria exist (making them)
 	for d in valid_scorecard[0].get("criteria"):
-		if not frappe.db.exists("Supplier Scorecard Criteria", d.get("criteria_name")):
+		if not nts.db.exists("Supplier Scorecard Criteria", d.get("criteria_name")):
 			d["doctype"] = "Supplier Scorecard Criteria"
 			d["name"] = d.get("criteria_name")
-			my_criteria = frappe.get_doc(d)
+			my_criteria = nts.get_doc(d)
 			my_criteria.insert()
 	return my_doc
 
 
 def delete_test_scorecards():
 	my_doc = make_supplier_scorecard()
-	if frappe.db.exists("Supplier Scorecard", my_doc.name):
+	if nts.db.exists("Supplier Scorecard", my_doc.name):
 		# Delete all the periods, then delete the scorecard
-		frappe.db.sql(
+		nts.db.sql(
 			"""delete from `tabSupplier Scorecard Period` where scorecard = %(scorecard)s""",
 			{"scorecard": my_doc.name},
 		)
-		frappe.db.sql(
+		nts.db.sql(
 			"""delete from `tabSupplier Scorecard Scoring Criteria` where parenttype = 'Supplier Scorecard Period'"""
 		)
-		frappe.db.sql(
+		nts.db.sql(
 			"""delete from `tabSupplier Scorecard Scoring Standing` where parenttype = 'Supplier Scorecard Period'"""
 		)
-		frappe.db.sql(
+		nts.db.sql(
 			"""delete from `tabSupplier Scorecard Scoring Variable` where parenttype = 'Supplier Scorecard Period'"""
 		)
-		frappe.delete_doc(my_doc.doctype, my_doc.name)
+		nts.delete_doc(my_doc.doctype, my_doc.name)
 
 
 valid_scorecard = [

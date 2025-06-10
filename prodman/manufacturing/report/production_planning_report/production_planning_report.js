@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Production Planning Report"] = {
+nts.query_reports["Production Planning Report"] = {
 	filters: [
 		{
 			fieldname: "company",
@@ -9,7 +9,7 @@ frappe.query_reports["Production Planning Report"] = {
 			fieldtype: "Link",
 			options: "Company",
 			reqd: 1,
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 		},
 		{
 			fieldname: "based_on",
@@ -19,8 +19,8 @@ frappe.query_reports["Production Planning Report"] = {
 			default: "Sales Order",
 			reqd: 1,
 			on_change: function () {
-				let filters = frappe.query_report.filters;
-				let based_on = frappe.query_report.get_filter_value("based_on");
+				let filters = nts.query_report.filters;
+				let based_on = nts.query_report.get_filter_value("based_on");
 				let options = {
 					"Sales Order": ["Delivery Date", "Total Amount"],
 					"Material Request": ["Required Date"],
@@ -34,7 +34,7 @@ frappe.query_reports["Production Planning Report"] = {
 					}
 				});
 
-				frappe.query_report.refresh();
+				nts.query_report.refresh();
 			},
 		},
 		{
@@ -43,15 +43,15 @@ frappe.query_reports["Production Planning Report"] = {
 			fieldtype: "MultiSelectList",
 			options: "based_on",
 			get_data: function (txt) {
-				if (!frappe.query_report.filters) return;
+				if (!nts.query_report.filters) return;
 
-				let based_on = frappe.query_report.get_filter_value("based_on");
+				let based_on = nts.query_report.get_filter_value("based_on");
 				if (!based_on) return;
 
-				return frappe.db.get_link_options(based_on, txt);
+				return nts.db.get_link_options(based_on, txt);
 			},
 			get_query: function () {
-				var company = frappe.query_report.get_filter_value("company");
+				var company = nts.query_report.get_filter_value("company");
 				return {
 					filters: {
 						docstatus: 1,
@@ -67,7 +67,7 @@ frappe.query_reports["Production Planning Report"] = {
 			options: "Warehouse",
 			depends_on: "eval: doc.based_on != 'Work Order'",
 			get_query: function () {
-				var company = frappe.query_report.get_filter_value("company");
+				var company = nts.query_report.get_filter_value("company");
 				return {
 					filters: {
 						company: company,

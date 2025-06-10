@@ -1,4 +1,4 @@
-import frappe
+import nts
 
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_doctypes_with_dimensions,
@@ -6,7 +6,7 @@ from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
 
 
 def execute():
-	accounting_dimensions = frappe.db.sql(
+	accounting_dimensions = nts.db.sql(
 		"""select fieldname from
 		`tabAccounting Dimension`""",
 		as_dict=1,
@@ -15,7 +15,7 @@ def execute():
 	doclist = get_doctypes_with_dimensions()
 
 	for dimension in accounting_dimensions:
-		frappe.db.sql(
+		nts.db.sql(
 			"""
 			UPDATE `tabCustom Field`
 			SET owner = 'Administrator'

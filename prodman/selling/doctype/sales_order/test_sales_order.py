@@ -1,13 +1,13 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 import json
 
-import frappe
-import frappe.permissions
-from frappe.core.doctype.user_permission.test_user_permission import create_user
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, flt, getdate, nowdate, today
+import nts
+import nts.permissions
+from nts.core.doctype.user_permission.test_user_permission import create_user
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import add_days, flt, getdate, nowdate, today
 
 from prodman.accounts.test.accounts_mixin import AccountsTestMixin
 from prodman.controllers.accounts_controller import InvalidQtyError, update_child_qty_rate
@@ -33,12 +33,12 @@ from prodman.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
 from prodman.stock.get_item_details import get_bin_details
 
 
-class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
+class TestSalesOrder(AccountsTestMixin, ntsTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
 		cls.unlink_setting = int(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Accounts Settings", "Accounts Settings", "unlink_advance_payment_on_cancelation_of_order"
 			)
 		)
@@ -46,7 +46,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 	@classmethod
 	def tearDownClass(cls) -> None:
 		# reset config to previous state
-		frappe.db.set_single_value(
+		nts.db.set_single_value(
 			"Accounts Settings", "unlink_advance_payment_on_cancelation_of_order", cls.unlink_setting
 		)
 		super().tearDownClass()
@@ -55,7 +55,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		self.create_customer("_Test Customer Credit")
 
 	def tearDown(self):
-		frappe.set_user("Administrator")
+		nts.set_user("Administrator")
 
 	def test_sales_order_with_negative_rate(self):
 		"""
@@ -98,7 +98,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 				"rate": 10,
 			},
 		)
-		self.assertRaises(frappe.NonNegativeError, so.save)
+		self.assertRaises(nts.NonNegativeError, so.save)
 
 		# InvalidQtyError with qty=0
 		so.items[1].qty = 0
@@ -119,7 +119,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 	def test_make_material_request(self):
 		so = make_sales_order(do_not_submit=True)
 
-		self.assertRaises(frappe.ValidationError, make_material_request, so.name)
+		self.assertRaises(nts.ValidationError, make_material_request, so.name)
 
 		so.submit()
 		mr = make_material_request(so.name)
@@ -136,7 +136,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 	def test_make_delivery_note(self):
 		so = make_sales_order(do_not_submit=True)
 
-		self.assertRaises(frappe.ValidationError, make_delivery_note, so.name)
+		self.assertRaises(nts.ValidationError, make_delivery_note, so.name)
 
 		so.submit()
 		dn = make_delivery_note(so.name)
@@ -147,7 +147,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 	def test_make_sales_invoice(self):
 		so = make_sales_order(do_not_submit=True)
 
-		self.assertRaises(frappe.ValidationError, make_sales_invoice, so.name)
+		self.assertRaises(nts.ValidationError, make_sales_invoice, so.name)
 
 		so.submit()
 		si = make_sales_invoice(so.name)
@@ -180,7 +180,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 	def test_make_sales_invoice_with_terms(self):
 		so = make_sales_order(do_not_submit=True)
 
-		self.assertRaises(frappe.ValidationError, make_sales_invoice, so.name)
+		self.assertRaises(nts.ValidationError, make_sales_invoice, so.name)
 
 		so.update({"payment_terms_template": "_Test Payment Term Template"})
 
@@ -301,7 +301,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 	def test_reserved_qty_for_over_delivery(self):
 		make_stock_entry(target="_Test Warehouse - _TC", qty=10, rate=100)
 		# set over-delivery allowance
-		frappe.db.set_value("Item", "_Test Item", "over_delivery_receipt_allowance", 50)
+		nts.db.set_value("Item", "_Test Item", "over_delivery_receipt_allowance", 50)
 
 		existing_reserved_qty = get_reserved_qty()
 
@@ -318,8 +318,8 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		make_stock_entry(target="_Test Warehouse - _TC", qty=10, rate=100)
 
 		# set over-delivery allowance
-		frappe.db.set_value("Item", "_Test Item", "over_delivery_receipt_allowance", 50)
-		frappe.db.set_value("Item", "_Test Item", "over_billing_allowance", 20)
+		nts.db.set_value("Item", "_Test Item", "over_delivery_receipt_allowance", 50)
+		nts.db.set_value("Item", "_Test Item", "over_billing_allowance", 20)
 
 		existing_reserved_qty = get_reserved_qty()
 
@@ -389,15 +389,15 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		so = make_sales_order(item_code="_Test Product Bundle Item")
 		so.db_set("status", "On Hold")
 		si = make_sales_invoice(so.name)
-		self.assertRaises(frappe.ValidationError, create_dn_against_so, so.name)
-		self.assertRaises(frappe.ValidationError, si.submit)
+		self.assertRaises(nts.ValidationError, create_dn_against_so, so.name)
+		self.assertRaises(nts.ValidationError, si.submit)
 
 	def test_reserved_qty_for_over_delivery_with_packing_list(self):
 		make_stock_entry(target="_Test Warehouse - _TC", qty=10, rate=100)
 		make_stock_entry(item="_Test Item Home Desktop 100", target="_Test Warehouse - _TC", qty=10, rate=100)
 
 		# set over-delivery allowance
-		frappe.db.set_value("Item", "_Test Product Bundle Item", "over_delivery_receipt_allowance", 50)
+		nts.db.set_value("Item", "_Test Product Bundle Item", "over_delivery_receipt_allowance", 50)
 
 		existing_reserved_qty_item1 = get_reserved_qty("_Test Item")
 		existing_reserved_qty_item2 = get_reserved_qty("_Test Item Home Desktop 100")
@@ -484,7 +484,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		trans_item = json.dumps(
 			[{"item_code": "_Test Item 2", "qty": 2, "rate": 500, "docname": so.get("items")[1].name}]
 		)
-		self.assertRaises(frappe.ValidationError, update_child_qty_rate, "Sales Order", trans_item, so.name)
+		self.assertRaises(nts.ValidationError, update_child_qty_rate, "Sales Order", trans_item, so.name)
 
 		# remove last added item
 		trans_item = json.dumps(
@@ -523,13 +523,13 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		trans_item = json.dumps(
 			[{"item_code": "_Test Item", "rate": 200, "qty": 2, "docname": so.items[0].name}]
 		)
-		self.assertRaises(frappe.ValidationError, update_child_qty_rate, "Sales Order", trans_item, so.name)
+		self.assertRaises(nts.ValidationError, update_child_qty_rate, "Sales Order", trans_item, so.name)
 
 	def test_update_child_with_precision(self):
-		from frappe.custom.doctype.property_setter.property_setter import make_property_setter
-		from frappe.model.meta import get_field_precision
+		from nts.custom.doctype.property_setter.property_setter import make_property_setter
+		from nts.model.meta import get_field_precision
 
-		precision = get_field_precision(frappe.get_meta("Sales Order Item").get_field("rate"))
+		precision = get_field_precision(nts.get_meta("Sales Order Item").get_field("rate"))
 
 		make_property_setter("Sales Order Item", "rate", "precision", 7, "Currency")
 		so = make_sales_order(item_code="_Test Item", qty=4, rate=200.34664)
@@ -547,48 +547,48 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		so = make_sales_order(item_code="_Test Item", qty=4)
 
 		test_user = create_user("test_so_child_perms@example.com", "Accounts User")
-		frappe.set_user(test_user.name)
+		nts.set_user(test_user.name)
 
 		# update qty
 		trans_item = json.dumps(
 			[{"item_code": "_Test Item", "rate": 200, "qty": 7, "docname": so.items[0].name}]
 		)
-		self.assertRaises(frappe.ValidationError, update_child_qty_rate, "Sales Order", trans_item, so.name)
+		self.assertRaises(nts.ValidationError, update_child_qty_rate, "Sales Order", trans_item, so.name)
 
 		# add new item
 		trans_item = json.dumps([{"item_code": "_Test Item", "rate": 100, "qty": 2}])
-		self.assertRaises(frappe.ValidationError, update_child_qty_rate, "Sales Order", trans_item, so.name)
+		self.assertRaises(nts.ValidationError, update_child_qty_rate, "Sales Order", trans_item, so.name)
 
 	def test_update_child_qty_rate_with_workflow(self):
-		from frappe.model.workflow import apply_workflow
+		from nts.model.workflow import apply_workflow
 
 		workflow = make_sales_order_workflow()
 		so = make_sales_order(item_code="_Test Item", qty=1, rate=150, do_not_submit=1)
 		apply_workflow(so, "Approve")
 
 		user = "test@example.com"
-		test_user = frappe.get_doc("User", user)
+		test_user = nts.get_doc("User", user)
 		test_user.add_roles("Sales User", "Test Junior Approver")
-		frappe.set_user(user)
+		nts.set_user(user)
 
 		# user shouldn't be able to edit since grand_total will become > 200 if qty is doubled
 		trans_item = json.dumps(
 			[{"item_code": "_Test Item", "rate": 150, "qty": 2, "docname": so.items[0].name}]
 		)
-		self.assertRaises(frappe.ValidationError, update_child_qty_rate, "Sales Order", trans_item, so.name)
+		self.assertRaises(nts.ValidationError, update_child_qty_rate, "Sales Order", trans_item, so.name)
 
-		frappe.set_user("Administrator")
+		nts.set_user("Administrator")
 		user2 = "test2@example.com"
-		test_user2 = frappe.get_doc("User", user2)
+		test_user2 = nts.get_doc("User", user2)
 		test_user2.add_roles("Sales User", "Test Approver")
-		frappe.set_user(user2)
+		nts.set_user(user2)
 
 		# Test Approver is allowed to edit with grand_total > 200
 		update_child_qty_rate("Sales Order", trans_item, so.name)
 		so.reload()
 		self.assertEqual(so.items[0].qty, 2)
 
-		frappe.set_user("Administrator")
+		nts.set_user("Administrator")
 		test_user.remove_roles("Sales User", "Test Junior Approver", "Test Approver")
 		test_user2.remove_roles("Sales User", "Test Junior Approver", "Test Approver")
 		workflow.is_active = 0
@@ -597,7 +597,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 	def test_material_request_for_product_bundle(self):
 		# Create the Material Request from the sales order for the Packing Items
 		# Check whether the material request has the correct packing item or not.
-		if not frappe.db.exists("Item", "_Test Product Bundle Item New 1"):
+		if not nts.db.exists("Item", "_Test Product Bundle Item New 1"):
 			bundle_item = make_item("_Test Product Bundle Item New 1", {"is_stock_item": 0})
 			bundle_item.append(
 				"item_defaults", {"company": "_Test Company", "default_warehouse": "_Test Warehouse - _TC"}
@@ -616,7 +616,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 
 	def test_bin_details_of_packed_item(self):
 		# test Update Items with product bundle
-		if not frappe.db.exists("Item", "_Test Product Bundle Item New"):
+		if not nts.db.exists("Item", "_Test Product Bundle Item New"):
 			bundle_item = make_item("_Test Product Bundle Item New", {"is_stock_item": 0})
 			bundle_item.append(
 				"item_defaults", {"company": "_Test Company", "default_warehouse": "_Test Warehouse - _TC"}
@@ -635,7 +635,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 
 		make_stock_entry(item="_Packed Item New 1", target="_Test Warehouse - _TC", qty=120, rate=100)
 
-		bin_details = frappe.db.get_value(
+		bin_details = nts.db.get_value(
 			"Bin",
 			{"item_code": "_Packed Item New 1", "warehouse": "_Test Warehouse - _TC"},
 			["actual_qty", "projected_qty", "ordered_qty"],
@@ -652,7 +652,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 
 	def test_update_child_product_bundle(self):
 		# test Update Items with product bundle
-		if not frappe.db.exists("Item", "_Product Bundle Item"):
+		if not nts.db.exists("Item", "_Product Bundle Item"):
 			bundle_item = make_item("_Product Bundle Item", {"is_stock_item": 0})
 			bundle_item.append(
 				"item_defaults", {"company": "_Test Company", "default_warehouse": "_Test Warehouse - _TC"}
@@ -703,7 +703,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		Add the same item + new item with tax template via Update Items.
 		Expected result: First Item's tax row is updated. New tax row is added for second Item.
 		"""
-		if not frappe.db.exists("Item", "Test Item with Tax"):
+		if not nts.db.exists("Item", "Test Item with Tax"):
 			make_item(
 				"Test Item with Tax",
 				{
@@ -711,8 +711,8 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 				},
 			)
 
-		if not frappe.db.exists("Item Tax Template", {"title": "Test Update Items Template"}):
-			frappe.get_doc(
+		if not nts.db.exists("Item Tax Template", {"title": "Test Update Items Template"}):
+			nts.get_doc(
 				{
 					"doctype": "Item Tax Template",
 					"title": "Test Update Items Template",
@@ -726,7 +726,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 				}
 			).insert()
 
-		new_item_with_tax = frappe.get_doc("Item", "Test Item with Tax")
+		new_item_with_tax = nts.get_doc("Item", "Test Item with Tax")
 
 		new_item_with_tax.append(
 			"taxes", {"item_tax_template": "Test Update Items Template - _TC", "valid_from": nowdate()}
@@ -735,13 +735,13 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 
 		tax_template = "_Test Account Excise Duty @ 10 - _TC"
 		item = "_Test Item Home Desktop 100"
-		if not frappe.db.exists("Item Tax", {"parent": item, "item_tax_template": tax_template}):
-			item_doc = frappe.get_doc("Item", item)
+		if not nts.db.exists("Item Tax", {"parent": item, "item_tax_template": tax_template}):
+			item_doc = nts.get_doc("Item", item)
 			item_doc.append("taxes", {"item_tax_template": tax_template, "valid_from": nowdate()})
 			item_doc.save()
 		else:
 			# update valid from
-			frappe.db.sql(
+			nts.db.sql(
 				"""UPDATE `tabItem Tax` set valid_from = CURRENT_DATE
 				where parent = %(item)s and item_tax_template = %(tax)s""",
 				{"item": item, "tax": tax_template},
@@ -766,8 +766,8 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		self.assertEqual(so.taxes[0].tax_amount, 10)
 		self.assertEqual(so.taxes[0].total, 110)
 
-		old_stock_settings_value = frappe.db.get_single_value("Stock Settings", "default_warehouse")
-		frappe.db.set_single_value("Stock Settings", "default_warehouse", "_Test Warehouse - _TC")
+		old_stock_settings_value = nts.db.get_single_value("Stock Settings", "default_warehouse")
+		nts.db.set_single_value("Stock Settings", "default_warehouse", "_Test Warehouse - _TC")
 
 		items = json.dumps(
 			[
@@ -794,7 +794,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		self.assertEqual(so.taxes[1].total, 480)
 
 		# teardown
-		frappe.db.sql(
+		nts.db.sql(
 			"""UPDATE `tabItem Tax` set valid_from = NULL
 			where parent = %(item)s and item_tax_template = %(tax)s""",
 			{"item": item, "tax": tax_template},
@@ -802,21 +802,21 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		so.cancel()
 		so.delete()
 		new_item_with_tax.delete()
-		frappe.get_doc("Item Tax Template", "Test Update Items Template - _TC").delete()
-		frappe.db.set_single_value("Stock Settings", "default_warehouse", old_stock_settings_value)
+		nts.get_doc("Item Tax Template", "Test Update Items Template - _TC").delete()
+		nts.db.set_single_value("Stock Settings", "default_warehouse", old_stock_settings_value)
 
 	def test_warehouse_user(self):
 		test_user = create_user("test_so_warehouse_user@example.com", "Sales User", "Stock User")
 
-		test_user_2 = frappe.get_doc("User", "test2@example.com")
+		test_user_2 = nts.get_doc("User", "test2@example.com")
 		test_user_2.add_roles("Sales User", "Stock User")
 		test_user_2.remove_roles("Sales Manager")
 
-		frappe.permissions.add_user_permission("Warehouse", "_Test Warehouse 1 - _TC", test_user.name)
-		frappe.permissions.add_user_permission("Warehouse", "_Test Warehouse 2 - _TC1", test_user_2.name)
-		frappe.permissions.add_user_permission("Company", "_Test Company 1", test_user_2.name)
+		nts.permissions.add_user_permission("Warehouse", "_Test Warehouse 1 - _TC", test_user.name)
+		nts.permissions.add_user_permission("Warehouse", "_Test Warehouse 2 - _TC1", test_user_2.name)
+		nts.permissions.add_user_permission("Company", "_Test Company 1", test_user_2.name)
 
-		frappe.set_user(test_user.name)
+		nts.set_user(test_user.name)
 
 		so = make_sales_order(
 			company="_Test Company 1",
@@ -826,15 +826,15 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		)
 		so.conversion_rate = 0.02
 		so.plc_conversion_rate = 0.02
-		self.assertRaises(frappe.PermissionError, so.insert)
+		self.assertRaises(nts.PermissionError, so.insert)
 
-		frappe.set_user(test_user_2.name)
+		nts.set_user(test_user_2.name)
 		so.insert()
 
-		frappe.set_user("Administrator")
-		frappe.permissions.remove_user_permission("Warehouse", "_Test Warehouse 1 - _TC", test_user.name)
-		frappe.permissions.remove_user_permission("Warehouse", "_Test Warehouse 2 - _TC1", test_user_2.name)
-		frappe.permissions.remove_user_permission("Company", "_Test Company 1", test_user_2.name)
+		nts.set_user("Administrator")
+		nts.permissions.remove_user_permission("Warehouse", "_Test Warehouse 1 - _TC", test_user.name)
+		nts.permissions.remove_user_permission("Warehouse", "_Test Warehouse 2 - _TC1", test_user_2.name)
+		nts.permissions.remove_user_permission("Company", "_Test Company 1", test_user_2.name)
 
 	def test_block_delivery_note_against_cancelled_sales_order(self):
 		so = make_sales_order()
@@ -846,7 +846,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 
 		dn.load_from_db()
 
-		self.assertRaises(frappe.CancelledLinkError, dn.submit)
+		self.assertRaises(nts.CancelledLinkError, dn.submit)
 
 	def test_service_type_product_bundle(self):
 		make_item("_Test Service Product Bundle", {"is_stock_item": 0})
@@ -880,7 +880,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 	def test_auto_insert_price(self):
 		make_item("_Test Item for Auto Price List", {"is_stock_item": 0})
 		make_item("_Test Item for Auto Price List with Discount Percentage", {"is_stock_item": 0})
-		frappe.db.set_single_value(
+		nts.db.set_single_value(
 			"Stock Settings",
 			{
 				"auto_insert_price_list_rate_if_missing": 1,
@@ -888,11 +888,11 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 			},
 		)
 
-		item_price = frappe.db.get_value(
+		item_price = nts.db.get_value(
 			"Item Price", {"price_list": "_Test Price List", "item_code": "_Test Item for Auto Price List"}
 		)
 		if item_price:
-			frappe.delete_doc("Item Price", item_price)
+			nts.delete_doc("Item Price", item_price)
 
 		make_sales_order(
 			item_code="_Test Item for Auto Price List", selling_price_list="_Test Price List", rate=100
@@ -900,7 +900,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 
 		# ensure price gets inserted based on rate if price list rate is not defined by user
 		self.assertEqual(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Item Price",
 				{"price_list": "_Test Price List", "item_code": "_Test Item for Auto Price List"},
 				"price_list_rate",
@@ -917,7 +917,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 			discount_percentage=20,
 		)
 
-		item_price = frappe.db.get_value(
+		item_price = nts.db.get_value(
 			"Item Price",
 			{
 				"price_list": "_Test Price List",
@@ -928,9 +928,9 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		)
 
 		self.assertEqual(item_price.price_list_rate, 200)
-		frappe.delete_doc("Item Price", item_price.name)
+		nts.delete_doc("Item Price", item_price.name)
 
-		frappe.db.set_single_value("Stock Settings", "update_price_list_based_on", "Rate")
+		nts.db.set_single_value("Stock Settings", "update_price_list_based_on", "Rate")
 
 		# ensure price gets insterted based on user-defined *Rate*
 		# if update_price_list_based_on is set to Rate
@@ -941,7 +941,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 			discount_percentage=20,
 		)
 
-		item_price = frappe.db.get_value(
+		item_price = nts.db.get_value(
 			"Item Price",
 			{
 				"price_list": "_Test Price List",
@@ -952,23 +952,23 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		)
 
 		self.assertEqual(item_price.price_list_rate, 160)
-		frappe.delete_doc("Item Price", item_price.name)
+		nts.delete_doc("Item Price", item_price.name)
 
 		# do not update price list
-		frappe.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 0)
+		nts.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 0)
 
-		item_price = frappe.db.get_value(
+		item_price = nts.db.get_value(
 			"Item Price", {"price_list": "_Test Price List", "item_code": "_Test Item for Auto Price List"}
 		)
 		if item_price:
-			frappe.delete_doc("Item Price", item_price)
+			nts.delete_doc("Item Price", item_price)
 
 		make_sales_order(
 			item_code="_Test Item for Auto Price List", selling_price_list="_Test Price List", rate=100
 		)
 
 		self.assertEqual(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Item Price",
 				{"price_list": "_Test Price List", "item_code": "_Test Item for Auto Price List"},
 				"price_list_rate",
@@ -976,7 +976,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 			None,
 		)
 
-		frappe.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 1)
+		nts.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 1)
 
 	def test_update_existing_item_price(self):
 		item_code = "_Test Item for Price List Updation"
@@ -984,7 +984,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 
 		make_item(item_code, {"is_stock_item": 0})
 
-		frappe.db.set_single_value(
+		nts.db.set_single_value(
 			"Stock Settings",
 			{
 				"auto_insert_price_list_rate_if_missing": 1,
@@ -1000,7 +1000,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		make_sales_order(item_code=item_code, selling_price_list=price_list, rate=90)
 
 		self.assertEqual(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Item Price",
 				{"price_list": price_list, "item_code": item_code},
 				"price_list_rate",
@@ -1008,7 +1008,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 			90,
 		)
 
-		frappe.db.set_single_value(
+		nts.db.set_single_value(
 			"Stock Settings",
 			{
 				"update_price_list_based_on": "Price List Rate",
@@ -1024,7 +1024,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		)
 
 		self.assertEqual(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Item Price",
 				{"price_list": price_list, "item_code": item_code},
 				"price_list_rate",
@@ -1033,7 +1033,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		)
 
 		# reset `update_existing_price_list_rate` to 0
-		frappe.db.set_single_value("Stock Settings", "update_existing_price_list_rate", 0)
+		nts.db.set_single_value("Stock Settings", "update_existing_price_list_rate", 0)
 
 	def test_drop_shipping(self):
 		from prodman.buying.doctype.purchase_order.purchase_order import update_status
@@ -1064,7 +1064,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 			},
 		]
 
-		if frappe.db.get_value("Item", "_Test Regular Item", "is_stock_item") == 1:
+		if nts.db.get_value("Item", "_Test Regular Item", "is_stock_item") == 1:
 			make_stock_entry(item="_Test Regular Item", target="_Test Warehouse - _TC", qty=2, rate=100)
 
 		# create so, po and dn
@@ -1084,7 +1084,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		self.assertEqual(len(po.items), 1)
 
 		# test ordered_qty and reserved_qty for drop ship item
-		bin_po_item = frappe.get_all(
+		bin_po_item = nts.get_all(
 			"Bin",
 			filters={"item_code": po_item.item_code, "warehouse": "_Test Warehouse - _TC"},
 			fields=["ordered_qty", "reserved_qty"],
@@ -1099,7 +1099,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 
 		# test per_delivered status
 		update_status("Delivered", po.name)
-		self.assertEqual(flt(frappe.db.get_value("Sales Order", so.name, "per_delivered"), 2), 100.00)
+		self.assertEqual(flt(nts.db.get_value("Sales Order", so.name, "per_delivered"), 2), 100.00)
 		po.load_from_db()
 
 		# test after closing so
@@ -1107,7 +1107,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		so.update_reserved_qty()
 
 		# test ordered_qty and reserved_qty for drop ship item after closing so
-		bin_po_item = frappe.get_all(
+		bin_po_item = nts.get_all(
 			"Bin",
 			filters={"item_code": po_item.item_code, "warehouse": "_Test Warehouse - _TC"},
 			fields=["ordered_qty", "reserved_qty"],
@@ -1192,10 +1192,10 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 			make_purchase_order_for_default_supplier,
 		)
 
-		if not frappe.db.exists("Item", "_Test Item for Drop Shipping 1"):
+		if not nts.db.exists("Item", "_Test Item for Drop Shipping 1"):
 			make_item("_Test Item for Drop Shipping 1", {"is_stock_item": 1, "delivered_by_supplier": 1})
 
-		if not frappe.db.exists("Item", "_Test Item for Drop Shipping 2"):
+		if not nts.db.exists("Item", "_Test Item for Drop Shipping 2"):
 			make_item("_Test Item for Drop Shipping 2", {"is_stock_item": 1, "delivered_by_supplier": 1})
 
 		so_items = [
@@ -1294,7 +1294,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		self.assertEqual(so.packed_items[1].ordered_qty, 2)
 
 	def test_reserved_qty_for_closing_so(self):
-		bin = frappe.get_all(
+		bin = nts.get_all(
 			"Bin",
 			filters={"item_code": "_Test Item", "warehouse": "_Test Warehouse - _TC"},
 			fields=["reserved_qty"],
@@ -1323,7 +1323,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		so.items[0].margin_rate_or_amount = 25
 		so.save()
 
-		new_so = frappe.copy_doc(so)
+		new_so = nts.copy_doc(so)
 		new_so.save(ignore_permissions=True)
 
 		self.assertEqual(new_so.get("items")[0].rate, flt((price_list_rate * 25) / 100 + price_list_rate))
@@ -1393,7 +1393,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 
 		# Check if Work Orders were raised
 		for item in so_item_name:
-			wo_qty = frappe.db.sql(
+			wo_qty = nts.db.sql(
 				"select sum(qty) from `tabWork Order` where sales_order=%s and sales_order_item=%s",
 				(so.name, item),
 			)
@@ -1402,7 +1402,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 	def test_advance_payment_entry_unlink_against_sales_order(self):
 		from prodman.accounts.doctype.payment_entry.test_payment_entry import get_payment_entry
 
-		frappe.db.set_single_value("Accounts Settings", "unlink_advance_payment_on_cancelation_of_order", 0)
+		nts.db.set_single_value("Accounts Settings", "unlink_advance_payment_on_cancelation_of_order", 0)
 
 		so = make_sales_order()
 
@@ -1417,9 +1417,9 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		pe.save(ignore_permissions=True)
 		pe.submit()
 
-		so_doc = frappe.get_doc("Sales Order", so.name)
+		so_doc = nts.get_doc("Sales Order", so.name)
 
-		self.assertRaises(frappe.LinkExistsError, so_doc.cancel)
+		self.assertRaises(nts.LinkExistsError, so_doc.cancel)
 
 	@change_settings("Accounts Settings", {"unlink_advance_payment_on_cancelation_of_order": 1})
 	def test_advance_paid_upon_payment_cancellation(self):
@@ -1455,7 +1455,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		so = make_sales_order()
 
 		# disable unlinking of payment entry
-		frappe.db.set_single_value("Accounts Settings", "unlink_advance_payment_on_cancelation_of_order", 0)
+		nts.db.set_single_value("Accounts Settings", "unlink_advance_payment_on_cancelation_of_order", 0)
 
 		# create a payment entry against sales order
 		pe = get_payment_entry("Sales Order", so.name, bank_account="_Test Bank - _TC")
@@ -1470,12 +1470,12 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		pe.submit()
 
 		# Cancel payment entry
-		po_doc = frappe.get_doc("Payment Entry", pe.name)
+		po_doc = nts.get_doc("Payment Entry", pe.name)
 		po_doc.cancel()
 
 		# Cancel sales order
 		try:
-			so_doc = frappe.get_doc("Sales Order", so.name)
+			so_doc = nts.get_doc("Sales Order", so.name)
 			so_doc.cancel()
 		except Exception:
 			self.fail("Can not cancel sales order with linked cancelled payment entry")
@@ -1568,16 +1568,16 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 
 		so = make_sales_order(**{"item_list": [{"item_code": item.item_code, "qty": 1, "rate": 1000}]})
 		so.submit()
-		mr_dict = frappe._dict()
+		mr_dict = nts._dict()
 		items = get_work_order_items(so.name, 1)
 		mr_dict["items"] = items
 		mr_dict["include_exploded_items"] = 0
 		mr_dict["ignore_existing_ordered_qty"] = 1
 		make_raw_material_request(mr_dict, so.company, so.name)
-		mr = frappe.db.sql(
+		mr = nts.db.sql(
 			"""select name from `tabMaterial Request` ORDER BY creation DESC LIMIT 1""", as_dict=1
 		)[0]
-		mr_doc = frappe.get_doc("Material Request", mr.get("name"))
+		mr_doc = nts.get_doc("Material Request", mr.get("name"))
 		self.assertEqual(mr_doc.items[0].sales_order, so.name)
 
 	def test_so_optional_blanket_order(self):
@@ -1589,12 +1589,12 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		make_blanket_order(blanket_order_type="Selling", quantity=10, rate=10)
 
 		so = make_sales_order(item_code="_Test Item", qty=5, against_blanket_order=1)
-		so_doc = frappe.get_doc("Sales Order", so.get("name"))
+		so_doc = nts.get_doc("Sales Order", so.get("name"))
 		# To test if the SO has a Blanket Order
 		self.assertTrue(so_doc.items[0].blanket_order)
 
 		so = make_sales_order(item_code="_Test Item", qty=5, against_blanket_order=0)
-		so_doc = frappe.get_doc("Sales Order", so.get("name"))
+		so_doc = nts.get_doc("Sales Order", so.get("name"))
 		# To test if the SO does NOT have a Blanket Order
 		self.assertEqual(so_doc.items[0].blanket_order, None)
 
@@ -1608,7 +1608,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		si = make_sales_invoice(so.name)
 		si.save()
 
-		self.assertRaises(frappe.ValidationError, so.cancel)
+		self.assertRaises(nts.ValidationError, so.cancel)
 
 	def test_so_cancellation_after_si_submission(self):
 		"""
@@ -1621,7 +1621,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		si.submit()
 
 		so.load_from_db()
-		self.assertRaises(frappe.LinkExistsError, so.cancel)
+		self.assertRaises(nts.LinkExistsError, so.cancel)
 
 	def test_so_cancellation_after_dn_submission(self):
 		"""
@@ -1634,7 +1634,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		dn.submit()
 
 		so.load_from_db()
-		self.assertRaises(frappe.LinkExistsError, so.cancel)
+		self.assertRaises(nts.LinkExistsError, so.cancel)
 
 	def test_so_cancellation_after_maintenance_schedule_submission(self):
 		"""
@@ -1647,7 +1647,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		ms.submit()
 
 		so.load_from_db()
-		self.assertRaises(frappe.LinkExistsError, so.cancel)
+		self.assertRaises(nts.LinkExistsError, so.cancel)
 
 	def test_so_cancellation_after_maintenance_visit_submission(self):
 		"""
@@ -1661,7 +1661,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		mv.submit()
 
 		so.load_from_db()
-		self.assertRaises(frappe.LinkExistsError, so.cancel)
+		self.assertRaises(nts.LinkExistsError, so.cancel)
 
 	def test_so_cancellation_after_work_order_submission(self):
 		"""
@@ -1674,7 +1674,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		make_wo_order_test_record(sales_order=so.name)
 
 		so.load_from_db()
-		self.assertRaises(frappe.LinkExistsError, so.cancel)
+		self.assertRaises(nts.LinkExistsError, so.cancel)
 
 	def test_payment_terms_are_fetched_when_creating_sales_invoice(self):
 		from prodman.accounts.doctype.payment_entry.test_payment_entry import (
@@ -1798,7 +1798,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 
 		# WO from MR
 		wo_name = raise_work_orders(mr.name)[0]
-		wo = frappe.get_doc("Work Order", wo_name)
+		wo = nts.get_doc("Work Order", wo_name)
 		wo.wip_warehouse = "Work In Progress - _TC"
 		wo.skip_transfer = True
 
@@ -1819,7 +1819,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 			basic_rate=100,
 		)
 
-		se = frappe.get_doc(make_se_from_wo(wo.name, "Manufacture", 2))
+		se = nts.get_doc(make_se_from_wo(wo.name, "Manufacture", 2))
 		se.submit()  # Finish WO
 
 		mr.reload()
@@ -1862,7 +1862,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 
 		# Make a customer
 		customer = get_customer_dict("QA Logistics")
-		frappe.get_doc(customer).insert()
+		nts.get_doc(customer).insert()
 
 		# Make a Sales Order
 		so = make_sales_order(
@@ -1947,7 +1947,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 			"_Test Product Bundle Item Partial 1",
 			"_Test Product Bundle Item Partial 2",
 		]:
-			if not frappe.db.exists("Item", product_bundle):
+			if not nts.db.exists("Item", product_bundle):
 				bundle_item = make_item(product_bundle, {"is_stock_item": 0})
 				bundle_item.append(
 					"item_defaults",
@@ -1956,7 +1956,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 				bundle_item.save(ignore_permissions=True)
 
 		for product_bundle in ["_Packed Item Partial 1", "_Packed Item Partial 2"]:
-			if not frappe.db.exists("Item", product_bundle):
+			if not nts.db.exists("Item", product_bundle):
 				make_item(product_bundle, {"is_stock_item": 1, "stock_uom": "Nos"})
 
 			make_stock_entry(item=product_bundle, target="_Test Warehouse - _TC", qty=2, rate=10)
@@ -2018,7 +2018,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 
 		# test Update Items with product bundle
 		for product_bundle in [bundle]:
-			if not frappe.db.exists("Item", product_bundle):
+			if not nts.db.exists("Item", product_bundle):
 				bundle_item = make_item(product_bundle, {"is_stock_item": 0})
 				bundle_item.append(
 					"item_defaults",
@@ -2027,7 +2027,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 				bundle_item.save(ignore_permissions=True)
 
 		for product_bundle in [packed_item]:
-			if not frappe.db.exists("Item", product_bundle):
+			if not nts.db.exists("Item", product_bundle):
 				make_item(product_bundle, {"is_stock_item": 0, "stock_uom": "Nos"})
 
 		make_product_bundle(bundle, [packed_item], 1)
@@ -2037,7 +2037,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 			{"valid_upto": add_days(nowdate(), 1), "expected_rate": 111.0},
 		]:
 			with self.subTest(scenario=scenario):
-				frappe.get_doc(
+				nts.get_doc(
 					{
 						"doctype": "Item Price",
 						"item_code": packed_item,
@@ -2049,7 +2049,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 					}
 				).save()
 
-				so = frappe.new_doc("Sales Order")
+				so = nts.new_doc("Sales Order")
 				so.transaction_date = nowdate()
 				so.delivery_date = nowdate()
 				so.set_warehouse = ""
@@ -2101,8 +2101,8 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		warehouse = "_Test Warehouse - _TC"
 		rejected_warehouse = "_Test Dummy Rejected Warehouse - _TC"
 
-		if not frappe.db.exists("Warehouse", rejected_warehouse):
-			frappe.get_doc(
+		if not nts.db.exists("Warehouse", rejected_warehouse):
+			nts.get_doc(
 				{
 					"doctype": "Warehouse",
 					"warehouse_name": rejected_warehouse,
@@ -2162,7 +2162,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		pick_list = create_pick_list(so.name)
 
 		pick_list.save()
-		batch_no = frappe.get_all(
+		batch_no = nts.get_all(
 			"Serial and Batch Entry",
 			filters={"parent": se.items[0].serial_and_batch_bundle},
 			fields=["batch_no"],
@@ -2189,13 +2189,13 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 			"_Test Auto Update Price List Item",
 		)
 
-		frappe.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 1)
+		nts.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 1)
 		so = make_sales_order(
 			item_code=item.name, currency="USD", qty=1, rate=100, price_list_rate=100, do_not_submit=True
 		)
 		so.save()
 
-		item_price = frappe.db.get_value("Item Price", {"item_code": item.name}, "price_list_rate")
+		item_price = nts.db.get_value("Item Price", {"item_code": item.name}, "price_list_rate")
 		self.assertEqual(item_price, 100)
 
 		so = make_sales_order(
@@ -2203,20 +2203,20 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		)
 		so.save()
 
-		item_price = frappe.db.get_value("Item Price", {"item_code": item.name}, "price_list_rate")
+		item_price = nts.db.get_value("Item Price", {"item_code": item.name}, "price_list_rate")
 		self.assertEqual(item_price, 100)
 
-		frappe.db.set_single_value("Stock Settings", "update_existing_price_list_rate", 1)
+		nts.db.set_single_value("Stock Settings", "update_existing_price_list_rate", 1)
 		so = make_sales_order(
 			item_code=item.name, currency="USD", qty=1, rate=200, price_list_rate=200, do_not_submit=True
 		)
 		so.save()
 
-		item_price = frappe.db.get_value("Item Price", {"item_code": item.name}, "price_list_rate")
+		item_price = nts.db.get_value("Item Price", {"item_code": item.name}, "price_list_rate")
 		self.assertEqual(item_price, 200)
 
-		frappe.db.set_single_value("Stock Settings", "update_existing_price_list_rate", 0)
-		frappe.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 0)
+		nts.db.set_single_value("Stock Settings", "update_existing_price_list_rate", 0)
+		nts.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 0)
 
 	def test_delivery_note_rate_on_change_of_warehouse(self):
 		from prodman.stock.doctype.warehouse.test_warehouse import create_warehouse
@@ -2230,7 +2230,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 			},
 		)
 
-		frappe.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 1)
+		nts.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 1)
 		so = make_sales_order(
 			item_code=item.name, rate=27648.00, price_list_rate=27648.00, qty=1, do_not_submit=True
 		)
@@ -2260,7 +2260,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 	def test_credit_limit_on_so_reopening(self):
 		# set credit limit
 		company = "_Test Company"
-		customer = frappe.get_doc("Customer", self.customer)
+		customer = nts.get_doc("Customer", self.customer)
 		customer.credit_limits = []
 		customer.append(
 			"credit_limits", {"company": company, "credit_limit": 1000, "bypass_credit_limit_check": False}
@@ -2279,18 +2279,18 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 		so2.customer_address = so2.shipping_address_name = None
 		so2.save().submit()
 
-		self.assertRaises(frappe.ValidationError, so1.update_status, "Draft")
+		self.assertRaises(nts.ValidationError, so1.update_status, "Draft")
 
 	def test_item_tax_transfer_from_sales_to_purchase(self):
 		from prodman.selling.doctype.sales_order.sales_order import make_purchase_order
 
-		item_tax = frappe.new_doc("Item Tax Template")
+		item_tax = nts.new_doc("Item Tax Template")
 		item_tax.title = "Test Item Tax Template"
 		item_tax.company = "_Test Company"
 		item_tax.append("taxes", {"tax_type": "_Test Account Service Tax - _TC", "tax_rate": 2})
 		item_tax.save()
 
-		item_group = frappe.get_doc("Item Group", "_Test Item Group")
+		item_group = nts.get_doc("Item Group", "_Test Item Group")
 		item_group.append("taxes", {"item_tax_template": "Test Item Tax Template - _TC"})
 		item_group.save()
 
@@ -2386,7 +2386,7 @@ class TestSalesOrder(AccountsTestMixin, FrappeTestCase):
 
 
 def automatically_fetch_payment_terms(enable=1):
-	accounts_settings = frappe.get_doc("Accounts Settings")
+	accounts_settings = nts.get_doc("Accounts Settings")
 	accounts_settings.automatically_fetch_payment_terms = enable
 	accounts_settings.save()
 
@@ -2400,8 +2400,8 @@ def compare_payment_schedules(doc, doc1, doc2):
 
 
 def make_sales_order(**args):
-	so = frappe.new_doc("Sales Order")
-	args = frappe._dict(args)
+	so = nts.new_doc("Sales Order")
+	args = nts._dict(args)
 	if args.transaction_date:
 		so.transaction_date = args.transaction_date
 
@@ -2450,7 +2450,7 @@ def make_sales_order(**args):
 
 
 def create_dn_against_so(so, delivered_qty=0, do_not_submit=False):
-	frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
+	nts.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
 
 	dn = make_delivery_note(so)
 	dn.get("items")[0].qty = delivered_qty or 5
@@ -2461,24 +2461,24 @@ def create_dn_against_so(so, delivered_qty=0, do_not_submit=False):
 
 
 def get_reserved_qty(item_code="_Test Item", warehouse="_Test Warehouse - _TC"):
-	return flt(frappe.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse}, "reserved_qty"))
+	return flt(nts.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse}, "reserved_qty"))
 
 
 test_dependencies = ["Currency Exchange"]
 
 
 def make_sales_order_workflow():
-	if frappe.db.exists("Workflow", "SO Test Workflow"):
-		doc = frappe.get_doc("Workflow", "SO Test Workflow")
+	if nts.db.exists("Workflow", "SO Test Workflow"):
+		doc = nts.get_doc("Workflow", "SO Test Workflow")
 		doc.set("is_active", 1)
 		doc.save()
 		return doc
 
-	frappe.get_doc(dict(doctype="Role", role_name="Test Junior Approver")).insert(ignore_if_duplicate=True)
-	frappe.get_doc(dict(doctype="Role", role_name="Test Approver")).insert(ignore_if_duplicate=True)
-	frappe.cache().hdel("roles", frappe.session.user)
+	nts.get_doc(dict(doctype="Role", role_name="Test Junior Approver")).insert(ignore_if_duplicate=True)
+	nts.get_doc(dict(doctype="Role", role_name="Test Approver")).insert(ignore_if_duplicate=True)
+	nts.cache().hdel("roles", nts.session.user)
 
-	workflow = frappe.get_doc(
+	workflow = nts.get_doc(
 		{
 			"doctype": "Workflow",
 			"workflow_name": "SO Test Workflow",

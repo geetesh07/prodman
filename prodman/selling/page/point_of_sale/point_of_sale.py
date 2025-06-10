@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 
-import frappe
-from frappe.utils import cint
-from frappe.utils.nestedset import get_root_of
+import nts
+from nts.utils import cint
+from nts.utils.nestedset import get_root_of
 
 from prodman.accounts.doctype.pos_invoice.pos_invoice import get_stock_availability
 from prodman.accounts.doctype.pos_profile.pos_profile import get_child_nodes, get_item_groups
@@ -24,7 +24,7 @@ def search_by_term(search_term, warehouse, price_list):
 	if not result:
 		return
 
-	item_doc = frappe.get_doc("Item", item_code)
+	item_doc = nts.get_doc("Item", item_code)
 
 	if not item_doc:
 		return
@@ -66,7 +66,7 @@ def search_by_term(search_term, warehouse, price_list):
 	if batch_no:
 		price_filters["batch_no"] = ["in", [batch_no, ""]]
 
-	price = frappe.get_list(
+	price = nts.get_list(
 		doctype="Item Price",
 		filters=price_filters,
 		fields=["uom", "currency", "price_list_rate", "batch_no"],
@@ -109,23 +109,23 @@ def search_by_term(search_term, warehouse, price_list):
 
 def filter_result_items(result, pos_profile):
 	if result and result.get("items"):
-		pos_item_groups = frappe.db.get_all("POS Item Group", {"parent": pos_profile}, pluck="item_group")
+		pos_item_groups = nts.db.get_all("POS Item Group", {"parent": pos_profile}, pluck="item_group")
 		if not pos_item_groups:
 			return
 		result["items"] = [item for item in result.get("items") if item.get("item_group") in pos_item_groups]
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_parent_item_group():
 	# Using get_all to ignore user permission
-	item_group = frappe.get_all("Item Group", {"lft": 1, "is_group": 1}, pluck="name")
+	item_group = nts.get_all("Item Group", {"lft": 1, "is_group": 1}, pluck="name")
 	if item_group:
 		return item_group[0]
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_items(start, page_length, price_list, item_group, pos_profile, search_term=""):
-	warehouse, hide_unavailable_items = frappe.db.get_value(
+	warehouse, hide_unavailable_items = nts.db.get_value(
 		"POS Profile", pos_profile, ["warehouse", "hide_unavailable_items"]
 	)
 
@@ -137,20 +137,20 @@ def get_items(start, page_length, price_list, item_group, pos_profile, search_te
 		if result:
 			return result
 
-	if not frappe.db.exists("Item Group", item_group):
+	if not nts.db.exists("Item Group", item_group):
 		item_group = get_root_of("Item Group")
 
 	condition = get_conditions(search_term)
 	condition += get_item_group_condition(pos_profile)
 
-	lft, rgt = frappe.db.get_value("Item Group", item_group, ["lft", "rgt"])
+	lft, rgt = nts.db.get_value("Item Group", item_group, ["lft", "rgt"])
 
 	bin_join_selection, bin_join_condition = "", ""
 	if hide_unavailable_items:
 		bin_join_selection = "LEFT JOIN `tabBin` bin ON bin.item_code = item.name"
 		bin_join_condition = "AND (item.is_stock_item = 0 OR (item.is_stock_item = 1 AND bin.warehouse = %(warehouse)s AND bin.actual_qty > 0))"
 
-	items_data = frappe.db.sql(
+	items_data = nts.db.sql(
 		"""
 		SELECT
 			item.name AS item_code,
@@ -189,15 +189,15 @@ def get_items(start, page_length, price_list, item_group, pos_profile, search_te
 	if not items_data:
 		return result
 
-	current_date = frappe.utils.today()
+	current_date = nts.utils.today()
 
 	for item in items_data:
-		uoms = frappe.get_doc("Item", item.item_code).get("uoms", [])
+		uoms = nts.get_doc("Item", item.item_code).get("uoms", [])
 
 		item.actual_qty, _ = get_stock_availability(item.item_code, warehouse)
 		item.uom = item.stock_uom
 
-		item_price = frappe.get_all(
+		item_price = nts.get_all(
 			"Item Price",
 			fields=["price_list_rate", "currency", "uom", "batch_no", "valid_from", "valid_upto"],
 			filters={
@@ -232,7 +232,7 @@ def get_items(start, page_length, price_list, item_group, pos_profile, search_te
 	return {"items": result}
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def search_for_serial_or_batch_or_barcode_number(search_value: str) -> dict[str, str | None]:
 	return scan_barcode(search_value)
 
@@ -240,7 +240,7 @@ def search_for_serial_or_batch_or_barcode_number(search_value: str) -> dict[str,
 def get_conditions(search_term):
 	condition = "("
 	condition += """item.name like {search_term}
-		or item.item_name like {search_term}""".format(search_term=frappe.db.escape("%" + search_term + "%"))
+		or item.item_name like {search_term}""".format(search_term=nts.db.escape("%" + search_term + "%"))
 	condition += add_search_fields_condition(search_term)
 	condition += ")"
 
@@ -249,11 +249,11 @@ def get_conditions(search_term):
 
 def add_search_fields_condition(search_term):
 	condition = ""
-	search_fields = frappe.get_all("POS Search Fields", fields=["fieldname"])
+	search_fields = nts.get_all("POS Search Fields", fields=["fieldname"])
 	if search_fields:
 		for field in search_fields:
 			condition += " or item.`{}` like {}".format(
-				field["fieldname"], frappe.db.escape("%" + search_term + "%")
+				field["fieldname"], nts.db.escape("%" + search_term + "%")
 			)
 	return condition
 
@@ -267,8 +267,8 @@ def get_item_group_condition(pos_profile):
 	return cond % tuple(item_groups)
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def item_group_query(doctype, txt, searchfield, start, page_len, filters):
 	item_groups = []
 	cond = "1=1"
@@ -281,16 +281,16 @@ def item_group_query(doctype, txt, searchfield, start, page_len, filters):
 			cond = "name in (%s)" % (", ".join(["%s"] * len(item_groups)))
 			cond = cond % tuple(item_groups)
 
-	return frappe.db.sql(
+	return nts.db.sql(
 		f""" select distinct name from `tabItem Group`
 			where {cond} and (name like %(txt)s) limit {page_len} offset {start}""",
 		{"txt": "%%%s%%" % txt},
 	)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def check_opening_entry(user):
-	open_vouchers = frappe.db.get_all(
+	open_vouchers = nts.db.get_all(
 		"POS Opening Entry",
 		filters={"user": user, "pos_closing_entry": ["in", ["", None]], "docstatus": 1},
 		fields=["name", "company", "pos_profile", "period_start_date"],
@@ -300,16 +300,16 @@ def check_opening_entry(user):
 	return open_vouchers
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def create_opening_voucher(pos_profile, company, balance_details):
 	balance_details = json.loads(balance_details)
 
-	new_pos_opening = frappe.get_doc(
+	new_pos_opening = nts.get_doc(
 		{
 			"doctype": "POS Opening Entry",
-			"period_start_date": frappe.utils.get_datetime(),
-			"posting_date": frappe.utils.getdate(),
-			"user": frappe.session.user,
+			"period_start_date": nts.utils.get_datetime(),
+			"posting_date": nts.utils.getdate(),
+			"user": nts.session.user,
 			"pos_profile": pos_profile,
 			"company": company,
 		}
@@ -320,19 +320,19 @@ def create_opening_voucher(pos_profile, company, balance_details):
 	return new_pos_opening.as_dict()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_past_order_list(search_term, status, limit=20):
 	fields = ["name", "grand_total", "currency", "customer", "posting_time", "posting_date"]
 	invoice_list = []
 
 	if search_term and status:
-		invoices_by_customer = frappe.db.get_list(
+		invoices_by_customer = nts.db.get_list(
 			"POS Invoice",
 			filters={"customer": ["like", f"%{search_term}%"], "status": status},
 			fields=fields,
 			page_length=limit,
 		)
-		invoices_by_name = frappe.db.get_list(
+		invoices_by_name = nts.db.get_list(
 			"POS Invoice",
 			filters={"name": ["like", f"%{search_term}%"], "status": status},
 			fields=fields,
@@ -341,21 +341,21 @@ def get_past_order_list(search_term, status, limit=20):
 
 		invoice_list = invoices_by_customer + invoices_by_name
 	elif status:
-		invoice_list = frappe.db.get_list(
+		invoice_list = nts.db.get_list(
 			"POS Invoice", filters={"status": status}, fields=fields, page_length=limit
 		)
 
 	return invoice_list
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def set_customer_info(fieldname, customer, value=""):
 	if fieldname == "loyalty_program":
-		frappe.db.set_value("Customer", customer, "loyalty_program", value)
+		nts.db.set_value("Customer", customer, "loyalty_program", value)
 
-	contact = frappe.get_cached_value("Customer", customer, "customer_primary_contact")
+	contact = nts.get_cached_value("Customer", customer, "customer_primary_contact")
 	if not contact:
-		contact = frappe.db.sql(
+		contact = nts.db.sql(
 			"""
 			SELECT parent FROM `tabDynamic Link`
 			WHERE
@@ -370,27 +370,27 @@ def set_customer_info(fieldname, customer, value=""):
 		contact = contact[0].get("parent") if contact else None
 
 	if not contact:
-		new_contact = frappe.new_doc("Contact")
+		new_contact = nts.new_doc("Contact")
 		new_contact.is_primary_contact = 1
 		new_contact.first_name = customer
 		new_contact.set("links", [{"link_doctype": "Customer", "link_name": customer}])
 		new_contact.save()
 		contact = new_contact.name
-		frappe.db.set_value("Customer", customer, "customer_primary_contact", contact)
+		nts.db.set_value("Customer", customer, "customer_primary_contact", contact)
 
-	contact_doc = frappe.get_doc("Contact", contact)
+	contact_doc = nts.get_doc("Contact", contact)
 	if fieldname == "email_id":
 		contact_doc.set("email_ids", [{"email_id": value, "is_primary": 1}])
-		frappe.db.set_value("Customer", customer, "email_id", value)
+		nts.db.set_value("Customer", customer, "email_id", value)
 	elif fieldname == "mobile_no":
 		contact_doc.set("phone_nos", [{"phone": value, "is_primary_mobile_no": 1}])
-		frappe.db.set_value("Customer", customer, "mobile_no", value)
+		nts.db.set_value("Customer", customer, "mobile_no", value)
 	contact_doc.save()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_pos_profile_data(pos_profile):
-	pos_profile = frappe.get_doc("POS Profile", pos_profile)
+	pos_profile = nts.get_doc("POS Profile", pos_profile)
 	pos_profile = pos_profile.as_dict()
 
 	_customer_groups_with_children = []

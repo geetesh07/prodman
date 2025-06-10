@@ -1,12 +1,12 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import copy
 
-import frappe
-from frappe import _, qb
-from frappe.model.document import Document
-from frappe.query_builder.custom import ConstantColumn
+import nts 
+from nts  import _, qb
+from nts .model.document import Document
+from nts .query_builder.custom import ConstantColumn
 
 from prodman.accounts.utils import _delete_pl_entries, create_payment_ledger_entry
 
@@ -19,17 +19,17 @@ def repost_ple_for_voucher(voucher_type, voucher_no, gle_map=None):
 		create_payment_ledger_entry(gle_map, cancel=0)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def start_payment_ledger_repost(docname=None):
 	"""
 	Repost Payment Ledger Entries for Vouchers through Background Job
 	"""
 	if docname:
-		repost_doc = frappe.get_doc("Repost Payment Ledger", docname)
+		repost_doc = nts .get_doc("Repost Payment Ledger", docname)
 		if repost_doc.docstatus.is_submitted() and repost_doc.repost_status in ["Queued", "Failed"]:
 			try:
 				for entry in repost_doc.repost_vouchers:
-					doc = frappe.get_doc(entry.voucher_type, entry.voucher_no)
+					doc = nts .get_doc(entry.voucher_type, entry.voucher_no)
 
 					if doc.doctype in ["Payment Entry", "Journal Entry"]:
 						gle_map = doc.build_gl_map()
@@ -38,17 +38,17 @@ def start_payment_ledger_repost(docname=None):
 
 					repost_ple_for_voucher(entry.voucher_type, entry.voucher_no, gle_map)
 
-				frappe.db.set_value(repost_doc.doctype, repost_doc.name, "repost_error_log", "")
-				frappe.db.set_value(repost_doc.doctype, repost_doc.name, "repost_status", "Completed")
+				nts .db.set_value(repost_doc.doctype, repost_doc.name, "repost_error_log", "")
+				nts .db.set_value(repost_doc.doctype, repost_doc.name, "repost_status", "Completed")
 			except Exception:
-				frappe.db.rollback()
+				nts .db.rollback()
 
-				traceback = frappe.get_traceback(with_context=True)
+				traceback = nts .get_traceback(with_context=True)
 				if traceback:
 					message = "Traceback: <br>" + traceback
-					frappe.db.set_value(repost_doc.doctype, repost_doc.name, "repost_error_log", message)
+					nts .db.set_value(repost_doc.doctype, repost_doc.name, "repost_error_log", message)
 
-				frappe.db.set_value(repost_doc.doctype, repost_doc.name, "repost_status", "Failed")
+				nts .db.set_value(repost_doc.doctype, repost_doc.name, "repost_status", "Failed")
 
 
 class RepostPaymentLedger(Document):
@@ -58,7 +58,7 @@ class RepostPaymentLedger(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.repost_payment_ledger_items.repost_payment_ledger_items import (
 			RepostPaymentLedgerItems,
@@ -114,16 +114,16 @@ class RepostPaymentLedger(Document):
 
 	def on_submit(self):
 		execute_repost_payment_ledger(self.name)
-		frappe.msgprint(_("Repost started in the background"))
+		nts .msgprint(_("Repost started in the background"))
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def execute_repost_payment_ledger(docname):
 	"""Repost Payment Ledger Entries by background job."""
 
 	job_name = "payment_ledger_repost_" + docname
 
-	frappe.enqueue(
+	nts .enqueue(
 		method="prodman.accounts.doctype.repost_payment_ledger.repost_payment_ledger.start_payment_ledger_repost",
 		docname=docname,
 		is_async=True,

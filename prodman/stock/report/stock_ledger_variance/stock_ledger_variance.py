@@ -1,11 +1,11 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import json
 
-import frappe
-from frappe import _
-from frappe.utils import cint, flt
+import nts
+from nts import _
+from nts.utils import cint, flt
 
 from prodman.stock.report.stock_ledger_invariant_check.stock_ledger_invariant_check import (
 	get_data as stock_ledger_invariant_check,
@@ -15,7 +15,7 @@ from prodman.stock.report.stock_ledger_invariant_check.stock_ledger_invariant_ch
 def execute(filters=None):
 	columns, data = [], []
 
-	filters = frappe._dict(filters or {})
+	filters = nts._dict(filters or {})
 	columns = get_columns()
 	data = get_data(filters)
 
@@ -199,13 +199,13 @@ def get_columns():
 
 
 def get_data(filters=None):
-	filters = frappe._dict(filters or {})
+	filters = nts._dict(filters or {})
 	item_warehouse_map = get_item_warehouse_combinations(filters)
-	valuation_method = frappe.db.get_single_value("Stock Settings", "valuation_method")
+	valuation_method = nts.db.get_single_value("Stock Settings", "valuation_method")
 
 	data = []
 	if item_warehouse_map:
-		precision = cint(frappe.db.get_single_value("System Settings", "float_precision"))
+		precision = cint(nts.db.get_single_value("System Settings", "float_precision"))
 
 		for item_warehouse in item_warehouse_map:
 			report_data = stock_ledger_invariant_check(item_warehouse)
@@ -231,14 +231,14 @@ def get_data(filters=None):
 
 
 def get_item_warehouse_combinations(filters: dict | None = None) -> dict:
-	filters = frappe._dict(filters or {})
+	filters = nts._dict(filters or {})
 
-	bin = frappe.qb.DocType("Bin")
-	item = frappe.qb.DocType("Item")
-	warehouse = frappe.qb.DocType("Warehouse")
+	bin = nts.qb.DocType("Bin")
+	item = nts.qb.DocType("Item")
+	warehouse = nts.qb.DocType("Warehouse")
 
 	query = (
-		frappe.qb.from_(bin)
+		nts.qb.from_(bin)
 		.inner_join(item)
 		.on(bin.item_code == item.name)
 		.inner_join(warehouse)

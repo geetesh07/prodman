@@ -1,17 +1,17 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("accounts", "doctype", "bank_transaction")
+	nts.reload_doc("accounts", "doctype", "bank_transaction")
 
-	bank_transaction_fields = frappe.get_meta("Bank Transaction").get_valid_columns()
+	bank_transaction_fields = nts.get_meta("Bank Transaction").get_valid_columns()
 
 	if "debit" in bank_transaction_fields:
-		frappe.db.sql(
+		nts.db.sql(
 			""" UPDATE `tabBank Transaction`
             SET status = 'Reconciled'
             WHERE
@@ -21,7 +21,7 @@ def execute():
 		)
 
 	elif "deposit" in bank_transaction_fields:
-		frappe.db.sql(
+		nts.db.sql(
 			""" UPDATE `tabBank Transaction`
             SET status = 'Reconciled'
             WHERE

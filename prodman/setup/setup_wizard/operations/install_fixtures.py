@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
@@ -6,13 +6,13 @@ import json
 import os
 from pathlib import Path
 
-import frappe
-from frappe import _
-from frappe.desk.doctype.global_search_settings.global_search_settings import (
+import nts
+from nts import _
+from nts.desk.doctype.global_search_settings.global_search_settings import (
 	update_global_search_doctypes,
 )
-from frappe.desk.page.setup_wizard.setup_wizard import make_records
-from frappe.utils import cstr, getdate
+from nts.desk.page.setup_wizard.setup_wizard import make_records
+from nts.utils import cstr, getdate
 
 from prodman.accounts.doctype.account.account import RootNotEditable
 from prodman.regional.address_template.setup import set_up_address_templates
@@ -298,8 +298,8 @@ def install(country=None):
 	):
 		records += [{"doctype": doctype, title_field: title} for title in read_lines(filename)]
 
-	base_path = frappe.get_app_path("prodman", "stock", "doctype")
-	response = frappe.read_file(os.path.join(base_path, "delivery_trip/dispatch_notification_template.html"))
+	base_path = nts.get_app_path("prodman", "stock", "doctype")
+	response = nts.read_file(os.path.join(base_path, "delivery_trip/dispatch_notification_template.html"))
 
 	records += [
 		{
@@ -307,7 +307,7 @@ def install(country=None):
 			"name": _("Dispatch Notification"),
 			"response": response,
 			"subject": _("Your order is out for delivery!"),
-			"owner": frappe.session.user,
+			"owner": nts.session.user,
 		}
 	]
 
@@ -325,7 +325,7 @@ def install(country=None):
 
 
 def update_selling_defaults():
-	selling_settings = frappe.get_doc("Selling Settings")
+	selling_settings = nts.get_doc("Selling Settings")
 	selling_settings.cust_master_name = "Customer Name"
 	selling_settings.so_required = "No"
 	selling_settings.dn_required = "No"
@@ -335,7 +335,7 @@ def update_selling_defaults():
 
 
 def update_buying_defaults():
-	buying_settings = frappe.get_doc("Buying Settings")
+	buying_settings = nts.get_doc("Buying Settings")
 	buying_settings.supp_master_name = "Supplier Name"
 	buying_settings.po_required = "No"
 	buying_settings.pr_required = "No"
@@ -346,7 +346,7 @@ def update_buying_defaults():
 
 def update_item_variant_settings():
 	# set no copy fields of an item doctype to item variant settings
-	doc = frappe.get_doc("Item Variant Settings")
+	doc = nts.get_doc("Item Variant Settings")
 	doc.set_default_fields()
 	doc.save()
 
@@ -354,11 +354,11 @@ def update_item_variant_settings():
 def add_uom_data():
 	# add UOMs
 	uoms = json.loads(
-		open(frappe.get_app_path("prodman", "setup", "setup_wizard", "data", "uom_data.json")).read()
+		open(nts.get_app_path("prodman", "setup", "setup_wizard", "data", "uom_data.json")).read()
 	)
 	for d in uoms:
-		if not frappe.db.exists("UOM", _(d.get("uom_name"))):
-			frappe.get_doc(
+		if not nts.db.exists("UOM", _(d.get("uom_name"))):
+			nts.get_doc(
 				{
 					"doctype": "UOM",
 					"uom_name": _(d.get("uom_name")),
@@ -371,18 +371,18 @@ def add_uom_data():
 	# bootstrap uom conversion factors
 	uom_conversions = json.loads(
 		open(
-			frappe.get_app_path("prodman", "setup", "setup_wizard", "data", "uom_conversion_data.json")
+			nts.get_app_path("prodman", "setup", "setup_wizard", "data", "uom_conversion_data.json")
 		).read()
 	)
 	for d in uom_conversions:
-		if not frappe.db.exists("UOM Category", _(d.get("category"))):
-			frappe.get_doc({"doctype": "UOM Category", "category_name": _(d.get("category"))}).db_insert()
+		if not nts.db.exists("UOM Category", _(d.get("category"))):
+			nts.get_doc({"doctype": "UOM Category", "category_name": _(d.get("category"))}).db_insert()
 
-		if not frappe.db.exists(
+		if not nts.db.exists(
 			"UOM Conversion Factor",
 			{"from_uom": _(d.get("from_uom")), "to_uom": _(d.get("to_uom"))},
 		):
-			frappe.get_doc(
+			nts.get_doc(
 				{
 					"doctype": "UOM Conversion Factor",
 					"category": _(d.get("category")),
@@ -417,7 +417,7 @@ def add_sale_stages():
 		{"doctype": "Sales Stage", "stage_name": _("Negotiation/Review")},
 	]
 	for sales_stage in records:
-		frappe.get_doc(sales_stage).db_insert()
+		nts.get_doc(sales_stage).db_insert()
 
 
 def install_company(args):
@@ -470,8 +470,8 @@ def install_defaults(args=None):  # nosemgrep
 	make_records(records)
 
 	# enable default currency
-	frappe.db.set_value("Currency", args.get("currency"), "enabled", 1)
-	frappe.db.set_single_value("Stock Settings", "email_footer_address", args.get("company_name"))
+	nts.db.set_value("Currency", args.get("currency"), "enabled", 1)
+	nts.db.set_single_value("Stock Settings", "email_footer_address", args.get("company_name"))
 
 	set_global_defaults(args)
 	update_stock_settings()
@@ -481,7 +481,7 @@ def install_defaults(args=None):  # nosemgrep
 
 
 def set_global_defaults(args):
-	global_defaults = frappe.get_doc("Global Defaults", "Global Defaults")
+	global_defaults = nts.get_doc("Global Defaults", "Global Defaults")
 
 	global_defaults.update(
 		{
@@ -495,10 +495,10 @@ def set_global_defaults(args):
 
 
 def update_stock_settings():
-	stock_settings = frappe.get_doc("Stock Settings")
+	stock_settings = nts.get_doc("Stock Settings")
 	stock_settings.item_naming_by = "Item Code"
 	stock_settings.valuation_method = "FIFO"
-	stock_settings.default_warehouse = frappe.db.get_value("Warehouse", {"warehouse_name": _("Stores")})
+	stock_settings.default_warehouse = nts.db.get_value("Warehouse", {"warehouse_name": _("Stores")})
 	stock_settings.stock_uom = _("Nos")
 	stock_settings.auto_indent = 1
 	stock_settings.auto_insert_price_list_rate_if_missing = 1
@@ -512,12 +512,12 @@ def create_bank_account(args):
 		args["bank_account"] = _("Bank Account")
 
 	company_name = args.get("company_name")
-	bank_account_group = frappe.db.get_value(
+	bank_account_group = nts.db.get_value(
 		"Account",
 		{"account_type": "Bank", "is_group": 1, "root_type": "Asset", "company": company_name},
 	)
 	if bank_account_group:
-		bank_account = frappe.get_doc(
+		bank_account = nts.get_doc(
 			{
 				"doctype": "Account",
 				"account_name": args.get("bank_account"),
@@ -531,7 +531,7 @@ def create_bank_account(args):
 			doc = bank_account.insert()
 
 			if args.get("set_default"):
-				frappe.db.set_value(
+				nts.db.set_value(
 					"Company",
 					args.get("company_name"),
 					"default_bank_account",
@@ -542,8 +542,8 @@ def create_bank_account(args):
 			return doc
 
 		except RootNotEditable:
-			frappe.throw(_("Bank account cannot be named as {0}").format(args.get("bank_account")))
-		except frappe.DuplicateEntryError:
+			nts.throw(_("Bank account cannot be named as {0}").format(args.get("bank_account")))
+		except nts.DuplicateEntryError:
 			# bank account same as a CoA entry
 			pass
 

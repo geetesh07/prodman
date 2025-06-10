@@ -1,13 +1,13 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _, msgprint, qb
-from frappe.model.document import Document
-from frappe.query_builder import Criterion
-from frappe.query_builder.custom import ConstantColumn
-from frappe.utils import flt, fmt_money, get_link_to_form, getdate, nowdate, today
+import nts 
+from nts  import _, msgprint, qb
+from nts .model.document import Document
+from nts .query_builder import Criterion
+from nts .query_builder.custom import ConstantColumn
+from nts .utils import flt, fmt_money, get_link_to_form, getdate, nowdate, today
 
 import prodman
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import get_dimensions
@@ -30,7 +30,7 @@ class PaymentReconciliation(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.payment_reconciliation_allocation.payment_reconciliation_allocation import (
 			PaymentReconciliationAllocation,
@@ -75,7 +75,7 @@ class PaymentReconciliation(Document):
 
 	def load_from_db(self):
 		# 'modified' attribute is required for `run_doc_method` to work properly.
-		doc_dict = frappe._dict(
+		doc_dict = nts ._dict(
 			{
 				"modified": None,
 				"company": None,
@@ -125,7 +125,7 @@ class PaymentReconciliation(Document):
 	def delete(self):
 		pass
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def get_unreconciled_entries(self):
 		self.get_nonreconciled_payment_entries()
 		self.get_invoice_entries()
@@ -156,7 +156,7 @@ class PaymentReconciliation(Document):
 		party_account = [self.receivable_payable_account]
 
 		order_doctype = "Sales Order" if self.party_type == "Customer" else "Purchase Order"
-		condition = frappe._dict(
+		condition = nts ._dict(
 			{
 				"company": self.get("company"),
 				"get_payments": True,
@@ -265,7 +265,7 @@ class PaymentReconciliation(Document):
 
 		conditions = []
 		conditions.append(doc.docstatus == 1)
-		conditions.append(doc[frappe.scrub(self.party_type)] == self.party)
+		conditions.append(doc[nts .scrub(self.party_type)] == self.party)
 		conditions.append(doc.is_return == 1)
 		conditions.append(doc.outstanding_amount != 0)
 
@@ -315,7 +315,7 @@ class PaymentReconciliation(Document):
 			for inv in return_outstanding:
 				if inv.outstanding != 0:
 					outstanding_dr_or_cr.append(
-						frappe._dict(
+						nts ._dict(
 							{
 								"reference_type": inv.voucher_type,
 								"reference_name": inv.voucher_no,
@@ -393,9 +393,9 @@ class PaymentReconciliation(Document):
 
 	def get_difference_amount(self, payment_entry, invoice, allocated_amount):
 		difference_amount = 0
-		if frappe.get_cached_value(
+		if nts .get_cached_value(
 			"Account", self.receivable_payable_account, "account_currency"
-		) != frappe.get_cached_value("Company", self.company, "default_currency"):
+		) != nts .get_cached_value("Company", self.company, "default_currency"):
 			if invoice.get("exchange_rate") and payment_entry.get("exchange_rate", 1) != invoice.get(
 				"exchange_rate", 1
 			):
@@ -405,11 +405,11 @@ class PaymentReconciliation(Document):
 
 		return difference_amount
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def is_auto_process_enabled(self):
-		return frappe.db.get_single_value("Accounts Settings", "auto_reconcile_payments")
+		return nts .db.get_single_value("Accounts Settings", "auto_reconcile_payments")
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def calculate_difference_on_allocation_change(self, payment_entry, invoice, allocated_amount):
 		invoice_exchange_map = self.get_invoice_exchange_map(invoice, payment_entry)
 		invoice[0]["exchange_rate"] = invoice_exchange_map.get(invoice[0].get("invoice_number"))
@@ -421,15 +421,15 @@ class PaymentReconciliation(Document):
 		new_difference_amount = self.get_difference_amount(payment_entry[0], invoice[0], allocated_amount)
 		return new_difference_amount
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def allocate_entries(self, args):
 		self.validate_entries()
 
-		exc_gain_loss_posting_date = frappe.db.get_single_value(
+		exc_gain_loss_posting_date = nts .db.get_single_value(
 			"Accounts Settings", "exchange_gain_loss_posting_date", cache=True
 		)
 		invoice_exchange_map = self.get_invoice_exchange_map(args.get("invoices"), args.get("payments"))
-		default_exchange_gain_loss_account = frappe.get_cached_value(
+		default_exchange_gain_loss_account = nts .get_cached_value(
 			"Company", self.company, "exchange_gain_loss_account"
 		)
 
@@ -484,7 +484,7 @@ class PaymentReconciliation(Document):
 		return res
 
 	def get_allocated_entry(self, pay, inv, allocated_amount):
-		res = frappe._dict(
+		res = nts ._dict(
 			{
 				"reference_type": pay.get("reference_type"),
 				"reference_name": pay.get("reference_name"),
@@ -530,9 +530,9 @@ class PaymentReconciliation(Document):
 		if dr_or_cr_notes:
 			reconcile_dr_cr_note(dr_or_cr_notes, self.company, self.dimensions)
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def reconcile(self):
-		if frappe.db.get_single_value("Accounts Settings", "auto_reconcile_payments"):
+		if nts .db.get_single_value("Accounts Settings", "auto_reconcile_payments"):
 			running_doc = is_any_doc_running(
 				dict(
 					company=self.company,
@@ -543,7 +543,7 @@ class PaymentReconciliation(Document):
 			)
 
 			if running_doc:
-				frappe.throw(
+				nts .throw(
 					_(
 						"A Reconciliation Job {0} is running for the same filters. Cannot reconcile now"
 					).format(get_link_to_form("Auto Reconcile", running_doc))
@@ -557,7 +557,7 @@ class PaymentReconciliation(Document):
 		self.get_unreconciled_entries()
 
 	def get_payment_details(self, row, dr_or_cr):
-		payment_details = frappe._dict(
+		payment_details = nts ._dict(
 			{
 				"voucher_type": row.get("reference_type"),
 				"voucher_no": row.get("reference_name"),
@@ -589,14 +589,14 @@ class PaymentReconciliation(Document):
 	def check_mandatory_to_fetch(self):
 		for fieldname in ["company", "party_type", "party", "receivable_payable_account"]:
 			if not self.get(fieldname):
-				frappe.throw(_("Please select {0} first").format(self.meta.get_label(fieldname)))
+				nts .throw(_("Please select {0} first").format(self.meta.get_label(fieldname)))
 
 	def validate_entries(self):
 		if not self.get("invoices"):
-			frappe.throw(_("No records found in the Invoices table"))
+			nts .throw(_("No records found in the Invoices table"))
 
 		if not self.get("payments"):
-			frappe.throw(_("No records found in the Payments table"))
+			nts .throw(_("No records found in the Payments table"))
 
 	def get_invoice_exchange_map(self, invoices, payments):
 		sales_invoices = [
@@ -613,11 +613,11 @@ class PaymentReconciliation(Document):
 			[d.get("reference_name") for d in payments if d.get("reference_type") == "Purchase Invoice"]
 		)
 
-		invoice_exchange_map = frappe._dict()
+		invoice_exchange_map = nts ._dict()
 
 		if sales_invoices:
-			sales_invoice_map = frappe._dict(
-				frappe.db.get_all(
+			sales_invoice_map = nts ._dict(
+				nts .db.get_all(
 					"Sales Invoice",
 					filters={"name": ("in", sales_invoices)},
 					fields=["name", "conversion_rate"],
@@ -628,8 +628,8 @@ class PaymentReconciliation(Document):
 			invoice_exchange_map.update(sales_invoice_map)
 
 		if purchase_invoices:
-			purchase_invoice_map = frappe._dict(
-				frappe.db.get_all(
+			purchase_invoice_map = nts ._dict(
+				nts .db.get_all(
 					"Purchase Invoice",
 					filters={"name": ("in", purchase_invoices)},
 					fields=["name", "conversion_rate"],
@@ -645,8 +645,8 @@ class PaymentReconciliation(Document):
 		)
 		if journals:
 			journals = list(set(journals))
-			journals_map = frappe._dict(
-				frappe.db.get_all(
+			journals_map = nts ._dict(
+				nts .db.get_all(
 					"Journal Entry Account",
 					filters={
 						"parent": ("in", journals),
@@ -666,7 +666,7 @@ class PaymentReconciliation(Document):
 		return invoice_exchange_map
 
 	def validate_allocation(self):
-		unreconciled_invoices = frappe._dict()
+		unreconciled_invoices = nts ._dict()
 
 		for inv in self.get("invoices"):
 			unreconciled_invoices.setdefault(inv.invoice_type, {}).setdefault(
@@ -679,7 +679,7 @@ class PaymentReconciliation(Document):
 				invoices_to_reconcile.append(row.invoice_number)
 
 				if flt(row.amount) - flt(row.allocated_amount) < 0:
-					frappe.throw(
+					nts .throw(
 						_(
 							"Row {0}: Allocated amount {1} must be less than or equal to remaining payment amount {2}"
 						).format(row.idx, row.allocated_amount, row.amount)
@@ -687,14 +687,14 @@ class PaymentReconciliation(Document):
 
 				invoice_outstanding = unreconciled_invoices.get(row.invoice_type, {}).get(row.invoice_number)
 				if flt(row.allocated_amount) - invoice_outstanding > 0.009:
-					frappe.throw(
+					nts .throw(
 						_(
 							"Row {0}: Allocated amount {1} must be less than or equal to invoice outstanding amount {2}"
 						).format(row.idx, row.allocated_amount, invoice_outstanding)
 					)
 
 		if not invoices_to_reconcile:
-			frappe.throw(_("No records found in Allocation table"))
+			nts .throw(_("No records found in Allocation table"))
 
 	def build_dimensions_filter_conditions(self):
 		ple = qb.DocType("Payment Ledger Entry")
@@ -761,7 +761,7 @@ def reconcile_dr_cr_note(dr_cr_notes, company, active_dimensions=None):
 
 		company_currency = prodman.get_company_currency(company)
 
-		jv = frappe.get_doc(
+		jv = nts .get_doc(
 			{
 				"doctype": "Journal Entry",
 				"voucher_type": voucher_type,
@@ -800,7 +800,7 @@ def reconcile_dr_cr_note(dr_cr_notes, company, active_dimensions=None):
 		)
 
 		# Credit Note(JE) will inherit the same dimension values as payment
-		dimensions_dict = frappe._dict()
+		dimensions_dict = nts ._dict()
 		if active_dimensions:
 			for dim in active_dimensions:
 				dimensions_dict[dim.fieldname] = inv.get(dim.fieldname)
@@ -850,12 +850,12 @@ def adjust_allocations_for_taxes(doc):
 	pass
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_queries_for_dimension_filters(company: str | None = None):
 	dimensions_with_filters = []
 	for d in get_dimensions()[0]:
 		filters = {}
-		meta = frappe.get_meta(d.document_type)
+		meta = nts .get_meta(d.document_type)
 		if meta.has_field("company") and company:
 			filters.update({"company": company})
 

@@ -1,10 +1,10 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.model.mapper import get_mapped_doc
-from frappe.utils import flt
+import nts
+from nts import _
+from nts.model.mapper import get_mapped_doc
+from nts.utils import flt
 
 from prodman.buying.utils import check_on_hold_or_closed_status
 from prodman.controllers.subcontracting_controller import SubcontractingController
@@ -19,7 +19,7 @@ class SubcontractingOrder(SubcontractingController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.stock.doctype.landed_cost_taxes_and_charges.landed_cost_taxes_and_charges import (
 			LandedCostTaxesandCharges,
@@ -101,7 +101,7 @@ class SubcontractingOrder(SubcontractingController):
 	def onload(self):
 		self.set_onload(
 			"over_transfer_allowance",
-			frappe.db.get_single_value("Buying Settings", "over_transfer_allowance"),
+			nts.db.get_single_value("Buying Settings", "over_transfer_allowance"),
 		)
 
 	def before_validate(self):
@@ -128,24 +128,24 @@ class SubcontractingOrder(SubcontractingController):
 
 	def validate_purchase_order_for_subcontracting(self):
 		if self.purchase_order:
-			po = frappe.get_doc("Purchase Order", self.purchase_order)
+			po = nts.get_doc("Purchase Order", self.purchase_order)
 
 			if not po.is_subcontracted:
-				frappe.throw(_("Please select a valid Purchase Order that is configured for Subcontracting."))
+				nts.throw(_("Please select a valid Purchase Order that is configured for Subcontracting."))
 
 			if po.is_old_subcontracting_flow:
-				frappe.throw(_("Please select a valid Purchase Order that has Service Items."))
+				nts.throw(_("Please select a valid Purchase Order that has Service Items."))
 
 			if po.docstatus != 1:
 				msg = f"Please submit Purchase Order {po.name} before proceeding."
-				frappe.throw(_(msg))
+				nts.throw(_(msg))
 
 			if po.per_received == 100:
 				msg = f"Cannot create more Subcontracting Orders against the Purchase Order {po.name}."
-				frappe.throw(_(msg))
+				nts.throw(_(msg))
 		else:
 			self.service_items = self.items = self.supplied_items = None
-			frappe.throw(_("Please select a Subcontracting Purchase Order."))
+			nts.throw(_("Please select a Subcontracting Purchase Order."))
 
 	def validate_service_items(self):
 		purchase_order_items = [item.purchase_order_item for item in self.items]
@@ -156,8 +156,8 @@ class SubcontractingOrder(SubcontractingController):
 		]
 
 		for service_item in self.service_items:
-			if frappe.get_value("Item", service_item.item_code, "is_stock_item"):
-				frappe.throw(_("Service Item {0} must be a non-stock item.").format(service_item.item_code))
+			if nts.get_value("Item", service_item.item_code, "is_stock_item"):
+				nts.throw(_("Service Item {0} must be a non-stock item.").format(service_item.item_code))
 
 			item = next(
 				item for item in self.items if item.purchase_order_item == service_item.purchase_order_item
@@ -171,7 +171,7 @@ class SubcontractingOrder(SubcontractingController):
 			for item in self.supplied_items:
 				if self.supplier_warehouse == item.reserve_warehouse:
 					msg = f"Reserve Warehouse must be different from Supplier Warehouse for Supplied Item {item.main_item_code}."
-					frappe.throw(_(msg))
+					nts.throw(_(msg))
 
 	def set_missing_values(self):
 		self.calculate_additional_costs()
@@ -185,7 +185,7 @@ class SubcontractingOrder(SubcontractingController):
 
 	def calculate_supplied_items_qty_and_amount(self):
 		for item in self.get("items"):
-			bom = frappe.get_doc("BOM", item.bom)
+			bom = nts.get_doc("BOM", item.bom)
 			rm_cost = sum(flt(rm_item.amount) for rm_item in bom.items)
 			item.rm_cost_per_qty = rm_cost / flt(bom.quantity)
 
@@ -206,7 +206,7 @@ class SubcontractingOrder(SubcontractingController):
 			if (
 				(not sco_item_rows or item.name in sco_item_rows)
 				and [item.item_code, item.warehouse] not in item_wh_list
-				and frappe.get_cached_value("Item", item.item_code, "is_stock_item")
+				and nts.get_cached_value("Item", item.item_code, "is_stock_item")
 				and item.warehouse
 			):
 				item_wh_list.append([item.item_code, item.warehouse])
@@ -215,11 +215,11 @@ class SubcontractingOrder(SubcontractingController):
 
 	@staticmethod
 	def get_ordered_qty(item_code, warehouse):
-		table = frappe.qb.DocType("Subcontracting Order")
-		child = frappe.qb.DocType("Subcontracting Order Item")
+		table = nts.qb.DocType("Subcontracting Order")
+		child = nts.qb.DocType("Subcontracting Order Item")
 
 		query = (
-			frappe.qb.from_(table)
+			nts.qb.from_(table)
 			.inner_join(child)
 			.on(table.name == child.parent)
 			.select((child.qty - child.received_qty) * child.conversion_factor)
@@ -247,9 +247,9 @@ class SubcontractingOrder(SubcontractingController):
 
 		for si in self.service_items:
 			if si.fg_item:
-				item = frappe.get_doc("Item", si.fg_item)
+				item = nts.get_doc("Item", si.fg_item)
 
-				po_item = frappe.get_doc("Purchase Order Item", si.purchase_order_item)
+				po_item = nts.get_doc("Purchase Order Item", si.purchase_order_item)
 				available_qty = po_item.qty - po_item.subcontracted_quantity
 
 				if available_qty == 0:
@@ -258,12 +258,12 @@ class SubcontractingOrder(SubcontractingController):
 				si.qty = available_qty
 				conversion_factor = po_item.qty / po_item.fg_item_qty
 				si.fg_item_qty = flt(
-					available_qty / conversion_factor, frappe.get_precision("Purchase Order Item", "qty")
+					available_qty / conversion_factor, nts.get_precision("Purchase Order Item", "qty")
 				)
 				si.amount = available_qty * si.rate
 
 				bom = (
-					frappe.db.get_value(
+					nts.db.get_value(
 						"Subcontracting BOM",
 						{"finished_good": item.item_code, "is_active": 1},
 						"finished_good_bom",
@@ -287,7 +287,7 @@ class SubcontractingOrder(SubcontractingController):
 					}
 				)
 			else:
-				frappe.throw(
+				nts.throw(
 					_("Please select Finished Good Item for Service Item {0}").format(
 						si.item_name or si.item_code
 					)
@@ -334,7 +334,7 @@ class SubcontractingOrder(SubcontractingController):
 
 	def update_subcontracted_quantity_in_po(self, cancel=False):
 		for service_item in self.service_items:
-			doc = frappe.get_doc("Purchase Order Item", service_item.purchase_order_item)
+			doc = nts.get_doc("Purchase Order Item", service_item.purchase_order_item)
 			doc.subcontracted_quantity = (
 				(doc.subcontracted_quantity + service_item.qty)
 				if not cancel
@@ -343,7 +343,7 @@ class SubcontractingOrder(SubcontractingController):
 			doc.save()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_subcontracting_receipt(source_name, target_doc=None):
 	return get_mapped_subcontracting_receipt(source_name, target_doc)
 
@@ -386,9 +386,9 @@ def get_mapped_subcontracting_receipt(source_name, target_doc=None):
 	return target_doc
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def update_subcontracting_order_status(sco, status=None):
 	if isinstance(sco, str):
-		sco = frappe.get_doc("Subcontracting Order", sco)
+		sco = nts.get_doc("Subcontracting Order", sco)
 
 	sco.update_status(status)

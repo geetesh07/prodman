@@ -1,13 +1,13 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 // get tax rate
-frappe.provide("prodman.taxes");
+nts.provide("prodman.taxes");
 
 prodman.accounts.taxes = {
 	setup_tax_validations: function(doctype) {
 		let me = this;
-		frappe.ui.form.on(doctype, {
+		nts.ui.form.on(doctype, {
 			setup: function(frm) {
 				// set conditional display for rate column in taxes
 				$(frm.wrapper).on('grid-row-render', function(e, grid_row) {
@@ -102,16 +102,16 @@ prodman.accounts.taxes = {
 			}
 		}
 		if (msg) {
-			frappe.validated = false;
+			nts.validated = false;
 			refresh_field("taxes");
-			frappe.throw(msg);
+			nts.throw(msg);
 		}
 
 	},
 
 	setup_tax_filters: function(doctype) {
 		let me = this;
-		frappe.ui.form.on(doctype, {
+		nts.ui.form.on(doctype, {
 			account_head: function(frm, cdt, cdn) {
 				let d = locals[cdt][cdn];
 
@@ -121,18 +121,18 @@ prodman.accounts.taxes = {
 				}
 
 				if(!d.charge_type && d.account_head){
-					frappe.msgprint(__("Please select Charge Type first"));
-					frappe.model.set_value(cdt, cdn, "account_head", "");
+					nts.msgprint(__("Please select Charge Type first"));
+					nts.model.set_value(cdt, cdn, "account_head", "");
 				} else if (d.account_head) {
-					frappe.call({
+					nts.call({
 						type:"GET",
 						method: "prodman.controllers.accounts_controller.get_tax_rate",
 						args: {"account_head":d.account_head},
 						callback: function(r) {
 							if (d.charge_type!=="Actual") {
-								frappe.model.set_value(cdt, cdn, "rate", r.message.tax_rate || 0);
+								nts.model.set_value(cdt, cdn, "rate", r.message.tax_rate || 0);
 							}
-							frappe.model.set_value(cdt, cdn, "description", r.message.account_name);
+							nts.model.set_value(cdt, cdn, "description", r.message.account_name);
 						}
 					})
 				}
@@ -157,7 +157,7 @@ prodman.accounts.taxes = {
 				}
 			},
 			included_in_print_rate: function(frm, cdt, cdn) {
-				let tax = frappe.get_doc(cdt, cdn);
+				let tax = nts.get_doc(cdt, cdn);
 				try {
 					me.validate_taxes_and_charges(cdt, cdn);
 					me.validate_inclusive_tax(tax, frm);
@@ -174,13 +174,13 @@ prodman.accounts.taxes = {
 		this.frm = this.frm || frm;
 		let actual_type_error = function() {
 			var msg = __("Actual type tax cannot be included in Item rate in row {0}", [tax.idx])
-			frappe.throw(msg);
+			nts.throw(msg);
 		};
 
 		let on_previous_row_error = function(row_range) {
 			var msg = __("For row {0} in {1}. To include {2} in Item rate, rows {3} must also be included",
 				[tax.idx, __(tax.doctype), tax.charge_type, row_range])
-			frappe.throw(msg);
+			nts.throw(msg);
 		};
 
 		if(cint(tax.included_in_print_rate)) {
@@ -200,7 +200,7 @@ prodman.accounts.taxes = {
 					on_previous_row_error(tax.row_id == 1 ? "1" : "1 - " + tax.row_id);
 				}
 			} else if(tax.category == "Valuation") {
-				frappe.throw(__("Valuation type charges can not marked as Inclusive"));
+				nts.throw(__("Valuation type charges can not marked as Inclusive"));
 			}
 		}
 	}
@@ -208,7 +208,7 @@ prodman.accounts.taxes = {
 
 prodman.accounts.payment_triggers = {
 	setup: function(doctype) {
-		frappe.ui.form.on(doctype, {
+		nts.ui.form.on(doctype, {
 			allocate_advances_automatically(frm) {
 				frm.trigger('fetch_advances');
 			},
@@ -219,7 +219,7 @@ prodman.accounts.payment_triggers = {
 
 			fetch_advances(frm) {
 				if(frm.doc.allocate_advances_automatically) {
-					frappe.call({
+					nts.call({
 						doc: frm.doc,
 						method: "set_advances",
 						callback: function(r, rt) {
@@ -234,11 +234,11 @@ prodman.accounts.payment_triggers = {
 
 prodman.accounts.pos = {
 	setup: function(doctype) {
-		frappe.ui.form.on(doctype, {
+		nts.ui.form.on(doctype, {
 			mode_of_payment: function(frm, cdt, cdn) {
 				var d = locals[cdt][cdn];
 				get_payment_mode_account(frm, d.mode_of_payment, function(account){
-					frappe.model.set_value(cdt, cdn, 'account', account)
+					nts.model.set_value(cdt, cdn, 'account', account)
 				})
 			}
 		});
@@ -246,14 +246,14 @@ prodman.accounts.pos = {
 
 	get_payment_mode_account: function(frm, mode_of_payment, callback) {
 		if(!frm.doc.company) {
-			frappe.throw({message:__("Please select a Company first."), title: __("Mandatory")});
+			nts.throw({message:__("Please select a Company first."), title: __("Mandatory")});
 		}
 
 		if(!mode_of_payment) {
 			return;
 		}
 
-		return  frappe.call({
+		return  nts.call({
 			method: "prodman.accounts.doctype.sales_invoice.sales_invoice.get_bank_cash_account",
 			args: {
 				"mode_of_payment": mode_of_payment,

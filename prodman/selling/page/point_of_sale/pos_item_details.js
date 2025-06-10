@@ -77,7 +77,7 @@ prodman.PointOfSale.ItemDetails = class {
 
 		if (item && current_item_changed) {
 			this.doctype = item.doctype;
-			this.item_meta = frappe.get_meta(this.doctype);
+			this.item_meta = nts.get_meta(this.doctype);
 			this.name = item.name;
 			this.item_row = item;
 			this.currency = this.events.get_frm().doc.currency;
@@ -105,11 +105,11 @@ prodman.PointOfSale.ItemDetails = class {
 			!item_row.serial_and_batch_bundle && !item_row.serial_no && !item_row.batch_no;
 
 		if ((serialized && no_bundle_selected) || (batched && no_bundle_selected)) {
-			frappe.show_alert({
+			nts.show_alert({
 				message: __("Item is removed since no serial / batch no selected."),
 				indicator: "orange",
 			});
-			frappe.utils.play_sound("cancel");
+			nts.utils.play_sound("cancel");
 			return this.events.remove_item_from_cart();
 		}
 	}
@@ -136,11 +136,11 @@ prodman.PointOfSale.ItemDetails = class {
 				`<img
 					onerror="cur_pos.item_details.handle_broken_image(this)"
 					class="h-full" src="${image}"
-					alt="${frappe.get_abbr(item_name)}"
+					alt="${nts.get_abbr(item_name)}"
 					style="object-fit: cover;">`
 			);
 		} else {
-			this.$item_image.html(`<div class="item-abbr">${frappe.get_abbr(item_name)}</div>`);
+			this.$item_image.html(`<div class="item-abbr">${nts.get_abbr(item_name)}</div>`);
 		}
 	}
 
@@ -174,7 +174,7 @@ prodman.PointOfSale.ItemDetails = class {
 			fieldname === "discount_percentage" ? (field_meta.label = __("Discount (%)")) : "";
 			const me = this;
 
-			this[`${fieldname}_control`] = frappe.ui.form.make_control({
+			this[`${fieldname}_control`] = nts.ui.form.make_control({
 				df: {
 					...field_meta,
 					onchange: function () {
@@ -235,7 +235,7 @@ prodman.PointOfSale.ItemDetails = class {
 			this.rate_control.df.onchange = function () {
 				if (this.value || flt(this.value) === 0) {
 					me.events.form_updated(me.current_item, "rate", this.value).then(() => {
-						const item_row = frappe.get_doc(me.doctype, me.name);
+						const item_row = nts.get_doc(me.doctype, me.name);
 						const doc = me.events.get_frm().doc;
 						me.$item_price.html(format_currency(item_row.rate, doc.currency));
 						me.render_discount_dom(item_row);
@@ -270,7 +270,7 @@ prodman.PointOfSale.ItemDetails = class {
 							me.warehouse_control.set_value("");
 							const bold_item_code = me.item_row.item_code.bold();
 							const bold_warehouse = this.value.bold();
-							frappe.throw(
+							nts.throw(
 								__("Item Code: {0} is not available under warehouse {1}.", [
 									bold_item_code,
 									bold_warehouse,
@@ -317,13 +317,13 @@ prodman.PointOfSale.ItemDetails = class {
 			this.uom_control.df.onchange = function () {
 				me.events.form_updated(me.current_item, "uom", this.value);
 
-				const item_row = frappe.get_doc(me.doctype, me.name);
+				const item_row = nts.get_doc(me.doctype, me.name);
 				me.conversion_factor_control.df.read_only = item_row.stock_uom == this.value;
 				me.conversion_factor_control.refresh();
 			};
 		}
 
-		frappe.model.on("POS Invoice Item", "*", (fieldname, value, item_row) => {
+		nts.model.on("POS Invoice Item", "*", (fieldname, value, item_row) => {
 			const field_control = this[`${fieldname}_control`];
 			const item_row_is_being_edited = this.compare_with_current_item(item_row);
 			if (
@@ -347,7 +347,7 @@ prodman.PointOfSale.ItemDetails = class {
 			if (!selected_serial_nos.length) return;
 
 			// find batch nos of the selected serial no
-			const serials_with_batch_no = await frappe.db.get_list("Serial No", {
+			const serials_with_batch_no = await nts.db.get_list("Serial No", {
 				filters: { name: ["in", selected_serial_nos] },
 				fields: ["batch_no", "name"],
 			});
@@ -389,7 +389,7 @@ prodman.PointOfSale.ItemDetails = class {
 
 	attach_shortcuts() {
 		this.wrapper.find(".close-btn").attr("title", "Esc");
-		frappe.ui.keys.on("escape", () => {
+		nts.ui.keys.on("escape", () => {
 			const item_details_visible = this.$component.is(":visible");
 			if (item_details_visible) {
 				this.events.close_item_details();
@@ -415,7 +415,7 @@ prodman.PointOfSale.ItemDetails = class {
 			let conversion_factor = this.conversion_factor_control.get_value();
 			let expiry_date = this.item_row.has_batch_no ? this.events.get_frm().doc.posting_date : "";
 
-			let numbers = frappe.call({
+			let numbers = nts.call({
 				method: "prodman.stock.doctype.serial_no.serial_no.auto_fetch_serial_number",
 				args: {
 					qty: qty * conversion_factor,
@@ -433,14 +433,14 @@ prodman.PointOfSale.ItemDetails = class {
 				if (!records_length) {
 					const warehouse = this.warehouse_control.get_value().bold();
 					const item_code = this.current_item.item_code.bold();
-					frappe.msgprint(
+					nts.msgprint(
 						__(
 							"Serial numbers unavailable for Item {0} under warehouse {1}. Please try changing warehouse.",
 							[item_code, warehouse]
 						)
 					);
 				} else if (records_length < qty) {
-					frappe.msgprint(__("Fetched only {0} available serial numbers.", [records_length]));
+					nts.msgprint(__("Fetched only {0} available serial numbers.", [records_length]));
 					this.qty_control.set_value(records_length);
 				}
 				numbers = auto_fetched_serial_numbers.join(`\n`);

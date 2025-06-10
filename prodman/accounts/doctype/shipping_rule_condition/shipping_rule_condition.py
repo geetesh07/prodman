@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 # For license information, please see license.txt
 
 
-from frappe.model.document import Document
+from nts .model.document import Document
 
 
 class ShippingRuleCondition(Document):
@@ -14,7 +14,7 @@ class ShippingRuleCondition(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from_value: DF.Float
 		parent: DF.Data

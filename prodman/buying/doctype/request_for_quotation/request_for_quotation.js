@@ -1,11 +1,11 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 cur_frm.add_fetch("contact", "email_id", "email_id");
 
 prodman.buying.setup_buying_controller();
 
-frappe.ui.form.on("Request for Quotation", {
+nts.ui.form.on("Request for Quotation", {
 	setup: function (frm) {
 		frm.custom_make_buttons = {
 			"Supplier Quotation": "Create",
@@ -14,7 +14,7 @@ frappe.ui.form.on("Request for Quotation", {
 		frm.fields_dict["suppliers"].grid.get_field("contact").get_query = function (doc, cdt, cdn) {
 			let d = locals[cdt][cdn];
 			return {
-				query: "frappe.contacts.doctype.contact.contact.contact_query",
+				query: "nts.contacts.doctype.contact.contact.contact_query",
 				filters: {
 					link_doctype: "Supplier",
 					link_name: d.supplier || "",
@@ -56,7 +56,7 @@ frappe.ui.form.on("Request for Quotation", {
 			frm.add_custom_button(
 				__("Send Emails to Suppliers"),
 				function () {
-					frappe.call({
+					nts.call({
 						method: "prodman.buying.doctype.request_for_quotation.request_for_quotation.send_supplier_emails",
 						freeze: true,
 						args: {
@@ -73,7 +73,7 @@ frappe.ui.form.on("Request for Quotation", {
 			frm.add_custom_button(
 				__("Download PDF"),
 				() => {
-					frappe.prompt(
+					nts.prompt(
 						[
 							{
 								fieldtype: "Link",
@@ -122,7 +122,7 @@ frappe.ui.form.on("Request for Quotation", {
 								label: "Language",
 								fieldname: "language",
 								options: "Language",
-								default: frappe.boot.lang,
+								default: nts.boot.lang,
 							},
 							{
 								fieldtype: "Link",
@@ -134,19 +134,19 @@ frappe.ui.form.on("Request for Quotation", {
 						],
 						(data) => {
 							var w = window.open(
-								frappe.urllib.get_full_url(
+								nts.urllib.get_full_url(
 									"/api/method/prodman.buying.doctype.request_for_quotation.request_for_quotation.get_pdf?" +
 										new URLSearchParams({
 											name: frm.doc.name,
 											supplier: data.supplier,
 											print_format: data.print_format || "Standard",
-											language: data.language || frappe.boot.lang,
+											language: data.language || nts.boot.lang,
 											letterhead: data.letter_head || frm.doc.letter_head || "",
 										}).toString()
 								)
 							);
 							if (!w) {
-								frappe.msgprint(__("Please enable pop-ups"));
+								nts.msgprint(__("Please enable pop-ups"));
 								return;
 							}
 						},
@@ -178,18 +178,18 @@ frappe.ui.form.on("Request for Quotation", {
 		const oneMonthAgo = new Date(today);
 		oneMonthAgo.setMonth(today.getMonth() - 1);
 
-		frappe.route_options = {
+		nts.route_options = {
 			company: frm.doc.company,
 			from_date: moment(oneMonthAgo).format("YYYY-MM-DD"),
 			to_date: moment(today).format("YYYY-MM-DD"),
 			request_for_quotation: frm.doc.name,
 		};
-		frappe.set_route("query-report", "Supplier Quotation Comparison");
+		nts.set_route("query-report", "Supplier Quotation Comparison");
 	},
 
 	make_supplier_quotation: function (frm) {
 		var doc = frm.doc;
-		var dialog = new frappe.ui.Dialog({
+		var dialog = new nts.ui.Dialog({
 			title: __("Create Supplier Quotation"),
 			fields: [
 				{
@@ -219,7 +219,7 @@ frappe.ui.form.on("Request for Quotation", {
 				if (!args) return;
 				dialog.hide();
 
-				return frappe.call({
+				return nts.call({
 					type: "GET",
 					method: "prodman.buying.doctype.request_for_quotation.request_for_quotation.make_supplier_quotation_from_rfq",
 					args: {
@@ -229,8 +229,8 @@ frappe.ui.form.on("Request for Quotation", {
 					freeze: true,
 					callback: function (r) {
 						if (!r.exc) {
-							var doc = frappe.model.sync(r.message);
-							frappe.set_route("Form", r.message.doctype, r.message.name);
+							var doc = nts.model.sync(r.message);
+							nts.set_route("Form", r.message.doctype, r.message.name);
 						}
 					},
 				});
@@ -249,7 +249,7 @@ frappe.ui.form.on("Request for Quotation", {
 		refresh_field("items");
 	},
 	preview: (frm) => {
-		let dialog = new frappe.ui.Dialog({
+		let dialog = new nts.ui.Dialog({
 			title: __("Preview Email"),
 			fields: [
 				{
@@ -310,17 +310,17 @@ frappe.ui.form.on("Request for Quotation", {
 		dialog.show();
 	},
 });
-frappe.ui.form.on("Request for Quotation Item", {
+nts.ui.form.on("Request for Quotation Item", {
 	items_add(frm, cdt, cdn) {
 		if (frm.doc.schedule_date) {
-			frappe.model.set_value(cdt, cdn, "schedule_date", frm.doc.schedule_date);
+			nts.model.set_value(cdt, cdn, "schedule_date", frm.doc.schedule_date);
 		}
 	},
 });
-frappe.ui.form.on("Request for Quotation Supplier", {
+nts.ui.form.on("Request for Quotation Supplier", {
 	supplier: function (frm, cdt, cdn) {
 		var d = locals[cdt][cdn];
-		frappe.call({
+		nts.call({
 			method: "prodman.accounts.party.get_party_details",
 			args: {
 				party: d.supplier,
@@ -328,8 +328,8 @@ frappe.ui.form.on("Request for Quotation Supplier", {
 			},
 			callback: function (r) {
 				if (r.message) {
-					frappe.model.set_value(cdt, cdn, "contact", r.message.contact_person);
-					frappe.model.set_value(cdt, cdn, "email_id", r.message.contact_email);
+					nts.model.set_value(cdt, cdn, "contact", r.message.contact_person);
+					nts.model.set_value(cdt, cdn, "email_id", r.message.contact_email);
 				}
 			},
 		});
@@ -393,7 +393,7 @@ prodman.buying.RequestforQuotationController = class RequestforQuotationControll
 				__("Possible Supplier"),
 				function () {
 					// Create a dialog window for the user to pick their supplier
-					var dialog = new frappe.ui.Dialog({
+					var dialog = new nts.ui.Dialog({
 						title: __("Select Possible Supplier"),
 						fields: [
 							{
@@ -463,7 +463,7 @@ prodman.buying.RequestforQuotationController = class RequestforQuotationControll
 
 	get_suppliers_button(frm) {
 		var doc = frm.doc;
-		var dialog = new frappe.ui.Dialog({
+		var dialog = new nts.ui.Dialog({
 			title: __("Get Suppliers"),
 			fields: [
 				{
@@ -474,7 +474,7 @@ prodman.buying.RequestforQuotationController = class RequestforQuotationControll
 					reqd: 1,
 					onchange() {
 						if (dialog.get_value("search_type") == "Tag") {
-							frappe
+							nts
 								.call({
 									method: "prodman.buying.doctype.request_for_quotation.request_for_quotation.get_supplier_tag",
 								})
@@ -539,9 +539,9 @@ prodman.buying.RequestforQuotationController = class RequestforQuotationControll
 				}
 
 				if (args.search_type === "Tag" && args.tag) {
-					return frappe.call({
+					return nts.call({
 						type: "GET",
-						method: "frappe.desk.doctype.tag.tag.get_tagged_docs",
+						method: "nts.desk.doctype.tag.tag.get_tagged_docs",
 						args: {
 							doctype: "Supplier",
 							tag: "%" + args.tag + "%",
@@ -549,8 +549,8 @@ prodman.buying.RequestforQuotationController = class RequestforQuotationControll
 						callback: load_suppliers,
 					});
 				} else if (args.supplier_group) {
-					return frappe.call({
-						method: "frappe.client.get_list",
+					return nts.call({
+						method: "nts.client.get_list",
 						args: {
 							doctype: "Supplier",
 							order_by: "name",

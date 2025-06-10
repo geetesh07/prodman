@@ -1,7 +1,7 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Supplier Scorecard", {
+nts.ui.form.on("Supplier Scorecard", {
 	setup: function (frm) {
 		if (frm.doc.indicator_color !== "") {
 			frm.set_indicator_formatter("status", function (doc) {
@@ -15,7 +15,7 @@ frappe.ui.form.on("Supplier Scorecard", {
 		}
 	},
 	load_criteria: function (frm) {
-		frappe.call({
+		nts.call({
 			method: "prodman.buying.doctype.supplier_scorecard_criteria.supplier_scorecard_criteria.get_criteria_list",
 			callback: function (r) {
 				frm.set_value("criteria", []);
@@ -30,9 +30,9 @@ frappe.ui.form.on("Supplier Scorecard", {
 	},
 });
 
-frappe.ui.form.on("Supplier Scorecard Scoring Standing", {
+nts.ui.form.on("Supplier Scorecard Scoring Standing", {
 	standing_name: function (frm, cdt, cdn) {
-		var d = frappe.get_doc(cdt, cdn);
+		var d = nts.get_doc(cdt, cdn);
 		if (d.standing_name) {
 			return frm.call({
 				method: "prodman.buying.doctype.supplier_scorecard_standing.supplier_scorecard_standing.get_scoring_standing",
@@ -45,12 +45,12 @@ frappe.ui.form.on("Supplier Scorecard Scoring Standing", {
 	},
 });
 
-frappe.ui.form.on("Supplier Scorecard Scoring Criteria", {
+nts.ui.form.on("Supplier Scorecard Scoring Criteria", {
 	criteria_name: function (frm, cdt, cdn) {
-		var d = frappe.get_doc(cdt, cdn);
+		var d = nts.get_doc(cdt, cdn);
 		if (d.criteria_name) {
 			return frm.call({
-				method: "frappe.client.get",
+				method: "nts.client.get",
 				args: {
 					fieldname: "weight",
 					doctype: "Supplier Scorecard Criteria",
@@ -68,7 +68,7 @@ frappe.ui.form.on("Supplier Scorecard Scoring Criteria", {
 });
 
 var loadAllStandings = function (frm) {
-	frappe.call({
+	nts.call({
 		method: "prodman.buying.doctype.supplier_scorecard_standing.supplier_scorecard_standing.get_standings_list",
 		callback: function (r) {
 			for (var j = 0; j < frm.doc.standings.length; j++) {

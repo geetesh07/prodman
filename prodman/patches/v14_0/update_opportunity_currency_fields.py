@@ -1,17 +1,17 @@
 import click
-import frappe
-from frappe.utils import flt
+import nts
+from nts.utils import flt
 
 import prodman
 from prodman.setup.utils import get_exchange_rate
 
 
 def execute():
-	frappe.reload_doc(
+	nts.reload_doc(
 		"accounts", "doctype", "currency_exchange_settings"
 	)  # get_exchange_rate depends on Currency Exchange Settings
-	frappe.reload_doctype("Opportunity")
-	opportunities = frappe.db.get_list(
+	nts.reload_doctype("Opportunity")
+	opportunities = nts.db.get_list(
 		"Opportunity",
 		filters={"opportunity_amount": [">", 0]},
 		fields=["name", "company", "currency", "opportunity_amount"],
@@ -22,7 +22,7 @@ def execute():
 
 		if opportunity.currency is None or opportunity.currency == "":
 			opportunity.currency = company_currency
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Opportunity",
 				opportunity.name,
 				{"currency": opportunity.currency},
@@ -41,7 +41,7 @@ def execute():
 			conversion_rate = 1
 			base_opportunity_amount = flt(opportunity.opportunity_amount)
 
-		frappe.db.set_value(
+		nts.db.set_value(
 			"Opportunity",
 			opportunity.name,
 			{"conversion_rate": conversion_rate, "base_opportunity_amount": base_opportunity_amount},

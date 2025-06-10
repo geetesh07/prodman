@@ -1,7 +1,7 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Asset Maintenance Log", {
+nts .ui.form.on("Asset Maintenance Log", {
 	asset_maintenance: (frm) => {
 		frm.set_query("task", function (doc) {
 			return {

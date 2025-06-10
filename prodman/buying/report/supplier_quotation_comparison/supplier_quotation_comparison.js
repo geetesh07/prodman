@@ -1,14 +1,14 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Supplier Quotation Comparison"] = {
+nts.query_reports["Supplier Quotation Comparison"] = {
 	filters: [
 		{
 			fieldtype: "Link",
 			label: __("Company"),
 			options: "Company",
 			fieldname: "company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -17,7 +17,7 @@ frappe.query_reports["Supplier Quotation Comparison"] = {
 			fieldtype: "Date",
 			width: "80",
 			reqd: 1,
-			default: frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+			default: nts.datetime.add_months(nts.datetime.get_today(), -1),
 		},
 		{
 			fieldname: "to_date",
@@ -25,7 +25,7 @@ frappe.query_reports["Supplier Quotation Comparison"] = {
 			fieldtype: "Date",
 			width: "80",
 			reqd: 1,
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 		},
 		{
 			default: "",
@@ -34,7 +34,7 @@ frappe.query_reports["Supplier Quotation Comparison"] = {
 			fieldname: "item_code",
 			fieldtype: "Link",
 			get_query: () => {
-				let quote = frappe.query_report.get_filter_value("supplier_quotation");
+				let quote = nts.query_report.get_filter_value("supplier_quotation");
 				if (quote != "") {
 					return {
 						query: "prodman.stock.doctype.quality_inspection.quality_inspection.item_query",
@@ -52,7 +52,7 @@ frappe.query_reports["Supplier Quotation Comparison"] = {
 			fieldtype: "MultiSelectList",
 			options: "Supplier",
 			get_data: function (txt) {
-				return frappe.db.get_link_options("Supplier", txt);
+				return nts.db.get_link_options("Supplier", txt);
 			},
 		},
 		{
@@ -62,7 +62,7 @@ frappe.query_reports["Supplier Quotation Comparison"] = {
 			options: "Supplier Quotation",
 			default: "",
 			get_data: function (txt) {
-				return frappe.db.get_link_options("Supplier Quotation", txt, { docstatus: ["<", 2] });
+				return nts.db.get_link_options("Supplier Quotation", txt, { docstatus: ["<", 2] });
 			},
 		},
 		{
@@ -97,9 +97,9 @@ frappe.query_reports["Supplier Quotation Comparison"] = {
 		value = default_formatter(value, row, column, data);
 
 		if (column.fieldname === "valid_till" && data.valid_till) {
-			if (frappe.datetime.get_diff(data.valid_till, frappe.datetime.nowdate()) <= 1) {
+			if (nts.datetime.get_diff(data.valid_till, nts.datetime.nowdate()) <= 1) {
 				value = `<div style="color:red">${value}</div>`;
-			} else if (frappe.datetime.get_diff(data.valid_till, frappe.datetime.nowdate()) <= 7) {
+			} else if (nts.datetime.get_diff(data.valid_till, nts.datetime.nowdate()) <= 7) {
 				value = `<div style="color:darkorange">${value}</div>`;
 			}
 		}
@@ -115,7 +115,7 @@ frappe.query_reports["Supplier Quotation Comparison"] = {
 		report.page.add_inner_button(
 			__("Select Default Supplier"),
 			() => {
-				let reporter = frappe.query_reports["Supplier Quotation Comparison"];
+				let reporter = nts.query_reports["Supplier Quotation Comparison"];
 
 				//Always make a new one so that the latest values get updated
 				reporter.make_default_supplier_dialog(report);
@@ -143,7 +143,7 @@ frappe.query_reports["Supplier Quotation Comparison"] = {
 		});
 
 		// Create a dialog window for the user to pick their supplier
-		let dialog = new frappe.ui.Dialog({
+		let dialog = new nts.ui.Dialog({
 			title: __("Select Default Supplier"),
 			fields: [
 				{
@@ -182,7 +182,7 @@ frappe.query_reports["Supplier Quotation Comparison"] = {
 
 			if (values) {
 				// Set the default_supplier field of the appropriate Item to the selected supplier
-				frappe.call({
+				nts.call({
 					method: "prodman.buying.report.supplier_quotation_comparison.supplier_quotation_comparison.set_default_supplier",
 					args: {
 						item_code: values.item_code,
@@ -191,7 +191,7 @@ frappe.query_reports["Supplier Quotation Comparison"] = {
 					},
 					freeze: true,
 					callback: (r) => {
-						frappe.msgprint(__("Successfully Set Supplier"));
+						nts.msgprint(__("Successfully Set Supplier"));
 						dialog.hide();
 					},
 				});

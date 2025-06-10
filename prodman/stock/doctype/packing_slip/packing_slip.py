@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import cint, flt
+import nts
+from nts import _
+from nts.utils import cint, flt
 
 from prodman.controllers.status_updater import StatusUpdater
 
@@ -16,7 +16,7 @@ class PackingSlip(StatusUpdater):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.stock.doctype.packing_slip_item.packing_slip_item import PackingSlipItem
 
@@ -78,8 +78,8 @@ class PackingSlip(StatusUpdater):
 	def validate_delivery_note(self):
 		"""Raises an exception if the `Delivery Note` status is not Draft"""
 
-		if cint(frappe.db.get_value("Delivery Note", self.delivery_note, "docstatus")) != 0:
-			frappe.throw(
+		if cint(nts.db.get_value("Delivery Note", self.delivery_note, "docstatus")) != 0:
+			nts.throw(
 				_("A Packing Slip can only be created for Draft Delivery Note.").format(self.delivery_note)
 			)
 
@@ -87,15 +87,15 @@ class PackingSlip(StatusUpdater):
 		"""Validate if case nos overlap. If they do, recommend next case no."""
 
 		if cint(self.from_case_no) <= 0:
-			frappe.throw(_("The 'From Package No.' field must neither be empty nor it's value less than 1."))
+			nts.throw(_("The 'From Package No.' field must neither be empty nor it's value less than 1."))
 		elif not self.to_case_no:
 			self.to_case_no = self.from_case_no
 		elif cint(self.to_case_no) < cint(self.from_case_no):
-			frappe.throw(_("'To Package No.' cannot be less than 'From Package No.'"))
+			nts.throw(_("'To Package No.' cannot be less than 'From Package No.'"))
 		else:
-			ps = frappe.qb.DocType("Packing Slip")
+			ps = nts.qb.DocType("Packing Slip")
 			res = (
-				frappe.qb.from_(ps)
+				nts.qb.from_(ps)
 				.select(
 					ps.name,
 				)
@@ -111,7 +111,7 @@ class PackingSlip(StatusUpdater):
 			).run()
 
 			if res:
-				frappe.throw(
+				nts.throw(
 					_("""Package No(s) already in use. Try from Package No {0}""").format(
 						self.get_recommended_case_no()
 					)
@@ -120,37 +120,37 @@ class PackingSlip(StatusUpdater):
 	def validate_items(self):
 		for item in self.items:
 			if item.qty <= 0:
-				frappe.throw(_("Row {0}: Qty must be greater than 0.").format(item.idx))
+				nts.throw(_("Row {0}: Qty must be greater than 0.").format(item.idx))
 
 			if not item.dn_detail and not item.pi_detail:
-				frappe.throw(
+				nts.throw(
 					_("Row {0}: Either Delivery Note Item or Packed Item reference is mandatory.").format(
 						item.idx
 					)
 				)
 
-			remaining_qty = frappe.db.get_value(
+			remaining_qty = nts.db.get_value(
 				"Delivery Note Item" if item.dn_detail else "Packed Item",
 				{"name": item.dn_detail or item.pi_detail, "docstatus": 0},
 				["sum(qty - packed_qty)"],
 			)
 
 			if remaining_qty is None:
-				frappe.throw(
+				nts.throw(
 					_("Row {0}: Please provide a valid Delivery Note Item or Packed Item reference.").format(
 						item.idx
 					)
 				)
 			elif remaining_qty <= 0:
-				frappe.throw(
+				nts.throw(
 					_("Row {0}: Packing Slip is already created for Item {1}.").format(
-						item.idx, frappe.bold(item.item_code)
+						item.idx, nts.bold(item.item_code)
 					)
 				)
 			elif item.qty > remaining_qty:
-				frappe.throw(
+				nts.throw(
 					_("Row {0}: Qty cannot be greater than {1} for the Item {2}.").format(
-						item.idx, frappe.bold(remaining_qty), frappe.bold(item.item_code)
+						item.idx, nts.bold(remaining_qty), nts.bold(item.item_code)
 					)
 				)
 
@@ -159,7 +159,7 @@ class PackingSlip(StatusUpdater):
 			self.from_case_no = self.get_recommended_case_no()
 
 		for item in self.items:
-			weight_per_unit, weight_uom = frappe.db.get_value(
+			weight_per_unit, weight_uom = nts.db.get_value(
 				"Item", item.item_code, ["weight_per_unit", "weight_uom"]
 			)
 
@@ -173,7 +173,7 @@ class PackingSlip(StatusUpdater):
 
 		return (
 			cint(
-				frappe.db.get_value(
+				nts.db.get_value(
 					"Packing Slip", {"delivery_note": self.delivery_note, "docstatus": 1}, ["max(to_case_no)"]
 				)
 			)
@@ -187,7 +187,7 @@ class PackingSlip(StatusUpdater):
 		net_weight_pkg = 0
 		for item in self.items:
 			if item.weight_uom != self.net_weight_uom:
-				frappe.throw(
+				nts.throw(
 					_(
 						"Different UOM for items will lead to incorrect (Total) Net Weight value. Make sure that Net Weight of each item is in the same UOM."
 					)
@@ -201,12 +201,12 @@ class PackingSlip(StatusUpdater):
 			self.gross_weight_pkg = self.net_weight_pkg
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def item_details(doctype, txt, searchfield, start, page_len, filters):
 	from prodman.controllers.queries import get_match_cond
 
-	return frappe.db.sql(
+	return nts.db.sql(
 		"""select name, item_name, description from `tabItem`
 				where name in ( select item_code FROM `tabDelivery Note Item`
 	 						where parent= {})

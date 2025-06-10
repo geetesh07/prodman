@@ -1,14 +1,14 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
 from typing import Literal
 
-import frappe
-from frappe.test_runner import make_test_records
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import random_string
-from frappe.utils.data import add_to_date, now, today
+import nts
+from nts.test_runner import make_test_records
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import random_string
+from nts.utils.data import add_to_date, now, today
 
 from prodman.manufacturing.doctype.job_card.job_card import (
 	JobCardOverTransferError,
@@ -26,7 +26,7 @@ from prodman.manufacturing.doctype.workstation.test_workstation import make_work
 from prodman.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
 
 
-class TestJobCard(FrappeTestCase):
+class TestJobCard(ntsTestCase):
 	def setUp(self):
 		make_bom_for_jc_tests()
 		self.transfer_material_against: Literal["Work Order", "Job Card"] = "Work Order"
@@ -56,23 +56,23 @@ class TestJobCard(FrappeTestCase):
 			)
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def test_job_card_operations(self):
-		job_cards = frappe.get_all(
+		job_cards = nts.get_all(
 			"Job Card", filters={"work_order": self.work_order.name}, fields=["operation_id", "name"]
 		)
 
 		if job_cards:
 			job_card = job_cards[0]
-			frappe.db.set_value("Job Card", job_card.name, "operation_row_number", job_card.operation_id)
+			nts.db.set_value("Job Card", job_card.name, "operation_row_number", job_card.operation_id)
 
-			doc = frappe.get_doc("Job Card", job_card.name)
+			doc = nts.get_doc("Job Card", job_card.name)
 			doc.operation_id = "Test Data"
 			self.assertRaises(OperationMismatchError, doc.save)
 
 	def test_job_card_with_different_work_station(self):
-		job_cards = frappe.get_all(
+		job_cards = nts.get_all(
 			"Job Card",
 			filters={"work_order": self.work_order.name},
 			fields=["operation_id", "workstation", "name", "for_quantity"],
@@ -81,14 +81,14 @@ class TestJobCard(FrappeTestCase):
 		job_card = job_cards[0]
 
 		if job_card:
-			workstation = frappe.db.get_value(
+			workstation = nts.db.get_value(
 				"Workstation", {"name": ("not in", [job_card.workstation])}, "name"
 			)
 
 			if not workstation or job_card.workstation == workstation:
 				workstation = make_workstation(workstation_name=random_string(5)).name
 
-			doc = frappe.get_doc("Job Card", job_card.name)
+			doc = nts.get_doc("Job Card", job_card.name)
 			doc.workstation = workstation
 			doc.append(
 				"time_logs",
@@ -101,7 +101,7 @@ class TestJobCard(FrappeTestCase):
 			)
 			doc.submit()
 
-			completed_qty = frappe.db.get_value(
+			completed_qty = nts.db.get_value(
 				"Work Order Operation", job_card.operation_id, "completed_qty"
 			)
 			self.assertEqual(completed_qty, job_card.for_quantity)
@@ -109,8 +109,8 @@ class TestJobCard(FrappeTestCase):
 	def test_job_card_overlap(self):
 		wo2 = make_wo_order_test_record(item="_Test FG Item 2", qty=2)
 
-		jc1 = frappe.get_last_doc("Job Card", {"work_order": self.work_order.name})
-		jc2 = frappe.get_last_doc("Job Card", {"work_order": wo2.name})
+		jc1 = nts.get_last_doc("Job Card", {"work_order": self.work_order.name})
+		jc2 = nts.get_last_doc("Job Card", {"work_order": wo2.name})
 
 		employee = "_T-Employee-00001"  # from test records
 
@@ -141,10 +141,10 @@ class TestJobCard(FrappeTestCase):
 		wo2 = make_wo_order_test_record(item="_Test FG Item 2", qty=2)
 
 		workstation = make_workstation(workstation_name=random_string(5)).name
-		frappe.db.set_value("Workstation", workstation, "production_capacity", 1)
+		nts.db.set_value("Workstation", workstation, "production_capacity", 1)
 
-		jc1 = frappe.get_last_doc("Job Card", {"work_order": self.work_order.name})
-		jc2 = frappe.get_last_doc("Job Card", {"work_order": wo2.name})
+		jc1 = nts.get_last_doc("Job Card", {"work_order": self.work_order.name})
+		jc2 = nts.get_last_doc("Job Card", {"work_order": wo2.name})
 
 		jc1.workstation = workstation
 		jc1.append(
@@ -162,7 +162,7 @@ class TestJobCard(FrappeTestCase):
 		)
 		self.assertRaises(OverlapError, jc2.save)
 
-		frappe.db.set_value("Workstation", workstation, "production_capacity", 2)
+		nts.db.set_value("Workstation", workstation, "production_capacity", 2)
 		jc2.load_from_db()
 
 		jc2.workstation = workstation
@@ -183,8 +183,8 @@ class TestJobCard(FrappeTestCase):
 
 		self.generate_required_stock(self.work_order)
 
-		job_card_name = frappe.db.get_value("Job Card", {"work_order": self.work_order.name})
-		job_card = frappe.get_doc("Job Card", job_card_name)
+		job_card_name = nts.db.get_value("Job Card", {"work_order": self.work_order.name})
+		job_card = nts.get_doc("Job Card", job_card_name)
 
 		transfer_entry_1 = make_stock_entry_from_jc(job_card_name)
 		del transfer_entry_1.items[1]  # transfer only 1 of 2 RMs
@@ -214,7 +214,7 @@ class TestJobCard(FrappeTestCase):
 
 		self.generate_required_stock(self.work_order)
 
-		job_card = frappe.get_last_doc("Job Card", {"work_order": self.work_order.name})
+		job_card = nts.get_last_doc("Job Card", {"work_order": self.work_order.name})
 		self.assertEqual(job_card.status, "Open")
 
 		# fully transfer both RMs
@@ -256,7 +256,7 @@ class TestJobCard(FrappeTestCase):
 
 		self.generate_required_stock(self.work_order)
 
-		job_card_name = frappe.db.get_value("Job Card", {"work_order": self.work_order.name})
+		job_card_name = nts.db.get_value("Job Card", {"work_order": self.work_order.name})
 
 		# fully transfer both RMs
 		transfer_entry_1 = make_stock_entry_from_jc(job_card_name)
@@ -279,7 +279,7 @@ class TestJobCard(FrappeTestCase):
 
 		self.generate_required_stock(self.work_order)
 
-		job_card_name = frappe.db.get_value("Job Card", {"work_order": self.work_order.name})
+		job_card_name = nts.db.get_value("Job Card", {"work_order": self.work_order.name})
 
 		# fully transfer both RMs
 		transfer_entry_1 = make_stock_entry_from_jc(job_card_name)
@@ -305,7 +305,7 @@ class TestJobCard(FrappeTestCase):
 			},
 		)
 
-		self.assertRaises(frappe.ValidationError, transfer_entry_1.insert)
+		self.assertRaises(nts.ValidationError, transfer_entry_1.insert)
 
 	def test_job_card_partial_material_transfer(self):
 		"Test partial material transfer against Job Card"
@@ -314,7 +314,7 @@ class TestJobCard(FrappeTestCase):
 
 		self.generate_required_stock(self.work_order)
 
-		job_card = frappe.get_last_doc("Job Card", {"work_order": self.work_order.name})
+		job_card = nts.get_last_doc("Job Card", {"work_order": self.work_order.name})
 
 		# partially transfer
 		transfer_entry = make_stock_entry_from_jc(job_card.name)
@@ -355,10 +355,10 @@ class TestJobCard(FrappeTestCase):
 		create_bom_with_multiple_operations()
 		work_order = make_wo_with_transfer_against_jc()
 
-		job_card_name = frappe.db.get_value(
+		job_card_name = nts.db.get_value(
 			"Job Card", {"work_order": work_order.name, "operation": "Test Operation A"}
 		)
-		job_card = frappe.get_doc("Job Card", job_card_name)
+		job_card = nts.get_doc("Job Card", job_card_name)
 
 		self.assertEqual(len(job_card.items), 1)
 		self.assertEqual(job_card.items[0].item_code, "_Test Item")
@@ -384,7 +384,7 @@ class TestJobCard(FrappeTestCase):
 		"Manufacturing Settings", {"add_corrective_operation_cost_in_finished_good_valuation": 1}
 	)
 	def test_corrective_costing(self):
-		job_card = frappe.get_last_doc("Job Card", {"work_order": self.work_order.name})
+		job_card = nts.get_last_doc("Job Card", {"work_order": self.work_order.name})
 
 		job_card.append(
 			"time_logs",
@@ -396,8 +396,8 @@ class TestJobCard(FrappeTestCase):
 		original_cost = self.work_order.total_operating_cost
 
 		# Create a corrective operation against it
-		corrective_action = frappe.get_doc(
-			doctype="Operation", is_corrective_operation=1, name=frappe.generate_hash()
+		corrective_action = nts.get_doc(
+			doctype="Operation", is_corrective_operation=1, name=nts.generate_hash()
 		).insert()
 
 		corrective_job_card = make_corrective_job_card(
@@ -435,7 +435,7 @@ class TestJobCard(FrappeTestCase):
 			source_warehouse=self.source_warehouse,
 		)
 		self.generate_required_stock(wo)
-		job_card = frappe.get_last_doc("Job Card", {"work_order": wo.name})
+		job_card = nts.get_last_doc("Job Card", {"work_order": wo.name})
 		job_card.update({"for_quantity": 4})
 		job_card.append(
 			"time_logs",
@@ -443,8 +443,8 @@ class TestJobCard(FrappeTestCase):
 		)
 		job_card.submit()
 
-		corrective_action = frappe.get_doc(
-			doctype="Operation", is_corrective_operation=1, name=frappe.generate_hash()
+		corrective_action = nts.get_doc(
+			doctype="Operation", is_corrective_operation=1, name=nts.generate_hash()
 		).insert()
 
 		corrective_job_card = make_corrective_job_card(
@@ -469,7 +469,7 @@ class TestJobCard(FrappeTestCase):
 
 		stock_entry = make_stock_entry_for_wo(wo.name, "Manufacture", qty=3)
 		self.assertEqual(stock_entry.additional_costs[1].amount, 37.5)
-		frappe.get_doc(stock_entry).submit()
+		nts.get_doc(stock_entry).submit()
 
 		from prodman.manufacturing.doctype.work_order.work_order import make_job_card
 
@@ -478,7 +478,7 @@ class TestJobCard(FrappeTestCase):
 			[{"name": wo.operations[0].name, "operation": "_Test Operation 1", "qty": 3, "pending_qty": 3}],
 		)
 		workstation = job_card.workstation
-		job_card = frappe.get_last_doc("Job Card", {"work_order": wo.name})
+		job_card = nts.get_last_doc("Job Card", {"work_order": wo.name})
 		job_card.update({"for_quantity": 3})
 		job_card.workstation = workstation
 		job_card.append(
@@ -515,7 +515,7 @@ class TestJobCard(FrappeTestCase):
 			jc.set_status()
 			self.assertEqual(jc.status, status)
 
-		jc = frappe.new_doc("Job Card")
+		jc = nts.new_doc("Job Card")
 		jc.process_loss_qty = 0
 		jc.for_quantity = 2
 		jc.transferred_qty = 1
@@ -541,7 +541,7 @@ class TestJobCard(FrappeTestCase):
 		create_bom_with_multiple_operations()
 		work_order = make_wo_with_transfer_against_jc()
 
-		job_card_name = frappe.db.get_value("Job Card", {"work_order": work_order.name}, "name")
+		job_card_name = nts.db.get_value("Job Card", {"work_order": work_order.name}, "name")
 
 		mr = make_material_request(job_card_name)
 		mr.schedule_date = today()
@@ -579,7 +579,7 @@ class TestJobCard(FrappeTestCase):
 
 		item_code = "Test Job Card Process Qty Item"
 		for item in [item_code, item_code + "RM 1", item_code + "RM 2"]:
-			if not frappe.db.exists("Item", item):
+			if not nts.db.exists("Item", item):
 				make_item(
 					item,
 					{
@@ -617,7 +617,7 @@ class TestJobCard(FrappeTestCase):
 		for row in routing_doc.operations:
 			self.assertEqual(row.sequence_id, row.idx)
 
-		first_job_card = frappe.get_all(
+		first_job_card = nts.get_all(
 			"Job Card",
 			filters={"work_order": wo_doc.name, "sequence_id": 1},
 			fields=["name"],
@@ -625,7 +625,7 @@ class TestJobCard(FrappeTestCase):
 			limit=1,
 		)[0].name
 
-		jc = frappe.get_doc("Job Card", first_job_card)
+		jc = nts.get_doc("Job Card", first_job_card)
 		for row in jc.scheduled_time_logs:
 			jc.append(
 				"time_logs",
@@ -643,7 +643,7 @@ class TestJobCard(FrappeTestCase):
 		self.assertEqual(jc.process_loss_qty, 2)
 		self.assertEqual(jc.for_quantity, 10)
 
-		second_job_card = frappe.get_all(
+		second_job_card = nts.get_all(
 			"Job Card",
 			filters={"work_order": wo_doc.name, "sequence_id": 2},
 			fields=["name"],
@@ -651,7 +651,7 @@ class TestJobCard(FrappeTestCase):
 			limit=1,
 		)[0].name
 
-		jc2 = frappe.get_doc("Job Card", second_job_card)
+		jc2 = nts.get_doc("Job Card", second_job_card)
 		for row in jc2.scheduled_time_logs:
 			jc2.append(
 				"time_logs",
@@ -663,7 +663,7 @@ class TestJobCard(FrappeTestCase):
 			)
 		jc2.time_logs[0].completed_qty = 10
 
-		self.assertRaises(frappe.ValidationError, jc2.save)
+		self.assertRaises(nts.ValidationError, jc2.save)
 
 		jc2.load_from_db()
 		for row in jc2.scheduled_time_logs:
@@ -683,7 +683,7 @@ class TestJobCard(FrappeTestCase):
 		self.assertEqual(jc2.for_quantity, 10)
 		self.assertEqual(jc2.process_loss_qty, 2)
 
-		s = frappe.get_doc(make_stock_entry_for_wo(wo_doc.name, "Manufacture", 10))
+		s = nts.get_doc(make_stock_entry_for_wo(wo_doc.name, "Manufacture", 10))
 		s.submit()
 
 		self.assertEqual(s.process_loss_qty, 2)
@@ -702,8 +702,8 @@ def create_bom_with_multiple_operations():
 	"Create a BOM with multiple operations and Material Transfer against Job Card"
 	from prodman.manufacturing.doctype.operation.test_operation import make_operation
 
-	test_record = frappe.get_test_records("BOM")[2]
-	bom_doc = frappe.get_doc(test_record)
+	test_record = nts.get_test_records("BOM")[2]
+	bom_doc = nts.get_doc(test_record)
 
 	row = {
 		"operation": "Test Operation A",
@@ -751,8 +751,8 @@ def make_wo_with_transfer_against_jc():
 
 
 def make_bom_for_jc_tests():
-	test_records = frappe.get_test_records("BOM")
-	bom = frappe.copy_doc(test_records[2])
+	test_records = nts.get_test_records("BOM")
+	bom = nts.copy_doc(test_records[2])
 	bom.set_rate_of_sub_assembly_item_based_on_bom = 0
 	bom.rm_cost_as_per = "Valuation Rate"
 	bom.items[0].uom = "_Test UOM 1"

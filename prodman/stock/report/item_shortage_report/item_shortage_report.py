@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -19,12 +19,12 @@ def execute(filters=None):
 
 
 def get_data(filters):
-	bin = frappe.qb.DocType("Bin")
-	wh = frappe.qb.DocType("Warehouse")
-	item = frappe.qb.DocType("Item")
+	bin = nts.qb.DocType("Bin")
+	wh = nts.qb.DocType("Warehouse")
+	item = nts.qb.DocType("Item")
 
 	query = (
-		frappe.qb.from_(bin)
+		nts.qb.from_(bin)
 		.from_(wh)
 		.from_(item)
 		.select(

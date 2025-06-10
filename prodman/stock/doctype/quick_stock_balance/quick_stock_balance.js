@@ -1,7 +1,7 @@
-// Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2019, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Quick Stock Balance", {
+nts.ui.form.on("Quick Stock Balance", {
 	setup: (frm) => {
 		frm.set_query("item", () => {
 			if (!(frm.doc.warehouse && frm.doc.date)) {
@@ -13,7 +13,7 @@ frappe.ui.form.on("Quick Stock Balance", {
 	make_custom_stock_report_button: (frm) => {
 		if (frm.doc.item) {
 			frm.add_custom_button(__("Stock Balance Report"), () => {
-				frappe.set_route("query-report", "Stock Balance", {
+				nts.set_route("query-report", "Stock Balance", {
 					item_code: frm.doc.item,
 					warehouse: frm.doc.warehouse,
 				});
@@ -27,7 +27,7 @@ frappe.ui.form.on("Quick Stock Balance", {
 	},
 
 	check_warehouse_and_date: (frm) => {
-		frappe.msgprint(__("Please enter Warehouse and Date"));
+		nts.msgprint(__("Please enter Warehouse and Date"));
 		frm.doc.item = "";
 		frm.refresh();
 	},
@@ -45,13 +45,13 @@ frappe.ui.form.on("Quick Stock Balance", {
 	},
 
 	item: (frm) => {
-		frappe.flags.last_updated_element = "item";
+		nts.flags.last_updated_element = "item";
 		frm.trigger("get_stock_and_item_details");
 		frm.trigger("make_custom_stock_report_button");
 	},
 
 	item_barcode: (frm) => {
-		frappe.flags.last_updated_element = "item_barcode";
+		nts.flags.last_updated_element = "item_barcode";
 		frm.trigger("get_stock_and_item_details");
 		frm.trigger("make_custom_stock_report_button");
 	},
@@ -64,12 +64,12 @@ frappe.ui.form.on("Quick Stock Balance", {
 				warehouse: frm.doc.warehouse,
 				date: frm.doc.date,
 			};
-			if (frappe.flags.last_updated_element === "item") {
+			if (nts.flags.last_updated_element === "item") {
 				filters = { ...filters, ...{ item: frm.doc.item } };
 			} else {
 				filters = { ...filters, ...{ barcode: frm.doc.item_barcode } };
 			}
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.doctype.quick_stock_balance.quick_stock_balance.get_stock_item_details",
 				args: filters,
 				callback: (r) => {

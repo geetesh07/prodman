@@ -1,4 +1,4 @@
-import frappe
+import nts
 
 
 def execute():
@@ -8,7 +8,7 @@ def execute():
 
 
 def update_purchase_invoices():
-	invoices = frappe.get_all(
+	invoices = nts.get_all(
 		"Purchase Invoice",
 		filters={"docstatus": 1, "is_return": 0},
 		pluck="name",
@@ -21,7 +21,7 @@ def update_purchase_invoices():
 
 
 def update_sales_invoices():
-	invoices = frappe.get_all(
+	invoices = nts.get_all(
 		"Sales Invoice",
 		filters={"docstatus": 1, "is_return": 0, "is_debit_note": 0},
 		pluck="name",
@@ -33,7 +33,7 @@ def update_sales_invoices():
 
 
 def update_sales_debit_notes():
-	invoices = frappe.get_all(
+	invoices = nts.get_all(
 		"Sales Invoice",
 		filters={"docstatus": 1, "is_debit_note": 1},
 		pluck="name",
@@ -46,9 +46,9 @@ def update_sales_debit_notes():
 
 
 def update_gl_entry(doctype, invoices, value):
-	gl_entry = frappe.qb.DocType("GL Entry")
+	gl_entry = nts.qb.DocType("GL Entry")
 	(
-		frappe.qb.update(gl_entry)
+		nts.qb.update(gl_entry)
 		.set("voucher_subtype", value)
 		.where(gl_entry.voucher_subtype.isnotnull())
 		.where(gl_entry.voucher_no.isin(invoices))

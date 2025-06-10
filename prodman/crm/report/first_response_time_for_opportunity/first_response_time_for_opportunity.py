@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -17,7 +17,7 @@ def execute(filters=None):
 		},
 	]
 
-	data = frappe.db.sql(
+	data = nts.db.sql(
 		"""
 		SELECT
 			date(creation) as creation_date,

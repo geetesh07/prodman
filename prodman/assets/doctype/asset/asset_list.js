@@ -1,4 +1,4 @@
-frappe.listview_settings["Asset"] = {
+nts .listview_settings["Asset"] = {
 	add_fields: ["status", "docstatus"],
 	has_indicator_for_draft: 1,
 	get_indicator: function (doc) {
@@ -31,7 +31,7 @@ frappe.listview_settings["Asset"] = {
 	onload: function (me) {
 		me.page.add_action_item(__("Make Asset Movement"), function () {
 			const assets = me.get_checked_items();
-			frappe.call({
+			nts .call({
 				method: "prodman.assets.doctype.asset.asset.make_asset_movement",
 				freeze: true,
 				args: {
@@ -39,8 +39,8 @@ frappe.listview_settings["Asset"] = {
 				},
 				callback: function (r) {
 					if (r.message) {
-						var doc = frappe.model.sync(r.message)[0];
-						frappe.set_route("Form", doc.doctype, doc.name);
+						var doc = nts .model.sync(r.message)[0];
+						nts .set_route("Form", doc.doctype, doc.name);
 					}
 				},
 			});

@@ -1,23 +1,23 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days, today
+import nts
+from nts.tests.utils import ntsTestCase
+from nts.utils import add_days, today
 
 from prodman.stock.doctype.delivery_note.test_delivery_note import create_delivery_note
 from prodman.stock.doctype.item.test_item import create_item
 from prodman.stock.doctype.purchase_receipt.test_purchase_receipt import make_purchase_receipt
 
 
-class TestStockLedgerReport(FrappeTestCase):
+class TestStockLedgerReport(ntsTestCase):
 	def setUp(self) -> None:
 		item = create_item("_Test Item with Serial No", is_stock_item=1)
 		item.has_serial_no = 1
 		item.serial_no_series = "TEST.###"
 		item.save(ignore_permissions=True)
 
-		self.filters = frappe._dict(
+		self.filters = nts._dict(
 			company="_Test Company",
 			from_date=today(),
 			to_date=add_days(today(), 30),
@@ -25,10 +25,10 @@ class TestStockLedgerReport(FrappeTestCase):
 		)
 
 	def tearDown(self) -> None:
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def test_available_serial_no(self):
-		report = frappe.get_doc("Report", "Available Serial No")
+		report = nts.get_doc("Report", "Available Serial No")
 
 		make_purchase_receipt(qty=10, item_code="_Test Item with Serial No")
 		data = report.get_data(filters=self.filters)

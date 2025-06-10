@@ -1,10 +1,10 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 import typing
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
+import nts
+from nts import _
+from nts.model.document import Document
 
 
 class ItemVariantSettings(Document):
@@ -14,7 +14,7 @@ class ItemVariantSettings(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.stock.doctype.variant_field.variant_field import VariantField
 
@@ -27,7 +27,7 @@ class ItemVariantSettings(Document):
 
 	def set_default_fields(self):
 		self.fields = []
-		fields = frappe.get_meta("Item").fields
+		fields = nts.get_meta("Item").fields
 		exclude_fields = {
 			"naming_series",
 			"item_code",
@@ -64,6 +64,6 @@ class ItemVariantSettings(Document):
 	def validate(self):
 		for d in self.fields:
 			if d.field_name in self.invalid_fields_for_copy_fields_in_variants:
-				frappe.throw(
+				nts.throw(
 					_("Cannot set the field <b>{0}</b> for copying in variants").format(d.field_name)
 				)

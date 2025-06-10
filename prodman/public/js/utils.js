@@ -1,19 +1,19 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
-frappe.provide("prodman");
-frappe.provide("prodman.utils");
-frappe.provide("prodman.stock.utils");
+nts.provide("prodman");
+nts.provide("prodman.utils");
+nts.provide("prodman.stock.utils");
 
 $.extend(prodman, {
 	get_currency: function (company) {
 		if (!company && cur_frm) company = cur_frm.doc.company;
 		if (company)
-			return frappe.get_doc(":Company", company)?.default_currency || frappe.boot.sysdefaults.currency;
-		else return frappe.boot.sysdefaults.currency;
+			return nts.get_doc(":Company", company)?.default_currency || nts.boot.sysdefaults.currency;
+		else return nts.boot.sysdefaults.currency;
 	},
 
 	get_presentation_currency_list: () => {
-		const docs = frappe.boot.docs;
+		const docs = nts.boot.docs;
 		let currency_list = docs.filter((d) => d.doctype === ":Currency").map((d) => d.name);
 		currency_list.unshift("");
 		return currency_list;
@@ -47,7 +47,7 @@ $.extend(prodman, {
 	},
 
 	stale_rate_allowed: () => {
-		return cint(frappe.boot.sysdefaults.allow_stale);
+		return cint(nts.boot.sysdefaults.allow_stale);
 	},
 
 	setup_serial_or_batch_no: function () {
@@ -55,23 +55,23 @@ $.extend(prodman, {
 	},
 
 	route_to_adjustment_jv: (args) => {
-		frappe.model.with_doctype("Journal Entry", () => {
+		nts.model.with_doctype("Journal Entry", () => {
 			// route to adjustment Journal Entry to handle Account Balance and Stock Value mismatch
-			let journal_entry = frappe.model.get_new_doc("Journal Entry");
+			let journal_entry = nts.model.get_new_doc("Journal Entry");
 
 			args.accounts.forEach((je_account) => {
-				let child_row = frappe.model.add_child(journal_entry, "accounts");
+				let child_row = nts.model.add_child(journal_entry, "accounts");
 				child_row.account = je_account.account;
 				child_row.debit_in_account_currency = je_account.debit_in_account_currency;
 				child_row.credit_in_account_currency = je_account.credit_in_account_currency;
 				child_row.party_type = "";
 			});
-			frappe.set_route("Form", "Journal Entry", journal_entry.name);
+			nts.set_route("Form", "Journal Entry", journal_entry.name);
 		});
 	},
 
 	route_to_pending_reposts: (args) => {
-		frappe.set_route("List", "Repost Item Valuation", args);
+		nts.set_route("List", "Repost Item Valuation", args);
 	},
 });
 
@@ -121,14 +121,14 @@ $.extend(prodman.utils, {
 			frm.add_custom_button(
 				__("Serial / Batch Nos"),
 				() => {
-					frappe.route_options = {
+					nts.route_options = {
 						voucher_no: frm.doc.name,
 						voucher_type: frm.doc.doctype,
 						from_date: frm.doc.posting_date || frm.doc.transaction_date,
 						to_date: frm.doc.posting_date || frm.doc.transaction_date,
 						company: frm.doc.company,
 					};
-					frappe.set_route("query-report", "Serial and Batch Summary");
+					nts.set_route("query-report", "Serial and Batch Summary");
 				},
 				__("View")
 			);
@@ -195,7 +195,7 @@ $.extend(prodman.utils, {
 
 	get_terms: function (tc_name, doc, callback) {
 		if (tc_name) {
-			return frappe.call({
+			return nts.call({
 				method: "prodman.setup.doctype.terms_and_conditions.terms_and_conditions.get_terms_and_conditions",
 				args: {
 					template_name: tc_name,
@@ -209,7 +209,7 @@ $.extend(prodman.utils, {
 	},
 
 	make_bank_account: function (doctype, docname) {
-		frappe.call({
+		nts.call({
 			method: "prodman.accounts.doctype.bank_account.bank_account.make_bank_account",
 			args: {
 				doctype: doctype,
@@ -217,16 +217,16 @@ $.extend(prodman.utils, {
 			},
 			freeze: true,
 			callback: function (r) {
-				var doclist = frappe.model.sync(r.message);
-				frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				var doclist = nts.model.sync(r.message);
+				nts.set_route("Form", doclist[0].doctype, doclist[0].name);
 			},
 		});
 	},
 
 	add_dimensions: function (report_name, index) {
-		let filters = frappe.query_reports[report_name].filters;
+		let filters = nts.query_reports[report_name].filters;
 
-		frappe.call({
+		nts.call({
 			method: "prodman.accounts.doctype.accounting_dimension.accounting_dimension.get_dimensions",
 			callback: function (r) {
 				let accounting_dimensions = r.message[0];
@@ -239,7 +239,7 @@ $.extend(prodman.utils, {
 							label: __(dimension["label"]),
 							fieldtype: "MultiSelectList",
 							get_data: function (txt) {
-								return frappe.db.get_link_options(dimension["document_type"], txt);
+								return nts.db.get_link_options(dimension["document_type"], txt);
 							},
 						});
 					}
@@ -249,9 +249,9 @@ $.extend(prodman.utils, {
 	},
 
 	add_inventory_dimensions: function (report_name, index) {
-		let filters = frappe.query_reports[report_name].filters;
+		let filters = nts.query_reports[report_name].filters;
 
-		frappe.call({
+		nts.call({
 			method: "prodman.stock.doctype.inventory_dimension.inventory_dimension.get_inventory_dimensions",
 			callback: function (r) {
 				if (r.message && r.message.length) {
@@ -268,13 +268,13 @@ $.extend(prodman.utils, {
 										? "eval:doc.show_dimension_wise_stock === 1"
 										: "",
 								get_data: function (txt) {
-									return frappe.db.get_link_options(dimension["doctype"], txt);
+									return nts.db.get_link_options(dimension["doctype"], txt);
 								},
 							});
 						} else {
 							existing_filter[0]["fieldtype"] = "MultiSelectList";
 							existing_filter[0]["get_data"] = function (txt) {
-								return frappe.db.get_link_options(dimension["doctype"], txt);
+								return nts.db.get_link_options(dimension["doctype"], txt);
 							};
 						}
 					});
@@ -284,29 +284,29 @@ $.extend(prodman.utils, {
 	},
 
 	make_subscription: function (doctype, docname) {
-		frappe.call({
-			method: "frappe.automation.doctype.auto_repeat.auto_repeat.make_auto_repeat",
+		nts.call({
+			method: "nts.automation.doctype.auto_repeat.auto_repeat.make_auto_repeat",
 			args: {
 				doctype: doctype,
 				docname: docname,
 			},
 			callback: function (r) {
-				var doclist = frappe.model.sync(r.message);
-				frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				var doclist = nts.model.sync(r.message);
+				nts.set_route("Form", doclist[0].doctype, doclist[0].name);
 			},
 		});
 	},
 
 	make_pricing_rule: function (doctype, docname) {
-		frappe.call({
+		nts.call({
 			method: "prodman.accounts.doctype.pricing_rule.pricing_rule.make_pricing_rule",
 			args: {
 				doctype: doctype,
 				docname: docname,
 			},
 			callback: function (r) {
-				var doclist = frappe.model.sync(r.message);
-				frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				var doclist = nts.model.sync(r.message);
+				nts.set_route("Form", doclist[0].doctype, doclist[0].name);
 			},
 		});
 	},
@@ -338,8 +338,8 @@ $.extend(prodman.utils, {
 	},
 	get_tree_options: function (option) {
 		// get valid options for tree based on user permission & locals dict
-		let unscrub_option = frappe.model.unscrub(option);
-		let user_permission = frappe.defaults.get_user_permissions();
+		let unscrub_option = nts.model.unscrub(option);
+		let user_permission = nts.defaults.get_user_permissions();
 		let options;
 
 		if (user_permission && user_permission[unscrub_option]) {
@@ -356,8 +356,8 @@ $.extend(prodman.utils, {
 	get_tree_default: function (option) {
 		// set default for a field based on user permission
 		let options = this.get_tree_options(option);
-		if (options.includes(frappe.defaults.get_default(option))) {
-			return frappe.defaults.get_default(option);
+		if (options.includes(nts.defaults.get_default(option))) {
+			return nts.defaults.get_default(option);
 		} else {
 			return options[0];
 		}
@@ -368,38 +368,38 @@ $.extend(prodman.utils, {
 			for (let i = 0; i < cl.length; i++) {
 				cl[i][fieldname] = doc[parent_fieldname];
 			}
-			frappe.refresh_field(table_fieldname);
+			nts.refresh_field(table_fieldname);
 		}
 	},
 	create_new_doc: function (doctype, update_fields) {
-		frappe.model.with_doctype(doctype, function () {
-			var new_doc = frappe.model.get_new_doc(doctype);
+		nts.model.with_doctype(doctype, function () {
+			var new_doc = nts.model.get_new_doc(doctype);
 			for (let [key, value] of Object.entries(update_fields)) {
 				new_doc[key] = value;
 			}
-			frappe.ui.form.make_quick_entry(doctype, null, null, new_doc);
+			nts.ui.form.make_quick_entry(doctype, null, null, new_doc);
 		});
 	},
 
 	// check if payments app is installed on site, if not warn user.
 	check_payments_app: () => {
-		if (frappe.boot.versions && !frappe.boot.versions.payments) {
+		if (nts.boot.versions && !nts.boot.versions.payments) {
 			const marketplace_link =
-				'<a href="https://frappecloud.com/marketplace/apps/payments">Marketplace</a>';
-			const github_link = '<a href="https://github.com/frappe/payments/">GitHub</a>';
+				'<a href="https://ntscloud.com/marketplace/apps/payments">Marketplace</a>';
+			const github_link = '<a href="https://github.com/nts/payments/">GitHub</a>';
 			const msg = __("payments app is not installed. Please install it from {0} or {1}", [
 				marketplace_link,
 				github_link,
 			]);
-			frappe.msgprint(msg);
+			nts.msgprint(msg);
 		}
 	},
 
 	pick_serial_and_batch_bundle(frm, cdt, cdn, type_of_transaction, warehouse_field) {
-		let item_row = frappe.get_doc(cdt, cdn);
+		let item_row = nts.get_doc(cdt, cdn);
 		item_row.type_of_transaction = type_of_transaction;
 
-		frappe.db.get_value("Item", item_row.item_code, ["has_batch_no", "has_serial_no"]).then((r) => {
+		nts.db.get_value("Item", item_row.item_code, ["has_batch_no", "has_serial_no"]).then((r) => {
 			item_row.has_batch_no = r.message.has_batch_no;
 			item_row.has_serial_no = r.message.has_serial_no;
 
@@ -418,22 +418,22 @@ $.extend(prodman.utils, {
 						update_values[warehouse_field] = r.warehouse;
 					}
 
-					frappe.model.set_value(item_row.doctype, item_row.name, update_values);
+					nts.model.set_value(item_row.doctype, item_row.name, update_values);
 				}
 			});
 		});
 	},
 
 	get_fiscal_year: function (date, with_dates = false, boolean = false) {
-		if (!frappe.boot.setup_complete) {
+		if (!nts.boot.setup_complete) {
 			return;
 		}
 		if (!date) {
-			date = frappe.datetime.get_today();
+			date = nts.datetime.get_today();
 		}
 
 		let fiscal_year = "";
-		frappe.call({
+		nts.call({
 			method: "prodman.accounts.utils.get_fiscal_year",
 			args: {
 				date: date,
@@ -457,7 +457,7 @@ prodman.utils.select_alternate_items = function (opts) {
 	const item_field = opts.item_field || "item_code";
 
 	this.data = [];
-	const dialog = new frappe.ui.Dialog({
+	const dialog = new nts.ui.Dialog({
 		title: __("Select Alternate Item"),
 		fields: [
 			{ fieldtype: "Section Break", label: __("Items") },
@@ -495,7 +495,7 @@ prodman.utils.select_alternate_items = function (opts) {
 							const item_code = this.get_value();
 							const warehouse = this.grid_row.on_grid_fields_dict.warehouse.get_value();
 							if (item_code && warehouse) {
-								frappe.call({
+								nts.call({
 									method: "prodman.stock.utils.get_latest_stock_qty",
 									args: {
 										item_code: item_code,
@@ -529,7 +529,7 @@ prodman.utils.select_alternate_items = function (opts) {
 							const warehouse = this.get_value();
 							const item_code = this.grid_row.on_grid_fields_dict.item_code.get_value();
 							if (item_code && warehouse) {
-								frappe.call({
+								nts.call({
 									method: "prodman.stock.utils.get_latest_stock_qty",
 									args: {
 										item_code: item_code,
@@ -564,7 +564,7 @@ prodman.utils.select_alternate_items = function (opts) {
 			});
 
 			alternative_items.forEach((d) => {
-				let row = frappe.get_doc(opts.child_doctype, d.docname);
+				let row = nts.get_doc(opts.child_doctype, d.docname);
 				let qty = null;
 				if (row.doctype === "Work Order Item") {
 					qty = row.required_qty;
@@ -572,8 +572,8 @@ prodman.utils.select_alternate_items = function (opts) {
 					qty = row.qty;
 				}
 				row[item_field] = d.alternate_item;
-				frappe.model.set_value(row.doctype, row.name, "qty", qty);
-				frappe.model.set_value(row.doctype, row.name, opts.original_item_field, d.item_code);
+				nts.model.set_value(row.doctype, row.name, "qty", qty);
+				nts.model.set_value(row.doctype, row.name, opts.original_item_field, d.item_code);
 				frm.trigger(item_field, row.doctype, row.name);
 			});
 
@@ -603,7 +603,7 @@ prodman.utils.update_child_items = function (opts) {
 	const frm = opts.frm;
 	const cannot_add_row = typeof opts.cannot_add_row === "undefined" ? true : opts.cannot_add_row;
 	const child_docname = typeof opts.cannot_add_row === "undefined" ? "items" : opts.child_docname;
-	const child_meta = frappe.get_meta(`${frm.doc.doctype} Item`);
+	const child_meta = nts.get_meta(`${frm.doc.doctype} Item`);
 	const has_reserved_stock = opts.has_reserved_stock ? true : false;
 	const get_precision = (fieldname) => child_meta.fields.find((f) => f.fieldname == fieldname).precision;
 
@@ -724,7 +724,7 @@ prodman.utils.update_child_items = function (opts) {
 			label: __("UOM"),
 			reqd: 1,
 			onchange: function () {
-				frappe.call({
+				nts.call({
 					method: "prodman.stock.get_item_details.get_conversion_factor",
 					args: { item_code: this.doc.item_code, uom: this.value },
 					callback: (r) => {
@@ -819,7 +819,7 @@ prodman.utils.update_child_items = function (opts) {
 		);
 	}
 
-	let dialog = new frappe.ui.Dialog({
+	let dialog = new nts.ui.Dialog({
 		title: __("Update Items"),
 		size: "extra-large",
 		fields: [
@@ -840,7 +840,7 @@ prodman.utils.update_child_items = function (opts) {
 		primary_action: function () {
 			if (frm.doctype == "Sales Order" && has_reserved_stock) {
 				this.hide();
-				frappe.confirm(
+				nts.confirm(
 					__(
 						"The reserved stock will be released when you update items. Are you certain you wish to proceed?"
 					),
@@ -852,7 +852,7 @@ prodman.utils.update_child_items = function (opts) {
 		},
 		update_items: function () {
 			const trans_items = this.get_values()["trans_items"].filter((item) => !!item.item_code);
-			frappe.call({
+			nts.call({
 				method: "prodman.controllers.accounts_controller.update_child_qty_rate",
 				freeze: true,
 				args: {
@@ -883,12 +883,12 @@ prodman.utils.map_current_doc = function (opts) {
 			}
 
 			// find the doctype of the items table
-			var items_doctype = frappe.meta.get_docfield(cur_frm.doctype, "items").options;
+			var items_doctype = nts.meta.get_docfield(cur_frm.doctype, "items").options;
 
 			// find the link fieldname from items table for the given
 			// source_doctype
 			var link_fieldname = null;
-			frappe.get_meta(items_doctype).fields.forEach(function (d) {
+			nts.get_meta(items_doctype).fields.forEach(function (d) {
 				if (d.options === opts.source_doctype) link_fieldname = d.fieldname;
 			});
 
@@ -908,8 +908,8 @@ prodman.utils.map_current_doc = function (opts) {
 
 			if (already_set) {
 				opts.source_name.forEach(function (src) {
-					frappe.model.with_doc(opts.source_doctype, src, function (r) {
-						var source_doc = frappe.model.get_doc(opts.source_doctype, src);
+					nts.model.with_doc(opts.source_doctype, src, function (r) {
+						var source_doc = nts.model.get_doc(opts.source_doctype, src);
 						$.each(source_doc.items || [], function (i, row) {
 							if (row.qty > flt(item_qty_map[row.item_code])) {
 								already_set = false;
@@ -919,7 +919,7 @@ prodman.utils.map_current_doc = function (opts) {
 					});
 
 					if (already_set) {
-						frappe.msgprint(
+						nts.msgprint(
 							__("You have already selected items from {0} {1}", [opts.source_doctype, src])
 						);
 						return;
@@ -928,11 +928,11 @@ prodman.utils.map_current_doc = function (opts) {
 			}
 		}
 
-		return frappe.call({
+		return nts.call({
 			// Sometimes we hit the limit for URL length of a GET request
 			// as we send the full target_doc. Hence this is a POST request.
 			type: "POST",
-			method: "frappe.model.mapper.map_docs",
+			method: "nts.model.mapper.map_docs",
 			args: {
 				method: opts.method,
 				source_names: opts.source_name,
@@ -943,7 +943,7 @@ prodman.utils.map_current_doc = function (opts) {
 			freeze_message: __("Mapping {0} ...", [opts.source_doctype]),
 			callback: function (r) {
 				if (!r.exc) {
-					frappe.model.sync(r.message);
+					nts.model.sync(r.message);
 					cur_frm.dirty();
 					cur_frm.refresh();
 				}
@@ -967,7 +967,7 @@ prodman.utils.map_current_doc = function (opts) {
 	if (opts.source_doctype) {
 		let data_fields = [];
 		if (["Purchase Receipt", "Delivery Note"].includes(opts.source_doctype)) {
-			let target_meta = frappe.get_meta(cur_frm.doc.doctype);
+			let target_meta = nts.get_meta(cur_frm.doc.doctype);
 			if (target_meta.fields.find((f) => f.fieldname === "taxes")) {
 				data_fields.push({
 					fieldname: "merge_taxes",
@@ -976,7 +976,7 @@ prodman.utils.map_current_doc = function (opts) {
 				});
 			}
 		}
-		const d = new frappe.ui.form.MultiSelectDialog({
+		const d = new nts.ui.form.MultiSelectDialog({
 			doctype: opts.source_doctype,
 			target: opts.target,
 			date_field: opts.date_field || undefined,
@@ -992,7 +992,7 @@ prodman.utils.map_current_doc = function (opts) {
 			action: function (selections, args) {
 				let values = selections;
 				if (values.length === 0) {
-					frappe.msgprint(__("Please select {0}", [opts.source_doctype]));
+					nts.msgprint(__("Please select {0}", [opts.source_doctype]));
 					return;
 				}
 
@@ -1023,7 +1023,7 @@ prodman.utils.map_current_doc = function (opts) {
 	}
 };
 
-frappe.form.link_formatters["Item"] = function (value, doc) {
+nts.form.link_formatters["Item"] = function (value, doc) {
 	if (doc && value && doc.item_name && doc.item_name !== value && doc.item_code === value) {
 		return value + ": " + doc.item_name;
 	} else if (!value && doc.doctype && doc.item_name) {
@@ -1035,7 +1035,7 @@ frappe.form.link_formatters["Item"] = function (value, doc) {
 	}
 };
 
-frappe.form.link_formatters["Employee"] = function (value, doc) {
+nts.form.link_formatters["Employee"] = function (value, doc) {
 	if (doc && value && doc.employee_name && doc.employee_name !== value && doc.employee === value) {
 		return value + ": " + doc.employee_name;
 	} else if (!value && doc.doctype && doc.employee_name) {
@@ -1047,7 +1047,7 @@ frappe.form.link_formatters["Employee"] = function (value, doc) {
 	}
 };
 
-frappe.form.link_formatters["Project"] = function (value, doc) {
+nts.form.link_formatters["Project"] = function (value, doc) {
 	if (doc && value && doc.project_name && doc.project_name !== value && doc.project === value) {
 		return value + ": " + doc.project_name;
 	} else if (!value && doc.doctype && doc.project_name) {
@@ -1061,7 +1061,7 @@ frappe.form.link_formatters["Project"] = function (value, doc) {
 
 // add description on posting time
 $(document).on("app_ready", function () {
-	if (!frappe.datetime.is_timezone_same()) {
+	if (!nts.datetime.is_timezone_same()) {
 		$.each(
 			[
 				"Stock Reconciliation",
@@ -1072,8 +1072,8 @@ $(document).on("app_ready", function () {
 				"Sales Invoice",
 			],
 			function (i, d) {
-				frappe.ui.form.on(d, "onload", function (frm) {
-					cur_frm.set_df_property("posting_time", "description", frappe.sys_defaults.time_zone);
+				nts.ui.form.on(d, "onload", function (frm) {
+					cur_frm.set_df_property("posting_time", "description", nts.sys_defaults.time_zone);
 				});
 			}
 		);
@@ -1082,12 +1082,12 @@ $(document).on("app_ready", function () {
 
 // Show SLA dashboard
 $(document).on("app_ready", function () {
-	$.each(frappe.boot.service_level_agreement_doctypes, function (_i, d) {
-		frappe.ui.form.on(d, {
+	$.each(nts.boot.service_level_agreement_doctypes, function (_i, d) {
+		nts.ui.form.on(d, {
 			onload: function (frm) {
 				if (!frm.doc.service_level_agreement) return;
 
-				frappe.call({
+				nts.call({
 					method: "prodman.support.doctype.service_level_agreement.service_level_agreement.get_service_level_agreement_filters",
 					args: {
 						doctype: frm.doc.doctype,
@@ -1121,8 +1121,8 @@ $(document).on("app_ready", function () {
 					frm.doc.service_level_agreement &&
 					["First Response Due", "Resolution Due"].includes(frm.doc.agreement_status)
 				) {
-					frappe.call({
-						method: "frappe.client.get",
+					nts.call({
+						method: "nts.client.get",
 						args: {
 							doctype: "Service Level Agreement",
 							name: frm.doc.service_level_agreement,
@@ -1222,7 +1222,7 @@ function set_time_to_resolve_and_response(frm, apply_sla_for_resolution) {
 }
 
 function get_time_left(timestamp, agreement_status) {
-	const diff = moment(timestamp).diff(frappe.datetime.system_datetime(true));
+	const diff = moment(timestamp).diff(nts.datetime.system_datetime(true));
 	const diff_display = diff >= 44500 ? moment.duration(diff).humanize() : "Failed";
 	let indicator = diff_display == "Failed" && agreement_status != "Fulfilled" ? "red" : "green";
 	return { diff_display: diff_display, indicator: indicator };

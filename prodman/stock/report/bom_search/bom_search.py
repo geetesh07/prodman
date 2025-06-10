@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and Contributors and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and Contributors and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -19,7 +19,7 @@ def execute(filters=None):
 		"BOM Explosion Item" if filters.search_sub_assemblies else "BOM Item",
 	):
 		all_boms = {}
-		for d in frappe.get_all(doctype, fields=["parent", "item_code"]):
+		for d in nts.get_all(doctype, fields=["parent", "item_code"]):
 			all_boms.setdefault(d.parent, []).append(d.item_code)
 
 		for parent, items in all_boms.items():

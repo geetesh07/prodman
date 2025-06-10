@@ -1,14 +1,14 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("setup", "doctype", "company")
+	nts.reload_doc("setup", "doctype", "company")
 
-	companies = frappe.get_all("Company", fields=["name", "default_payable_account"])
+	companies = nts.get_all("Company", fields=["name", "default_payable_account"])
 
 	for company in companies:
 		if company.default_payable_account is not None:
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Company",
 				company.name,
 				"default_expense_claim_payable_account",

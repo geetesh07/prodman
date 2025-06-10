@@ -1,15 +1,15 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import json
 
-import frappe
-from frappe import _
-from frappe.utils import cstr, nowdate
-from frappe.utils.data import fmt_money
-from frappe.utils.jinja import render_template
-from frappe.utils.pdf import get_pdf
-from frappe.utils.print_format import read_multi_pdf
+import nts
+from nts import _
+from nts.utils import cstr, nowdate
+from nts.utils.data import fmt_money
+from nts.utils.jinja import render_template
+from nts.utils.pdf import get_pdf
+from nts.utils.print_format import read_multi_pdf
 from pypdf import PdfWriter
 
 from prodman.accounts.utils import get_fiscal_year
@@ -18,12 +18,12 @@ IRS_1099_FORMS_FILE_EXTENSION = ".pdf"
 
 
 def execute(filters=None):
-	filters = filters if isinstance(filters, frappe._dict) else frappe._dict(filters)
+	filters = filters if isinstance(filters, nts._dict) else nts._dict(filters)
 	if not filters:
 		filters.setdefault("fiscal_year", get_fiscal_year(nowdate())[0])
-		filters.setdefault("company", frappe.db.get_default("company"))
+		filters.setdefault("company", nts.db.get_default("company"))
 
-	region = frappe.db.get_value("Company", filters={"name": filters.company}, fieldname=["country"])
+	region = nts.db.get_value("Company", filters={"name": filters.company}, fieldname=["country"])
 
 	if region != "United States":
 		return [], []
@@ -31,9 +31,9 @@ def execute(filters=None):
 	columns = get_columns()
 	conditions = ""
 	if filters.supplier_group:
-		conditions += "AND s.supplier_group = %s" % frappe.db.escape(filters.get("supplier_group"))
+		conditions += "AND s.supplier_group = %s" % nts.db.escape(filters.get("supplier_group"))
 
-	data = frappe.db.sql(
+	data = nts.db.sql(
 		f"""
 		SELECT
 			s.supplier_group as "supplier_group",
@@ -84,26 +84,26 @@ def get_columns():
 	]
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def irs_1099_print(filters):
 	if not filters:
-		frappe._dict(
+		nts._dict(
 			{
-				"company": frappe.db.get_default("Company"),
-				"fiscal_year": frappe.db.get_default("Fiscal Year"),
+				"company": nts.db.get_default("Company"),
+				"fiscal_year": nts.db.get_default("Fiscal Year"),
 			}
 		)
 	else:
-		filters = frappe._dict(json.loads(filters))
+		filters = nts._dict(json.loads(filters))
 
 	fiscal_year_doc = get_fiscal_year(fiscal_year=filters.fiscal_year, as_dict=True)
 	fiscal_year = cstr(fiscal_year_doc.year_start_date.year)
 
 	company_address = get_payer_address_html(filters.company)
-	company_tin = frappe.db.get_value("Company", filters.company, "tax_id")
+	company_tin = nts.db.get_value("Company", filters.company, "tax_id")
 
 	columns, data = execute(filters)
-	template = frappe.get_doc("Print Format", "IRS 1099 Form").html
+	template = nts.get_doc("Print Format", "IRS 1099 Form").html
 	output = PdfWriter()
 
 	for row in data:
@@ -117,15 +117,15 @@ def irs_1099_print(filters):
 		row["payments"] = fmt_money(row["payments"], precision=0, currency="USD")
 		get_pdf(render_template(template, row), output=output if output else None)
 
-	frappe.local.response.filename = (
+	nts.local.response.filename = (
 		f"{filters.fiscal_year} {filters.company} IRS 1099 Forms{IRS_1099_FORMS_FILE_EXTENSION}"
 	)
-	frappe.local.response.filecontent = read_multi_pdf(output)
-	frappe.local.response.type = "download"
+	nts.local.response.filecontent = read_multi_pdf(output)
+	nts.local.response.type = "download"
 
 
 def get_payer_address_html(company):
-	address_list = frappe.db.sql(
+	address_list = nts.db.sql(
 		"""
 		SELECT
 			name
@@ -144,13 +144,13 @@ def get_payer_address_html(company):
 	address_display = ""
 	if address_list:
 		company_address = address_list[0]["name"]
-		address_display = frappe.get_doc("Address", company_address).get_display()
+		address_display = nts.get_doc("Address", company_address).get_display()
 
 	return address_display
 
 
 def get_street_address_html(party_type, party):
-	address_list = frappe.db.sql(
+	address_list = nts.db.sql(
 		"""
 		SELECT
 			link.parent
@@ -172,7 +172,7 @@ def get_street_address_html(party_type, party):
 	street_address = city_state = ""
 	if address_list:
 		supplier_address = address_list[0]["parent"]
-		doc = frappe.get_doc("Address", supplier_address)
+		doc = nts.get_doc("Address", supplier_address)
 
 		if doc.address_line2:
 			street_address = doc.address_line1 + "<br>\n" + doc.address_line2 + "<br>\n"

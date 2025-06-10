@@ -1,17 +1,17 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe import _
-from frappe.utils import cstr, getdate
+import nts
+from nts import _
+from nts.utils import cstr, getdate
 
 
 # nosemgrep
 def set_default_settings(args):
 	# enable default currency
-	frappe.db.set_value("Currency", args.get("currency"), "enabled", 1)
+	nts.db.set_value("Currency", args.get("currency"), "enabled", 1)
 
-	global_defaults = frappe.get_doc("Global Defaults", "Global Defaults")
+	global_defaults = nts.get_doc("Global Defaults", "Global Defaults")
 	global_defaults.update(
 		{
 			"current_fiscal_year": get_fy_details(args.get("fy_start_date"), args.get("fy_end_date")),
@@ -23,14 +23,14 @@ def set_default_settings(args):
 
 	global_defaults.save()
 
-	system_settings = frappe.get_doc("System Settings")
+	system_settings = nts.get_doc("System Settings")
 	system_settings.email_footer_address = args.get("company_name")
 	system_settings.save()
 
-	stock_settings = frappe.get_doc("Stock Settings")
+	stock_settings = nts.get_doc("Stock Settings")
 	stock_settings.item_naming_by = "Item Code"
 	stock_settings.valuation_method = "FIFO"
-	stock_settings.default_warehouse = frappe.db.get_value("Warehouse", {"warehouse_name": _("Stores")})
+	stock_settings.default_warehouse = nts.db.get_value("Warehouse", {"warehouse_name": _("Stores")})
 	stock_settings.stock_uom = _("Nos")
 	stock_settings.auto_indent = 1
 	stock_settings.auto_insert_price_list_rate_if_missing = 1
@@ -38,7 +38,7 @@ def set_default_settings(args):
 	stock_settings.set_qty_in_transactions_based_on_serial_no_input = 1
 	stock_settings.save()
 
-	selling_settings = frappe.get_doc("Selling Settings")
+	selling_settings = nts.get_doc("Selling Settings")
 	selling_settings.cust_master_name = "Customer Name"
 	selling_settings.so_required = "No"
 	selling_settings.dn_required = "No"
@@ -46,7 +46,7 @@ def set_default_settings(args):
 	selling_settings.sales_update_frequency = "Each Transaction"
 	selling_settings.save()
 
-	buying_settings = frappe.get_doc("Buying Settings")
+	buying_settings = nts.get_doc("Buying Settings")
 	buying_settings.supp_master_name = "Supplier Name"
 	buying_settings.po_required = "No"
 	buying_settings.pr_required = "No"
@@ -54,21 +54,21 @@ def set_default_settings(args):
 	buying_settings.allow_multiple_items = 1
 	buying_settings.save()
 
-	delivery_settings = frappe.get_doc("Delivery Settings")
+	delivery_settings = nts.get_doc("Delivery Settings")
 	delivery_settings.dispatch_template = _("Dispatch Notification")
 	delivery_settings.save()
 
 
 def set_no_copy_fields_in_variant_settings():
 	# set no copy fields of an item doctype to item variant settings
-	doc = frappe.get_doc("Item Variant Settings")
+	doc = nts.get_doc("Item Variant Settings")
 	doc.set_default_fields()
 	doc.save()
 
 
 def create_price_lists(args):
 	for pl_type, pl_name in (("Selling", _("Standard Selling")), ("Buying", _("Standard Buying"))):
-		frappe.get_doc(
+		nts.get_doc(
 			{
 				"doctype": "Price List",
 				"price_list_name": pl_name,
@@ -81,15 +81,15 @@ def create_price_lists(args):
 
 
 def create_employee_for_self(args):
-	if frappe.session.user == "Administrator":
+	if nts.session.user == "Administrator":
 		return
 
 	# create employee for self
-	emp = frappe.get_doc(
+	emp = nts.get_doc(
 		{
 			"doctype": "Employee",
 			"employee_name": " ".join(filter(None, [args.get("first_name"), args.get("last_name")])),
-			"user_id": frappe.session.user,
+			"user_id": nts.session.user,
 			"status": "Active",
 			"company": args.get("company_name"),
 		}
@@ -100,14 +100,14 @@ def create_employee_for_self(args):
 
 def create_territories():
 	"""create two default territories, one for home country and one named Rest of the World"""
-	from frappe.utils.nestedset import get_root_of
+	from nts.utils.nestedset import get_root_of
 
-	country = frappe.db.get_default("country")
+	country = nts.db.get_default("country")
 	root_territory = get_root_of("Territory")
 
 	for name in (country, _("Rest Of The World")):
-		if name and not frappe.db.exists("Territory", name):
-			frappe.get_doc(
+		if name and not nts.db.exists("Territory", name):
+			nts.get_doc(
 				{
 					"doctype": "Territory",
 					"territory_name": name.replace("'", ""),

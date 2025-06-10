@@ -7,15 +7,15 @@ class CallPopup {
 	}
 
 	make() {
-		frappe.utils.play_sound("incoming-call");
-		this.dialog = new frappe.ui.Dialog({
+		nts.utils.play_sound("incoming-call");
+		this.dialog = new nts.ui.Dialog({
 			static: true,
 			minimizable: true,
 		});
 		this.dialog.get_close_btn().show();
 		this.setup_dialog();
 		this.set_call_status();
-		frappe.utils.bind_actions_with_object(this.dialog.$body, this);
+		nts.utils.bind_actions_with_object(this.dialog.$body, this);
 		this.dialog.$wrapper.addClass("call-popup");
 		this.dialog.get_close_btn().unbind("click").click(this.close_modal.bind(this));
 		this.dialog.show();
@@ -64,7 +64,7 @@ class CallPopup {
 	}
 
 	call_ended(call_log, missed) {
-		frappe.utils.play_sound("call-disconnect");
+		nts.utils.play_sound("call-disconnect");
 		this.update_call_log(call_log, missed);
 		setTimeout(() => {
 			if (!this.dialog.get_value("call_summary")) {
@@ -86,23 +86,23 @@ class CallPopup {
 	}
 
 	setup_listener() {
-		frappe.realtime.on(`call_${this.call_log.id}_ended`, (call_log) => {
+		nts.realtime.on(`call_${this.call_log.id}_ended`, (call_log) => {
 			this.call_ended(call_log);
 		});
 
-		frappe.realtime.on(`call_${this.call_log.id}_missed`, (call_log) => {
+		nts.realtime.on(`call_${this.call_log.id}_missed`, (call_log) => {
 			this.call_ended(call_log, true);
 		});
 	}
 
 	clear_listeners() {
-		frappe.realtime.off(`call_${this.call_log.id}_ended`);
-		frappe.realtime.off(`call_${this.call_log.id}_missed`);
+		nts.realtime.off(`call_${this.call_log.id}_ended`);
+		nts.realtime.off(`call_${this.call_log.id}_missed`);
 	}
 
 	setup_call_details() {
 		this.caller_info = $(`<div></div>`);
-		this.call_details = new frappe.ui.FieldGroup({
+		this.call_details = new nts.ui.FieldGroup({
 			fields: [
 				{
 					fieldname: "name",
@@ -114,7 +114,7 @@ class CallPopup {
 				{
 					fieldtype: "Button",
 					label: __("Open Contact"),
-					click: () => frappe.set_route("Form", "Contact", this.get_contact_link().link_name),
+					click: () => nts.set_route("Form", "Contact", this.get_contact_link().link_name),
 					depends_on: () => this.get_caller_name(),
 				},
 				{
@@ -132,7 +132,7 @@ class CallPopup {
 				{
 					fieldtype: "Button",
 					label: __("Create New Lead"),
-					click: () => frappe.new_doc("Lead", { mobile_no: this.caller_number }),
+					click: () => nts.new_doc("Lead", { mobile_no: this.caller_number }),
 					depends_on: () => !this.get_caller_name(),
 				},
 				{
@@ -171,7 +171,7 @@ class CallPopup {
 						const call_summary = this.call_details.get_value("call_summary");
 						const call_type = this.call_details.get_value("call_type");
 						if (!call_summary) return;
-						frappe
+						nts
 							.xcall(
 								"prodman.telephony.doctype.call_log.call_log.add_call_summary_and_call_type",
 								{
@@ -182,7 +182,7 @@ class CallPopup {
 							)
 							.then(() => {
 								this.close_modal();
-								frappe.show_alert({
+								nts.show_alert({
 									message: `
 								${__("Call Summary Saved")}
 								<br>
@@ -209,23 +209,23 @@ class CallPopup {
 
 	create_new_customer() {
 		// to avoid quick entry form
-		const new_customer = frappe.model.get_new_doc("Customer");
+		const new_customer = nts.model.get_new_doc("Customer");
 		new_customer.mobile_no = this.caller_number;
-		frappe.set_route("Form", new_customer.doctype, new_customer.name);
+		nts.set_route("Form", new_customer.doctype, new_customer.name);
 	}
 
 	create_new_contact() {
 		// TODO: fix new_doc, it should accept child table values
-		const new_contact = frappe.model.get_new_doc("Contact");
-		const phone_no = frappe.model.add_child(new_contact, "Contact Phone", "phone_nos");
+		const new_contact = nts.model.get_new_doc("Contact");
+		const phone_no = nts.model.add_child(new_contact, "Contact Phone", "phone_nos");
 		phone_no.phone = this.caller_number;
 		phone_no.is_primary_mobile_no = 1;
-		frappe.set_route("Form", new_contact.doctype, new_contact.name);
+		nts.set_route("Form", new_contact.doctype, new_contact.name);
 	}
 }
 
 $(document).on("app_ready", function () {
-	frappe.realtime.on("show_call_popup", (call_log) => {
+	nts.realtime.on("show_call_popup", (call_log) => {
 		let call_popup = prodman.call_popup;
 		if (call_popup && call_log.name === call_popup.call_log.name) {
 			call_popup.update_call_log(call_log);

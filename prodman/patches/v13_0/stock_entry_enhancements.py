@@ -1,14 +1,14 @@
-# Copyright(c) 2020, Frappe Technologies Pvt.Ltd.and Contributors
+# Copyright(c) 2020, nts Technologies Pvt.Ltd.and Contributors
 # License: GNU General Public License v3.See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("stock", "doctype", "stock_entry")
-	if frappe.db.has_column("Stock Entry", "add_to_transit"):
-		frappe.db.sql(
+	nts.reload_doc("stock", "doctype", "stock_entry")
+	if nts.db.has_column("Stock Entry", "add_to_transit"):
+		nts.db.sql(
 			"""
             UPDATE `tabStock Entry` SET
             stock_entry_type = 'Material Transfer',
@@ -17,7 +17,7 @@ def execute():
             """
 		)
 
-		frappe.db.sql(
+		nts.db.sql(
 			"""UPDATE `tabStock Entry` SET
             stock_entry_type = 'Material Transfer',
             purpose = 'Material Transfer'
@@ -25,12 +25,12 @@ def execute():
             """
 		)
 
-		frappe.reload_doc("stock", "doctype", "warehouse_type")
-		if not frappe.db.exists("Warehouse Type", "Transit"):
-			doc = frappe.new_doc("Warehouse Type")
+		nts.reload_doc("stock", "doctype", "warehouse_type")
+		if not nts.db.exists("Warehouse Type", "Transit"):
+			doc = nts.new_doc("Warehouse Type")
 			doc.name = "Transit"
 			doc.insert()
 
-		frappe.reload_doc("stock", "doctype", "stock_entry_type")
-		frappe.delete_doc_if_exists("Stock Entry Type", "Send to Warehouse")
-		frappe.delete_doc_if_exists("Stock Entry Type", "Receive at Warehouse")
+		nts.reload_doc("stock", "doctype", "stock_entry_type")
+		nts.delete_doc_if_exists("Stock Entry Type", "Send to Warehouse")
+		nts.delete_doc_if_exists("Stock Entry Type", "Receive at Warehouse")

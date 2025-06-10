@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -44,11 +44,11 @@ def get_data(filters):
 
 
 def get_filtered_data(filters):
-	bom = frappe.qb.DocType("BOM")
-	bom_ops = frappe.qb.DocType("BOM Operation")
+	bom = nts.qb.DocType("BOM")
+	bom_ops = nts.qb.DocType("BOM Operation")
 
 	bom_ops_query = (
-		frappe.qb.from_(bom)
+		nts.qb.from_(bom)
 		.join(bom_ops)
 		.on(bom.name == bom_ops.parent)
 		.select(
@@ -78,7 +78,7 @@ def get_filtered_data(filters):
 
 
 def get_bom_count(bom_data):
-	data = frappe.get_all(
+	data = nts.get_all(
 		"BOM Item",
 		fields=["count(name) as count", "bom_no"],
 		filters={"bom_no": ("in", bom_data)},
@@ -93,7 +93,7 @@ def get_bom_count(bom_data):
 
 
 def get_args():
-	return frappe._dict({"name": "", "item": "", "item_name": "", "uom": ""})
+	return nts._dict({"name": "", "item": "", "item_name": "", "uom": ""})
 
 
 def get_columns(filters):

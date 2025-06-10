@@ -1,11 +1,11 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 from random import randint
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import today
+import nts
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import today
 
 from prodman.selling.doctype.sales_order.sales_order import create_pick_list, make_delivery_note
 from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
@@ -21,7 +21,7 @@ from prodman.stock.doctype.stock_reservation_entry.stock_reservation_entry impor
 from prodman.stock.utils import get_stock_balance
 
 
-class TestStockReservationEntry(FrappeTestCase):
+class TestStockReservationEntry(ntsTestCase):
 	def setUp(self) -> None:
 		self.warehouse = "_Test Warehouse - _TC"
 		self.sr_item = make_item(properties={"is_stock_item": 1, "valuation_rate": 100})
@@ -33,7 +33,7 @@ class TestStockReservationEntry(FrappeTestCase):
 			validate_stock_reservation_settings,
 		)
 
-		voucher = frappe._dict(
+		voucher = nts._dict(
 			{
 				"doctype": "Sales Order",
 			}
@@ -41,12 +41,12 @@ class TestStockReservationEntry(FrappeTestCase):
 
 		# Case - 1: When `Stock Reservation` is disabled in `Stock Settings`, throw `ValidationError`
 		with change_settings("Stock Settings", {"enable_stock_reservation": 0}):
-			self.assertRaises(frappe.ValidationError, validate_stock_reservation_settings, voucher)
+			self.assertRaises(nts.ValidationError, validate_stock_reservation_settings, voucher)
 
 		with change_settings("Stock Settings", {"enable_stock_reservation": 1}):
 			# Case - 2: When `Voucher Type` is not allowed for `Stock Reservation`, throw `ValidationError`
 			voucher.doctype = "NOT ALLOWED"
-			self.assertRaises(frappe.ValidationError, validate_stock_reservation_settings, voucher)
+			self.assertRaises(nts.ValidationError, validate_stock_reservation_settings, voucher)
 
 			# Case - 3: When `Voucher Type` is allowed for `Stock Reservation`
 			voucher.doctype = "Sales Order"
@@ -421,12 +421,12 @@ class TestStockReservationEntry(FrappeTestCase):
 			# Test - 4: After Delivery Note, SRE Delivered Qty should be equal to SRE Reserved Qty.
 			self.assertEqual(sre_details.delivered_qty, sre_details.reserved_qty)
 
-		sre = frappe.qb.DocType("Stock Reservation Entry")
-		sb_entry = frappe.qb.DocType("Serial and Batch Entry")
+		sre = nts.qb.DocType("Stock Reservation Entry")
+		sb_entry = nts.qb.DocType("Serial and Batch Entry")
 		for item in dn.items:
 			if item.serial_and_batch_bundle:
 				reserved_sb_entries = (
-					frappe.qb.from_(sre)
+					nts.qb.from_(sre)
 					.inner_join(sb_entry)
 					.on(sre.name == sb_entry.parent)
 					.select(sb_entry.serial_no, sb_entry.batch_no, sb_entry.qty, sb_entry.delivered_qty)
@@ -444,7 +444,7 @@ class TestStockReservationEntry(FrappeTestCase):
 
 					reserved_sb_details.add((sb_details.serial_no, sb_details.batch_no, -1 * sb_details.qty))
 
-				delivered_sb_entries = frappe.db.get_all(
+				delivered_sb_entries = nts.db.get_all(
 					"Serial and Batch Entry",
 					filters={"parent": item.serial_and_batch_bundle},
 					fields=["serial_no", "batch_no", "qty"],
@@ -473,7 +473,7 @@ class TestStockReservationEntry(FrappeTestCase):
 			self.assertEqual(sre_details.delivered_qty, 0)
 
 			if sre_details.reservation_based_on == "Serial and Batch":
-				sb_entries = frappe.db.get_all(
+				sb_entries = nts.db.get_all(
 					"Serial and Batch Entry",
 					filters={"parenttype": "Stock Reservation Entry", "parent": sre_details.name},
 					fields=["delivered_qty"],
@@ -527,14 +527,14 @@ class TestStockReservationEntry(FrappeTestCase):
 			# Test - 1: SRE Reserved Qty should be updated in Sales Order Item.
 			self.assertEqual(item.stock_reserved_qty, sre_details.reserved_qty)
 
-		sre = frappe.qb.DocType("Stock Reservation Entry")
-		sb_entry = frappe.qb.DocType("Serial and Batch Entry")
+		sre = nts.qb.DocType("Stock Reservation Entry")
+		sb_entry = nts.qb.DocType("Serial and Batch Entry")
 		for location in pl.locations:
 			# Test - 2: Reserved Qty should be updated in Pick List Item.
 			self.assertEqual(location.stock_reserved_qty, location.qty)
 
 			if location.serial_and_batch_bundle:
-				picked_sb_entries = frappe.db.get_all(
+				picked_sb_entries = nts.db.get_all(
 					"Serial and Batch Entry",
 					filters={"parent": location.serial_and_batch_bundle},
 					fields=["serial_no", "batch_no", "qty"],
@@ -543,7 +543,7 @@ class TestStockReservationEntry(FrappeTestCase):
 				picked_sb_details: set[tuple] = set(picked_sb_entries)
 
 				reserved_sb_entries = (
-					frappe.qb.from_(sre)
+					nts.qb.from_(sre)
 					.inner_join(sb_entry)
 					.on(sre.name == sb_entry.parent)
 					.select(sb_entry.serial_no, sb_entry.batch_no, sb_entry.qty)
@@ -611,7 +611,7 @@ class TestStockReservationEntry(FrappeTestCase):
 		pr.save().submit()
 
 		for item in pr.items:
-			sre, status, reserved_qty = frappe.db.get_value(
+			sre, status, reserved_qty = nts.db.get_value(
 				"Stock Reservation Entry",
 				{
 					"from_voucher_type": "Purchase Receipt",
@@ -628,13 +628,13 @@ class TestStockReservationEntry(FrappeTestCase):
 			self.assertEqual(reserved_qty, item.qty)
 
 			if item.serial_and_batch_bundle:
-				sb_details = frappe.db.get_all(
+				sb_details = nts.db.get_all(
 					"Serial and Batch Entry",
 					filters={"parent": item.serial_and_batch_bundle},
 					fields=["serial_no", "batch_no", "qty"],
 					as_list=True,
 				)
-				reserved_sb_details = frappe.db.get_all(
+				reserved_sb_details = nts.db.get_all(
 					"Serial and Batch Entry",
 					filters={"parent": sre},
 					fields=["serial_no", "batch_no", "qty"],
@@ -676,7 +676,7 @@ class TestStockReservationEntry(FrappeTestCase):
 		so.create_stock_reservation_entries()
 
 		# Test - 1: ValidationError should be thrown as the inwarded stock is reserved.
-		self.assertRaises(frappe.ValidationError, se.cancel)
+		self.assertRaises(nts.ValidationError, se.cancel)
 
 	def tearDown(self) -> None:
 		cancel_all_stock_reservation_entries()
@@ -725,11 +725,11 @@ def create_items() -> dict:
 def create_material_receipt(
 	items: dict, warehouse: str = "_Test Warehouse - _TC", qty: float = 100
 ) -> StockEntry:
-	se = frappe.new_doc("Stock Entry")
+	se = nts.new_doc("Stock Entry")
 	se.purpose = "Material Receipt"
 	se.company = "_Test Company"
-	cost_center = frappe.get_value("Company", se.company, "cost_center")
-	expense_account = frappe.get_value("Company", se.company, "stock_adjustment_account")
+	cost_center = nts.get_value("Company", se.company, "cost_center")
+	expense_account = nts.get_value("Company", se.company, "stock_adjustment_account")
 
 	for item in items.values():
 		se.append(
@@ -755,15 +755,15 @@ def create_material_receipt(
 
 
 def cancel_all_stock_reservation_entries() -> None:
-	sre_list = frappe.db.get_all("Stock Reservation Entry", filters={"docstatus": 1}, pluck="name")
+	sre_list = nts.db.get_all("Stock Reservation Entry", filters={"docstatus": 1}, pluck="name")
 
 	for sre in sre_list:
-		frappe.get_doc("Stock Reservation Entry", sre).cancel()
+		nts.get_doc("Stock Reservation Entry", sre).cancel()
 
 
 def make_stock_reservation_entry(**args):
-	doc = frappe.new_doc("Stock Reservation Entry")
-	args = frappe._dict(args)
+	doc = nts.new_doc("Stock Reservation Entry")
+	args = nts._dict(args)
 
 	doc.item_code = args.item_code
 	doc.warehouse = args.warehouse or "_Test Warehouse - _TC"

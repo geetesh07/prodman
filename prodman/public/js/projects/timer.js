@@ -1,7 +1,7 @@
-frappe.provide("prodman.timesheet");
+nts.provide("prodman.timesheet");
 
 prodman.timesheet.timer = function (frm, row, timestamp = 0) {
-	let dialog = new frappe.ui.Dialog({
+	let dialog = new nts.ui.Dialog({
 		title: __("Timer"),
 		fields: [
 			{
@@ -79,9 +79,9 @@ prodman.timesheet.control_timer = function (frm, dialog, row, timestamp = 0) {
 			) {
 				frm.doc.time_logs = [];
 			}
-			row = frappe.model.add_child(frm.doc, "Timesheet Detail", "time_logs");
+			row = nts.model.add_child(frm.doc, "Timesheet Detail", "time_logs");
 			row.activity_type = args.activity_type;
-			row.from_time = frappe.datetime.get_datetime_as_string();
+			row.from_time = nts.datetime.get_datetime_as_string();
 			row.project = args.project;
 			row.task = args.task;
 			row.expected_hours = args.expected_hours;
@@ -89,7 +89,7 @@ prodman.timesheet.control_timer = function (frm, dialog, row, timestamp = 0) {
 			let d = moment(row.from_time);
 			if (row.expected_hours) {
 				d.add(row.expected_hours, "hours");
-				row.to_time = d.format(frappe.defaultDatetimeFormat);
+				row.to_time = d.format(nts.defaultDatetimeFormat);
 			}
 			frm.refresh_field("time_logs");
 			frm.save();
@@ -118,7 +118,7 @@ prodman.timesheet.control_timer = function (frm, dialog, row, timestamp = 0) {
 		grid_row.doc.task = args.task;
 		grid_row.doc.expected_hours = args.expected_hours;
 		grid_row.doc.hours = currentIncrement / 3600;
-		grid_row.doc.to_time = frappe.datetime.now_datetime();
+		grid_row.doc.to_time = nts.datetime.now_datetime();
 		grid_row.refresh();
 		frm.dirty();
 		frm.save();
@@ -145,8 +145,8 @@ prodman.timesheet.control_timer = function (frm, dialog, row, timestamp = 0) {
 		if (hours > 99999) reset();
 		if (cur_dialog && cur_dialog.get_value("expected_hours") > 0) {
 			if (flag && currentIncrement >= cur_dialog.get_value("expected_hours") * 3600) {
-				frappe.utils.play_sound("alert");
-				frappe.msgprint(__("Timer exceeded the given hours."));
+				nts.utils.play_sound("alert");
+				nts.msgprint(__("Timer exceeded the given hours."));
 				flag = false;
 			}
 		}

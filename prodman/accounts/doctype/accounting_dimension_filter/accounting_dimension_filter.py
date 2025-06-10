@@ -1,10 +1,10 @@
-# Copyright, (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright, (c) 2020, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _, scrub
-from frappe.model.document import Document
+import nts 
+from nts  import _, scrub
+from nts .model.document import Document
 
 
 class AccountingDimensionFilter(Document):
@@ -14,7 +14,7 @@ class AccountingDimensionFilter(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.allowed_dimension.allowed_dimension import AllowedDimension
 		from prodman.accounts.doctype.applicable_on_account.applicable_on_account import (
@@ -40,7 +40,7 @@ class AccountingDimensionFilter(Document):
 		self.validate_applicable_accounts()
 
 	def validate_applicable_accounts(self):
-		accounts = frappe.db.sql(
+		accounts = nts .db.sql(
 			"""
 				SELECT a.applicable_on_account as account
 				FROM `tabApplicable On Account` a, `tabAccounting Dimension Filter` d
@@ -56,19 +56,19 @@ class AccountingDimensionFilter(Document):
 
 		for account in self.get("accounts"):
 			if account.applicable_on_account in account_list:
-				frappe.throw(
+				nts .throw(
 					_("Row {0}: {1} account already applied for Accounting Dimension {2}").format(
 						account.idx,
-						frappe.bold(account.applicable_on_account),
-						frappe.bold(self.accounting_dimension),
+						nts .bold(account.applicable_on_account),
+						nts .bold(self.accounting_dimension),
 					)
 				)
 
 
 def get_dimension_filter_map():
-	if not frappe.flags.get("dimension_filter_map"):
+	if not nts .flags.get("dimension_filter_map"):
 		# nosemgrep
-		filters = frappe.db.sql(
+		filters = nts .db.sql(
 			"""
 			SELECT
 				a.applicable_on_account, d.dimension_value, p.accounting_dimension,
@@ -97,9 +97,9 @@ def get_dimension_filter_map():
 				f.allow_or_restrict,
 				f.is_mandatory,
 			)
-		frappe.flags.dimension_filter_map = dimension_filter_map
+		nts .flags.dimension_filter_map = dimension_filter_map
 
-	return frappe.flags.dimension_filter_map
+	return nts .flags.dimension_filter_map
 
 
 def build_map(map_object, dimension, account, filter_value, allow_or_restrict, is_mandatory):

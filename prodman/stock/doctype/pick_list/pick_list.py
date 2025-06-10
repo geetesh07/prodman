@@ -1,19 +1,19 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2019, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import json
 from collections import OrderedDict, defaultdict
 from itertools import groupby
 
-import frappe
-from frappe import _, bold
-from frappe.model.document import Document
-from frappe.model.mapper import map_child_doc
-from frappe.query_builder import Case
-from frappe.query_builder.custom import GROUP_CONCAT
-from frappe.query_builder.functions import Coalesce, Locate, Replace, Sum
-from frappe.utils import ceil, cint, floor, flt, get_link_to_form
-from frappe.utils.nestedset import get_descendants_of
+import nts
+from nts import _, bold
+from nts.model.document import Document
+from nts.model.mapper import map_child_doc
+from nts.query_builder import Case
+from nts.query_builder.custom import GROUP_CONCAT
+from nts.query_builder.functions import Coalesce, Locate, Replace, Sum
+from nts.utils import ceil, cint, floor, flt, get_link_to_form
+from nts.utils.nestedset import get_descendants_of
 
 from prodman.selling.doctype.sales_order.sales_order import (
 	make_delivery_note as create_delivery_note_from_sales_order,
@@ -39,7 +39,7 @@ class PickList(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.stock.doctype.pick_list_item.pick_list_item import PickListItem
 
@@ -65,7 +65,7 @@ class PickList(Document):
 	# end: auto-generated types
 
 	def onload(self) -> None:
-		if frappe.get_cached_value("Stock Settings", None, "enable_stock_reservation"):
+		if nts.get_cached_value("Stock Settings", None, "enable_stock_reservation"):
 			if self.has_unreserved_stock():
 				self.set_onload("has_unreserved_stock", True)
 
@@ -97,7 +97,7 @@ class PickList(Document):
 				batch_qty = get_batch_qty(row.batch_no, row.warehouse, row.item_code)
 
 				if row.picked_qty > batch_qty:
-					frappe.throw(
+					nts.throw(
 						_(
 							"At Row #{0}: The picked quantity {1} for the item {2} is greater than available stock {3} for the batch {4} in the warehouse {5}. Please restock the item."
 						).format(
@@ -113,14 +113,14 @@ class PickList(Document):
 
 				continue
 
-			bin_qty = frappe.db.get_value(
+			bin_qty = nts.db.get_value(
 				"Bin",
 				{"item_code": row.item_code, "warehouse": row.warehouse},
 				"actual_qty",
 			)
 
 			if row.picked_qty > flt(bin_qty):
-				frappe.throw(
+				nts.throw(
 					_(
 						"At Row #{0}: The picked quantity {1} for the item {2} is greater than available stock {3} in the warehouse {4}."
 					).format(row.idx, row.picked_qty, bold(row.item_code), bin_qty, bold(row.warehouse)),
@@ -135,7 +135,7 @@ class PickList(Document):
 				continue
 
 			picked_serial_nos = get_serial_nos(row.serial_no)
-			validated_serial_nos = frappe.get_all(
+			validated_serial_nos = nts.get_all(
 				"Serial No",
 				filters={"name": ("in", picked_serial_nos), "warehouse": row.warehouse},
 				pluck="name",
@@ -143,7 +143,7 @@ class PickList(Document):
 
 			incorrect_serial_nos = set(picked_serial_nos) - set(validated_serial_nos)
 			if incorrect_serial_nos:
-				frappe.throw(
+				nts.throw(
 					_("The Serial No at Row #{0}: {1} is not available in warehouse {2}.").format(
 						row.idx, ", ".join(incorrect_serial_nos), row.warehouse
 					),
@@ -155,9 +155,9 @@ class PickList(Document):
 		for location in self.get("locations"):
 			if (
 				location.sales_order
-				and frappe.db.get_value("Sales Order", location.sales_order, "per_picked", cache=True) == 100
+				and nts.db.get_value("Sales Order", location.sales_order, "per_picked", cache=True) == 100
 			):
-				frappe.throw(
+				nts.throw(
 					_("Row #{}: item {} has been picked already.").format(location.idx, location.item_code)
 				)
 
@@ -175,19 +175,19 @@ class PickList(Document):
 
 		if so_list:
 			for so in so_list:
-				so_doc = frappe.get_doc("Sales Order", so)
+				so_doc = nts.get_doc("Sales Order", so)
 				for item in so_doc.items:
 					if item.stock_reserved_qty > 0:
-						frappe.throw(
+						nts.throw(
 							_(
 								"Cannot create a pick list for Sales Order {0} because it has reserved stock. Please unreserve the stock in order to create a pick list."
-							).format(frappe.bold(so))
+							).format(nts.bold(so))
 						)
 
 	def validate_picked_items(self):
 		for item in self.locations:
 			if self.scan_mode and item.picked_qty < item.stock_qty:
-				frappe.throw(
+				nts.throw(
 					_(
 						"Row {0} picked quantity is less than the required quantity, additional {1} {2} required."
 					).format(item.idx, item.stock_qty - item.picked_qty, item.stock_uom),
@@ -213,13 +213,13 @@ class PickList(Document):
 				batches.append(row.batch_no)
 
 		if batches:
-			batch = frappe.qb.DocType("Batch")
+			batch = nts.qb.DocType("Batch")
 			query = (
-				frappe.qb.from_(batch)
+				nts.qb.from_(batch)
 				.select(batch.name)
 				.where(
 					(batch.name.isin(batches))
-					& (batch.expiry_date <= frappe.utils.nowdate())
+					& (batch.expiry_date <= nts.utils.nowdate())
 					& (batch.expiry_date.isnotnull())
 				)
 			)
@@ -228,7 +228,7 @@ class PickList(Document):
 			if expired_batches:
 				msg = "<ul>" + "".join(f"<li>{batch.name}</li>" for batch in expired_batches) + "</ul>"
 
-				frappe.throw(
+				nts.throw(
 					_("The following batches are expired, please restock them: <br> {0}").format(msg),
 					title=_("Expired Batches"),
 				)
@@ -241,7 +241,7 @@ class PickList(Document):
 				continue
 
 			if not row.use_serial_batch_fields and (row.serial_no or row.batch_no):
-				frappe.throw(_("Please enable Use Old Serial / Batch Fields to make_bundle"))
+				nts.throw(_("Please enable Use Old Serial / Batch Fields to make_bundle"))
 
 			if row.use_serial_batch_fields and (not row.serial_and_batch_bundle):
 				sn_doc = SerialBatchCreation(
@@ -255,7 +255,7 @@ class PickList(Document):
 						"type_of_transaction": "Outward",
 						"company": self.company,
 						"serial_nos": get_serial_nos(row.serial_no) if row.serial_no else None,
-						"batches": frappe._dict({row.batch_no: row.stock_qty}) if row.batch_no else None,
+						"batches": nts._dict({row.batch_no: row.stock_qty}) if row.batch_no else None,
 						"batch_no": row.batch_no,
 					}
 				).make_serial_and_batch_bundle()
@@ -268,7 +268,7 @@ class PickList(Document):
 			msg = _(
 				"The Pick List having Stock Reservation Entries cannot be updated. If you need to make changes, we recommend canceling the existing Stock Reservation Entries before updating the Pick List."
 			)
-			frappe.throw(msg)
+			nts.throw(msg)
 
 	def on_cancel(self):
 		self.ignore_linked_doctypes = [
@@ -287,16 +287,16 @@ class PickList(Document):
 		for row in self.locations:
 			if (
 				row.serial_and_batch_bundle
-				and frappe.db.get_value("Serial and Batch Bundle", row.serial_and_batch_bundle, "docstatus")
+				and nts.db.get_value("Serial and Batch Bundle", row.serial_and_batch_bundle, "docstatus")
 				== 1
 			):
-				frappe.db.set_value(
+				nts.db.set_value(
 					"Serial and Batch Bundle",
 					row.serial_and_batch_bundle,
 					{"is_cancelled": 1, "voucher_no": ""},
 				)
 
-				frappe.get_doc("Serial and Batch Bundle", row.serial_and_batch_bundle).cancel()
+				nts.get_doc("Serial and Batch Bundle", row.serial_and_batch_bundle).cancel()
 				row.db_set("serial_and_batch_bundle", None)
 
 	def on_update(self):
@@ -306,7 +306,7 @@ class PickList(Document):
 	def linked_serial_and_batch_bundle(self):
 		for row in self.get("locations"):
 			if row.serial_and_batch_bundle:
-				frappe.get_doc(
+				nts.get_doc(
 					"Serial and Batch Bundle", row.serial_and_batch_bundle
 				).set_serial_and_batch_values(self, row)
 
@@ -316,12 +316,12 @@ class PickList(Document):
 	def remove_serial_and_batch_bundle(self):
 		for row in self.locations:
 			if row.serial_and_batch_bundle:
-				frappe.delete_doc("Serial and Batch Bundle", row.serial_and_batch_bundle)
+				nts.delete_doc("Serial and Batch Bundle", row.serial_and_batch_bundle)
 
 	def validate_serial_and_batch_bundle(self):
 		for row in self.locations:
 			if row.serial_and_batch_bundle:
-				doc = frappe.get_doc("Serial and Batch Bundle", row.serial_and_batch_bundle)
+				doc = nts.get_doc("Serial and Batch Bundle", row.serial_and_batch_bundle)
 				if doc.docstatus == 0:
 					doc.submit()
 
@@ -360,12 +360,12 @@ class PickList(Document):
 		picked_items = get_picked_items_qty(packed_items)
 		self.validate_picked_qty(picked_items)
 
-		picked_qty = frappe._dict()
+		picked_qty = nts._dict()
 		for d in picked_items:
 			picked_qty[d.sales_order_item] = d.picked_qty
 
 		for packed_item in packed_items:
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Packed Item",
 				packed_item,
 				"picked_qty",
@@ -377,12 +377,12 @@ class PickList(Document):
 		picked_items = get_picked_items_qty(so_items)
 		self.validate_picked_qty(picked_items)
 
-		picked_qty = frappe._dict()
+		picked_qty = nts._dict()
 		for d in picked_items:
 			picked_qty[d.sales_order_item] = d.picked_qty
 
 		for so_item in so_items:
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Sales Order Item",
 				so_item,
 				"picked_qty",
@@ -397,9 +397,9 @@ class PickList(Document):
 				sales_orders.append(row.sales_order)
 
 		for sales_order in sales_orders:
-			frappe.get_doc("Sales Order", sales_order, for_update=True).update_picking_status()
+			nts.get_doc("Sales Order", sales_order, for_update=True).update_picking_status()
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def create_stock_reservation_entries(self, notify=True) -> None:
 		"""Creates Stock Reservation Entries for Sales Order Items against Pick List."""
 
@@ -419,14 +419,14 @@ class PickList(Document):
 
 		if so_items_details_map:
 			for so, items_details in so_items_details_map.items():
-				so_doc = frappe.get_doc("Sales Order", so)
+				so_doc = nts.get_doc("Sales Order", so)
 				so_doc.create_stock_reservation_entries(
 					items_details=items_details,
 					from_voucher_type="Pick List",
 					notify=notify,
 				)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def cancel_stock_reservation_entries(self, notify=True) -> None:
 		"""Cancel Stock Reservation Entries for Sales Order Items created against Pick List."""
 
@@ -440,23 +440,23 @@ class PickList(Document):
 
 	def validate_picked_qty(self, data):
 		over_delivery_receipt_allowance = 100 + flt(
-			frappe.db.get_single_value("Stock Settings", "over_delivery_receipt_allowance")
+			nts.db.get_single_value("Stock Settings", "over_delivery_receipt_allowance")
 		)
 
 		for row in data:
 			if (row.picked_qty / row.stock_qty) * 100 > over_delivery_receipt_allowance:
-				frappe.throw(
+				nts.throw(
 					_(
 						"You are picking more than required quantity for the item {0}. Check if there is any other pick list created for the sales order {1}."
 					).format(row.item_code, row.sales_order)
 				)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def set_item_locations(self, save=False):
 		self.validate_for_qty()
 		items = self.aggregate_item_qty()
 		picked_items_details = self.get_picked_items_details(items)
-		self.item_location_map = frappe._dict()
+		self.item_location_map = nts._dict()
 
 		from_warehouses = [self.parent_warehouse] if self.parent_warehouse else []
 		if self.parent_warehouse:
@@ -474,7 +474,7 @@ class PickList(Document):
 		for row in reset_rows:
 			self.remove(row)
 
-		updated_locations = frappe._dict()
+		updated_locations = nts._dict()
 		len_idx = len(self.get("locations")) or 0
 		for item_doc in items:
 			item_code = item_doc.item_code
@@ -533,7 +533,7 @@ class PickList(Document):
 				location.idx = len_idx
 				self.append("locations", location)
 
-			frappe.msgprint(
+			nts.msgprint(
 				_(
 					"Please Restock Items and Update the Pick List to continue. To discontinue, cancel the Pick List."
 				),
@@ -554,10 +554,10 @@ class PickList(Document):
 				continue
 
 			if not item.item_code:
-				frappe.throw(f"Row #{item.idx}: Item Code is Mandatory")
+				nts.throw(f"Row #{item.idx}: Item Code is Mandatory")
 			if not cint(
-				frappe.get_cached_value("Item", item.item_code, "is_stock_item")
-			) and not frappe.db.exists("Product Bundle", {"new_item_code": item.item_code, "disabled": 0}):
+				nts.get_cached_value("Item", item.item_code, "is_stock_item")
+			) and not nts.db.exists("Product Bundle", {"new_item_code": item.item_code, "disabled": 0}):
 				continue
 			item_code = item.item_code
 			reference = item.sales_order_item or item.material_request_item
@@ -582,7 +582,7 @@ class PickList(Document):
 		if self.purpose == "Material Transfer for Manufacture" and (
 			self.for_qty is None or self.for_qty == 0
 		):
-			frappe.throw(_("Qty of Finished Goods Item should be greater than 0."))
+			nts.throw(_("Qty of Finished Goods Item should be greater than 0."))
 
 	def before_print(self, settings=None):
 		if self.group_same_items:
@@ -619,8 +619,8 @@ class PickList(Document):
 		for so_row, item_code in product_bundles.items():
 			picked_qty = self._compute_picked_qty_for_bundle(so_row, product_bundle_qty_map[item_code])
 			item_table = "Sales Order Item"
-			already_picked = frappe.db.get_value(item_table, so_row, "picked_qty", for_update=True)
-			frappe.db.set_value(
+			already_picked = nts.db.get_value(item_table, so_row, "picked_qty", for_update=True)
+			nts.db.set_value(
 				item_table,
 				so_row,
 				"picked_qty",
@@ -628,7 +628,7 @@ class PickList(Document):
 			)
 
 	def get_picked_items_details(self, items):
-		picked_items = frappe._dict()
+		picked_items = nts._dict()
 
 		if not items:
 			return picked_items
@@ -660,7 +660,7 @@ class PickList(Document):
 				picked_items[item_data.item_code] = {}
 
 			if key not in picked_items[item_data.item_code]:
-				picked_items[item_data.item_code][key] = frappe._dict(
+				picked_items[item_data.item_code][key] = nts._dict(
 					{
 						"picked_qty": 0,
 						"serial_no": [],
@@ -685,7 +685,7 @@ class PickList(Document):
 					picked_items[row.item_code] = {}
 
 				if key not in picked_items[row.item_code]:
-					picked_items[row.item_code][key] = frappe._dict(
+					picked_items[row.item_code][key] = nts._dict(
 						{
 							"picked_qty": 0,
 							"serial_no": [],
@@ -699,10 +699,10 @@ class PickList(Document):
 					picked_items[row.item_code][key]["serial_no"].extend(serial_no)
 
 	def _get_pick_list_items(self, items):
-		pi = frappe.qb.DocType("Pick List")
-		pi_item = frappe.qb.DocType("Pick List Item")
+		pi = nts.qb.DocType("Pick List")
+		pi_item = nts.qb.DocType("Pick List Item")
 		query = (
-			frappe.qb.from_(pi)
+			nts.qb.from_(pi)
 			.inner_join(pi_item)
 			.on(pi.name == pi_item.parent)
 			.select(
@@ -739,7 +739,7 @@ class PickList(Document):
 		for item in self.locations:
 			if not item.product_bundle_item:
 				continue
-			product_bundles[item.product_bundle_item] = frappe.db.get_value(
+			product_bundles[item.product_bundle_item] = nts.db.get_value(
 				"Sales Order Item",
 				item.product_bundle_item,
 				"item_code",
@@ -750,13 +750,13 @@ class PickList(Document):
 		# bundle_item_code: Dict[component, qty]
 		product_bundle_qty_map = {}
 		for bundle_item_code in bundles:
-			bundle = frappe.get_last_doc("Product Bundle", {"new_item_code": bundle_item_code, "disabled": 0})
+			bundle = nts.get_last_doc("Product Bundle", {"new_item_code": bundle_item_code, "disabled": 0})
 			product_bundle_qty_map[bundle_item_code] = {item.item_code: item.qty for item in bundle.items}
 		return product_bundle_qty_map
 
 	def _compute_picked_qty_for_bundle(self, bundle_row, bundle_items) -> int:
 		"""Compute how many full bundles can be created from picked items."""
-		precision = frappe.get_precision("Stock Ledger Entry", "qty_after_transaction")
+		precision = nts.get_precision("Stock Ledger Entry", "qty_after_transaction")
 
 		possible_bundles = []
 		for item in self.locations:
@@ -796,14 +796,14 @@ class PickList(Document):
 
 def update_pick_list_status(pick_list):
 	if pick_list:
-		doc = frappe.get_doc("Pick List", pick_list)
+		doc = nts.get_doc("Pick List", pick_list)
 		doc.run_method("update_status")
 
 
 def get_picked_items_qty(items) -> list[dict]:
-	pi_item = frappe.qb.DocType("Pick List Item")
+	pi_item = nts.qb.DocType("Pick List Item")
 	return (
-		frappe.qb.from_(pi_item)
+		nts.qb.from_(pi_item)
 		.select(
 			pi_item.sales_order_item,
 			pi_item.item_code,
@@ -822,7 +822,7 @@ def get_picked_items_qty(items) -> list[dict]:
 
 def validate_item_locations(pick_list):
 	if not pick_list.locations:
-		frappe.throw(_("Add items in the Item Locations table"))
+		nts.throw(_("Add items in the Item Locations table"))
 
 
 def get_items_with_location_and_quantity(item_doc, item_location_map, docstatus):
@@ -832,15 +832,15 @@ def get_items_with_location_and_quantity(item_doc, item_location_map, docstatus)
 	# if stock qty is zero on submitted entry, show positive remaining qty to recalculate in case of restock.
 	remaining_stock_qty = item_doc.qty if (docstatus == 1 and item_doc.stock_qty == 0) else item_doc.stock_qty
 
-	precision = frappe.get_precision("Pick List Item", "qty")
+	precision = nts.get_precision("Pick List Item", "qty")
 	while flt(remaining_stock_qty, precision) > 0 and available_locations:
 		item_location = available_locations.pop(0)
-		item_location = frappe._dict(item_location)
+		item_location = nts._dict(item_location)
 
 		stock_qty = remaining_stock_qty if item_location.qty >= remaining_stock_qty else item_location.qty
 		qty = stock_qty / (item_doc.conversion_factor or 1)
 
-		uom_must_be_whole_number = frappe.get_cached_value("UOM", item_doc.uom, "must_be_whole_number")
+		uom_must_be_whole_number = nts.get_cached_value("UOM", item_doc.uom, "must_be_whole_number")
 		if uom_must_be_whole_number:
 			qty = floor(qty)
 			stock_qty = qty * item_doc.conversion_factor
@@ -852,7 +852,7 @@ def get_items_with_location_and_quantity(item_doc, item_location_map, docstatus)
 			serial_nos = "\n".join(item_location.serial_nos[0 : cint(stock_qty)])
 
 		locations.append(
-			frappe._dict(
+			nts._dict(
 				{
 					"qty": qty,
 					"stock_qty": stock_qty,
@@ -891,8 +891,8 @@ def get_available_item_locations(
 ):
 	locations = []
 
-	has_serial_no = frappe.get_cached_value("Item", item_code, "has_serial_no")
-	has_batch_no = frappe.get_cached_value("Item", item_code, "has_batch_no")
+	has_serial_no = nts.get_cached_value("Item", item_code, "has_serial_no")
+	has_batch_no = nts.get_cached_value("Item", item_code, "has_batch_no")
 
 	if has_batch_no and has_serial_no:
 		locations = get_available_item_locations_for_serial_and_batched_item(
@@ -960,7 +960,7 @@ def validate_picked_materials(item_code, required_qty, locations, picked_item_de
 
 	if remaining_qty > 0:
 		if picked_item_details:
-			frappe.msgprint(
+			nts.msgprint(
 				_("{0} units of Item {1} is picked in another Pick List.").format(
 					remaining_qty, get_link_to_form("Item", item_code)
 				),
@@ -968,7 +968,7 @@ def validate_picked_materials(item_code, required_qty, locations, picked_item_de
 			)
 
 		else:
-			frappe.msgprint(
+			nts.msgprint(
 				_("{0} units of Item {1} is not available in any of the warehouses.").format(
 					remaining_qty, get_link_to_form("Item", item_code)
 				),
@@ -978,7 +978,7 @@ def validate_picked_materials(item_code, required_qty, locations, picked_item_de
 
 def filter_locations_by_picked_materials(locations, picked_item_details) -> list[dict]:
 	filterd_locations = []
-	precision = frappe.get_precision("Pick List Item", "qty")
+	precision = nts.get_precision("Pick List Item", "qty")
 	for row in locations:
 		key = row.warehouse
 		if row.batch_no:
@@ -1018,7 +1018,7 @@ def get_available_item_locations_for_serial_and_batched_item(
 	)
 
 	if locations:
-		sn = frappe.qb.DocType("Serial No")
+		sn = nts.qb.DocType("Serial No")
 		conditions = (sn.item_code == item_code) & (sn.company == company)
 
 		for location in locations:
@@ -1027,7 +1027,7 @@ def get_available_item_locations_for_serial_and_batched_item(
 			)  # if extra qty in batch
 
 			serial_nos = (
-				frappe.qb.from_(sn)
+				nts.qb.from_(sn)
 				.select(sn.name)
 				.where(
 					(conditions) & (sn.batch_no == location.batch_no) & (sn.warehouse == location.warehouse)
@@ -1048,9 +1048,9 @@ def get_available_item_locations_for_serialized_item(
 	company,
 	consider_rejected_warehouses=False,
 ):
-	sn = frappe.qb.DocType("Serial No")
+	sn = nts.qb.DocType("Serial No")
 	query = (
-		frappe.qb.from_(sn)
+		nts.qb.from_(sn)
 		.select(sn.name, sn.warehouse)
 		.where(sn.item_code == item_code)
 		.orderby(sn.creation)
@@ -1068,7 +1068,7 @@ def get_available_item_locations_for_serialized_item(
 
 	serial_nos = query.run(as_list=True)
 
-	warehouse_serial_nos_map = frappe._dict()
+	warehouse_serial_nos_map = nts._dict()
 	for serial_no, warehouse in serial_nos:
 		warehouse_serial_nos_map.setdefault(warehouse, []).append(serial_no)
 
@@ -1078,7 +1078,7 @@ def get_available_item_locations_for_serialized_item(
 		qty = len(serial_nos)
 
 		locations.append(
-			frappe._dict(
+			nts._dict(
 				{
 					"qty": qty,
 					"warehouse": warehouse,
@@ -1098,16 +1098,16 @@ def get_available_item_locations_for_batched_item(
 ):
 	locations = []
 	data = get_auto_batch_nos(
-		frappe._dict(
+		nts._dict(
 			{
 				"item_code": item_code,
 				"warehouse": from_warehouses,
-				"based_on": frappe.db.get_single_value("Stock Settings", "pick_serial_and_batch_based_on"),
+				"based_on": nts.db.get_single_value("Stock Settings", "pick_serial_and_batch_based_on"),
 			}
 		)
 	)
 
-	warehouse_wise_batches = frappe._dict()
+	warehouse_wise_batches = nts._dict()
 	rejected_warehouses = get_rejected_warehouses()
 
 	for d in data:
@@ -1122,7 +1122,7 @@ def get_available_item_locations_for_batched_item(
 	for warehouse, batches in warehouse_wise_batches.items():
 		for batch_no, qty in batches.items():
 			locations.append(
-				frappe._dict(
+				nts._dict(
 					{
 						"qty": qty,
 						"warehouse": warehouse,
@@ -1141,9 +1141,9 @@ def get_available_item_locations_for_other_item(
 	company,
 	consider_rejected_warehouses=False,
 ):
-	bin = frappe.qb.DocType("Bin")
+	bin = nts.qb.DocType("Bin")
 	query = (
-		frappe.qb.from_(bin)
+		nts.qb.from_(bin)
 		.select(bin.warehouse, bin.actual_qty.as_("qty"))
 		.where((bin.item_code == item_code) & (bin.actual_qty > 0))
 		.orderby(bin.creation)
@@ -1152,7 +1152,7 @@ def get_available_item_locations_for_other_item(
 	if from_warehouses:
 		query = query.where(bin.warehouse.isin(from_warehouses))
 	else:
-		wh = frappe.qb.DocType("Warehouse")
+		wh = nts.qb.DocType("Warehouse")
 		query = query.from_(wh).where((bin.warehouse == wh.name) & (wh.company == company))
 
 	if not consider_rejected_warehouses:
@@ -1164,9 +1164,9 @@ def get_available_item_locations_for_other_item(
 	return item_locations
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def create_delivery_note(source_name, target_doc=None):
-	pick_list = frappe.get_doc("Pick List", source_name)
+	pick_list = nts.get_doc("Pick List", source_name)
 	validate_item_locations(pick_list)
 	sales_dict = dict()
 	sales_orders = []
@@ -1174,7 +1174,7 @@ def create_delivery_note(source_name, target_doc=None):
 	for location in pick_list.locations:
 		if location.sales_order:
 			sales_orders.append(
-				frappe.db.get_value(
+				nts.db.get_value(
 					"Sales Order", location.sales_order, ["customer", "name as sales_order"], as_dict=True
 				)
 			)
@@ -1189,12 +1189,12 @@ def create_delivery_note(source_name, target_doc=None):
 	if not all(item.sales_order for item in pick_list.locations):
 		delivery_note = create_dn_wo_so(pick_list)
 
-	frappe.msgprint(_("Delivery Note(s) created for the Pick List"))
+	nts.msgprint(_("Delivery Note(s) created for the Pick List"))
 	return delivery_note
 
 
 def create_dn_wo_so(pick_list):
-	delivery_note = frappe.new_doc("Delivery Note")
+	delivery_note = nts.new_doc("Delivery Note")
 	delivery_note.company = pick_list.company
 
 	item_table_mapper_without_so = {
@@ -1248,7 +1248,7 @@ def map_pl_locations(pick_list, item_mapper, delivery_note, sales_order=None):
 			continue
 
 		if location.sales_order_item:
-			sales_order_item = frappe.get_doc("Sales Order Item", location.sales_order_item)
+			sales_order_item = nts.get_doc("Sales Order Item", location.sales_order_item)
 		else:
 			sales_order_item = None
 
@@ -1271,7 +1271,7 @@ def map_pl_locations(pick_list, item_mapper, delivery_note, sales_order=None):
 
 	delivery_note.pick_list = pick_list.name
 	delivery_note.company = pick_list.company
-	delivery_note.customer = frappe.get_value("Sales Order", sales_order, "customer")
+	delivery_note.customer = nts.get_value("Sales Order", sales_order, "customer")
 
 
 def add_product_bundles_to_delivery_note(pick_list: "PickList", delivery_note, item_mapper) -> None:
@@ -1283,7 +1283,7 @@ def add_product_bundles_to_delivery_note(pick_list: "PickList", delivery_note, i
 	product_bundle_qty_map = pick_list._get_product_bundle_qty_map(product_bundles.values())
 
 	for so_row, item_code in product_bundles.items():
-		sales_order_item = frappe.get_doc("Sales Order Item", so_row)
+		sales_order_item = nts.get_doc("Sales Order Item", so_row)
 		dn_bundle_item = map_child_doc(sales_order_item, delivery_note, item_mapper)
 		dn_bundle_item.qty = pick_list._compute_picked_qty_for_bundle(
 			so_row, product_bundle_qty_map[item_code]
@@ -1316,15 +1316,15 @@ def update_packed_item_details(pick_list: "PickList", delivery_note) -> None:
 		packed_item.serial_no = location.serial_no
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def create_stock_entry(pick_list):
-	pick_list = frappe.get_doc(json.loads(pick_list))
+	pick_list = nts.get_doc(json.loads(pick_list))
 	validate_item_locations(pick_list)
 
 	if stock_entry_exists(pick_list.get("name")):
-		return frappe.msgprint(_("Stock Entry has been already created against this Pick List"))
+		return nts.msgprint(_("Stock Entry has been already created against this Pick List"))
 
-	stock_entry = frappe.new_doc("Stock Entry")
+	stock_entry = nts.new_doc("Stock Entry")
 	stock_entry.pick_list = pick_list.get("name")
 	stock_entry.purpose = pick_list.get("purpose")
 	stock_entry.company = pick_list.get("company")
@@ -1342,11 +1342,11 @@ def create_stock_entry(pick_list):
 	return stock_entry.as_dict()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_pending_work_orders(doctype, txt, searchfield, start, page_length, filters, as_dict):
-	wo = frappe.qb.DocType("Work Order")
+	wo = nts.qb.DocType("Work Order")
 	return (
-		frappe.qb.from_(wo)
+		nts.qb.from_(wo)
 		.select(wo.name, wo.company, wo.planned_start_date)
 		.where(
 			(wo.status.notin(["Completed", "Stopped"]))
@@ -1362,17 +1362,17 @@ def get_pending_work_orders(doctype, txt, searchfield, start, page_length, filte
 	).run(as_dict=as_dict)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def target_document_exists(pick_list_name, purpose):
 	if purpose == "Delivery":
-		return frappe.db.exists("Delivery Note", {"pick_list": pick_list_name, "docstatus": 1})
+		return nts.db.exists("Delivery Note", {"pick_list": pick_list_name, "docstatus": 1})
 
 	return stock_entry_exists(pick_list_name)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_item_details(item_code, uom=None):
-	details = frappe.db.get_value("Item", item_code, ["stock_uom", "name"], as_dict=1)
+	details = nts.db.get_value("Item", item_code, ["stock_uom", "name"], as_dict=1)
 	details.uom = uom or details.stock_uom
 	if uom:
 		details.update(get_conversion_factor(item_code, uom))
@@ -1381,7 +1381,7 @@ def get_item_details(item_code, uom=None):
 
 
 def update_delivery_note_item(source, target, delivery_note):
-	cost_center = frappe.db.get_value("Project", delivery_note.project, "cost_center")
+	cost_center = nts.db.get_value("Project", delivery_note.project, "cost_center")
 	if not cost_center:
 		cost_center = get_cost_center(source.item_code, "Item", delivery_note.company)
 
@@ -1393,7 +1393,7 @@ def update_delivery_note_item(source, target, delivery_note):
 
 def get_cost_center(for_item, from_doctype, company):
 	"""Returns Cost Center for Item or Item Group"""
-	return frappe.db.get_value(
+	return nts.db.get_value(
 		"Item Default",
 		fieldname=["buying_cost_center"],
 		filters={"parent": for_item, "parenttype": from_doctype, "company": company},
@@ -1407,11 +1407,11 @@ def set_delivery_note_missing_values(target):
 
 
 def stock_entry_exists(pick_list_name):
-	return frappe.db.exists("Stock Entry", {"pick_list": pick_list_name})
+	return nts.db.exists("Stock Entry", {"pick_list": pick_list_name})
 
 
 def update_stock_entry_based_on_work_order(pick_list, stock_entry):
-	work_order = frappe.get_doc("Work Order", pick_list.get("work_order"))
+	work_order = nts.get_doc("Work Order", pick_list.get("work_order"))
 
 	stock_entry.work_order = work_order.name
 	stock_entry.company = work_order.company
@@ -1420,9 +1420,9 @@ def update_stock_entry_based_on_work_order(pick_list, stock_entry):
 	stock_entry.use_multi_level_bom = work_order.use_multi_level_bom
 	stock_entry.fg_completed_qty = pick_list.for_qty
 	if work_order.bom_no:
-		stock_entry.inspection_required = frappe.db.get_value("BOM", work_order.bom_no, "inspection_required")
+		stock_entry.inspection_required = nts.db.get_value("BOM", work_order.bom_no, "inspection_required")
 
-	is_wip_warehouse_group = frappe.db.get_value("Warehouse", work_order.wip_warehouse, "is_group")
+	is_wip_warehouse_group = nts.db.get_value("Warehouse", work_order.wip_warehouse, "is_group")
 	if not (is_wip_warehouse_group and work_order.skip_transfer):
 		wip_warehouse = work_order.wip_warehouse
 	else:
@@ -1432,7 +1432,7 @@ def update_stock_entry_based_on_work_order(pick_list, stock_entry):
 	stock_entry.project = work_order.project
 
 	for location in pick_list.locations:
-		item = frappe._dict()
+		item = nts._dict()
 		update_common_item_properties(item, location)
 		item.t_warehouse = wip_warehouse
 
@@ -1445,10 +1445,10 @@ def update_stock_entry_based_on_material_request(pick_list, stock_entry):
 	for location in pick_list.locations:
 		target_warehouse = None
 		if location.material_request_item:
-			target_warehouse = frappe.get_value(
+			target_warehouse = nts.get_value(
 				"Material Request Item", location.material_request_item, "warehouse"
 			)
-		item = frappe._dict()
+		item = nts._dict()
 		update_common_item_properties(item, location)
 		item.t_warehouse = target_warehouse
 		stock_entry.append("items", item)
@@ -1458,7 +1458,7 @@ def update_stock_entry_based_on_material_request(pick_list, stock_entry):
 
 def update_stock_entry_items_with_no_reference(pick_list, stock_entry):
 	for location in pick_list.locations:
-		item = frappe._dict()
+		item = nts._dict()
 		update_common_item_properties(item, location)
 
 		stock_entry.append("items", item)
@@ -1481,12 +1481,12 @@ def update_common_item_properties(item, location):
 
 
 def get_rejected_warehouses():
-	if not hasattr(frappe.local, "rejected_warehouses"):
-		frappe.local.rejected_warehouses = []
+	if not hasattr(nts.local, "rejected_warehouses"):
+		nts.local.rejected_warehouses = []
 
-	if not frappe.local.rejected_warehouses:
-		frappe.local.rejected_warehouses = frappe.get_all(
+	if not nts.local.rejected_warehouses:
+		nts.local.rejected_warehouses = nts.get_all(
 			"Warehouse", filters={"is_rejected_warehouse": 1}, pluck="name"
 		)
 
-	return frappe.local.rejected_warehouses
+	return nts.local.rejected_warehouses

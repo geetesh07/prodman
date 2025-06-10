@@ -23,7 +23,7 @@
 		<div class="col-sm-3">
 			{% if(doc.schedule_date) { %}
                 <span title="{%= __("Reqd By Date") %}" class="{%=
-				(frappe.datetime.get_diff(doc.schedule_date, frappe.datetime.get_today()) < 0
+				(nts.datetime.get_diff(doc.schedule_date, nts.datetime.get_today()) < 0
 					&& doc.ordered_qty < doc.qty)
 					? "text-danger" : "text-muted" %}">
 					{%= doc.get_formatted("schedule_date") %}</span>

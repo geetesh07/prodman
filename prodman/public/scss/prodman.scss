@@ -51,7 +51,7 @@
 }
 
 // assessment tool
-.frappe-control[data-fieldname="result_html"] {
+.nts-control[data-fieldname="result_html"] {
 	overflow: scroll;
 }
 .assessment-result-tool {
@@ -590,6 +590,6 @@ body[data-route="pos"] {
 	justify-content: center;
 }
 
-.frappe-control[data-fieldname="other_charges_calculation"] .ql-editor {
+.nts-control[data-fieldname="other_charges_calculation"] .ql-editor {
 	white-space: normal;
 }

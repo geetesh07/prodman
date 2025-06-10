@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 # For license information, please see license.txt
 
 
-from frappe import _, throw
-from frappe.model.document import Document
-from frappe.utils import cint, formatdate, get_datetime_str, nowdate
+from nts import _, throw
+from nts.model.document import Document
+from nts.utils import cint, formatdate, get_datetime_str, nowdate
 
 
 class CurrencyExchange(Document):
@@ -16,7 +16,7 @@ class CurrencyExchange(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		date: DF.Date
 		exchange_rate: DF.Float

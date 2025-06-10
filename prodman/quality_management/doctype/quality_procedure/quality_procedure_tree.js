@@ -1,4 +1,4 @@
-frappe.treeview_settings["Quality Procedure"] = {
+nts.treeview_settings["Quality Procedure"] = {
 	ignore_fields: ["parent_quality_procedure"],
 	get_tree_nodes: "prodman.quality_management.doctype.quality_procedure.quality_procedure.get_children",
 	add_tree_node: "prodman.quality_management.doctype.quality_procedure.quality_procedure.add_node",
@@ -23,9 +23,9 @@ frappe.treeview_settings["Quality Procedure"] = {
 		{
 			label: __("New Quality Procedure"),
 			action: function () {
-				frappe.new_doc("Quality Procedure", true);
+				nts.new_doc("Quality Procedure", true);
 			},
-			condition: 'frappe.boot.user.can_create.indexOf("Quality Procedure") !== -1',
+			condition: 'nts.boot.user.can_create.indexOf("Quality Procedure") !== -1',
 		},
 	],
 	onload: function (treeview) {

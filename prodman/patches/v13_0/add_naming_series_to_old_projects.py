@@ -1,10 +1,10 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("projects", "doctype", "project")
+	nts.reload_doc("projects", "doctype", "project")
 
-	frappe.db.sql(
+	nts.db.sql(
 		"""UPDATE `tabProject`
 		SET
 			naming_series = 'PROJ-.####'

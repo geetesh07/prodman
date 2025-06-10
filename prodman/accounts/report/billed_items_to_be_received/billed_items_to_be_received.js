@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Billed Items To Be Received"] = {
+nts .query_reports["Billed Items To Be Received"] = {
 	filters: [
 		{
 			label: __("Company"),
@@ -9,14 +9,14 @@ frappe.query_reports["Billed Items To Be Received"] = {
 			fieldtype: "Link",
 			options: "Company",
 			reqd: 1,
-			default: frappe.defaults.get_default("Company"),
+			default: nts .defaults.get_default("Company"),
 		},
 		{
 			label: __("As on Date"),
 			fieldname: "posting_date",
 			fieldtype: "Date",
 			reqd: 1,
-			default: frappe.datetime.get_today(),
+			default: nts .datetime.get_today(),
 		},
 		{
 			label: __("Purchase Invoice"),

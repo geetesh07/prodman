@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
 	for report in ["Delayed Order Item Summary", "Delayed Order Summary"]:
-		if frappe.db.exists("Report", report):
-			frappe.delete_doc("Report", report)
+		if nts.db.exists("Report", report):
+			nts.delete_doc("Report", report)

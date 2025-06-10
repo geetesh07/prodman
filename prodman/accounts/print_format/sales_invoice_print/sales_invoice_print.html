@@ -3,7 +3,7 @@
 		<div class="letter-head">{{ letter_head }}</div>
 	{% endif %}
 	{% if print_heading_template %}
-		{{ frappe.render_template(print_heading_template, {"doc":doc}) }}
+		{{ nts .render_template(print_heading_template, {"doc":doc}) }}
 	{% else %}
 	{% endif %}
 	{%- if doc.meta.is_submittable and doc.docstatus==2-%}
@@ -66,11 +66,11 @@
 			</div>
 			<div style="margin-top: 20px;">
 				<div><label>{{ _("Invoice Date") }}</label></div>
-				<div>{{ frappe.utils.format_date(doc.posting_date) }}</div>
+				<div>{{ nts .utils.format_date(doc.posting_date) }}</div>
 			</div>
 			<div style="margin-top: 20px;">
 				<div><label>{{ _("Due Date") }}</label></div>
-				<div>{{ frappe.utils.format_date(doc.due_date) }}</div>
+				<div>{{ nts .utils.format_date(doc.due_date) }}</div>
 			</div>
 		</div>
 	</div>

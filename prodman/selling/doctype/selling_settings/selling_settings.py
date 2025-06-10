@@ -1,13 +1,13 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 # For license information, please see license.txt
 
 
-import frappe
-from frappe.custom.doctype.property_setter.property_setter import make_property_setter
-from frappe.model.document import Document
-from frappe.utils import cint
+import nts
+from nts.custom.doctype.property_setter.property_setter import make_property_setter
+from nts.model.document import Document
+from nts.utils import cint
 
 
 class SellingSettings(Document):
@@ -17,7 +17,7 @@ class SellingSettings(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		allow_against_multiple_purchase_orders: DF.Check
 		allow_multiple_items: DF.Check
@@ -58,7 +58,7 @@ class SellingSettings(Document):
 			"editable_price_list_rate",
 			"selling_price_list",
 		]:
-			frappe.db.set_default(key, self.get(key, ""))
+			nts.db.set_default(key, self.get(key, ""))
 
 		from prodman.utilities.naming import set_by_naming_series
 

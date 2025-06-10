@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.utils.nestedset import NestedSet, get_root_of
+import nts
+from nts.utils.nestedset import NestedSet, get_root_of
 
 from prodman.utilities.transaction_base import delete_events
 
@@ -15,7 +15,7 @@ class Department(NestedSet):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		company: DF.Link
 		department_name: DF.Data
@@ -44,13 +44,13 @@ class Department(NestedSet):
 
 	def before_rename(self, old, new, merge=False):
 		# renaming consistency with abbreviation
-		if frappe.get_cached_value("Company", self.company, "abbr") not in new:
+		if nts.get_cached_value("Company", self.company, "abbr") not in new:
 			new = get_abbreviated_name(new, self.company)
 
 		return new
 
 	def on_update(self):
-		if not (frappe.local.flags.ignore_update_nsm or frappe.flags.in_setup_wizard):
+		if not (nts.local.flags.ignore_update_nsm or nts.flags.in_setup_wizard):
 			super().on_update()
 
 	def on_trash(self):
@@ -59,16 +59,16 @@ class Department(NestedSet):
 
 
 def on_doctype_update():
-	frappe.db.add_index("Department", ["lft", "rgt"])
+	nts.db.add_index("Department", ["lft", "rgt"])
 
 
 def get_abbreviated_name(name, company):
-	abbr = frappe.get_cached_value("Company", company, "abbr")
+	abbr = nts.get_cached_value("Company", company, "abbr")
 	new_name = f"{name} - {abbr}"
 	return new_name
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_children(doctype, parent=None, company=None, is_root=False):
 	fields = ["name as value", "is_group as expandable"]
 	filters = {}
@@ -81,17 +81,17 @@ def get_children(doctype, parent=None, company=None, is_root=False):
 	else:
 		filters["parent_department"] = parent
 
-	return frappe.get_all("Department", fields=fields, filters=filters, order_by="name")
+	return nts.get_all("Department", fields=fields, filters=filters, order_by="name")
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def add_node():
-	from frappe.desk.treeview import make_tree_args
+	from nts.desk.treeview import make_tree_args
 
-	args = frappe.form_dict
+	args = nts.form_dict
 	args = make_tree_args(**args)
 
 	if args.parent_department == args.company:
 		args.parent_department = None
 
-	frappe.get_doc(args).insert()
+	nts.get_doc(args).insert()

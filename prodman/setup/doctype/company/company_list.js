@@ -1,5 +1,5 @@
-frappe.listview_settings["Company"] = {
+nts.listview_settings["Company"] = {
 	onload() {
-		frappe.breadcrumbs.add("Accounts");
+		nts.breadcrumbs.add("Accounts");
 	},
 };

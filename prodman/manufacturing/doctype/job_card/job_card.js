@@ -1,7 +1,7 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Job Card", {
+nts.ui.form.on("Job Card", {
 	setup: function (frm) {
 		frm.set_query("operation", function () {
 			return {
@@ -33,8 +33,8 @@ frappe.ui.form.on("Job Card", {
 	},
 
 	refresh: function (frm) {
-		frappe.flags.pause_job = 0;
-		frappe.flags.resume_job = 0;
+		nts.flags.pause_job = 0;
+		nts.flags.resume_job = 0;
 		let has_items = frm.doc.items && frm.doc.items.length;
 
 		if (!frm.is_new() && frm.doc.__onload?.work_order_closed) {
@@ -92,7 +92,7 @@ frappe.ui.form.on("Job Card", {
 			// if Job Card is link to Work Order, the job card must not be able to start if Work Order not "Started"
 			// and if stock mvt for WIP is required
 			if (frm.doc.work_order) {
-				frappe.db.get_value(
+				nts.db.get_value(
 					"Work Order",
 					frm.doc.work_order,
 					["skip_transfer", "status"],
@@ -115,7 +115,7 @@ frappe.ui.form.on("Job Card", {
 		frm.trigger("setup_quality_inspection");
 
 		if (frm.doc.work_order) {
-			frappe.db.get_value("Work Order", frm.doc.work_order, "transfer_material_against").then((r) => {
+			nts.db.get_value("Work Order", frm.doc.work_order, "transfer_material_against").then((r) => {
 				if (r.message.transfer_material_against == "Work Order") {
 					frm.set_df_property("items", "hidden", 1);
 				}
@@ -185,7 +185,7 @@ frappe.ui.form.on("Job Card", {
 					},
 				];
 
-				frappe.prompt(
+				nts.prompt(
 					fields,
 					(d) => {
 						frm.events.make_corrective_job_card(frm, d.operation, d.for_operation);
@@ -198,7 +198,7 @@ frappe.ui.form.on("Job Card", {
 	},
 
 	make_corrective_job_card: function (frm, operation, for_operation) {
-		frappe.call({
+		nts.call({
 			method: "prodman.manufacturing.doctype.job_card.job_card.make_corrective_job_card",
 			args: {
 				source_name: frm.doc.name,
@@ -207,8 +207,8 @@ frappe.ui.form.on("Job Card", {
 			},
 			callback: function (r) {
 				if (r.message) {
-					frappe.model.sync(r.message);
-					frappe.set_route("Form", r.message.doctype, r.message.name);
+					nts.model.sync(r.message);
+					nts.set_route("Form", r.message.doctype, r.message.name);
 				}
 			},
 		});
@@ -218,7 +218,7 @@ frappe.ui.form.on("Job Card", {
 		frm.trigger("toggle_operation_number");
 
 		if (frm.doc.operation && frm.doc.work_order) {
-			frappe.call({
+			nts.call({
 				method: "prodman.manufacturing.doctype.job_card.job_card.get_operation_details",
 				args: {
 					work_order: frm.doc.work_order,
@@ -268,7 +268,7 @@ frappe.ui.form.on("Job Card", {
 		if (!frm.doc.started_time && !frm.doc.current_time) {
 			frm.add_custom_button(__("Start Job"), () => {
 				if ((frm.doc.employee && !frm.doc.employee.length) || !frm.doc.employee) {
-					frappe.prompt(
+					nts.prompt(
 						{
 							fieldtype: "Table MultiSelect",
 							label: __("Select Employees"),
@@ -307,7 +307,7 @@ frappe.ui.form.on("Job Card", {
 				}
 
 				if (set_qty) {
-					frappe.prompt(
+					nts.prompt(
 						{
 							fieldtype: "Float",
 							label: __("Completed Quantity"),
@@ -329,7 +329,7 @@ frappe.ui.form.on("Job Card", {
 	start_job: function (frm, status, employee) {
 		const args = {
 			job_card_id: frm.doc.name,
-			start_time: frappe.datetime.now_datetime(),
+			start_time: nts.datetime.now_datetime(),
 			employees: employee,
 			status: status,
 		};
@@ -339,7 +339,7 @@ frappe.ui.form.on("Job Card", {
 	complete_job: function (frm, status, completed_qty) {
 		const args = {
 			job_card_id: frm.doc.name,
-			complete_time: frappe.datetime.now_datetime(),
+			complete_time: nts.datetime.now_datetime(),
 			status: status,
 			completed_qty: completed_qty,
 		};
@@ -349,7 +349,7 @@ frappe.ui.form.on("Job Card", {
 	make_time_log: function (frm, args) {
 		frm.events.update_sub_operation(frm, args);
 
-		frappe.call({
+		nts.call({
 			method: "prodman.manufacturing.doctype.job_card.job_card.make_time_log",
 			args: {
 				args: args,
@@ -430,7 +430,7 @@ frappe.ui.form.on("Job Card", {
 			if (frm.doc.status == "On Hold") {
 				updateStopwatch(currentIncrement);
 			} else {
-				currentIncrement += moment(frappe.datetime.now_datetime()).diff(
+				currentIncrement += moment(nts.datetime.now_datetime()).diff(
 					moment(frm.doc.started_time),
 					"seconds"
 				);
@@ -455,7 +455,7 @@ frappe.ui.form.on("Job Card", {
 	},
 
 	make_material_request: function (frm) {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.manufacturing.doctype.job_card.job_card.make_material_request",
 			frm: frm,
 			run_link_triggers: true,
@@ -463,7 +463,7 @@ frappe.ui.form.on("Job Card", {
 	},
 
 	make_stock_entry: function (frm) {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.manufacturing.doctype.job_card.job_card.make_stock_entry",
 			frm: frm,
 			run_link_triggers: true,
@@ -494,7 +494,7 @@ frappe.ui.form.on("Job Card", {
 	},
 });
 
-frappe.ui.form.on("Job Card Time Log", {
+nts.ui.form.on("Job Card Time Log", {
 	completed_qty: function (frm) {
 		frm.events.set_total_completed_qty(frm);
 	},

@@ -1,9 +1,9 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe.model.document import Document
-from frappe.utils import cint, cstr
+import nts 
+from nts .model.document import Document
+from nts .utils import cint, cstr
 
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_accounting_dimensions,
@@ -17,7 +17,7 @@ class AccountClosingBalance(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		account: DF.Link | None
 		account_currency: DF.Link | None
@@ -46,7 +46,7 @@ def make_closing_entries(closing_entries, voucher_name, company, closing_date):
 	merged_entries = aggregate_with_last_account_closing_balance(combined_entries, accounting_dimensions)
 
 	for _key, value in merged_entries.items():
-		cle = frappe.new_doc("Account Closing Balance")
+		cle = nts .new_doc("Account Closing Balance")
 		cle.update(value)
 		cle.update(value["dimensions"])
 		cle.update(
@@ -111,7 +111,7 @@ def generate_key(entry, accounting_dimensions):
 
 def get_previous_closing_entries(company, closing_date, accounting_dimensions):
 	entries = []
-	last_period_closing_voucher = frappe.db.get_all(
+	last_period_closing_voucher = nts .db.get_all(
 		"Period Closing Voucher",
 		filters={"docstatus": 1, "company": company, "period_end_date": ("<", closing_date)},
 		fields=["name"],
@@ -120,8 +120,8 @@ def get_previous_closing_entries(company, closing_date, accounting_dimensions):
 	)
 
 	if last_period_closing_voucher:
-		account_closing_balance = frappe.qb.DocType("Account Closing Balance")
-		query = frappe.qb.from_(account_closing_balance).select(
+		account_closing_balance = nts .qb.DocType("Account Closing Balance")
+		query = nts .qb.from_(account_closing_balance).select(
 			account_closing_balance.company,
 			account_closing_balance.account,
 			account_closing_balance.account_currency,

@@ -1,21 +1,21 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["First Response Time for Opportunity"] = {
+nts.query_reports["First Response Time for Opportunity"] = {
 	filters: [
 		{
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
 			reqd: 1,
-			default: frappe.datetime.add_days(frappe.datetime.nowdate(), -30),
+			default: nts.datetime.add_days(nts.datetime.nowdate(), -30),
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
 			reqd: 1,
-			default: frappe.datetime.nowdate(),
+			default: nts.datetime.nowdate(),
 		},
 	],
 	get_chart_data: function (_columns, result) {
@@ -36,7 +36,7 @@ frappe.query_reports["First Response Time for Opportunity"] = {
 						hide_days: 0,
 						hide_seconds: 0,
 					};
-					return frappe.utils.get_formatted_duration(d, duration_options);
+					return nts.utils.get_formatted_duration(d, duration_options);
 				},
 			},
 		};

@@ -8,7 +8,7 @@ const INDICATORS = {
 	Requested: "green",
 };
 
-frappe.listview_settings["Payment Request"] = {
+nts .listview_settings["Payment Request"] = {
 	add_fields: ["status"],
 	get_indicator: function (doc) {
 		if (!doc.status || !INDICATORS[doc.status]) return;

@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _, msgprint
+import nts
+from nts import _, msgprint
 
 
 def execute(filters=None):
@@ -97,7 +97,7 @@ def get_entries(filters):
 	date_field = "transaction_date" if filters.get("doctype") == "Sales Order" else "posting_date"
 
 	conditions = get_conditions(filters, date_field)
-	entries = frappe.db.sql(
+	entries = nts.db.sql(
 		"""
 		SELECT
 			dt.name, dt.customer, dt.territory, dt.{date_field} as posting_date, dt.currency,
@@ -138,7 +138,7 @@ def get_conditions(filters, date_field):
 		conditions += " and dt_item.brand = %(brand)s"
 
 	if filters.get("item_group"):
-		lft, rgt = frappe.get_cached_value("Item Group", filters.get("item_group"), ["lft", "rgt"])
+		lft, rgt = nts.get_cached_value("Item Group", filters.get("item_group"), ["lft", "rgt"])
 
 		conditions += f""" and dt_item.item_group in (select name from
 			`tabItem Group` where lft >= {lft} and rgt <= {rgt})"""

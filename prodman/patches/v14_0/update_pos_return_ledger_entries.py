@@ -1,5 +1,5 @@
-import frappe
-from frappe import qb
+import nts
+from nts import qb
 
 from prodman.accounts.utils import update_voucher_outstanding
 
@@ -17,7 +17,7 @@ def get_valid_against_voucher_ref(pos_returns):
 
 
 def build_dict_of_valid_against_reference(pos_returns):
-	_against_ref_dict = frappe._dict()
+	_against_ref_dict = nts._dict()
 	res = get_valid_against_voucher_ref(pos_returns)
 	for x in res:
 		_against_ref_dict[x.name] = x.return_against
@@ -43,7 +43,7 @@ def fix_incorrect_against_voucher_ref(affected_pos_returns):
 		# Update GL
 		if gles_with_invalid_against:
 			for gl in gles_with_invalid_against:
-				frappe.db.set_value(
+				nts.db.set_value(
 					"GL Entry",
 					gl.name,
 					"against_voucher",

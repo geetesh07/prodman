@@ -1,10 +1,10 @@
-# Copyright (c) 2024, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2024, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _, qb
-from frappe.query_builder import CustomFunction
-from frappe.query_builder.custom import ConstantColumn
+import nts 
+from nts  import _, qb
+from nts .query_builder import CustomFunction
+from nts .query_builder.custom import ConstantColumn
 
 
 def execute(filters=None):
@@ -14,7 +14,7 @@ def execute(filters=None):
 
 
 def build_payment_entry_dict(row: dict) -> dict:
-	row_dict = frappe._dict()
+	row_dict = nts ._dict()
 	row_dict.update(
 		{
 			"payment_document": row.get("doctype"),
@@ -41,7 +41,7 @@ def build_payment_entry_dict(row: dict) -> dict:
 
 
 def build_journal_entry_dict(row: dict) -> dict:
-	row_dict = frappe._dict()
+	row_dict = nts ._dict()
 	row_dict.update(
 		{
 			"payment_document": row.get("doctype"),

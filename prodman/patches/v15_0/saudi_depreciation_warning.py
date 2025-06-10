@@ -1,9 +1,9 @@
 import click
-import frappe
+import nts
 
 
 def execute():
-	if "ksa" in frappe.get_installed_apps():
+	if "ksa" in nts.get_installed_apps():
 		return
 	click.secho(
 		"Region Saudi Arabia(KSA) is moved to a separate app\n"

@@ -1,9 +1,9 @@
-# Copyright (c) 2018, Frappe and contributors
+# Copyright (c) 2018, nts and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe.model.document import Document
+import nts
+from nts.model.document import Document
 
 
 class QualityReview(Document):
@@ -13,7 +13,7 @@ class QualityReview(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.quality_management.doctype.quality_review_objective.quality_review_objective import (
 			QualityReviewObjective,
@@ -30,7 +30,7 @@ class QualityReview(Document):
 	def validate(self):
 		# fetch targets from goal
 		if not self.reviews:
-			for d in frappe.get_doc("Quality Goal", self.goal).objectives:
+			for d in nts.get_doc("Quality Goal", self.goal).objectives:
 				self.append("reviews", dict(objective=d.objective, target=d.target, uom=d.uom))
 
 		self.set_status()
@@ -46,11 +46,11 @@ class QualityReview(Document):
 
 
 def review():
-	day = frappe.utils.getdate().day
-	weekday = frappe.utils.getdate().strftime("%A")
-	month = frappe.utils.getdate().strftime("%B")
+	day = nts.utils.getdate().day
+	weekday = nts.utils.getdate().strftime("%A")
+	month = nts.utils.getdate().strftime("%B")
 
-	for goal in frappe.get_list("Quality Goal", fields=["name", "frequency", "date", "weekday"]):
+	for goal in nts.get_list("Quality Goal", fields=["name", "frequency", "date", "weekday"]):
 		if goal.frequency == "Daily":
 			create_review(goal.name)
 
@@ -65,9 +65,9 @@ def review():
 
 
 def create_review(goal):
-	goal = frappe.get_doc("Quality Goal", goal)
+	goal = nts.get_doc("Quality Goal", goal)
 
-	review = frappe.get_doc({"doctype": "Quality Review", "goal": goal.name, "date": frappe.utils.getdate()})
+	review = nts.get_doc({"doctype": "Quality Review", "goal": goal.name, "date": nts.utils.getdate()})
 
 	review.insert(ignore_permissions=True)
 

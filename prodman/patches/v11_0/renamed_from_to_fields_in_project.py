@@ -1,14 +1,14 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.model.utils.rename_field import rename_field
+import nts
+from nts.model.utils.rename_field import rename_field
 
 
 def execute():
-	frappe.reload_doc("projects", "doctype", "project")
+	nts.reload_doc("projects", "doctype", "project")
 
-	if frappe.db.has_column("Project", "from"):
+	if nts.db.has_column("Project", "from"):
 		rename_field("Project", "from", "from_time")
 		rename_field("Project", "to", "to_time")

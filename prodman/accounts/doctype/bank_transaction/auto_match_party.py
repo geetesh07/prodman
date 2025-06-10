@@ -1,5 +1,5 @@
-import frappe
-from frappe.utils import flt
+import nts 
+from nts .utils import flt
 from rapidfuzz import fuzz, process
 
 
@@ -25,7 +25,7 @@ class AutoMatchParty:
 			deposit=self.deposit,
 		).match()
 
-		fuzzy_matching_enabled = frappe.db.get_single_value("Accounts Settings", "enable_fuzzy_matching")
+		fuzzy_matching_enabled = nts .db.get_single_value("Accounts Settings", "enable_fuzzy_matching")
 		if not result and fuzzy_matching_enabled:
 			result = AutoMatchbyPartyNameDescription(
 				bank_party_name=self.bank_party_name, description=self.description, deposit=self.deposit
@@ -58,7 +58,7 @@ class AutoMatchbyAccountIBAN:
 			return None
 
 		# Search for a matching Bank Account that has party set
-		party_result = frappe.db.get_all(
+		party_result = nts .db.get_all(
 			"Bank Account",
 			or_filters=self.get_or_filters(),
 			filters={"party_type": ("is", "set"), "party": ("is", "set")},
@@ -69,7 +69,7 @@ class AutoMatchbyAccountIBAN:
 			return (result["party_type"], result["party"])
 
 		# If no party is found, search in Employee (since it has bank account details)
-		if employee_result := frappe.db.get_all(
+		if employee_result := nts .db.get_all(
 			"Employee", or_filters=self.get_or_filters("Employee"), pluck="name", limit_page_length=1
 		):
 			return ("Employee", employee_result[0])
@@ -109,7 +109,7 @@ class AutoMatchbyPartyNameDescription:
 		for party in parties:
 			filters = {"status": "Active"} if party == "Employee" else {"disabled": 0}
 			field = f"{party.lower()}_name"
-			names = frappe.get_all(party, filters=filters, fields=[f"{field} as party_name", "name"])
+			names = nts .get_all(party, filters=filters, fields=[f"{field} as party_name", "name"])
 
 			for field in ["bank_party_name", "description"]:
 				if not self.get(field):

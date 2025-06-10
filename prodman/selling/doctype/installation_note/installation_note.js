@@ -1,9 +1,9 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.ui.form.on("Installation Note", {
+nts.ui.form.on("Installation Note", {
 	setup: function (frm) {
-		frappe.dynamic_link = { doc: frm.doc, fieldname: "customer", doctype: "Customer" };
+		nts.dynamic_link = { doc: frm.doc, fieldname: "customer", doctype: "Customer" };
 		frm.set_query("customer_address", prodman.queries.address_query);
 		frm.set_query("contact_person", prodman.queries.contact_query);
 		frm.set_query("customer", prodman.queries.customer);
@@ -24,7 +24,7 @@ frappe.ui.form.on("Installation Note", {
 			frm.set_value({ status: "Draft" });
 		}
 		if (frm.doc.__islocal) {
-			frm.set_value({ inst_date: frappe.datetime.get_today() });
+			frm.set_value({ inst_date: nts.datetime.get_today() });
 		}
 
 		let sbb_field = frm.get_docfield("items", "serial_and_batch_bundle");
@@ -48,10 +48,10 @@ frappe.ui.form.on("Installation Note", {
 	},
 });
 
-frappe.provide("prodman.selling");
+nts.provide("prodman.selling");
 
 // TODO commonify this code
-prodman.selling.InstallationNote = class InstallationNote extends frappe.ui.form.Controller {
+prodman.selling.InstallationNote = class InstallationNote extends nts.ui.form.Controller {
 	refresh() {
 		var me = this;
 		if (this.frm.doc.docstatus === 0) {

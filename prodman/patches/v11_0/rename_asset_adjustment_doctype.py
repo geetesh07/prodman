@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	if frappe.db.table_exists("Asset Adjustment") and not frappe.db.table_exists("Asset Value Adjustment"):
-		frappe.rename_doc("DocType", "Asset Adjustment", "Asset Value Adjustment", force=True)
-		frappe.reload_doc("assets", "doctype", "asset_value_adjustment")
+	if nts.db.table_exists("Asset Adjustment") and not nts.db.table_exists("Asset Value Adjustment"):
+		nts.rename_doc("DocType", "Asset Adjustment", "Asset Value Adjustment", force=True)
+		nts.reload_doc("assets", "doctype", "asset_value_adjustment")

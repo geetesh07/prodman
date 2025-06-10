@@ -1,11 +1,11 @@
-// Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2021, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Transaction Deletion Record", {
+nts.ui.form.on("Transaction Deletion Record", {
 	onload: function (frm) {
 		if (frm.doc.docstatus == 0) {
 			let doctypes_to_be_ignored_array;
-			frappe.call({
+			nts.call({
 				method: "prodman.setup.doctype.transaction_deletion_record.transaction_deletion_record.get_doctypes_to_be_ignored",
 				callback: function (r) {
 					doctypes_to_be_ignored_array = r.message;

@@ -1,13 +1,13 @@
-# Copyright (c) 2019, Frappe and Contributors
+# Copyright (c) 2019, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("stock", "doctype", "pick_list")
-	frappe.db.sql(
+	nts.reload_doc("stock", "doctype", "pick_list")
+	nts.db.sql(
 		"""UPDATE `tabPick List` set purpose = 'Delivery'
         WHERE docstatus = 1  and purpose = 'Delivery against Sales Order' """
 	)

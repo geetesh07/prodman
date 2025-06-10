@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["UAE VAT 201"] = {
+nts.query_reports["UAE VAT 201"] = {
 	filters: [
 		{
 			fieldname: "company",
@@ -9,21 +9,21 @@ frappe.query_reports["UAE VAT 201"] = {
 			fieldtype: "Link",
 			options: "Company",
 			reqd: 1,
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 		},
 		{
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
 			reqd: 1,
-			default: frappe.datetime.add_months(frappe.datetime.get_today(), -3),
+			default: nts.datetime.add_months(nts.datetime.get_today(), -3),
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
 			reqd: 1,
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 		},
 	],
 	formatter: function (value, row, column, data, default_formatter) {

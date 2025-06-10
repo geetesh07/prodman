@@ -1,23 +1,23 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 import unittest
 
-import frappe
-import frappe.utils
+import nts
+import nts.utils
 
 import prodman
 from prodman.setup.doctype.employee.employee import InactiveEmployeeStatusError
 
-test_records = frappe.get_test_records("Employee")
+test_records = nts.get_test_records("Employee")
 
 
 class TestEmployee(unittest.TestCase):
 	def test_employee_status_left(self):
 		employee1 = make_employee("test_employee_1@company.com")
 		employee2 = make_employee("test_employee_2@company.com")
-		employee1_doc = frappe.get_doc("Employee", employee1)
-		employee2_doc = frappe.get_doc("Employee", employee2)
+		employee1_doc = nts.get_doc("Employee", employee1)
+		employee2_doc = nts.get_doc("Employee", employee2)
 		employee2_doc.reload()
 		employee2_doc.reports_to = employee1_doc.name
 		employee2_doc.save()
@@ -27,20 +27,20 @@ class TestEmployee(unittest.TestCase):
 
 	def test_user_has_employee(self):
 		employee = make_employee("test_emp_user_creation@company.com")
-		employee_doc = frappe.get_doc("Employee", employee)
+		employee_doc = nts.get_doc("Employee", employee)
 		user = employee_doc.user_id
-		self.assertTrue("Employee" in frappe.get_roles(user))
+		self.assertTrue("Employee" in nts.get_roles(user))
 		employee_doc.user_id = ""
 		employee_doc.save()
-		self.assertTrue("Employee" not in frappe.get_roles(user))
+		self.assertTrue("Employee" not in nts.get_roles(user))
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts.db.rollback()
 
 
 def make_employee(user, company=None, **kwargs):
-	if not frappe.db.get_value("User", user):
-		frappe.get_doc(
+	if not nts.db.get_value("User", user):
+		nts.get_doc(
 			{
 				"doctype": "User",
 				"email": user,
@@ -51,8 +51,8 @@ def make_employee(user, company=None, **kwargs):
 			}
 		).insert()
 
-	if not frappe.db.get_value("Employee", {"user_id": user}):
-		employee = frappe.get_doc(
+	if not nts.db.get_value("Employee", {"user_id": user}):
+		employee = nts.get_doc(
 			{
 				"doctype": "Employee",
 				"naming_series": "EMP-",
@@ -61,7 +61,7 @@ def make_employee(user, company=None, **kwargs):
 				"user_id": user,
 				"date_of_birth": "1990-05-08",
 				"date_of_joining": "2013-01-01",
-				"department": frappe.get_all("Department", fields="name")[0].name,
+				"department": nts.get_all("Department", fields="name")[0].name,
 				"gender": "Female",
 				"company_email": user,
 				"prefered_contact_email": "Company Email",
@@ -75,7 +75,7 @@ def make_employee(user, company=None, **kwargs):
 		employee.insert()
 		return employee.name
 	else:
-		employee = frappe.get_doc("Employee", {"employee_name": user})
+		employee = nts.get_doc("Employee", {"employee_name": user})
 		employee.update(kwargs)
 		employee.status = "Active"
 		employee.save()

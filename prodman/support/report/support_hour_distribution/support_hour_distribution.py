@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import add_to_date, get_datetime, getdate
+import nts
+from nts import _
+from nts.utils import add_to_date, get_datetime, getdate
 
 time_slots = {
 	"12AM - 3AM": "00:00:00-03:00:00",
@@ -52,7 +52,7 @@ def get_data(filters):
 
 def get_hours_count(start_time, end_time):
 	data = (
-		frappe.db.sql(
+		nts.db.sql(
 			""" select count(*) from `tabIssue` where creation
 		between %(start_time)s and %(end_time)s""",
 			{"start_time": start_time, "end_time": end_time},

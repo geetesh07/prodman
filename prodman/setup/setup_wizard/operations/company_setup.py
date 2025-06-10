@@ -1,14 +1,14 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe.utils import cstr, getdate
+import nts
+from nts.utils import cstr, getdate
 
 
 def create_fiscal_year_and_company(args):
 	if args.get("fy_start_date"):
 		curr_fiscal_year = get_fy_details(args.get("fy_start_date"), args.get("fy_end_date"))
-		frappe.get_doc(
+		nts.get_doc(
 			{
 				"doctype": "Fiscal Year",
 				"year": curr_fiscal_year,
@@ -18,7 +18,7 @@ def create_fiscal_year_and_company(args):
 		).insert()
 
 	if args.get("company_name"):
-		frappe.get_doc(
+		nts.get_doc(
 			{
 				"doctype": "Company",
 				"company_name": args.get("company_name"),

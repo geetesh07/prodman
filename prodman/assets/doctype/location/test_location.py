@@ -1,12 +1,12 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import json
 import unittest
 
-import frappe
+import nts 
 
-test_records = frappe.get_test_records("Location")
+test_records = nts .get_test_records("Location")
 
 
 class TestLocation(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestLocation(unittest.TestCase):
 		formatted_locations = []
 
 		for location in locations:
-			doc = frappe.get_doc("Location", location)
+			doc = nts .get_doc("Location", location)
 			doc.save()
 			area += doc.area
 			temp = json.loads(doc.location)
@@ -24,7 +24,7 @@ class TestLocation(unittest.TestCase):
 			temp["features"][0]["properties"]["feature_of"] = location
 			formatted_locations.extend(temp["features"])
 
-		test_location = frappe.get_doc("Location", "Test Location Area")
+		test_location = nts .get_doc("Location", "Test Location Area")
 		test_location.save()
 
 		test_location_features = json.loads(test_location.get("location"))["features"]

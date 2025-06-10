@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _, bold, throw
-from frappe.utils import cint, flt, get_link_to_form, nowtime
+import nts
+from nts import _, bold, throw
+from nts.utils import cint, flt, get_link_to_form, nowtime
 
 from prodman.accounts.party import render_address
 from prodman.controllers.accounts_controller import get_taxes_and_charges
@@ -34,7 +34,7 @@ class SellingController(StockController):
 		if self.docstatus == 1 and self.doctype in ["Delivery Note", "Sales Invoice"]:
 			self.set_onload(
 				"allow_to_make_qc_after_submission",
-				frappe.db.get_single_value(
+				nts.db.get_single_value(
 					"Stock Settings", "allow_to_make_quality_inspection_after_purchase_or_delivery"
 				),
 			)
@@ -119,7 +119,7 @@ class SellingController(StockController):
 
 	def remove_shipping_charge(self):
 		if self.shipping_rule:
-			shipping_rule = frappe.get_doc("Shipping Rule", self.shipping_rule)
+			shipping_rule = nts.get_doc("Shipping Rule", self.shipping_rule)
 			existing_shipping_charge = self.get(
 				"taxes",
 				{
@@ -134,7 +134,7 @@ class SellingController(StockController):
 				self.calculate_taxes_and_totals()
 
 	def set_total_in_words(self):
-		from frappe.utils import money_in_words
+		from nts.utils import money_in_words
 
 		if self.meta.get_field("base_in_words"):
 			base_amount = abs(
@@ -203,31 +203,31 @@ class SellingController(StockController):
 		if not sales_persons:
 			return
 
-		sales_person_status = frappe.db.get_all(
+		sales_person_status = nts.db.get_all(
 			"Sales Person", filters={"name": ["in", sales_persons]}, fields=["name", "enabled"]
 		)
 
 		for row in sales_person_status:
 			if not row.enabled:
-				frappe.throw(_("Sales Person <b>{0}</b> is disabled.").format(row.name))
+				nts.throw(_("Sales Person <b>{0}</b> is disabled.").format(row.name))
 
 	def validate_max_discount(self):
 		for d in self.get("items"):
 			if d.item_code:
-				discount = flt(frappe.get_cached_value("Item", d.item_code, "max_discount"))
+				discount = flt(nts.get_cached_value("Item", d.item_code, "max_discount"))
 
 				if discount and flt(d.discount_percentage) > discount:
-					frappe.throw(_("Maximum discount for Item {0} is {1}%").format(d.item_code, discount))
+					nts.throw(_("Maximum discount for Item {0} is {1}%").format(d.item_code, discount))
 
 	def set_qty_as_per_stock_uom(self):
-		allow_to_edit_stock_qty = frappe.db.get_single_value(
+		allow_to_edit_stock_qty = nts.db.get_single_value(
 			"Stock Settings", "allow_to_edit_stock_uom_qty_for_sales"
 		)
 
 		for d in self.get("items"):
 			if d.meta.get_field("stock_qty"):
 				if not d.conversion_factor:
-					frappe.throw(_("Row {0}: Conversion Factor is mandatory").format(d.idx))
+					nts.throw(_("Row {0}: Conversion Factor is mandatory").format(d.idx))
 				d.stock_qty = flt(d.qty) * flt(d.conversion_factor)
 				if allow_to_edit_stock_qty:
 					d.stock_qty = flt(d.stock_qty, d.precision("stock_qty"))
@@ -251,7 +251,7 @@ class SellingController(StockController):
 				title=_("Invalid Selling Price"),
 			)
 
-		if self.get("is_return") or not frappe.db.get_single_value(
+		if self.get("is_return") or not nts.db.get_single_value(
 			"Selling Settings", "validate_selling_price"
 		):
 			return
@@ -263,7 +263,7 @@ class SellingController(StockController):
 			if not item.item_code or item.is_free_item:
 				continue
 
-			last_purchase_rate, is_stock_item = frappe.get_cached_value(
+			last_purchase_rate, is_stock_item = nts.get_cached_value(
 				"Item", item.item_code, ("last_purchase_rate", "is_stock_item")
 			)
 
@@ -281,12 +281,12 @@ class SellingController(StockController):
 			return
 
 		or_conditions = (
-			f"""(item_code = {frappe.db.escape(valuation_rate[0])}
-			and warehouse = {frappe.db.escape(valuation_rate[1])})"""
+			f"""(item_code = {nts.db.escape(valuation_rate[0])}
+			and warehouse = {nts.db.escape(valuation_rate[1])})"""
 			for valuation_rate in valuation_rate_map
 		)
 
-		valuation_rates = frappe.db.sql(
+		valuation_rates = nts.db.sql(
 			f"""
 			select
 				item_code, warehouse, valuation_rate
@@ -329,7 +329,7 @@ class SellingController(StockController):
 					if p.parent_detail_docname == d.name and p.parent_item == d.item_code:
 						# the packing details table's qty is already multiplied with parent's qty
 						il.append(
-							frappe._dict(
+							nts._dict(
 								{
 									"warehouse": p.warehouse or d.warehouse,
 									"item_code": p.item_code,
@@ -353,7 +353,7 @@ class SellingController(StockController):
 						)
 			else:
 				il.append(
-					frappe._dict(
+					nts._dict(
 						{
 							"warehouse": d.warehouse,
 							"item_code": d.item_code,
@@ -397,7 +397,7 @@ class SellingController(StockController):
 
 		items_with_product_bundle = {
 			row.new_item_code
-			for row in frappe.get_all(
+			for row in nts.get_all(
 				"Product Bundle",
 				filters={"new_item_code": ("in", items_to_fetch), "disabled": 0},
 				fields="new_item_code",
@@ -408,7 +408,7 @@ class SellingController(StockController):
 			product_bundle_items[item_code] = item_code in items_with_product_bundle
 
 	def get_already_delivered_qty(self, current_docname, so, so_detail):
-		delivered_via_dn = frappe.db.sql(
+		delivered_via_dn = nts.db.sql(
 			"""select sum(qty) from `tabDelivery Note Item`
 			where so_detail = %s and docstatus = 1
 			and against_sales_order = %s
@@ -416,7 +416,7 @@ class SellingController(StockController):
 			(so_detail, so, current_docname),
 		)
 
-		delivered_via_si = frappe.db.sql(
+		delivered_via_si = nts.db.sql(
 			"""select sum(si_item.qty)
 			from `tabSales Invoice Item` si_item, `tabSales Invoice` si
 			where si_item.parent = si.name and si.update_stock = 1
@@ -433,7 +433,7 @@ class SellingController(StockController):
 		return total_delivered_qty
 
 	def get_so_qty_and_warehouse(self, so_detail):
-		so_item = frappe.db.sql(
+		so_item = nts.db.sql(
 			"""select qty, warehouse from `tabSales Order Item`
 			where name = %s and docstatus = 1""",
 			so_detail,
@@ -446,9 +446,9 @@ class SellingController(StockController):
 	def check_sales_order_on_hold_or_close(self, ref_fieldname):
 		for d in self.get("items"):
 			if d.get(ref_fieldname):
-				status = frappe.db.get_value("Sales Order", d.get(ref_fieldname), "status")
+				status = nts.db.get_value("Sales Order", d.get(ref_fieldname), "status")
 				if status in ("Closed", "On Hold") and not self.is_return:
-					frappe.throw(_("Sales Order {0} is {1}").format(d.get(ref_fieldname), status))
+					nts.throw(_("Sales Order {0} is {1}").format(d.get(ref_fieldname), status))
 
 	def update_reserved_qty(self):
 		so_map = {}
@@ -461,14 +461,14 @@ class SellingController(StockController):
 
 		for so, so_item_rows in so_map.items():
 			if so and so_item_rows:
-				sales_order = frappe.get_doc("Sales Order", so)
+				sales_order = nts.get_doc("Sales Order", so)
 
 				if (sales_order.status == "Closed" and not self.is_return) or sales_order.status in [
 					"Cancelled"
 				]:
-					frappe.throw(
+					nts.throw(
 						_("{0} {1} is cancelled or closed").format(_("Sales Order"), so),
-						frappe.InvalidStatusError,
+						nts.InvalidStatusError,
 					)
 
 				sales_order.update_reserved_qty(so_item_rows)
@@ -477,12 +477,12 @@ class SellingController(StockController):
 		if self.doctype not in ("Delivery Note", "Sales Invoice"):
 			return
 
-		allow_at_arms_length_price = frappe.get_cached_value(
+		allow_at_arms_length_price = nts.get_cached_value(
 			"Stock Settings", None, "allow_internal_transfer_at_arms_length_price"
 		)
 		items = self.get("items") + (self.get("packed_items") or [])
 		for d in items:
-			if not frappe.get_cached_value("Item", d.item_code, "is_stock_item"):
+			if not nts.get_cached_value("Item", d.item_code, "is_stock_item"):
 				continue
 
 			if not self.get("return_against") or (
@@ -545,7 +545,7 @@ class SellingController(StockController):
 							)
 							if d.rate != rate:
 								d.rate = rate
-								frappe.msgprint(
+								nts.msgprint(
 									_(
 										"Row {0}: Item rate has been updated as per valuation rate since its an internal stock transfer"
 									).format(d.idx),
@@ -569,7 +569,7 @@ class SellingController(StockController):
 		sl_entries = []
 		# Loop over items and packed items table
 		for d in self.get_item_list():
-			if frappe.get_cached_value("Item", d.item_code, "is_stock_item") == 1 and flt(d.qty):
+			if nts.get_cached_value("Item", d.item_code, "is_stock_item") == 1 and flt(d.qty):
 				if flt(d.conversion_factor) == 0.0:
 					d.conversion_factor = (
 						get_conversion_factor(d.item_code, d.uom).get("conversion_factor") or 1.0
@@ -608,7 +608,7 @@ class SellingController(StockController):
 					serial_and_batch_bundle, item_row.warehouse, type_of_transaction="Inward"
 				)
 			elif not serial_and_batch_bundle:
-				serial_and_batch_bundle = frappe.db.get_value(
+				serial_and_batch_bundle = nts.db.get_value(
 					"Stock Ledger Entry",
 					{"voucher_detail_no": item_row.name, "warehouse": item_row.warehouse},
 					"serial_and_batch_bundle",
@@ -685,7 +685,7 @@ class SellingController(StockController):
 		if doc_list:
 			po_nos += [
 				d.po_no
-				for d in frappe.get_all(ref_doctype, "po_no", filters={"name": ("in", doc_list)})
+				for d in nts.get_all(ref_doctype, "po_no", filters={"name": ("in", doc_list)})
 				if d.get("po_no")
 			]
 
@@ -713,7 +713,7 @@ class SellingController(StockController):
 
 	def validate_for_duplicate_items(self):
 		check_list, chk_dupl_itm = [], []
-		if cint(frappe.db.get_single_value("Selling Settings", "allow_multiple_items")):
+		if cint(nts.db.get_single_value("Selling Settings", "allow_multiple_items")):
 			return
 		if self.doctype == "Sales Invoice" and self.is_consolidated:
 			return
@@ -721,8 +721,8 @@ class SellingController(StockController):
 			return
 
 		items = [item.item_code for item in self.get("items")]
-		item_stock_map = frappe._dict(
-			frappe.get_all(
+		item_stock_map = nts._dict(
+			nts.get_all(
 				"Item",
 				filters={"item_code": ["in", items]},
 				fields=["item_code", "is_stock_item"],
@@ -757,20 +757,20 @@ class SellingController(StockController):
 				stock_items = [d.item_code, d.description, d.warehouse, ""]
 				non_stock_items = [d.item_code, d.description]
 
-			duplicate_items_msg = _("Item {0} entered multiple times.").format(frappe.bold(d.item_code))
+			duplicate_items_msg = _("Item {0} entered multiple times.").format(nts.bold(d.item_code))
 			duplicate_items_msg += "<br><br>"
 			duplicate_items_msg += _("Please enable {} in {} to allow same item in multiple rows").format(
-				frappe.bold(_("Allow Item to Be Added Multiple Times in a Transaction")),
+				nts.bold(_("Allow Item to Be Added Multiple Times in a Transaction")),
 				get_link_to_form("Selling Settings", "Selling Settings"),
 			)
 			if item_stock_map.get(d.item_code):
 				if stock_items in check_list:
-					frappe.throw(duplicate_items_msg)
+					nts.throw(duplicate_items_msg)
 				else:
 					check_list.append(stock_items)
 			else:
 				if non_stock_items in chk_dupl_itm:
-					frappe.throw(duplicate_items_msg)
+					nts.throw(duplicate_items_msg)
 				else:
 					chk_dupl_itm.append(non_stock_items)
 
@@ -779,8 +779,8 @@ class SellingController(StockController):
 
 		for d in items:
 			if d.get("target_warehouse") and d.get("warehouse") == d.get("target_warehouse"):
-				warehouse = frappe.bold(d.get("target_warehouse"))
-				frappe.throw(
+				warehouse = nts.bold(d.get("target_warehouse"))
+				nts.throw(
 					_(
 						"Row {0}: Delivery Warehouse ({1}) and Customer Warehouse ({2}) can not be same"
 					).format(d.idx, warehouse, warehouse)
@@ -789,7 +789,7 @@ class SellingController(StockController):
 		if not self.get("is_internal_customer") and any(d.get("target_warehouse") for d in items):
 			msg = _("Target Warehouse is set for some items but the customer is not an internal customer.")
 			msg += " " + _("This {} will be treated as material transfer.").format(_(self.doctype))
-			frappe.msgprint(msg, title="Internal Transfer", alert=True)
+			nts.msgprint(msg, title="Internal Transfer", alert=True)
 
 	def validate_items(self):
 		# validate items to see if they have is_sales_item enabled
@@ -800,7 +800,7 @@ class SellingController(StockController):
 	def update_stock_reservation_entries(self) -> None:
 		"""Updates Delivered Qty in Stock Reservation Entries."""
 
-		if not frappe.db.get_single_value("Stock Settings", "enable_stock_reservation"):
+		if not nts.db.get_single_value("Stock Settings", "enable_stock_reservation"):
 			return
 
 		# Don't update Delivered Qty on Return.
@@ -815,7 +815,7 @@ class SellingController(StockController):
 				if not item.get(so_field) or not item.so_detail:
 					continue
 
-				sre_list = frappe.db.get_all(
+				sre_list = nts.db.get_all(
 					"Stock Reservation Entry",
 					{
 						"docstatus": 1,
@@ -837,11 +837,11 @@ class SellingController(StockController):
 					if qty_to_deliver <= 0:
 						break
 
-					sre_doc = frappe.get_doc("Stock Reservation Entry", sre)
+					sre_doc = nts.get_doc("Stock Reservation Entry", sre)
 
 					qty_can_be_deliver = 0
 					if sre_doc.reservation_based_on == "Serial and Batch" and item.serial_and_batch_bundle:
-						sbb = frappe.get_doc("Serial and Batch Bundle", item.serial_and_batch_bundle)
+						sbb = nts.get_doc("Serial and Batch Bundle", item.serial_and_batch_bundle)
 						if sre_doc.has_serial_no:
 							delivered_serial_nos = [d.serial_no for d in sbb.entries]
 							for entry in sre_doc.sb_entries:
@@ -884,7 +884,7 @@ class SellingController(StockController):
 				if not item.get(so_field) or not item.so_detail:
 					continue
 
-				sre_list = frappe.db.get_all(
+				sre_list = nts.db.get_all(
 					"Stock Reservation Entry",
 					{
 						"docstatus": 1,
@@ -906,11 +906,11 @@ class SellingController(StockController):
 					if qty_to_undelivered <= 0:
 						break
 
-					sre_doc = frappe.get_doc("Stock Reservation Entry", sre)
+					sre_doc = nts.get_doc("Stock Reservation Entry", sre)
 
 					qty_can_be_undelivered = 0
 					if sre_doc.reservation_based_on == "Serial and Batch" and item.serial_and_batch_bundle:
-						sbb = frappe.get_doc("Serial and Batch Bundle", item.serial_and_batch_bundle)
+						sbb = nts.get_doc("Serial and Batch Bundle", item.serial_and_batch_bundle)
 						if sre_doc.has_serial_no:
 							serial_nos_to_undelivered = [d.serial_no for d in sbb.entries]
 							for entry in sre_doc.sb_entries:
@@ -959,10 +959,10 @@ def get_serial_and_batch_bundle(child, parent, delivery_note_child=None):
 	if child.get("use_serial_batch_fields"):
 		return
 
-	if not frappe.db.get_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward"):
+	if not nts.db.get_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward"):
 		return
 
-	item_details = frappe.db.get_value("Item", child.item_code, ["has_serial_no", "has_batch_no"], as_dict=1)
+	item_details = nts.db.get_value("Item", child.item_code, ["has_serial_no", "has_batch_no"], as_dict=1)
 
 	if not item_details.has_serial_no and not item_details.has_batch_no:
 		return

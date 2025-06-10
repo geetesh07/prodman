@@ -1,4 +1,4 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 prodman.StockAnalytics = class StockAnalytics extends prodman.StockGridReport {
@@ -23,7 +23,7 @@ prodman.StockAnalytics = class StockAnalytics extends prodman.StockGridReport {
 					if (!item.is_group) {
 						return repl(
 							"<a \
-							onclick='frappe.cur_grid_report.show_stock_ledger(\"%(value)s\")'>\
+							onclick='nts.cur_grid_report.show_stock_ledger(\"%(value)s\")'>\
 							%(value)s</a>",
 							{
 								value: item.name,
@@ -152,9 +152,9 @@ prodman.StockAnalytics = class StockAnalytics extends prodman.StockGridReport {
 	}
 	prepare_balances() {
 		var me = this;
-		var from_date = frappe.datetime.str_to_obj(this.from_date);
-		var to_date = frappe.datetime.str_to_obj(this.to_date);
-		var data = frappe.report_dump.data["Stock Ledger Entry"];
+		var from_date = nts.datetime.str_to_obj(this.from_date);
+		var to_date = nts.datetime.str_to_obj(this.to_date);
+		var data = nts.report_dump.data["Stock Ledger Entry"];
 
 		this.item_warehouse = {};
 		this.serialized_buying_rates = this.get_serialized_buying_rates();
@@ -163,7 +163,7 @@ prodman.StockAnalytics = class StockAnalytics extends prodman.StockGridReport {
 			let diff = 0;
 			var sl = data[i];
 			sl.posting_datetime = sl.posting_date + " " + sl.posting_time;
-			var posting_datetime = frappe.datetime.str_to_obj(sl.posting_datetime);
+			var posting_datetime = nts.datetime.str_to_obj(sl.posting_datetime);
 
 			if (me.is_default("warehouse") ? true : me.warehouse == sl.warehouse) {
 				var item = me.item_by_name[sl.item_code];
@@ -173,7 +173,7 @@ prodman.StockAnalytics = class StockAnalytics extends prodman.StockGridReport {
 					var wh = me.get_item_warehouse(sl.warehouse, sl.item_code);
 					var valuation_method = item.valuation_method
 						? item.valuation_method
-						: frappe.sys_defaults.valuation_method;
+						: nts.sys_defaults.valuation_method;
 					var is_fifo = valuation_method == "FIFO";
 
 					if (sl.voucher_type == "Stock Reconciliation") {
@@ -231,11 +231,11 @@ prodman.StockAnalytics = class StockAnalytics extends prodman.StockGridReport {
 		});
 	}
 	show_stock_ledger(item_code) {
-		frappe.route_options = {
+		nts.route_options = {
 			item_code: item_code,
 			from_date: this.from_date,
 			to_date: this.to_date,
 		};
-		frappe.set_route("query-report", "Stock Ledger");
+		nts.set_route("query-report", "Stock Ledger");
 	}
 };

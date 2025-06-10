@@ -1,17 +1,17 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import json
 
-import frappe
-from frappe import _
-from frappe.core.doctype.communication.email import make
-from frappe.desk.form.load import get_attachments
-from frappe.model.mapper import get_mapped_doc
-from frappe.utils import get_url
-from frappe.utils.print_format import download_pdf
-from frappe.utils.user import get_user_fullname
+import nts
+from nts import _
+from nts.core.doctype.communication.email import make
+from nts.desk.form.load import get_attachments
+from nts.model.mapper import get_mapped_doc
+from nts.utils import get_url
+from nts.utils.print_format import download_pdf
+from nts.utils.user import get_user_fullname
 
 from prodman.accounts.party import get_party_account_currency, get_party_details
 from prodman.buying.utils import validate_for_items
@@ -28,7 +28,7 @@ class RequestforQuotation(BuyingController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.buying.doctype.request_for_quotation_item.request_for_quotation_item import (
 			RequestforQuotationItem,
@@ -82,7 +82,7 @@ class RequestforQuotation(BuyingController):
 		"""
 		If permitted in settings and any item has 0 qty, the RFQ has unit price items.
 		"""
-		if not frappe.db.get_single_value("Buying Settings", "allow_zero_qty_in_request_for_quotation"):
+		if not nts.db.get_single_value("Buying Settings", "allow_zero_qty_in_request_for_quotation"):
 			return
 
 		self.has_unit_price_items = any(
@@ -92,22 +92,22 @@ class RequestforQuotation(BuyingController):
 	def validate_duplicate_supplier(self):
 		supplier_list = [d.supplier for d in self.suppliers]
 		if len(supplier_list) != len(set(supplier_list)):
-			frappe.throw(_("Same supplier has been entered multiple times"))
+			nts.throw(_("Same supplier has been entered multiple times"))
 
 	def validate_supplier_list(self):
 		for d in self.suppliers:
-			prevent_rfqs = frappe.db.get_value("Supplier", d.supplier, "prevent_rfqs")
+			prevent_rfqs = nts.db.get_value("Supplier", d.supplier, "prevent_rfqs")
 			if prevent_rfqs:
-				standing = frappe.db.get_value("Supplier Scorecard", d.supplier, "status")
-				frappe.throw(
+				standing = nts.db.get_value("Supplier Scorecard", d.supplier, "status")
+				nts.throw(
 					_("RFQs are not allowed for {0} due to a scorecard standing of {1}").format(
 						d.supplier, standing
 					)
 				)
-			warn_rfqs = frappe.db.get_value("Supplier", d.supplier, "warn_rfqs")
+			warn_rfqs = nts.db.get_value("Supplier", d.supplier, "warn_rfqs")
 			if warn_rfqs:
-				standing = frappe.db.get_value("Supplier Scorecard", d.supplier, "status")
-				frappe.msgprint(
+				standing = nts.db.get_value("Supplier Scorecard", d.supplier, "status")
+				nts.msgprint(
 					_(
 						"{0} currently has a {1} Supplier Scorecard standing, and RFQs to this supplier should be issued with caution."
 					).format(d.supplier, standing),
@@ -118,13 +118,13 @@ class RequestforQuotation(BuyingController):
 	def update_email_id(self):
 		for rfq_supplier in self.suppliers:
 			if not rfq_supplier.email_id:
-				rfq_supplier.email_id = frappe.db.get_value("Contact", rfq_supplier.contact, "email_id")
+				rfq_supplier.email_id = nts.db.get_value("Contact", rfq_supplier.contact, "email_id")
 
 	def validate_email_id(self, args):
 		if not args.email_id:
-			frappe.throw(
+			nts.throw(
 				_("Row {0}: For Supplier {1}, Email Address is Required to send an email").format(
-					args.idx, frappe.bold(args.supplier)
+					args.idx, nts.bold(args.supplier)
 				)
 			)
 
@@ -147,7 +147,7 @@ class RequestforQuotation(BuyingController):
 	def on_cancel(self):
 		self.db_set("status", "Cancelled")
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_supplier_email_preview(self, supplier):
 		"""Returns formatted email preview as string."""
 		rfq_suppliers = list(filter(lambda row: row.supplier == supplier, self.suppliers))
@@ -177,18 +177,18 @@ class RequestforQuotation(BuyingController):
 
 	def get_link(self):
 		# RFQ link for supplier portal
-		route = frappe.db.get_value(
+		route = nts.db.get_value(
 			"Portal Menu Item", {"reference_doctype": "Request for Quotation"}, ["route"]
 		)
 		if not route:
-			frappe.throw(_("Please add Request for Quotation to the sidebar in Portal Settings."))
+			nts.throw(_("Please add Request for Quotation to the sidebar in Portal Settings."))
 
 		return get_url(f"{route}/{self.name}")
 
 	def update_supplier_part_no(self, supplier):
 		self.vendor = supplier
 		for item in self.items:
-			item.supplier_part_no = frappe.db.get_value(
+			item.supplier_part_no = nts.db.get_value(
 				"Item Supplier", {"parent": item.item_code, "supplier": supplier}, "supplier_part_no"
 			)
 
@@ -196,8 +196,8 @@ class RequestforQuotation(BuyingController):
 		"""Create a new user for the supplier if not set in contact"""
 		update_password_link, contact = "", ""
 
-		if frappe.db.exists("User", rfq_supplier.email_id):
-			user = frappe.get_doc("User", rfq_supplier.email_id)
+		if nts.db.exists("User", rfq_supplier.email_id):
+			user = nts.get_doc("User", rfq_supplier.email_id)
 		else:
 			user, update_password_link = self.create_user(rfq_supplier, link)
 
@@ -208,9 +208,9 @@ class RequestforQuotation(BuyingController):
 	def link_supplier_contact(self, rfq_supplier, user):
 		"""If no Contact, create a new contact against Supplier. If Contact exists, check if email and user id set."""
 		if rfq_supplier.contact:
-			contact = frappe.get_doc("Contact", rfq_supplier.contact)
+			contact = nts.get_doc("Contact", rfq_supplier.contact)
 		else:
-			contact = frappe.new_doc("Contact")
+			contact = nts.new_doc("Contact")
 			contact.first_name = rfq_supplier.supplier_name or rfq_supplier.supplier
 			contact.append("links", {"link_doctype": "Supplier", "link_name": rfq_supplier.supplier})
 			contact.append("email_ids", {"email_id": user.name, "is_primary": 1})
@@ -230,8 +230,8 @@ class RequestforQuotation(BuyingController):
 
 	def update_user_in_supplier(self, supplier, user):
 		"""Update user in Supplier."""
-		if not frappe.db.exists("Portal User", {"parent": supplier, "user": user}):
-			supplier_doc = frappe.get_doc("Supplier", supplier)
+		if not nts.db.exists("Portal User", {"parent": supplier, "user": user}):
+			supplier_doc = nts.get_doc("Supplier", supplier)
 			supplier_doc.append(
 				"portal_users",
 				{
@@ -246,7 +246,7 @@ class RequestforQuotation(BuyingController):
 			supplier_doc.save()
 
 	def create_user(self, rfq_supplier, link):
-		user = frappe.get_doc(
+		user = nts.get_doc(
 			{
 				"doctype": "User",
 				"send_welcome_email": 0,
@@ -262,14 +262,14 @@ class RequestforQuotation(BuyingController):
 		return user, update_password_link
 
 	def supplier_rfq_mail(self, data, update_password_link, rfq_link, preview=False):
-		full_name = get_user_fullname(frappe.session["user"])
+		full_name = get_user_fullname(nts.session["user"])
 		if full_name == "Guest":
 			full_name = "Administrator"
 
 		doc_args = self.as_dict()
 
 		if data.get("contact"):
-			contact = frappe.get_doc("Contact", data.get("contact"))
+			contact = nts.get_doc("Contact", data.get("contact"))
 			doc_args["contact"] = contact.as_dict()
 
 		doc_args.update(
@@ -285,10 +285,10 @@ class RequestforQuotation(BuyingController):
 		if not self.email_template:
 			return
 
-		email_template = frappe.get_doc("Email Template", self.email_template)
-		message = frappe.render_template(email_template.response_, doc_args)
-		subject = frappe.render_template(email_template.subject, doc_args)
-		sender = frappe.session.user not in STANDARD_USERS and frappe.session.user or None
+		email_template = nts.get_doc("Email Template", self.email_template)
+		message = nts.render_template(email_template.response_, doc_args)
+		subject = nts.render_template(email_template.subject, doc_args)
+		sender = nts.session.user not in STANDARD_USERS and nts.session.user or None
 
 		if preview:
 			return {"message": message, "subject": subject}
@@ -298,10 +298,10 @@ class RequestforQuotation(BuyingController):
 			attachments = self.get_attachments()
 
 		if self.send_document_print:
-			supplier_language = frappe.db.get_value("Supplier", data.supplier, "language")
-			system_language = frappe.db.get_single_value("System Settings", "language")
+			supplier_language = nts.db.get_value("Supplier", data.supplier, "language")
+			system_language = nts.db.get_single_value("System Settings", "language")
 			attachments.append(
-				frappe.attach_print(
+				nts.attach_print(
 					self.doctype,
 					self.name,
 					doc=self,
@@ -325,7 +325,7 @@ class RequestforQuotation(BuyingController):
 			name=self.name,
 		)["name"]
 
-		frappe.msgprint(_("Email Sent to Supplier {0}").format(data.supplier))
+		nts.msgprint(_("Email Sent to Supplier {0}").format(data.supplier))
 
 	def get_attachments(self):
 		return [d.name for d in get_attachments(self.doctype, self.name)]
@@ -335,7 +335,7 @@ class RequestforQuotation(BuyingController):
 			if sup_name is None or supplier.supplier == sup_name:
 				quote_status = _("Received")
 				for item in self.items:
-					sqi_count = frappe.db.sql(
+					sqi_count = nts.db.sql(
 						"""
 						SELECT
 							COUNT(sqi.name) as count
@@ -354,17 +354,17 @@ class RequestforQuotation(BuyingController):
 				supplier.quote_status = quote_status
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def send_supplier_emails(rfq_name):
 	check_portal_enabled("Request for Quotation")
-	rfq = frappe.get_doc("Request for Quotation", rfq_name)
+	rfq = nts.get_doc("Request for Quotation", rfq_name)
 	if rfq.docstatus == 1:
 		rfq.send_to_supplier()
 
 
 def check_portal_enabled(reference_doctype):
-	if not frappe.db.get_value("Portal Menu Item", {"reference_doctype": reference_doctype}, "enabled"):
-		frappe.throw(
+	if not nts.db.get_value("Portal Menu Item", {"reference_doctype": reference_doctype}, "enabled"):
+		nts.throw(
 			_(
 				"The Access to Request for Quotation From Portal is Disabled. To Allow Access, Enable it in Portal Settings."
 			)
@@ -386,7 +386,7 @@ def get_list_context(context=None):
 	return list_context
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_supplier_quotation_from_rfq(source_name, target_doc=None, for_supplier=None):
 	def postprocess(source, target_doc):
 		if for_supplier:
@@ -395,7 +395,7 @@ def make_supplier_quotation_from_rfq(source_name, target_doc=None, for_supplier=
 			target_doc.currency = args.currency or get_party_account_currency(
 				"Supplier", for_supplier, source.company
 			)
-			target_doc.buying_price_list = args.buying_price_list or frappe.db.get_value(
+			target_doc.buying_price_list = args.buying_price_list or nts.db.get_value(
 				"Buying Settings", None, "buying_price_list"
 			)
 		set_missing_values(source, target_doc)
@@ -426,13 +426,13 @@ def make_supplier_quotation_from_rfq(source_name, target_doc=None, for_supplier=
 
 
 # This method is used to make supplier quotation from supplier's portal.
-@frappe.whitelist()
+@nts.whitelist()
 def create_supplier_quotation(doc):
 	if isinstance(doc, str):
 		doc = json.loads(doc)
 
 	try:
-		sq_doc = frappe.get_doc(
+		sq_doc = nts.get_doc(
 			{
 				"doctype": "Supplier Quotation",
 				"supplier": doc.get("supplier"),
@@ -441,14 +441,14 @@ def create_supplier_quotation(doc):
 				"currency": doc.get("currency")
 				or get_party_account_currency("Supplier", doc.get("supplier"), doc.get("company")),
 				"buying_price_list": doc.get("buying_price_list")
-				or frappe.db.get_value("Buying Settings", None, "buying_price_list"),
+				or nts.db.get_value("Buying Settings", None, "buying_price_list"),
 			}
 		)
 		add_items(sq_doc, doc.get("supplier"), doc.get("items"))
 		sq_doc.flags.ignore_permissions = True
 		sq_doc.run_method("set_missing_values")
 		sq_doc.save()
-		frappe.msgprint(_("Supplier Quotation {0} Created").format(sq_doc.name))
+		nts.msgprint(_("Supplier Quotation {0} Created").format(sq_doc.name))
 		return sq_doc.name
 	except Exception:
 		return None
@@ -457,7 +457,7 @@ def create_supplier_quotation(doc):
 def add_items(sq_doc, supplier, items):
 	for data in items:
 		if isinstance(data, dict):
-			data = frappe._dict(data)
+			data = nts._dict(data)
 
 		create_rfq_items(sq_doc, supplier, data)
 
@@ -484,7 +484,7 @@ def create_rfq_items(sq_doc, supplier, data):
 		{
 			"request_for_quotation_item": data.name,
 			"request_for_quotation": data.parent,
-			"supplier_part_no": frappe.db.get_value(
+			"supplier_part_no": nts.db.get_value(
 				"Item Supplier", {"parent": data.item_code, "supplier": supplier}, "supplier_part_no"
 			),
 		}
@@ -493,7 +493,7 @@ def create_rfq_items(sq_doc, supplier, data):
 	sq_doc.append("items", args)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_pdf(
 	name: str,
 	supplier: str,
@@ -501,7 +501,7 @@ def get_pdf(
 	language: str | None = None,
 	letterhead: str | None = None,
 ):
-	doc = frappe.get_doc("Request for Quotation", name)
+	doc = nts.get_doc("Request for Quotation", name)
 	if supplier:
 		doc.update_supplier_part_no(supplier)
 
@@ -516,9 +516,9 @@ def get_pdf(
 	)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_item_from_material_requests_based_on_supplier(source_name, target_doc=None):
-	mr_items_list = frappe.db.sql(
+	mr_items_list = nts.db.sql(
 		"""
 		SELECT
 			mr.name, mr_item.item_code
@@ -571,16 +571,16 @@ def get_item_from_material_requests_based_on_supplier(source_name, target_doc=No
 	return target_doc
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_supplier_tag():
 	filters = {"document_type": "Supplier"}
-	tags = list(set(tag.tag for tag in frappe.get_all("Tag Link", filters=filters, fields=["tag"]) if tag))
+	tags = list(set(tag.tag for tag in nts.get_all("Tag Link", filters=filters, fields=["tag"]) if tag))
 
 	return tags
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def get_rfq_containing_supplier(doctype, txt, searchfield, start, page_len, filters):
 	conditions = ""
 	if txt:
@@ -589,7 +589,7 @@ def get_rfq_containing_supplier(doctype, txt, searchfield, start, page_len, filt
 	if filters.get("transaction_date"):
 		conditions += "and rfq.transaction_date = '{}'".format(filters.get("transaction_date"))
 
-	rfq_data = frappe.db.sql(
+	rfq_data = nts.db.sql(
 		f"""
 		select
 			distinct rfq.name, rfq.transaction_date,

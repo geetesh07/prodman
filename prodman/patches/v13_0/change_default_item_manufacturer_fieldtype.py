@@ -1,13 +1,13 @@
-import frappe
+import nts
 
 
 def execute():
 	# Erase all default item manufacturers that dont exist.
-	item = frappe.qb.DocType("Item")
-	manufacturer = frappe.qb.DocType("Manufacturer")
+	item = nts.qb.DocType("Item")
+	manufacturer = nts.qb.DocType("Manufacturer")
 
 	(
-		frappe.qb.update(item)
+		nts.qb.update(item)
 		.set(item.default_item_manufacturer, None)
 		.left_join(manufacturer)
 		.on(item.default_item_manufacturer == manufacturer.name)

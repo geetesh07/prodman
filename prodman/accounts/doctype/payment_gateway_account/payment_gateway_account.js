@@ -1,7 +1,7 @@
-// Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2019, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.ui.form.on("Payment Gateway Account", {
+nts .ui.form.on("Payment Gateway Account", {
 	refresh(frm) {
 		prodman.utils.check_payments_app();
 		if (!frm.doc.__islocal) {

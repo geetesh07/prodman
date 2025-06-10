@@ -32,7 +32,7 @@ class VisualPlantFloor {
 	}
 
 	prepare_data() {
-		frappe.call({
+		nts.call({
 			method: "prodman.manufacturing.doctype.workstation.workstation.get_workstations",
 			args: {
 				plant_floor: this.plant_floor,
@@ -45,7 +45,7 @@ class VisualPlantFloor {
 	}
 
 	add_filter() {
-		this.plant_floor = frappe.ui.form.make_control({
+		this.plant_floor = nts.ui.form.make_control({
 			df: {
 				fieldtype: "Link",
 				options: "Plant Floor",
@@ -62,7 +62,7 @@ class VisualPlantFloor {
 
 		this.plant_floor.$wrapper.addClass("form-column col-sm-2");
 
-		this.workstation_type = frappe.ui.form.make_control({
+		this.workstation_type = nts.ui.form.make_control({
 			df: {
 				fieldtype: "Link",
 				options: "Workstation Type",
@@ -78,7 +78,7 @@ class VisualPlantFloor {
 
 		this.workstation_type.$wrapper.addClass("form-column col-sm-2");
 
-		this.workstation = frappe.ui.form.make_control({
+		this.workstation = nts.ui.form.make_control({
 			df: {
 				fieldtype: "Link",
 				options: "Workstation",
@@ -103,7 +103,7 @@ class VisualPlantFloor {
 
 		this.workstation.$wrapper.addClass("form-column col-sm-2");
 
-		this.workstation_status = frappe.ui.form.make_control({
+		this.workstation_status = nts.ui.form.make_control({
 			df: {
 				fieldtype: "Select",
 				options: "\nProduction\nOff\nIdle\nProblem\nMaintenance\nSetup",
@@ -122,7 +122,7 @@ class VisualPlantFloor {
 		let plant_floor = this.plant_floor.get_value();
 
 		if (plant_floor) {
-			frappe.call({
+			nts.call({
 				method: "prodman.manufacturing.doctype.workstation.workstation.get_workstations",
 				args: {
 					plant_floor: plant_floor,
@@ -140,7 +140,7 @@ class VisualPlantFloor {
 
 	render_workstations() {
 		this.wrapper.find(".plant-floor-container").empty();
-		let template = frappe.render_template("visual_plant_floor_template", {
+		let template = nts.render_template("visual_plant_floor_template", {
 			workstations: this.workstations,
 		});
 
@@ -154,4 +154,4 @@ class VisualPlantFloor {
 	}
 }
 
-frappe.ui.VisualPlantFloor = VisualPlantFloor;
+nts.ui.VisualPlantFloor = VisualPlantFloor;

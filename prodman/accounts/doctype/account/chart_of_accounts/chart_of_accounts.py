@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 import json
 import os
 
-import frappe
-from frappe.utils import cstr
-from frappe.utils.nestedset import rebuild_tree
+import nts 
+from nts .utils import cstr
+from nts .utils.nestedset import rebuild_tree
 from unidecode import unidecode
 
 
@@ -43,7 +43,7 @@ def create_charts(
 						else "Profit and Loss"
 					)
 
-					account = frappe.get_doc(
+					account = nts .get_doc(
 						{
 							"doctype": "Account",
 							"account_name": child.get("account_name") if from_coa_importer else account_name,
@@ -55,12 +55,12 @@ def create_charts(
 							"account_number": account_number,
 							"account_type": child.get("account_type"),
 							"account_currency": child.get("account_currency")
-							or frappe.get_cached_value("Company", company, "default_currency"),
+							or nts .get_cached_value("Company", company, "default_currency"),
 							"tax_rate": child.get("tax_rate"),
 						}
 					)
 
-					if root_account or frappe.local.flags.allow_unverified_charts:
+					if root_account or nts .local.flags.allow_unverified_charts:
 						account.flags.ignore_mandatory = True
 
 					account.flags.ignore_permissions = True
@@ -73,10 +73,10 @@ def create_charts(
 
 		# Rebuild NestedSet HSM tree for Account Doctype
 		# after all accounts are already inserted.
-		frappe.local.flags.ignore_update_nsm = True
+		nts .local.flags.ignore_update_nsm = True
 		_import_accounts(chart, None, None, root_account=True)
 		rebuild_tree("Account", "parent_account")
-		frappe.local.flags.ignore_update_nsm = False
+		nts .local.flags.ignore_update_nsm = False
 
 
 def add_suffix_if_duplicate(account_name, account_number, accounts):
@@ -116,7 +116,7 @@ def identify_is_group(child):
 	return is_group
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_chart(chart_template, existing_company=None):
 	chart = {}
 	if existing_company:
@@ -136,12 +136,12 @@ def get_chart(chart_template, existing_company=None):
 		return standard_chart_of_accounts_with_account_number.get()
 	else:
 		folders = ("verified",)
-		if frappe.local.flags.allow_unverified_charts:
+		if nts .local.flags.allow_unverified_charts:
 			folders = ("verified", "unverified")
 		for folder in folders:
 			path = os.path.join(os.path.dirname(__file__), folder)
 			for fname in os.listdir(path):
-				fname = frappe.as_unicode(fname)
+				fname = nts .as_unicode(fname)
 				if fname.endswith(".json"):
 					with open(os.path.join(path, fname)) as f:
 						chart = f.read()
@@ -149,7 +149,7 @@ def get_chart(chart_template, existing_company=None):
 							return json.loads(chart).get("tree")
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_charts_for_country(country, with_standard=False):
 	charts = []
 
@@ -158,13 +158,13 @@ def get_charts_for_country(country, with_standard=False):
 			content = json.loads(content)
 			if (
 				content and content.get("disabled", "No") == "No"
-			) or frappe.local.flags.allow_unverified_charts:
+			) or nts .local.flags.allow_unverified_charts:
 				charts.append(content["name"])
 
-	country_code = frappe.get_cached_value("Country", country, "code")
+	country_code = nts .get_cached_value("Country", country, "code")
 	if country_code:
 		folders = ("verified",)
-		if frappe.local.flags.allow_unverified_charts:
+		if nts .local.flags.allow_unverified_charts:
 			folders = ("verified", "unverified")
 
 		for folder in folders:
@@ -173,7 +173,7 @@ def get_charts_for_country(country, with_standard=False):
 				continue
 
 			for fname in os.listdir(path):
-				fname = frappe.as_unicode(fname)
+				fname = nts .as_unicode(fname)
 				if (fname.startswith(country_code) or fname.startswith(country)) and fname.endswith(".json"):
 					with open(os.path.join(path, fname)) as f:
 						_get_chart_name(f.read())
@@ -186,7 +186,7 @@ def get_charts_for_country(country, with_standard=False):
 
 
 def get_account_tree_from_existing_company(existing_company):
-	all_accounts = frappe.get_all(
+	all_accounts = nts .get_all(
 		"Account",
 		filters={"company": existing_company},
 		fields=[
@@ -240,7 +240,7 @@ def build_account_tree(tree, parent, all_accounts):
 		build_account_tree(tree[child.account_name], child, all_accounts)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def validate_bank_account(coa, bank_account):
 	accounts = []
 	chart = get_chart(coa)
@@ -265,7 +265,7 @@ def validate_bank_account(coa, bank_account):
 	return bank_account in accounts
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def build_tree_from_json(chart_template, chart_data=None, from_coa_importer=False):
 	"""get chart template from its folder and parse the json to be rendered as tree"""
 	chart = chart_data or get_chart(chart_template)

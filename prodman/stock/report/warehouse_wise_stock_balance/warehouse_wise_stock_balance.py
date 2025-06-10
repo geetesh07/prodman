@@ -1,11 +1,11 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 from typing import Any, TypedDict
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import Sum
+import nts
+from nts import _
+from nts.query_builder.functions import Sum
 
 
 class StockBalanceFilter(TypedDict):
@@ -26,10 +26,10 @@ def execute(filters=None):
 
 
 def get_warehouse_wise_balance(filters: StockBalanceFilter) -> list[SLEntry]:
-	sle = frappe.qb.DocType("Stock Ledger Entry")
+	sle = nts.qb.DocType("Stock Ledger Entry")
 
 	query = (
-		frappe.qb.from_(sle)
+		nts.qb.from_(sle)
 		.select(sle.warehouse, Sum(sle.stock_value_difference).as_("stock_balance"))
 		.where((sle.docstatus < 2) & (sle.is_cancelled == 0))
 		.groupby(sle.warehouse)
@@ -39,7 +39,7 @@ def get_warehouse_wise_balance(filters: StockBalanceFilter) -> list[SLEntry]:
 		query = query.where(sle.company == filters.get("company"))
 
 	data = query.run(as_list=True)
-	return frappe._dict(data) if data else frappe._dict()
+	return nts._dict(data) if data else nts._dict()
 
 
 def get_warehouses(report_filters: StockBalanceFilter):
@@ -47,7 +47,7 @@ def get_warehouses(report_filters: StockBalanceFilter):
 	if report_filters.get("show_disabled_warehouses"):
 		filters["disabled"] = ("in", [0, report_filters.show_disabled_warehouses])
 
-	return frappe.get_all(
+	return nts.get_all(
 		"Warehouse",
 		fields=["name", "parent_warehouse", "is_group", "disabled"],
 		filters=filters,

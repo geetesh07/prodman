@@ -1,9 +1,9 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.accounts.dimensions");
+nts .provide("prodman.accounts.dimensions");
 
-frappe.ui.form.on("Shipping Rule", {
+nts .ui.form.on("Shipping Rule", {
 	onload: function (frm) {
 		prodman.accounts.dimensions.setup_dimension_filters(frm, frm.doctype);
 	},

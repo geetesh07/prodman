@@ -1,28 +1,28 @@
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	if frappe.db.table_exists("POS Closing Voucher"):
-		if not frappe.db.exists("DocType", "POS Closing Entry"):
-			frappe.rename_doc("DocType", "POS Closing Voucher", "POS Closing Entry", force=True)
+	if nts.db.table_exists("POS Closing Voucher"):
+		if not nts.db.exists("DocType", "POS Closing Entry"):
+			nts.rename_doc("DocType", "POS Closing Voucher", "POS Closing Entry", force=True)
 
-		if not frappe.db.exists("DocType", "POS Closing Entry Taxes"):
-			frappe.rename_doc("DocType", "POS Closing Voucher Taxes", "POS Closing Entry Taxes", force=True)
+		if not nts.db.exists("DocType", "POS Closing Entry Taxes"):
+			nts.rename_doc("DocType", "POS Closing Voucher Taxes", "POS Closing Entry Taxes", force=True)
 
-		if not frappe.db.exists("DocType", "POS Closing Voucher Details"):
-			frappe.rename_doc(
+		if not nts.db.exists("DocType", "POS Closing Voucher Details"):
+			nts.rename_doc(
 				"DocType", "POS Closing Voucher Details", "POS Closing Entry Detail", force=True
 			)
 
-		frappe.reload_doc("Accounts", "doctype", "POS Closing Entry")
-		frappe.reload_doc("Accounts", "doctype", "POS Closing Entry Taxes")
-		frappe.reload_doc("Accounts", "doctype", "POS Closing Entry Detail")
+		nts.reload_doc("Accounts", "doctype", "POS Closing Entry")
+		nts.reload_doc("Accounts", "doctype", "POS Closing Entry Taxes")
+		nts.reload_doc("Accounts", "doctype", "POS Closing Entry Detail")
 
-	if frappe.db.exists("DocType", "POS Closing Voucher"):
-		frappe.delete_doc("DocType", "POS Closing Voucher")
-		frappe.delete_doc("DocType", "POS Closing Voucher Taxes")
-		frappe.delete_doc("DocType", "POS Closing Voucher Details")
-		frappe.delete_doc("DocType", "POS Closing Voucher Invoices")
+	if nts.db.exists("DocType", "POS Closing Voucher"):
+		nts.delete_doc("DocType", "POS Closing Voucher")
+		nts.delete_doc("DocType", "POS Closing Voucher Taxes")
+		nts.delete_doc("DocType", "POS Closing Voucher Details")
+		nts.delete_doc("DocType", "POS Closing Voucher Invoices")

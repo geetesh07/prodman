@@ -1,9 +1,9 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2020, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe.model.document import Document
+import nts 
+from nts .model.document import Document
 
 
 class JournalEntryTemplate(Document):
@@ -13,7 +13,7 @@ class JournalEntryTemplate(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.journal_entry_template_account.journal_entry_template_account import (
 			JournalEntryTemplateAccount,
@@ -45,6 +45,6 @@ class JournalEntryTemplate(Document):
 	pass
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_naming_series():
-	return frappe.get_meta("Journal Entry").get_field("naming_series").options
+	return nts .get_meta("Journal Entry").get_field("naming_series").options

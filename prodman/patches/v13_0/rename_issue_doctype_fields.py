@@ -1,19 +1,19 @@
-# Copyright (c) 2020, Frappe and Contributors
+# Copyright (c) 2020, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.model.utils.rename_field import rename_field
+import nts
+from nts.model.utils.rename_field import rename_field
 
 
 def execute():
-	if frappe.db.exists("DocType", "Issue"):
-		issues = frappe.db.get_all(
+	if nts.db.exists("DocType", "Issue"):
+		issues = nts.db.get_all(
 			"Issue",
 			fields=["name", "response_by_variance", "resolution_by_variance", "mins_to_first_response"],
 			order_by="creation desc",
 		)
-		frappe.reload_doc("support", "doctype", "issue")
+		nts.reload_doc("support", "doctype", "issue")
 
 		# rename fields
 		rename_map = {
@@ -29,7 +29,7 @@ def execute():
 			response_by_variance = convert_to_seconds(entry.response_by_variance, "Hours")
 			resolution_by_variance = convert_to_seconds(entry.resolution_by_variance, "Hours")
 			mins_to_first_response = convert_to_seconds(entry.mins_to_first_response, "Minutes")
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Issue",
 				entry.name,
 				{
@@ -42,21 +42,21 @@ def execute():
 			# commit after every 100 updates
 			count += 1
 			if count % 100 == 0:
-				frappe.db.commit()
+				nts.db.commit()
 
-	if frappe.db.exists("DocType", "Opportunity"):
-		opportunities = frappe.db.get_all(
+	if nts.db.exists("DocType", "Opportunity"):
+		opportunities = nts.db.get_all(
 			"Opportunity", fields=["name", "mins_to_first_response"], order_by="creation desc"
 		)
-		frappe.reload_doctype("Opportunity", force=True)
+		nts.reload_doctype("Opportunity", force=True)
 		rename_field("Opportunity", "mins_to_first_response", "first_response_time")
 
 		# change fieldtype to duration
-		frappe.reload_doc("crm", "doctype", "opportunity", force=True)
+		nts.reload_doc("crm", "doctype", "opportunity", force=True)
 		count = 0
 		for entry in opportunities:
 			mins_to_first_response = convert_to_seconds(entry.mins_to_first_response, "Minutes")
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Opportunity",
 				entry.name,
 				"first_response_time",
@@ -66,15 +66,15 @@ def execute():
 			# commit after every 100 updates
 			count += 1
 			if count % 100 == 0:
-				frappe.db.commit()
+				nts.db.commit()
 
 	# renamed reports from "Minutes to First Response for Issues" to "First Response Time for Issues". Same for Opportunity
 	for report in [
 		"Minutes to First Response for Issues",
 		"Minutes to First Response for Opportunity",
 	]:
-		if frappe.db.exists("Report", report):
-			frappe.delete_doc("Report", report, ignore_permissions=True)
+		if nts.db.exists("Report", report):
+			nts.delete_doc("Report", report, ignore_permissions=True)
 
 
 def convert_to_seconds(value, unit):

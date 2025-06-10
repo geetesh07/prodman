@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
+import nts
+from nts import _
+from nts.model.document import Document
 
 
 class Operation(Document):
@@ -14,7 +14,7 @@ class Operation(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.manufacturing.doctype.sub_operation.sub_operation import SubOperation
 
@@ -39,13 +39,13 @@ class Operation(Document):
 		operation_list = []
 		for row in self.sub_operations:
 			if row.operation in operation_list:
-				frappe.throw(
-					_("The operation {0} can not add multiple times").format(frappe.bold(row.operation))
+				nts.throw(
+					_("The operation {0} can not add multiple times").format(nts.bold(row.operation))
 				)
 
 			if self.name == row.operation:
-				frappe.throw(
-					_("The operation {0} can not be the sub operation").format(frappe.bold(row.operation))
+				nts.throw(
+					_("The operation {0} can not be the sub operation").format(nts.bold(row.operation))
 				)
 
 			operation_list.append(row.operation)

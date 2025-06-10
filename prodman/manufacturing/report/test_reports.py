@@ -1,6 +1,6 @@
 import unittest
 
-import frappe
+import nts
 
 from prodman.tests.utils import ReportFilters, ReportName, execute_script_report
 
@@ -10,10 +10,10 @@ class TestManufacturingReports(unittest.TestCase):
 		self.setup_default_filters()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def setup_default_filters(self):
-		self.last_bom = frappe.get_last_doc("BOM").name
+		self.last_bom = nts.get_last_doc("BOM").name
 		self.DEFAULT_FILTERS = {
 			"company": "_Test Company",
 			"from_date": "2010-01-01",
@@ -46,9 +46,9 @@ class TestManufacturingReports(unittest.TestCase):
 			("Work Order Summary", {"fiscal_year": "2021-2022", "age": 0}),
 		]
 
-		if frappe.db.a_row_exists("Production Plan"):
+		if nts.db.a_row_exists("Production Plan"):
 			self.REPORT_FILTER_TEST_CASES.append(
-				("Production Plan Summary", {"production_plan": frappe.get_last_doc("Production Plan").name})
+				("Production Plan Summary", {"production_plan": nts.get_last_doc("Production Plan").name})
 			)
 
 		self.OPTIONAL_FILTERS = {

@@ -1,9 +1,9 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
+import nts
+from nts import _
+from nts.model.document import Document
 
 
 class PartySpecificItem(Document):
@@ -13,7 +13,7 @@ class PartySpecificItem(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		based_on_value: DF.DynamicLink
 		party: DF.DynamicLink
@@ -22,7 +22,7 @@ class PartySpecificItem(Document):
 	# end: auto-generated types
 
 	def validate(self):
-		exists = frappe.db.exists(
+		exists = nts.db.exists(
 			{
 				"doctype": "Party Specific Item",
 				"party_type": self.party_type,
@@ -32,4 +32,4 @@ class PartySpecificItem(Document):
 			}
 		)
 		if exists:
-			frappe.throw(_("This item filter has already been applied for the {0}").format(self.party_type))
+			nts.throw(_("This item filter has already been applied for the {0}").format(self.party_type))

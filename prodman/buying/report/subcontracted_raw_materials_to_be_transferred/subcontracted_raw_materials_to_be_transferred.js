@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Subcontracted Raw Materials To Be Transferred"] = {
+nts.query_reports["Subcontracted Raw Materials To Be Transferred"] = {
 	filters: [
 		{
 			label: __("Order Type"),
@@ -21,14 +21,14 @@ frappe.query_reports["Subcontracted Raw Materials To Be Transferred"] = {
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+			default: nts.datetime.add_months(nts.datetime.get_today(), -1),
 			reqd: 1,
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 			reqd: 1,
 		},
 	],

@@ -1,7 +1,7 @@
-// Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Warehouse Wise Stock Balance"] = {
+nts.query_reports["Warehouse Wise Stock Balance"] = {
 	filters: [
 		{
 			fieldname: "company",
@@ -9,7 +9,7 @@ frappe.query_reports["Warehouse Wise Stock Balance"] = {
 			fieldtype: "Link",
 			options: "Company",
 			reqd: 1,
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 		},
 		{
 			fieldname: "show_disabled_warehouses",

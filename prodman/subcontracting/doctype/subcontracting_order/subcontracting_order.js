@@ -1,25 +1,25 @@
-// Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.provide("prodman.buying");
+nts.provide("prodman.buying");
 
 prodman.landed_cost_taxes_and_charges.setup_triggers("Subcontracting Order");
 
 // client script for Subcontracting Order Item is not necessarily required as the server side code will do everything that is necessary.
 // this is just so that the user does not get potentially confused
-frappe.ui.form.on("Subcontracting Order Item", {
+nts.ui.form.on("Subcontracting Order Item", {
 	qty(frm, cdt, cdn) {
 		const row = locals[cdt][cdn];
-		frappe.model.set_value(cdt, cdn, "amount", row.qty * row.rate);
+		nts.model.set_value(cdt, cdn, "amount", row.qty * row.rate);
 		const service_item = frm.doc.service_items[row.idx - 1];
-		frappe.model.set_value(
+		nts.model.set_value(
 			service_item.doctype,
 			service_item.name,
 			"qty",
 			row.qty * row.subcontracting_conversion_factor
 		);
-		frappe.model.set_value(service_item.doctype, service_item.name, "fg_item_qty", row.qty);
-		frappe.model.set_value(
+		nts.model.set_value(service_item.doctype, service_item.name, "fg_item_qty", row.qty);
+		nts.model.set_value(
 			service_item.doctype,
 			service_item.name,
 			"amount",
@@ -34,7 +34,7 @@ frappe.ui.form.on("Subcontracting Order Item", {
 	},
 });
 
-frappe.ui.form.on("Subcontracting Order", {
+nts.ui.form.on("Subcontracting Order", {
 	setup: (frm) => {
 		frm.get_field("items").grid.cannot_add_rows = true;
 		frm.trigger("set_queries");
@@ -135,7 +135,7 @@ frappe.ui.form.on("Subcontracting Order", {
 
 	onload: (frm) => {
 		if (!frm.doc.transaction_date) {
-			frm.set_value("transaction_date", frappe.datetime.get_today());
+			frm.set_value("transaction_date", nts.datetime.get_today());
 		}
 	},
 
@@ -156,7 +156,7 @@ frappe.ui.form.on("Subcontracting Order", {
 	},
 
 	refresh: function (frm) {
-		frappe.dynamic_link = { doc: frm.doc, fieldname: "supplier", doctype: "Supplier" };
+		nts.dynamic_link = { doc: frm.doc, fieldname: "supplier", doctype: "Supplier" };
 
 		if (frm.doc.docstatus == 1 && frm.has_perm("submit")) {
 			if (frm.doc.status == "Closed") {
@@ -178,7 +178,7 @@ frappe.ui.form.on("Subcontracting Order", {
 	},
 
 	update_subcontracting_order_status(frm, status) {
-		frappe.call({
+		nts.call({
 			method: "prodman.subcontracting.doctype.subcontracting_order.subcontracting_order.update_subcontracting_order_status",
 			args: {
 				sco: frm.doc.name,
@@ -218,8 +218,8 @@ frappe.ui.form.on("Subcontracting Order", {
 						},
 						callback: function (r) {
 							if (r && r.message) {
-								const doc = frappe.model.sync(r.message);
-								frappe.set_route("Form", doc[0].doctype, doc[0].name);
+								const doc = nts.model.sync(r.message);
+								nts.set_route("Form", doc[0].doctype, doc[0].name);
 							}
 						},
 					});
@@ -230,7 +230,7 @@ frappe.ui.form.on("Subcontracting Order", {
 	},
 });
 
-frappe.ui.form.on("Landed Cost Taxes and Charges", {
+nts.ui.form.on("Landed Cost Taxes and Charges", {
 	amount: function (frm, cdt, cdn) {
 		frm.events.set_base_amount(frm, cdt, cdn);
 	},
@@ -274,7 +274,7 @@ prodman.buying.SubcontractingOrderController = class SubcontractingOrderControll
 
 	items_add(doc, cdt, cdn) {
 		if (doc.set_warehouse) {
-			var row = frappe.get_doc(cdt, cdn);
+			var row = nts.get_doc(cdt, cdn);
 			row.warehouse = doc.set_warehouse;
 		}
 	}
@@ -301,7 +301,7 @@ prodman.buying.SubcontractingOrderController = class SubcontractingOrderControll
 	}
 
 	make_subcontracting_receipt() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.subcontracting.doctype.subcontracting_order.subcontracting_order.make_subcontracting_receipt",
 			frm: cur_frm,
 			freeze_message: __("Creating Subcontracting Receipt ..."),
@@ -309,15 +309,15 @@ prodman.buying.SubcontractingOrderController = class SubcontractingOrderControll
 	}
 
 	make_stock_entry() {
-		frappe.call({
+		nts.call({
 			method: "prodman.controllers.subcontracting_controller.make_rm_stock_entry",
 			args: {
 				subcontract_order: cur_frm.doc.name,
 				order_doctype: cur_frm.doc.doctype,
 			},
 			callback: (r) => {
-				var doclist = frappe.model.sync(r.message);
-				frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				var doclist = nts.model.sync(r.message);
+				nts.set_route("Form", doclist[0].doctype, doclist[0].name);
 			},
 		});
 	}

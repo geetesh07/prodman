@@ -3,13 +3,13 @@
 	doc (PO), hence it is recalculated for setting new correct status of PR.
 """
 
-import frappe
+import nts
 
-logger = frappe.logger("patch", allow_site=True, file_count=50)
+logger = nts.logger("patch", allow_site=True, file_count=50)
 
 
 def execute():
-	affected_purchase_receipts = frappe.db.sql(
+	affected_purchase_receipts = nts.db.sql(
 		"""select name from `tabPurchase Receipt`
 		where status = 'Draft' and per_billed = 100 and docstatus = 1"""
 	)
@@ -19,14 +19,14 @@ def execute():
 
 	logger.info(f"purchase_receipt_status: begin patch, PR count: {len(affected_purchase_receipts)}")
 
-	frappe.reload_doc("stock", "doctype", "Purchase Receipt")
-	frappe.reload_doc("stock", "doctype", "Purchase Receipt Item")
+	nts.reload_doc("stock", "doctype", "Purchase Receipt")
+	nts.reload_doc("stock", "doctype", "Purchase Receipt Item")
 
 	for pr in affected_purchase_receipts:
 		pr_name = pr[0]
 		logger.info(f"purchase_receipt_status: patching PR - {pr_name}")
 
-		pr_doc = frappe.get_doc("Purchase Receipt", pr_name)
+		pr_doc = nts.get_doc("Purchase Receipt", pr_name)
 
 		pr_doc.update_billing_status(update_modified=False)
 		pr_doc.set_status(update=True, update_modified=False)

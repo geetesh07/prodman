@@ -1,9 +1,9 @@
-# Copyright (c) 2018, Frappe and Contributors
+# Copyright (c) 2018, nts and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts
 
 
 class TestQualityGoal(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestQualityGoal(unittest.TestCase):
 
 
 def get_quality_goal():
-	return frappe.get_doc(
+	return nts.get_doc(
 		dict(
 			doctype="Quality Goal",
 			goal="Test Quality Module",

@@ -1,8 +1,8 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 // render
-frappe.listview_settings["Purchase Invoice"] = {
+nts .listview_settings["Purchase Invoice"] = {
 	add_fields: [
 		"supplier",
 		"supplier_name",
@@ -25,7 +25,7 @@ frappe.listview_settings["Purchase Invoice"] = {
 		if (flt(doc.outstanding_amount) > 0 && doc.docstatus == 1 && cint(doc.on_hold)) {
 			if (!doc.release_date) {
 				return [__("On Hold"), "darkgrey"];
-			} else if (frappe.datetime.get_diff(doc.release_date, frappe.datetime.nowdate()) > 0) {
+			} else if (nts .datetime.get_diff(doc.release_date, nts .datetime.nowdate()) > 0) {
 				return [__("Temporarily on Hold"), "darkgrey"];
 			}
 		}
@@ -45,13 +45,13 @@ frappe.listview_settings["Purchase Invoice"] = {
 	},
 
 	onload: function (listview) {
-		if (frappe.model.can_create("Purchase Receipt")) {
+		if (nts .model.can_create("Purchase Receipt")) {
 			listview.page.add_action_item(__("Purchase Receipt"), () => {
 				prodman.bulk_transaction_processing.create(listview, "Purchase Invoice", "Purchase Receipt");
 			});
 		}
 
-		if (frappe.model.can_create("Payment Entry")) {
+		if (nts .model.can_create("Payment Entry")) {
 			listview.page.add_action_item(__("Payment"), () => {
 				prodman.bulk_transaction_processing.create(listview, "Purchase Invoice", "Payment Entry");
 			});

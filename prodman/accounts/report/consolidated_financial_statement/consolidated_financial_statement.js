@@ -1,14 +1,14 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Consolidated Financial Statement"] = {
+nts .query_reports["Consolidated Financial Statement"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts .defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -19,22 +19,22 @@ frappe.query_reports["Consolidated Financial Statement"] = {
 			default: ["Fiscal Year"],
 			reqd: 1,
 			on_change: function () {
-				let filter_based_on = frappe.query_report.get_filter_value("filter_based_on");
-				frappe.query_report.toggle_filter_display(
+				let filter_based_on = nts .query_report.get_filter_value("filter_based_on");
+				nts .query_report.toggle_filter_display(
 					"from_fiscal_year",
 					filter_based_on === "Date Range"
 				);
-				frappe.query_report.toggle_filter_display("to_fiscal_year", filter_based_on === "Date Range");
-				frappe.query_report.toggle_filter_display(
+				nts .query_report.toggle_filter_display("to_fiscal_year", filter_based_on === "Date Range");
+				nts .query_report.toggle_filter_display(
 					"period_start_date",
 					filter_based_on === "Fiscal Year"
 				);
-				frappe.query_report.toggle_filter_display(
+				nts .query_report.toggle_filter_display(
 					"period_end_date",
 					filter_based_on === "Fiscal Year"
 				);
 
-				frappe.query_report.refresh();
+				nts .query_report.refresh();
 			},
 		},
 		{
@@ -56,19 +56,19 @@ frappe.query_reports["Consolidated Financial Statement"] = {
 			label: __("Start Year"),
 			fieldtype: "Link",
 			options: "Fiscal Year",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today()),
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today()),
 			reqd: 1,
 			on_change: () => {
-				frappe.model.with_doc(
+				nts .model.with_doc(
 					"Fiscal Year",
-					frappe.query_report.get_filter_value("from_fiscal_year"),
+					nts .query_report.get_filter_value("from_fiscal_year"),
 					function (r) {
-						let year_start_date = frappe.model.get_value(
+						let year_start_date = nts .model.get_value(
 							"Fiscal Year",
-							frappe.query_report.get_filter_value("from_fiscal_year"),
+							nts .query_report.get_filter_value("from_fiscal_year"),
 							"year_start_date"
 						);
-						frappe.query_report.set_filter_value({
+						nts .query_report.set_filter_value({
 							period_start_date: year_start_date,
 						});
 					}
@@ -80,19 +80,19 @@ frappe.query_reports["Consolidated Financial Statement"] = {
 			label: __("End Year"),
 			fieldtype: "Link",
 			options: "Fiscal Year",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today()),
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today()),
 			reqd: 1,
 			on_change: () => {
-				frappe.model.with_doc(
+				nts .model.with_doc(
 					"Fiscal Year",
-					frappe.query_report.get_filter_value("to_fiscal_year"),
+					nts .query_report.get_filter_value("to_fiscal_year"),
 					function (r) {
-						let year_end_date = frappe.model.get_value(
+						let year_end_date = nts .model.get_value(
 							"Fiscal Year",
-							frappe.query_report.get_filter_value("to_fiscal_year"),
+							nts .query_report.get_filter_value("to_fiscal_year"),
 							"year_end_date"
 						);
-						frappe.query_report.set_filter_value({
+						nts .query_report.set_filter_value({
 							period_end_date: year_end_date,
 						});
 					}
@@ -118,7 +118,7 @@ frappe.query_reports["Consolidated Financial Statement"] = {
 			label: __("Currency"),
 			fieldtype: "Select",
 			options: prodman.get_presentation_currency_list(),
-			default: frappe.defaults.get_user_default("Currency"),
+			default: nts .defaults.get_user_default("Currency"),
 		},
 		{
 			fieldname: "accumulated_in_group_company",
@@ -162,11 +162,11 @@ frappe.query_reports["Consolidated Financial Statement"] = {
 		return value;
 	},
 	onload: function () {
-		let fiscal_year = prodman.utils.get_fiscal_year(frappe.datetime.get_today());
+		let fiscal_year = prodman.utils.get_fiscal_year(nts .datetime.get_today());
 
-		frappe.model.with_doc("Fiscal Year", fiscal_year, function (r) {
-			var fy = frappe.model.get_doc("Fiscal Year", fiscal_year);
-			frappe.query_report.set_filter_value({
+		nts .model.with_doc("Fiscal Year", fiscal_year, function (r) {
+			var fy = nts .model.get_doc("Fiscal Year", fiscal_year);
+			nts .query_report.set_filter_value({
 				period_start_date: fy.year_start_date,
 				period_end_date: fy.year_end_date,
 			});

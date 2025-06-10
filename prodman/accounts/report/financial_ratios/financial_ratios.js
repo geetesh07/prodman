@@ -1,15 +1,15 @@
-// Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 /* eslint-disable */
 
-frappe.query_reports["Financial Ratios"] = {
+nts .query_reports["Financial Ratios"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts .defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -17,7 +17,7 @@ frappe.query_reports["Financial Ratios"] = {
 			label: __("Start Year"),
 			fieldtype: "Link",
 			options: "Fiscal Year",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today()),
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today()),
 			reqd: 1,
 		},
 		{
@@ -25,7 +25,7 @@ frappe.query_reports["Financial Ratios"] = {
 			label: __("End Year"),
 			fieldtype: "Link",
 			options: "Fiscal Year",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today()),
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today()),
 			reqd: 1,
 		},
 		{
@@ -40,14 +40,14 @@ frappe.query_reports["Financial Ratios"] = {
 			fieldname: "period_start_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[1],
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today(), true)[1],
 			hidden: 1,
 		},
 		{
 			fieldname: "period_end_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[2],
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today(), true)[2],
 			hidden: 1,
 		},
 	],

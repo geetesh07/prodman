@@ -1,8 +1,8 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-from frappe.model.document import Document
+from nts .model.document import Document
 
 
 class SubscriptionSettings(Document):
@@ -12,7 +12,7 @@ class SubscriptionSettings(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		cancel_after_grace: DF.Check
 		grace_period: DF.Int

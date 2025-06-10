@@ -1,13 +1,13 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 from typing import Literal
 
-import frappe
-from frappe import _
-from frappe.model.docstatus import DocStatus
-from frappe.query_builder.functions import Coalesce, Count, Round, Sum
-from frappe.utils.data import get_timespan_date_range
+import nts
+from nts import _
+from nts.model.docstatus import DocStatus
+from nts.query_builder.functions import Coalesce, Count, Round, Sum
+from nts.utils.data import get_timespan_date_range
 
 
 def execute(filters=None):
@@ -57,14 +57,14 @@ def get_data(company: str, from_date: str, to_date: str, group_by: Literal["Lost
 	"""Return quotation value grouped by lost reason or competitor"""
 	if group_by == "Lost Reason":
 		fieldname = "lost_reason"
-		dimension = frappe.qb.DocType("Quotation Lost Reason Detail")
+		dimension = nts.qb.DocType("Quotation Lost Reason Detail")
 	elif group_by == "Competitor":
 		fieldname = "competitor"
-		dimension = frappe.qb.DocType("Competitor Detail")
+		dimension = nts.qb.DocType("Competitor Detail")
 	else:
-		frappe.throw(_("Invalid Group By"))
+		nts.throw(_("Invalid Group By"))
 
-	q = frappe.qb.DocType("Quotation")
+	q = nts.qb.DocType("Quotation")
 
 	lost_quotation_condition = (
 		(q.status == "Lost")
@@ -74,12 +74,12 @@ def get_data(company: str, from_date: str, to_date: str, group_by: Literal["Lost
 		& (q.company == company)
 	)
 
-	from_lost_quotations = frappe.qb.from_(q).where(lost_quotation_condition)
+	from_lost_quotations = nts.qb.from_(q).where(lost_quotation_condition)
 	total_quotations = from_lost_quotations.select(Count(q.name))
 	total_value = from_lost_quotations.select(Sum(q.base_net_total))
 
 	query = (
-		frappe.qb.from_(q)
+		nts.qb.from_(q)
 		.select(
 			Coalesce(dimension[fieldname], _("Not Specified")),
 			Count(q.name).distinct(),

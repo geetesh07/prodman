@@ -1,17 +1,17 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import getdate
+import nts 
+from nts  import _
+from nts .utils import getdate
 
 
 def execute(filters=None):
 	if filters.get("party_type") == "Customer":
-		party_naming_by = frappe.db.get_single_value("Selling Settings", "cust_master_name")
+		party_naming_by = nts .db.get_single_value("Selling Settings", "cust_master_name")
 	else:
-		party_naming_by = frappe.db.get_single_value("Buying Settings", "supp_master_name")
+		party_naming_by = nts .db.get_single_value("Buying Settings", "supp_master_name")
 
 	filters["naming_series"] = party_naming_by
 
@@ -34,9 +34,9 @@ def execute(filters=None):
 
 def validate_filters(filters):
 	"""Validate if dates are properly set"""
-	filters = frappe._dict(filters or {})
+	filters = nts ._dict(filters or {})
 	if filters.from_date > filters.to_date:
-		frappe.throw(_("From Date must be before To Date"))
+		nts .throw(_("From Date must be before To Date"))
 
 
 def get_result(filters, tds_docs, tds_accounts, tax_category_map, journal_entry_party_map, net_total_map):
@@ -94,7 +94,7 @@ def get_result(filters, tds_docs, tds_accounts, tax_category_map, journal_entry_
 					party_type = "customer_type"
 
 				row = {
-					"pan" if frappe.db.has_column(filters.party_type, "pan") else "tax_id": party_map.get(
+					"pan" if nts .db.has_column(filters.party_type, "pan") else "tax_id": party_map.get(
 						party, {}
 					).get("pan"),
 					"party": party_map.get(party, {}).get("name"),
@@ -127,7 +127,7 @@ def get_result(filters, tds_docs, tds_accounts, tax_category_map, journal_entry_
 
 
 def get_party_pan_map(party_type):
-	party_map = frappe._dict()
+	party_map = nts ._dict()
 
 	fields = ["name", "tax_withholding_category"]
 	if party_type == "Supplier":
@@ -135,10 +135,10 @@ def get_party_pan_map(party_type):
 	else:
 		fields += ["customer_type", "customer_name"]
 
-	if frappe.db.has_column(party_type, "pan"):
+	if nts .db.has_column(party_type, "pan"):
 		fields.append("pan")
 
-	party_details = frappe.db.get_all(party_type, fields=fields)
+	party_details = nts .db.get_all(party_type, fields=fields)
 
 	for party in party_details:
 		party.party_type = party_type
@@ -152,7 +152,7 @@ def get_gle_map(documents):
 	# {"purchase_invoice": list of dict of all gle created for this invoice}
 	gle_map = {}
 
-	gle = frappe.db.get_all(
+	gle = nts .db.get_all(
 		"GL Entry",
 		{"voucher_no": ["in", documents], "is_cancelled": 0},
 		["credit", "debit", "account", "voucher_no", "posting_date", "voucher_type", "against", "party"],
@@ -168,7 +168,7 @@ def get_gle_map(documents):
 
 
 def get_columns(filters):
-	pan = "pan" if frappe.db.has_column(filters.party_type, "pan") else "tax_id"
+	pan = "pan" if nts .db.has_column(filters.party_type, "pan") else "tax_id"
 	columns = [
 		{
 			"label": _("Section Code"),
@@ -177,7 +177,7 @@ def get_columns(filters):
 			"fieldtype": "Link",
 			"width": 90,
 		},
-		{"label": _(frappe.unscrub(pan)), "fieldname": pan, "fieldtype": "Data", "width": 60},
+		{"label": _(nts .unscrub(pan)), "fieldname": pan, "fieldtype": "Data", "width": 60},
 	]
 
 	if filters.naming_series == "Naming Series":
@@ -281,12 +281,12 @@ def get_tds_docs(filters):
 	sales_invoices = []
 	payment_entries = []
 	journal_entries = []
-	tax_category_map = frappe._dict()
-	net_total_map = frappe._dict()
-	journal_entry_party_map = frappe._dict()
-	bank_accounts = frappe.get_all("Account", {"is_group": 0, "account_type": "Bank"}, pluck="name")
+	tax_category_map = nts ._dict()
+	net_total_map = nts ._dict()
+	journal_entry_party_map = nts ._dict()
+	bank_accounts = nts .get_all("Account", {"is_group": 0, "account_type": "Bank"}, pluck="name")
 
-	_tds_accounts = frappe.get_all(
+	_tds_accounts = nts .get_all(
 		"Tax Withholding Account",
 		{"company": filters.get("company")},
 		["account", "parent"],
@@ -337,13 +337,13 @@ def get_tds_docs(filters):
 
 def get_tds_docs_query(filters, bank_accounts, tds_accounts):
 	if not tds_accounts:
-		frappe.throw(
-			_("No {0} Accounts found for this company.").format(frappe.bold(_("Tax Withholding"))),
+		nts .throw(
+			_("No {0} Accounts found for this company.").format(nts .bold(_("Tax Withholding"))),
 			title=_("Accounts Missing Error"),
 		)
-	gle = frappe.qb.DocType("GL Entry")
+	gle = nts .qb.DocType("GL Entry")
 	query = (
-		frappe.qb.from_(gle)
+		nts .qb.from_(gle)
 		.select("voucher_no", "voucher_type", "against", "party")
 		.where(gle.is_cancelled == 0)
 	)
@@ -362,7 +362,7 @@ def get_tds_docs_query(filters, bank_accounts, tds_accounts):
 			(gle.voucher_type == "Journal Entry") & (gle.party == filters.get("party"))
 		)
 	else:
-		party = frappe.get_all(filters.get("party_type"), pluck="name")
+		party = nts .get_all(filters.get("party_type"), pluck="name")
 		jv_condition = gle.against.isin(party) | (
 			(gle.voucher_type == "Journal Entry")
 			& ((gle.party_type == filters.get("party_type")) | (gle.party_type == ""))
@@ -373,7 +373,7 @@ def get_tds_docs_query(filters, bank_accounts, tds_accounts):
 
 def get_journal_entry_party_map(journal_entries):
 	journal_entry_party_map = {}
-	for d in frappe.db.get_all(
+	for d in nts .db.get_all(
 		"Journal Entry Account",
 		{
 			"parent": ("in", journal_entries),
@@ -410,7 +410,7 @@ def get_doc_info(vouchers, doctype, tax_category_map, net_total_map=None):
 		"Journal Entry": ["tax_withholding_category", "total_debit"],
 	}
 
-	entries = frappe.get_all(
+	entries = nts .get_all(
 		doctype, filters={"name": ("in", vouchers)}, fields=common_fields + fields_dict[doctype]
 	)
 
@@ -435,16 +435,16 @@ def get_doc_info(vouchers, doctype, tax_category_map, net_total_map=None):
 
 
 def get_tax_rate_map(filters):
-	rate_map = frappe.get_all(
+	rate_map = nts .get_all(
 		"Tax Withholding Rate",
 		filters={"from_date": ("<=", filters.to_date), "to_date": (">=", filters.from_date)},
 		fields=["parent", "tax_withholding_rate", "from_date", "to_date"],
 	)
 
-	rate_list = frappe._dict()
+	rate_list = nts ._dict()
 
 	for rate in rate_map:
-		rate_list.setdefault(rate.parent, []).append(frappe._dict(rate))
+		rate_list.setdefault(rate.parent, []).append(nts ._dict(rate))
 
 	return rate_list
 

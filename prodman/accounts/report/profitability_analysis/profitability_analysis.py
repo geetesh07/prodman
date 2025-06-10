@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import cstr, flt
+import nts 
+from nts  import _
+from nts .utils import cstr, flt
 
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import get_dimensions
 from prodman.accounts.report.financial_statements import (
@@ -18,7 +18,7 @@ value_fields = ("income", "expense", "gross_profit_loss")
 
 def execute(filters=None):
 	if filters.get("based_on") == "Accounting Dimension" and not filters.get("accounting_dimension"):
-		frappe.throw(_("Select Accounting Dimension."))
+		nts .throw(_("Select Accounting Dimension."))
 
 	based_on = (
 		filters.based_on if filters.based_on != "Accounting Dimension" else filters.accounting_dimension
@@ -32,23 +32,23 @@ def execute(filters=None):
 
 def get_accounts_data(based_on, company):
 	if based_on == "Cost Center":
-		return frappe.db.sql(
+		return nts .db.sql(
 			"""select name, parent_cost_center as parent_account, cost_center_name as account_name, lft, rgt
 			from `tabCost Center` where company=%s order by name""",
 			company,
 			as_dict=True,
 		)
 	elif based_on == "Project":
-		return frappe.get_all("Project", fields=["name"], filters={"company": company}, order_by="name")
+		return nts .get_all("Project", fields=["name"], filters={"company": company}, order_by="name")
 	else:
 		filters = {}
-		doctype = frappe.unscrub(based_on)
-		has_company = frappe.db.has_column(doctype, "company")
+		doctype = nts .unscrub(based_on)
+		has_company = nts .db.has_column(doctype, "company")
 
 		if has_company:
 			filters.update({"company": company})
 
-		return frappe.get_all(doctype, fields=["name"], filters=filters, order_by="name")
+		return nts .get_all(doctype, fields=["name"], filters=filters, order_by="name")
 
 
 def get_data(accounts, filters, based_on):
@@ -132,7 +132,7 @@ def accumulate_values_into_parents(accounts, accounts_by_name):
 
 def prepare_data(accounts, filters, total_row, parent_children_map, based_on):
 	data = []
-	company_currency = frappe.get_cached_value("Company", filters.get("company"), "default_currency")
+	company_currency = nts .get_cached_value("Company", filters.get("company"), "default_currency")
 
 	for d in accounts:
 		has_value = False
@@ -213,7 +213,7 @@ def set_gl_entries_by_account(
 	if from_date:
 		additional_conditions.append("and posting_date >= %(from_date)s")
 
-	gl_entries = frappe.db.sql(
+	gl_entries = nts .db.sql(
 		"""select posting_date, {based_on} as based_on, debit, credit,
 		is_opening, (select root_type from `tabAccount` where name = account) as type
 		from `tabGL Entry` where company=%(company)s

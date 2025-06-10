@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.model.document import Document
+import nts 
+from nts .model.document import Document
 
 from prodman.accounts.doctype.sales_taxes_and_charges_template.sales_taxes_and_charges_template import (
 	valdiate_taxes_and_charges_template,
@@ -17,7 +17,7 @@ class PurchaseTaxesandChargesTemplate(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.purchase_taxes_and_charges.purchase_taxes_and_charges import (
 			PurchaseTaxesandCharges,
@@ -36,5 +36,5 @@ class PurchaseTaxesandChargesTemplate(Document):
 
 	def autoname(self):
 		if self.company and self.title:
-			abbr = frappe.get_cached_value("Company", self.company, "abbr")
+			abbr = nts .get_cached_value("Company", self.company, "abbr")
 			self.name = f"{self.title} - {abbr}"

@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -64,9 +64,9 @@ def get_columns(filters):
 
 
 def get_data(filters):
-	wo = frappe.qb.DocType("Work Order")
+	wo = nts.qb.DocType("Work Order")
 	query = (
-		frappe.qb.from_(wo)
+		nts.qb.from_(wo)
 		.select(wo.name.as_("work_order"), wo.qty, wo.produced_qty, wo.production_item, wo.bom_no)
 		.where((wo.produced_qty > wo.qty) & (wo.docstatus == 1))
 	)
@@ -81,7 +81,7 @@ def get_data(filters):
 	for d in query.run(as_dict=True):
 		results.append(d)
 
-		for data in frappe.get_all(
+		for data in nts.get_all(
 			"Work Order Item",
 			fields=["item_code as raw_material_code", "required_qty", "consumed_qty"],
 			filters={"parent": d.work_order, "parenttype": "Work Order"},
@@ -91,12 +91,12 @@ def get_data(filters):
 	return results
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def get_work_orders(doctype, txt, searchfield, start, page_len, filters):
-	wo = frappe.qb.DocType("Work Order")
+	wo = nts.qb.DocType("Work Order")
 	query = (
-		frappe.qb.from_(wo)
+		nts.qb.from_(wo)
 		.select(wo.name)
 		.where((wo.name.like(f"{txt}%")) & (wo.produced_qty > wo.qty) & (wo.docstatus == 1))
 		.orderby(wo.name)

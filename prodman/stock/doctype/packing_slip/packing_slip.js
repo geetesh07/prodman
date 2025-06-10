@@ -1,7 +1,7 @@
-// Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2023, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Packing Slip", {
+nts.ui.form.on("Packing Slip", {
 	setup: (frm) => {
 		frm.set_query("delivery_note", () => {
 			return {
@@ -13,7 +13,7 @@ frappe.ui.form.on("Packing Slip", {
 
 		frm.set_query("item_code", "items", (doc, cdt, cdn) => {
 			if (!doc.delivery_note) {
-				frappe.throw(__("Please select a Delivery Note"));
+				nts.throw(__("Please select a Delivery Note"));
 			} else {
 				let d = locals[cdt][cdn];
 				return {

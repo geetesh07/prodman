@@ -1,10 +1,10 @@
-# Copyright (c) 2024, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2024, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _, qb
-from frappe.query_builder import Criterion
-from frappe.query_builder.custom import ConstantColumn
+import nts 
+from nts  import _, qb
+from nts .query_builder import Criterion
+from nts .query_builder.custom import ConstantColumn
 
 
 def execute(filters: dict | None = None):
@@ -71,13 +71,13 @@ def identify_cancelled_vouchers(active_vouchers: list[dict] | list | None = None
 
 def validate_filters(filters: dict | None = None):
 	if not filters:
-		frappe.throw(_("Filters missing"))
+		nts .throw(_("Filters missing"))
 
 	if not filters.company:
-		frappe.throw(_("Company is mandatory"))
+		nts .throw(_("Company is mandatory"))
 
 	if filters.from_date > filters.to_date:
-		frappe.throw(_("Start Date should be lower than End Date"))
+		nts .throw(_("Start Date should be lower than End Date"))
 
 
 def build_query_filters(filters: dict | None = None) -> list:

@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts 
+from nts  import _
 
 
 def execute(filters=None):
@@ -11,7 +11,7 @@ def execute(filters=None):
 		filters = {}
 
 	if not filters.get("date"):
-		frappe.throw(_("Please select date"))
+		nts .throw(_("Please select date"))
 
 	columns = get_columns(filters)
 
@@ -64,4 +64,4 @@ def get_columns(filters):
 
 
 def get_all_shares(shareholder):
-	return frappe.get_doc("Shareholder", shareholder).share_balance
+	return nts .get_doc("Shareholder", shareholder).share_balance

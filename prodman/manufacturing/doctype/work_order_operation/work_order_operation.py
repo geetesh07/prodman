@@ -1,8 +1,8 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors and contributors
 # For license information, please see license.txt
 
 
-from frappe.model.document import Document
+from nts.model.document import Document
 
 
 class WorkOrderOperation(Document):
@@ -12,7 +12,7 @@ class WorkOrderOperation(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		actual_end_time: DF.Datetime | None
 		actual_operating_cost: DF.Currency

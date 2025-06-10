@@ -1,10 +1,10 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import (
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .utils import (
 	add_days,
 	add_months,
 	add_years,
@@ -30,7 +30,7 @@ class AssetDepreciationSchedule(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.assets.doctype.depreciation_schedule.depreciation_schedule import (
 			DepreciationSchedule,
@@ -74,7 +74,7 @@ class AssetDepreciationSchedule(Document):
 		if self.finance_book:
 			finance_book_filter = ["finance_book", "=", self.finance_book]
 
-		asset_depr_schedule = frappe.db.exists(
+		asset_depr_schedule = nts .db.exists(
 			"Asset Depreciation Schedule",
 			[
 				["asset", "=", self.asset],
@@ -85,13 +85,13 @@ class AssetDepreciationSchedule(Document):
 
 		if asset_depr_schedule and asset_depr_schedule != self.name:
 			if self.finance_book:
-				frappe.throw(
+				nts .throw(
 					_(
 						"Asset Depreciation Schedule {0} for Asset {1} and Finance Book {2} already exists."
 					).format(asset_depr_schedule, self.asset, self.finance_book)
 				)
 			else:
-				frappe.throw(
+				nts .throw(
 					_("Asset Depreciation Schedule {0} for Asset {1} already exists.").format(
 						asset_depr_schedule, self.asset
 					)
@@ -107,7 +107,7 @@ class AssetDepreciationSchedule(Document):
 	def cancel_depreciation_entries(self):
 		for d in self.get("depreciation_schedule"):
 			if d.journal_entry:
-				frappe.get_doc("Journal Entry", d.journal_entry).cancel()
+				nts .get_doc("Journal Entry", d.journal_entry).cancel()
 
 	def on_cancel(self):
 		self.db_set("status", "Cancelled")
@@ -116,24 +116,24 @@ class AssetDepreciationSchedule(Document):
 		if not self.shift_based or self.docstatus != 0:
 			return
 
-		asset_doc = frappe.get_doc("Asset", self.asset)
+		asset_doc = nts .get_doc("Asset", self.asset)
 		fb_row = asset_doc.finance_books[self.finance_book_id - 1]
 
 		self.make_depr_schedule(asset_doc, fb_row)
 		self.set_accumulated_depreciation(asset_doc, fb_row)
 
 	def prepare_draft_asset_depr_schedule_data_from_asset_name_and_fb_name(self, asset_name, fb_name):
-		asset_doc = frappe.get_doc("Asset", asset_name)
+		asset_doc = nts .get_doc("Asset", asset_name)
 
 		finance_book_filter = ["finance_book", "is", "not set"]
 		if fb_name:
 			finance_book_filter = ["finance_book", "=", fb_name]
 
-		asset_finance_book_name = frappe.db.get_value(
+		asset_finance_book_name = nts .db.get_value(
 			doctype="Asset Finance Book",
 			filters=[["parent", "=", asset_name], finance_book_filter],
 		)
-		asset_finance_book_doc = frappe.get_doc("Asset Finance Book", asset_finance_book_name)
+		asset_finance_book_doc = nts .get_doc("Asset Finance Book", asset_finance_book_name)
 
 		self.prepare_draft_asset_depr_schedule_data(asset_doc, asset_finance_book_doc)
 
@@ -370,13 +370,13 @@ class AssetDepreciationSchedule(Document):
 					has_wdv_or_dd_non_yearly_pro_rata,
 				)
 				if flt(depreciation_amount, asset_doc.precision("gross_purchase_amount")) <= 0:
-					frappe.throw(
+					nts .throw(
 						_(
 							"Gross Purchase Amount Too Low: {0} cannot be depreciated over {1} cycles with a frequency of {2} depreciations."
 						).format(
-							frappe.bold(asset_doc.gross_purchase_amount),
-							frappe.bold(row.total_number_of_depreciations),
-							frappe.bold(row.frequency_of_depreciation),
+							nts .bold(asset_doc.gross_purchase_amount),
+							nts .bold(row.total_number_of_depreciations),
+							nts .bold(row.frequency_of_depreciation),
 						)
 					)
 			elif n == 0 and has_wdv_or_dd_non_yearly_pro_rata and self.opening_accumulated_depreciation:
@@ -478,7 +478,7 @@ class AssetDepreciationSchedule(Document):
 			shift = (
 				self.schedules_before_clearing[schedule_idx].shift
 				if self.schedules_before_clearing and len(self.schedules_before_clearing) > schedule_idx
-				else frappe.get_cached_value("Asset Shift Factor", {"default": 1}, "shift_name")
+				else nts .get_cached_value("Asset Shift Factor", {"default": 1}, "shift_name")
 			)
 		else:
 			shift = None
@@ -582,7 +582,7 @@ def _check_is_pro_rata(asset_doc, row, wdv_or_dd_non_yearly=False):
 		days = date_diff(row.depreciation_start_date, from_date) + 1
 		total_days = get_total_days(row.depreciation_start_date, row.frequency_of_depreciation)
 	if days <= 0:
-		frappe.throw(
+		nts .throw(
 			_(
 				"""Error: This asset already has {0} depreciation periods booked.
 				The `depreciation start` date must be at least {1} periods after the `available for use` date.
@@ -731,7 +731,7 @@ def get_daily_prorata_based_straight_line_depr(
 
 
 def get_daily_depr_amount(asset, row, schedule_idx, amount):
-	if cint(frappe.db.get_single_value("Accounts Settings", "calculate_depr_using_total_days")):
+	if cint(nts .db.get_single_value("Accounts Settings", "calculate_depr_using_total_days")):
 		total_days = (
 			date_diff(
 				get_last_day(
@@ -818,7 +818,7 @@ def get_shift_depr_amount(asset_depr_schedule, asset, row, schedule_idx):
 
 
 def get_asset_shift_factors_map():
-	return dict(frappe.db.get_all("Asset Shift Factor", ["shift_name", "shift_factor"], as_list=True))
+	return dict(nts .db.get_all("Asset Shift Factor", ["shift_name", "shift_factor"], as_list=True))
 
 
 @prodman.allow_regional
@@ -1007,7 +1007,7 @@ def make_draft_asset_depr_schedules(asset_doc):
 
 
 def make_draft_asset_depr_schedule(asset_doc, row):
-	asset_depr_schedule_doc = frappe.new_doc("Asset Depreciation Schedule")
+	asset_depr_schedule_doc = nts .new_doc("Asset Depreciation Schedule")
 
 	asset_depr_schedule_doc.prepare_draft_asset_depr_schedule_data(asset_doc, row)
 
@@ -1063,13 +1063,13 @@ def make_new_active_asset_depr_schedules_and_cancel_current_ones(
 		)
 
 		if not current_asset_depr_schedule_doc:
-			frappe.throw(
+			nts .throw(
 				_("Asset Depreciation Schedule not found for Asset {0} and Finance Book {1}").format(
 					get_link_to_form("Asset", asset_doc.name), row.finance_book
 				)
 			)
 
-		new_asset_depr_schedule_doc = frappe.copy_doc(current_asset_depr_schedule_doc)
+		new_asset_depr_schedule_doc = nts .copy_doc(current_asset_depr_schedule_doc)
 
 		if asset_doc.flags.increase_in_asset_value_due_to_repair and row.depreciation_method in (
 			"Written Down Value",
@@ -1107,13 +1107,13 @@ def get_temp_asset_depr_schedule_doc(
 	current_asset_depr_schedule_doc = get_asset_depr_schedule_doc(asset_doc.name, "Active", row.finance_book)
 
 	if not current_asset_depr_schedule_doc:
-		frappe.throw(
+		nts .throw(
 			_("Asset Depreciation Schedule not found for Asset {0} and Finance Book {1}").format(
 				get_link_to_form("Asset", asset_doc.name), row.finance_book
 			)
 		)
 
-	temp_asset_depr_schedule_doc = frappe.copy_doc(current_asset_depr_schedule_doc)
+	temp_asset_depr_schedule_doc = nts .copy_doc(current_asset_depr_schedule_doc)
 
 	if new_depr_schedule:
 		temp_asset_depr_schedule_doc.depreciation_schedule = []
@@ -1141,7 +1141,7 @@ def get_temp_asset_depr_schedule_doc(
 	return temp_asset_depr_schedule_doc
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_depr_schedule(asset_name, status, finance_book=None):
 	asset_depr_schedule_doc = get_asset_depr_schedule_doc(asset_name, status, finance_book)
 
@@ -1151,14 +1151,14 @@ def get_depr_schedule(asset_name, status, finance_book=None):
 	return asset_depr_schedule_doc.get("depreciation_schedule")
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_asset_depr_schedule_doc(asset_name, status, finance_book=None):
 	asset_depr_schedule = get_asset_depr_schedule_name(asset_name, status, finance_book)
 
 	if not asset_depr_schedule:
 		return
 
-	asset_depr_schedule_doc = frappe.get_doc("Asset Depreciation Schedule", asset_depr_schedule[0].name)
+	asset_depr_schedule_doc = nts .get_doc("Asset Depreciation Schedule", asset_depr_schedule[0].name)
 
 	return asset_depr_schedule_doc
 
@@ -1178,7 +1178,7 @@ def get_asset_depr_schedule_name(asset_name, status, finance_book=None):
 	else:
 		filters.append(["finance_book", "is", "not set"])
 
-	return frappe.get_all(
+	return nts .get_all(
 		doctype="Asset Depreciation Schedule",
 		filters=filters,
 		limit=1,

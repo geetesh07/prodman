@@ -1,10 +1,10 @@
 import io
 import json
 
-import frappe
-from frappe import _
-from frappe.utils import cstr, flt
-from frappe.utils.file_manager import remove_file
+import nts
+from nts import _
+from nts.utils import cstr, flt
+from nts.utils.file_manager import remove_file
 
 from prodman.controllers.taxes_and_totals import get_itemised_tax
 from prodman.regional.italy import state_codes
@@ -29,29 +29,29 @@ def update_itemised_tax_data(doc):
 		row.total_amount = flt((row.net_amount + row.tax_amount), row.precision("total_amount"))
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def export_invoices(filters=None):
-	frappe.has_permission("Sales Invoice", throw=True)
+	nts.has_permission("Sales Invoice", throw=True)
 
-	invoices = frappe.get_all(
+	invoices = nts.get_all(
 		"Sales Invoice", filters=get_conditions(filters), fields=["name", "company_tax_id"]
 	)
 
 	attachments = get_e_invoice_attachments(invoices)
 
-	zip_filename = "{}-einvoices.zip".format(frappe.utils.get_datetime().strftime("%Y%m%d_%H%M%S"))
+	zip_filename = "{}-einvoices.zip".format(nts.utils.get_datetime().strftime("%Y%m%d_%H%M%S"))
 
 	download_zip(attachments, zip_filename)
 
 
 def prepare_invoice(invoice, progressive_number):
 	# set company information
-	company = frappe.get_doc("Company", invoice.company)
+	company = nts.get_doc("Company", invoice.company)
 
 	invoice.progressive_number = progressive_number
 	invoice.unamended_name = get_unamended_name(invoice)
 	invoice.company_data = company
-	company_address = frappe.get_doc("Address", invoice.company_address)
+	company_address = nts.get_doc("Address", invoice.company_address)
 	invoice.company_address_data = company_address
 
 	# Set invoice type
@@ -59,18 +59,18 @@ def prepare_invoice(invoice, progressive_number):
 		if invoice.is_return and invoice.return_against:
 			invoice.type_of_document = "TD04"  # Credit Note (Nota di Credito)
 			invoice.return_against_unamended = get_unamended_name(
-				frappe.get_doc("Sales Invoice", invoice.return_against)
+				nts.get_doc("Sales Invoice", invoice.return_against)
 			)
 		else:
 			invoice.type_of_document = "TD01"  # Sales Invoice (Fattura)
 
 	# set customer information
-	invoice.customer_data = frappe.get_doc("Customer", invoice.customer)
-	customer_address = frappe.get_doc("Address", invoice.customer_address)
+	invoice.customer_data = nts.get_doc("Customer", invoice.customer)
+	customer_address = nts.get_doc("Address", invoice.customer_address)
 	invoice.customer_address_data = customer_address
 
 	if invoice.shipping_address_name:
-		invoice.shipping_address_data = frappe.get_doc("Address", invoice.shipping_address_name)
+		invoice.shipping_address_data = nts.get_doc("Address", invoice.shipping_address_name)
 
 	if invoice.customer_data.is_public_administration:
 		invoice.transmission_format_code = "FPA12"
@@ -129,18 +129,18 @@ def download_zip(files, output_filename):
 	zip_stream = io.BytesIO()
 	with zipfile.ZipFile(zip_stream, "w", zipfile.ZIP_DEFLATED) as zip_file:
 		for file in files:
-			file_path = frappe.utils.get_files_path(file.file_name, is_private=file.is_private)
+			file_path = nts.utils.get_files_path(file.file_name, is_private=file.is_private)
 
 			zip_file.write(file_path, arcname=file.file_name)
 
-	frappe.local.response.filename = output_filename
-	frappe.local.response.filecontent = zip_stream.getvalue()
-	frappe.local.response.type = "download"
+	nts.local.response.filename = output_filename
+	nts.local.response.filecontent = zip_stream.getvalue()
+	nts.local.response.type = "download"
 	zip_stream.close()
 
 
 def get_invoice_summary(items, taxes):
-	summary_data = frappe._dict()
+	summary_data = nts._dict()
 	for tax in taxes:
 		# Include only VAT charges.
 		if tax.charge_type == "Actual":
@@ -151,7 +151,7 @@ def get_invoice_summary(items, taxes):
 			reference_row = next((row for row in taxes if row.idx == int(tax.row_id or 0)), None)
 			if reference_row:
 				items.append(
-					frappe._dict(
+					nts._dict(
 						idx=len(items) + 1,
 						item_code=reference_row.description,
 						item_name=reference_row.description,
@@ -159,7 +159,7 @@ def get_invoice_summary(items, taxes):
 						rate=reference_row.tax_amount,
 						qty=1.0,
 						amount=reference_row.tax_amount,
-						stock_uom=frappe.db.get_single_value("Stock Settings", "stock_uom") or _("Nos"),
+						stock_uom=nts.db.get_single_value("Stock Settings", "stock_uom") or _("Nos"),
 						tax_rate=tax.rate,
 						tax_amount=(reference_row.tax_amount * tax.rate) / 100,
 						net_amount=reference_row.tax_amount,
@@ -242,16 +242,16 @@ def sales_invoice_validate(doc):
 		return
 
 	if not doc.company_address:
-		frappe.throw(
+		nts.throw(
 			_("Please set an Address on the Company '%s'" % doc.company),
 			title=_("E-Invoicing Information Missing"),
 		)
 	else:
 		validate_address(doc.company_address)
 
-	company_fiscal_regime = frappe.get_cached_value("Company", doc.company, "fiscal_regime")
+	company_fiscal_regime = nts.get_cached_value("Company", doc.company, "fiscal_regime")
 	if not company_fiscal_regime:
-		frappe.throw(
+		nts.throw(
 			_("Fiscal Regime is mandatory, kindly set the fiscal regime in the company {0}").format(
 				doc.company
 			)
@@ -259,20 +259,20 @@ def sales_invoice_validate(doc):
 	else:
 		doc.company_fiscal_regime = company_fiscal_regime
 
-	doc.company_tax_id = frappe.get_cached_value("Company", doc.company, "tax_id")
-	doc.company_fiscal_code = frappe.get_cached_value("Company", doc.company, "fiscal_code")
+	doc.company_tax_id = nts.get_cached_value("Company", doc.company, "tax_id")
+	doc.company_fiscal_code = nts.get_cached_value("Company", doc.company, "fiscal_code")
 	if not doc.company_tax_id or not doc.company_fiscal_code:
-		frappe.throw(
+		nts.throw(
 			_("Please set both the Tax ID and Fiscal Code on Company {0}").format(doc.company),
 			title=_("E-Invoicing Information Missing"),
 		)
 	# Validate customer details
-	customer = frappe.get_doc("Customer", doc.customer)
+	customer = nts.get_doc("Customer", doc.customer)
 
 	if customer.customer_type == "Individual":
 		doc.customer_fiscal_code = customer.fiscal_code
 		if not doc.customer_fiscal_code:
-			frappe.throw(
+			nts.throw(
 				_("Please set Fiscal Code for the customer '%s'" % doc.customer),
 				title=_("E-Invoicing Information Missing"),
 			)
@@ -280,32 +280,32 @@ def sales_invoice_validate(doc):
 		if customer.is_public_administration:
 			doc.customer_fiscal_code = customer.fiscal_code
 			if not doc.customer_fiscal_code:
-				frappe.throw(
+				nts.throw(
 					_("Please set Fiscal Code for the public administration '%s'" % doc.customer),
 					title=_("E-Invoicing Information Missing"),
 				)
 		else:
 			doc.tax_id = customer.tax_id
 			if not doc.tax_id:
-				frappe.throw(
+				nts.throw(
 					_("Please set Tax ID for the customer '%s'" % doc.customer),
 					title=_("E-Invoicing Information Missing"),
 				)
 
 	if not doc.customer_address:
-		frappe.throw(_("Please set the Customer Address"), title=_("E-Invoicing Information Missing"))
+		nts.throw(_("Please set the Customer Address"), title=_("E-Invoicing Information Missing"))
 	else:
 		validate_address(doc.customer_address)
 
 	if not len(doc.taxes):
-		frappe.throw(
+		nts.throw(
 			_("Please set at least one row in the Taxes and Charges Table"),
 			title=_("E-Invoicing Information Missing"),
 		)
 	else:
 		for row in doc.taxes:
 			if row.rate == 0 and row.tax_amount == 0 and not row.tax_exemption_reason:
-				frappe.throw(
+				nts.throw(
 					_("Row {0}: Please set at Tax Exemption Reason in Sales Taxes and Charges").format(
 						row.idx
 					),
@@ -314,7 +314,7 @@ def sales_invoice_validate(doc):
 
 	for schedule in doc.payment_schedule:
 		if schedule.mode_of_payment and not schedule.mode_of_payment_code:
-			schedule.mode_of_payment_code = frappe.get_cached_value(
+			schedule.mode_of_payment_code = nts.get_cached_value(
 				"Mode of Payment", schedule.mode_of_payment, "mode_of_payment_code"
 			)
 
@@ -332,12 +332,12 @@ def sales_invoice_on_submit(doc, method):
 
 	for schedule in doc.payment_schedule:
 		if not schedule.mode_of_payment:
-			frappe.throw(
+			nts.throw(
 				_("Row {0}: Please set the Mode of Payment in Payment Schedule").format(schedule.idx),
 				title=_("E-Invoicing Information Missing"),
 			)
-		elif not frappe.db.get_value("Mode of Payment", schedule.mode_of_payment, "mode_of_payment_code"):
-			frappe.throw(
+		elif not nts.db.get_value("Mode of Payment", schedule.mode_of_payment, "mode_of_payment_code"):
+			nts.throw(
 				_("Row {0}: Please set the correct code on Mode of Payment {1}").format(
 					schedule.idx, schedule.mode_of_payment
 				),
@@ -351,9 +351,9 @@ def prepare_and_attach_invoice(doc, replace=False):
 	progressive_name, progressive_number = get_progressive_name_and_number(doc, replace)
 
 	invoice = prepare_invoice(doc, progressive_number)
-	item_meta = frappe.get_meta("Sales Invoice Item")
+	item_meta = nts.get_meta("Sales Invoice Item")
 
-	invoice_xml = frappe.render_template(
+	invoice_xml = nts.render_template(
 		"prodman/regional/italy/e-invoice.xml",
 		context={"doc": invoice, "item_meta": item_meta},
 		is_path=True,
@@ -363,7 +363,7 @@ def prepare_and_attach_invoice(doc, replace=False):
 
 	xml_filename = progressive_name + ".xml"
 
-	_file = frappe.get_doc(
+	_file = nts.get_doc(
 		{
 			"doctype": "File",
 			"file_name": xml_filename,
@@ -377,10 +377,10 @@ def prepare_and_attach_invoice(doc, replace=False):
 	return _file
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def generate_single_invoice(docname):
-	doc = frappe.get_doc("Sales Invoice", docname)
-	frappe.has_permission("Sales Invoice", doc=doc, throw=True)
+	doc = nts.get_doc("Sales Invoice", docname)
+	nts.has_permission("Sales Invoice", doc=doc, throw=True)
 
 	e_invoice = prepare_and_attach_invoice(doc, True)
 	return e_invoice.file_url
@@ -401,7 +401,7 @@ def sales_invoice_on_cancel(doc, method):
 
 
 def get_company_country(company):
-	return frappe.get_cached_value("Company", company, "country")
+	return nts.get_cached_value("Company", company, "country")
 
 
 def get_e_invoice_attachments(invoices):
@@ -420,7 +420,7 @@ def get_e_invoice_attachments(invoices):
 		for invoice in invoices
 	}
 
-	attachments = frappe.get_all(
+	attachments = nts.get_all(
 		"File",
 		fields=("name", "file_name", "attached_to_name", "is_private"),
 		filters={"attached_to_name": ("in", tax_id_map), "attached_to_doctype": "Sales Invoice"},
@@ -440,11 +440,11 @@ def get_e_invoice_attachments(invoices):
 
 def validate_address(address_name):
 	fields = ["pincode", "city", "country_code"]
-	data = frappe.get_cached_value("Address", address_name, fields, as_dict=1) or {}
+	data = nts.get_cached_value("Address", address_name, fields, as_dict=1) or {}
 
 	for field in fields:
 		if not data.get(field):
-			frappe.throw(
+			nts.throw(
 				_("Please set {0} for address {1}").format(field.replace("-", ""), address_name),
 				title=_("E-Invoicing Information Missing"),
 			)
@@ -470,7 +470,7 @@ def get_progressive_name_and_number(doc, replace=False):
 			return filename, filename.split("_")[1]
 
 	company_tax_id = doc.company_tax_id if doc.company_tax_id.startswith("IT") else "IT" + doc.company_tax_id
-	progressive_name = frappe.model.naming.make_autoname(company_tax_id + "_.#####")
+	progressive_name = nts.model.naming.make_autoname(company_tax_id + "_.#####")
 	progressive_number = progressive_name.split("_")[1]
 
 	return progressive_name, progressive_number

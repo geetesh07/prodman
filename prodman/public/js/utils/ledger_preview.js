@@ -1,4 +1,4 @@
-frappe.provide("prodman.accounts");
+nts.provide("prodman.accounts");
 
 prodman.accounts.ledger_preview = {
 	show_accounting_ledger_preview(frm) {
@@ -7,7 +7,7 @@ prodman.accounts.ledger_preview = {
 			frm.add_custom_button(
 				__("Accounting Ledger"),
 				function () {
-					frappe.call({
+					nts.call({
 						type: "GET",
 						method: "prodman.controllers.stock_controller.show_accounting_ledger_preview",
 						args: {
@@ -36,7 +36,7 @@ prodman.accounts.ledger_preview = {
 			frm.add_custom_button(
 				__("Stock Ledger"),
 				function () {
-					frappe.call({
+					nts.call({
 						type: "GET",
 						method: "prodman.controllers.stock_controller.show_stock_ledger_preview",
 						args: {
@@ -61,7 +61,7 @@ prodman.accounts.ledger_preview = {
 
 	make_dialog(label, fieldname, columns, data) {
 		let me = this;
-		let dialog = new frappe.ui.Dialog({
+		let dialog = new nts.ui.Dialog({
 			size: "extra-large",
 			title: __(label),
 			fields: [
@@ -88,6 +88,6 @@ prodman.accounts.ledger_preview = {
 			inlineFilters: true,
 		};
 
-		new frappe.DataTable(wrapper, datatable_options);
+		new nts.DataTable(wrapper, datatable_options);
 	},
 };

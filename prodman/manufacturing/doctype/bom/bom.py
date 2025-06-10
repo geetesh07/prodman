@@ -1,4 +1,4 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 import functools
@@ -6,12 +6,12 @@ import re
 from collections import deque
 from operator import itemgetter
 
-import frappe
-from frappe import _, bold
-from frappe.core.doctype.version.version import get_diff
-from frappe.model.mapper import get_mapped_doc
-from frappe.utils import cint, cstr, flt, today
-from frappe.website.website_generator import WebsiteGenerator
+import nts
+from nts import _, bold
+from nts.core.doctype.version.version import get_diff
+from nts.model.mapper import get_mapped_doc
+from nts.utils import cint, cstr, flt, today
+from nts.website.website_generator import WebsiteGenerator
 
 import prodman
 from prodman.setup.utils import get_exchange_rate
@@ -21,7 +21,7 @@ from prodman.stock.get_item_details import get_conversion_factor, get_price_list
 form_grid_templates = {"items": "templates/form_grid/item_grid.html"}
 
 
-class BOMRecursionError(frappe.ValidationError):
+class BOMRecursionError(nts.ValidationError):
 	pass
 
 
@@ -45,7 +45,7 @@ class BOMTree:
 			self.__create_tree()
 
 	def __create_tree(self):
-		bom = frappe.get_cached_doc("BOM", self.name)
+		bom = nts.get_cached_doc("BOM", self.name)
 		self.item_code = bom.item
 		self.bom_qty = bom.quantity
 
@@ -106,7 +106,7 @@ class BOM(WebsiteGenerator):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.manufacturing.doctype.bom_explosion_item.bom_explosion_item import BOMExplosionItem
 		from prodman.manufacturing.doctype.bom_item.bom_item import BOMItem
@@ -165,7 +165,7 @@ class BOM(WebsiteGenerator):
 		with_operations: DF.Check
 	# end: auto-generated types
 
-	website = frappe._dict(
+	website = nts._dict(
 		# page_title_field = "item_name",
 		condition_field="show_in_website",
 		template="templates/generators/bom.html",
@@ -175,7 +175,7 @@ class BOM(WebsiteGenerator):
 		# ignore amended documents while calculating current index
 
 		search_key = f"{self.doctype}-{self.item}%"
-		existing_boms = frappe.get_all(
+		existing_boms = nts.get_all(
 			"BOM", filters={"name": search_key, "amended_from": ["is", "not set"]}, pluck="name"
 		)
 
@@ -196,8 +196,8 @@ class BOM(WebsiteGenerator):
 			truncated_item_name = truncated_item_name.rsplit(" ", 1)[0]
 			name = f"{prefix}-{truncated_item_name}-{suffix}"
 
-		if frappe.db.exists("BOM", name):
-			existing_boms = frappe.get_all(
+		if nts.db.exists("BOM", name):
+			existing_boms = nts.get_all(
 				"BOM", filters={"name": ("like", search_key), "amended_from": ["is", "not set"]}, pluck="name"
 			)
 
@@ -220,7 +220,7 @@ class BOM(WebsiteGenerator):
 		self.set_onload_for_muulti_level_bom()
 
 	def set_onload_for_muulti_level_bom(self):
-		use_multi_level_bom = frappe.db.get_value(
+		use_multi_level_bom = nts.db.get_value(
 			"Property Setter",
 			{"field_name": "use_multi_level_bom", "doc_type": "Work Order", "property": "default"},
 			"value",
@@ -252,10 +252,10 @@ class BOM(WebsiteGenerator):
 		return index
 
 	def validate(self):
-		self.route = frappe.scrub(self.name).replace("_", "-")
+		self.route = nts.scrub(self.name).replace("_", "-")
 
 		if not self.company:
-			frappe.throw(_("Please select a Company first."), title=_("Mandatory"))
+			nts.throw(_("Please select a Company first."), title=_("Mandatory"))
 
 		self.clear_operations()
 		self.clear_inspection()
@@ -282,8 +282,8 @@ class BOM(WebsiteGenerator):
 		if not self.get("items"):
 			return
 
-		item_wise_uom = frappe._dict(
-			frappe.get_all(
+		item_wise_uom = nts._dict(
+			nts.get_all(
 				"Item",
 				filters={"name": ("in", [item.item_code for item in self.items])},
 				fields=["name", "stock_uom"],
@@ -299,7 +299,7 @@ class BOM(WebsiteGenerator):
 		context.parents = [{"name": "boms", "title": _("All BOMs")}]
 
 	def on_update(self):
-		frappe.cache().hdel("bom_children", self.name)
+		nts.cache().hdel("bom_children", self.name)
 		self.check_recursion()
 
 	def on_submit(self):
@@ -320,7 +320,7 @@ class BOM(WebsiteGenerator):
 			return
 
 		if self.bom_creator_item:
-			frappe.db.set_value(
+			nts.db.set_value(
 				"BOM Creator Item",
 				self.bom_creator_item,
 				"bom_created",
@@ -328,7 +328,7 @@ class BOM(WebsiteGenerator):
 				update_modified=False,
 			)
 
-		doc = frappe.get_doc("BOM Creator", self.bom_creator)
+		doc = nts.get_doc("BOM Creator", self.bom_creator)
 		doc.set_status(save=True)
 
 	def on_update_after_submit(self):
@@ -339,11 +339,11 @@ class BOM(WebsiteGenerator):
 		item = get_item_details(item_code)
 
 		if not item:
-			frappe.throw(_("Item: {0} does not exist in the system").format(item_code))
+			nts.throw(_("Item: {0} does not exist in the system").format(item_code))
 
 		return item
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_routing(self):
 		if self.routing:
 			self.set("operations", [])
@@ -362,7 +362,7 @@ class BOM(WebsiteGenerator):
 				"fixed_time",
 			]
 
-			for row in frappe.get_all(
+			for row in nts.get_all(
 				"BOM Operation",
 				fields=fields,
 				filters={"parenttype": "Routing", "parent": self.routing},
@@ -412,11 +412,11 @@ class BOM(WebsiteGenerator):
 				if item.get(key) is None:
 					item.set(key, value)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_bom_material_detail(self, args=None):
 		"""Get raw material details like uom, desc and rate"""
 		if not args:
-			args = frappe.form_dict.get("args")
+			args = nts.form_dict.get("args")
 
 		if isinstance(args, str):
 			import json
@@ -457,8 +457,8 @@ class BOM(WebsiteGenerator):
 		return ret_item
 
 	def validate_bom_currency(self, item):
-		if item.get("bom_no") and frappe.db.get_value("BOM", item.get("bom_no"), "currency") != self.currency:
-			frappe.throw(
+		if item.get("bom_no") and nts.db.get_value("BOM", item.get("bom_no"), "currency") != self.currency:
+			nts.throw(
 				_("Row {0}: Currency of the BOM #{1} should be equal to the selected currency {2}").format(
 					item.idx, item.bom_no, self.currency
 				)
@@ -474,7 +474,7 @@ class BOM(WebsiteGenerator):
 			rate = get_valuation_rate(arg)
 		elif arg:
 			# Customer Provided parts and Supplier sourced parts will have zero rate
-			if not frappe.db.get_value("Item", arg["item_code"], "is_customer_provided_item") and not arg.get(
+			if not nts.db.get_value("Item", arg["item_code"], "is_customer_provided_item") and not arg.get(
 				"sourced_by_supplier"
 			):
 				if arg.get("bom_no") and self.set_rate_of_sub_assembly_item_based_on_bom:
@@ -484,20 +484,20 @@ class BOM(WebsiteGenerator):
 
 					if not rate:
 						if self.rm_cost_as_per == "Price List":
-							frappe.msgprint(
+							nts.msgprint(
 								_("Price not found for item {0} in price list {1}").format(
 									arg["item_code"], self.buying_price_list
 								),
 								alert=True,
 							)
 						else:
-							frappe.msgprint(
+							nts.msgprint(
 								_("{0} not found for item {1}").format(self.rm_cost_as_per, arg["item_code"]),
 								alert=True,
 							)
 		return flt(rate) * flt(self.plc_conversion_rate or 1) / (self.conversion_rate or 1)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def update_cost(self, update_parent=True, from_child_bom=False, update_hour_rate=True, save=True):
 		if self.docstatus == 2:
 			return
@@ -515,34 +515,34 @@ class BOM(WebsiteGenerator):
 
 		# update parent BOMs
 		if self.total_cost != existing_bom_cost and update_parent:
-			parent_boms = frappe.db.sql_list(
+			parent_boms = nts.db.sql_list(
 				"""select distinct parent from `tabBOM Item`
 				where bom_no = %s and docstatus=1 and parenttype='BOM'""",
 				self.name,
 			)
 
 			for bom in parent_boms:
-				frappe.get_doc("BOM", bom).update_cost(from_child_bom=True)
+				nts.get_doc("BOM", bom).update_cost(from_child_bom=True)
 
 		if not from_child_bom:
 			msg = "Cost Updated"
 			if not self.flags.cost_updated:
 				msg = "No changes in cost found"
 
-			frappe.msgprint(_(msg), alert=True)
+			nts.msgprint(_(msg), alert=True)
 
 	def update_parent_cost(self):
 		if self.total_cost:
 			cost = self.total_cost / self.quantity
 
-			frappe.db.sql(
+			nts.db.sql(
 				"""update `tabBOM Item` set rate=%s, amount=stock_qty*%s
 				where bom_no = %s and docstatus < 2 and parenttype='BOM'""",
 				(cost, cost, self.name),
 			)
 
 	def get_bom_unitcost(self, bom_no):
-		bom = frappe.db.sql(
+		bom = nts.db.sql(
 			"""select name, base_total_cost/quantity as unit_cost from `tabBOM`
 			where is_active = 1 and name = %s""",
 			bom_no,
@@ -556,23 +556,23 @@ class BOM(WebsiteGenerator):
 		update default bom in item master
 		"""
 		if self.is_default and self.is_active:
-			from frappe.model.utils import set_default
+			from nts.model.utils import set_default
 
 			set_default(self, "item")
-			item = frappe.get_doc("Item", self.item)
+			item = nts.get_doc("Item", self.item)
 			if item.default_bom != self.name:
-				frappe.db.set_value("Item", self.item, "default_bom", self.name)
+				nts.db.set_value("Item", self.item, "default_bom", self.name)
 		elif (
-			not frappe.db.exists(dict(doctype="BOM", docstatus=1, item=self.item, is_default=1))
+			not nts.db.exists(dict(doctype="BOM", docstatus=1, item=self.item, is_default=1))
 			and self.is_active
 		):
 			self.db_set("is_default", 1)
-			frappe.db.set_value("Item", self.item, "default_bom", self.name)
+			nts.db.set_value("Item", self.item, "default_bom", self.name)
 		else:
 			self.db_set("is_default", 0)
-			item = frappe.get_doc("Item", self.item)
+			item = nts.get_doc("Item", self.item)
 			if item.default_bom == self.name:
-				frappe.db.set_value("Item", self.item, "default_bom", None)
+				nts.db.set_value("Item", self.item, "default_bom", None)
 
 	def clear_operations(self):
 		if not self.with_operations:
@@ -586,21 +586,21 @@ class BOM(WebsiteGenerator):
 		"""Validate main FG item"""
 		item = self.get_item_det(self.item)
 		if not item:
-			frappe.throw(_("Item {0} does not exist in the system or has expired").format(self.item))
+			nts.throw(_("Item {0} does not exist in the system or has expired").format(self.item))
 		else:
-			ret = frappe.db.get_value("Item", self.item, ["description", "stock_uom", "item_name"])
+			ret = nts.db.get_value("Item", self.item, ["description", "stock_uom", "item_name"])
 			self.description = ret[0]
 			self.uom = ret[1]
 			self.item_name = ret[2]
 
 		if not self.quantity:
-			frappe.throw(_("Quantity should be greater than 0"))
+			nts.throw(_("Quantity should be greater than 0"))
 
 	def validate_currency(self):
 		if self.rm_cost_as_per == "Price List":
-			price_list_currency = frappe.db.get_value("Price List", self.buying_price_list, "currency")
+			price_list_currency = nts.db.get_value("Price List", self.buying_price_list, "currency")
 			if price_list_currency not in (self.currency, self.company_currency()):
-				frappe.throw(
+				nts.throw(
 					_("Currency of the price list {0} must be {1} or {2}").format(
 						self.buying_price_list, self.currency, self.company_currency()
 					)
@@ -642,14 +642,14 @@ class BOM(WebsiteGenerator):
 		"""Validate raw material entries"""
 
 		if not self.get("items"):
-			frappe.throw(_("Raw Materials cannot be blank."))
+			nts.throw(_("Raw Materials cannot be blank."))
 
 		check_list = []
 		for m in self.get("items"):
 			if m.bom_no:
 				validate_bom_no(m.item_code, m.bom_no)
 			if flt(m.qty) <= 0:
-				frappe.throw(_("Quantity required for Item {0} in row {1}").format(m.item_code, m.idx))
+				nts.throw(_("Quantity required for Item {0} in row {1}").format(m.item_code, m.idx))
 			check_list.append(m)
 
 	def check_recursion(self, bom_list=None):
@@ -663,13 +663,13 @@ class BOM(WebsiteGenerator):
 					"Note: If you want to use the finished good {0} as a raw material, then enable the 'Do Not Explode' checkbox in the Items table against the same raw material."
 				).format(bold(production_item))
 
-			frappe.throw(
+			nts.throw(
 				msg,
 				exc=BOMRecursionError,
 			)
 
 		bom_list = self.traverse_tree()
-		child_items = frappe.get_all(
+		child_items = nts.get_all(
 			"BOM Item",
 			fields=["bom_no", "item_code"],
 			filters={"parent": ("in", bom_list), "parenttype": "BOM"},
@@ -688,14 +688,14 @@ class BOM(WebsiteGenerator):
 
 	def traverse_tree(self, bom_list=None):
 		def _get_children(bom_no):
-			children = frappe.cache().hget("bom_children", bom_no)
+			children = nts.cache().hget("bom_children", bom_no)
 			if children is None:
-				children = frappe.db.sql_list(
+				children = nts.db.sql_list(
 					"""SELECT `bom_no` FROM `tabBOM Item`
 					WHERE `parent`=%s AND `bom_no`!='' AND `parenttype`='BOM'""",
 					bom_no,
 				)
-				frappe.cache().hset("bom_children", bom_no, children)
+				nts.cache().hset("bom_children", bom_no, children)
 			return children
 
 		count = 0
@@ -759,7 +759,7 @@ class BOM(WebsiteGenerator):
 
 	def update_rate_and_time(self, row, update_hour_rate=False):
 		if not row.hour_rate or update_hour_rate:
-			hour_rate = flt(frappe.get_cached_value("Workstation", row.workstation, "hour_rate"))
+			hour_rate = flt(nts.get_cached_value("Workstation", row.workstation, "hour_rate"))
 
 			if hour_rate:
 				row.hour_rate = (
@@ -854,7 +854,7 @@ class BOM(WebsiteGenerator):
 		for item in self.get("items"):
 			if item.bom_no:
 				# Get Item-Rate from Subassembly BOM
-				explosion_items = frappe.get_all(
+				explosion_items = nts.get_all(
 					"BOM Explosion Item",
 					filters={"parent": item.bom_no},
 					fields=["item_code", "rate"],
@@ -880,7 +880,7 @@ class BOM(WebsiteGenerator):
 				self.get_child_exploded_items(d.bom_no, d.stock_qty)
 			elif d.item_code:
 				self.add_to_cur_exploded_items(
-					frappe._dict(
+					nts._dict(
 						{
 							"item_code": d.item_code,
 							"item_name": d.item_name,
@@ -909,7 +909,7 @@ class BOM(WebsiteGenerator):
 	def get_child_exploded_items(self, bom_no, stock_qty):
 		"""Add all items from Flat BOM of child BOM"""
 		# Did not use qty_consumed_per_unit in the query, as it leads to rounding loss
-		child_fb_items = frappe.db.sql(
+		child_fb_items = nts.db.sql(
 			"""
 			SELECT
 				bom_item.item_code,
@@ -935,7 +935,7 @@ class BOM(WebsiteGenerator):
 
 		for d in child_fb_items:
 			self.add_to_cur_exploded_items(
-				frappe._dict(
+				nts._dict(
 					{
 						"item_code": d["item_code"],
 						"item_name": d["item_name"],
@@ -956,7 +956,7 @@ class BOM(WebsiteGenerator):
 		self.set("exploded_items", [])
 
 		if save:
-			frappe.db.sql("""delete from `tabBOM Explosion Item` where parent=%s""", self.name)
+			nts.db.sql("""delete from `tabBOM Explosion Item` where parent=%s""", self.name)
 
 		for d in sorted(self.cur_exploded_items, key=itemgetter(0)):
 			ch = self.append("exploded_items", {})
@@ -971,7 +971,7 @@ class BOM(WebsiteGenerator):
 
 	def validate_bom_links(self):
 		if not self.is_active:
-			act_pbom = frappe.db.sql(
+			act_pbom = nts.db.sql(
 				"""select distinct bom_item.parent from `tabBOM Item` bom_item
 				where bom_item.bom_no = %s and bom_item.docstatus = 1 and bom_item.parenttype='BOM'
 				and exists (select * from `tabBOM` where name = bom_item.parent
@@ -980,13 +980,13 @@ class BOM(WebsiteGenerator):
 			)
 
 			if act_pbom and act_pbom[0][0]:
-				frappe.throw(_("Cannot deactivate or cancel BOM as it is linked with other BOMs"))
+				nts.throw(_("Cannot deactivate or cancel BOM as it is linked with other BOMs"))
 
 	def validate_transfer_against(self):
 		if not self.with_operations:
 			self.transfer_material_against = "Work Order"
 		if not self.transfer_material_against and not self.is_new():
-			frappe.throw(
+			nts.throw(
 				_("Setting {} is required").format(self.meta.get_label("transfer_material_against")),
 				title=_("Missing value"),
 			)
@@ -997,17 +997,17 @@ class BOM(WebsiteGenerator):
 
 	def validate_operations(self):
 		if self.with_operations and not self.get("operations") and self.docstatus == 1:
-			frappe.throw(_("Operations cannot be left blank"))
+			nts.throw(_("Operations cannot be left blank"))
 
 		if self.with_operations:
 			for d in self.operations:
 				if not d.description:
-					d.description = frappe.db.get_value("Operation", d.operation, "description")
+					d.description = nts.db.get_value("Operation", d.operation, "description")
 				if not d.batch_size or d.batch_size <= 0:
 					d.batch_size = 1
 
 				if not d.workstation and not d.workstation_type:
-					frappe.throw(
+					nts.throw(
 						_(
 							"Row {0}: Workstation or Workstation Type is mandatory for an operation {1}"
 						).format(d.idx, d.operation)
@@ -1022,14 +1022,14 @@ class BOM(WebsiteGenerator):
 			self.process_loss_qty = flt(self.quantity) * flt(self.process_loss_percentage) / 100
 
 	def validate_scrap_items(self):
-		must_be_whole_number = frappe.get_value("UOM", self.uom, "must_be_whole_number")
+		must_be_whole_number = nts.get_value("UOM", self.uom, "must_be_whole_number")
 
 		if self.process_loss_percentage and self.process_loss_percentage > 100:
-			frappe.throw(_("Process Loss Percentage cannot be greater than 100"))
+			nts.throw(_("Process Loss Percentage cannot be greater than 100"))
 
 		if self.process_loss_qty and must_be_whole_number and self.process_loss_qty % 1 != 0:
-			msg = f"Item: {frappe.bold(self.item)} with Stock UOM: {frappe.bold(self.uom)} can't have fractional process loss qty as UOM {frappe.bold(self.uom)} is a whole Number."
-			frappe.throw(msg, title=_("Invalid Process Loss Configuration"))
+			msg = f"Item: {nts.bold(self.item)} with Stock UOM: {nts.bold(self.uom)} can't have fractional process loss qty as UOM {nts.bold(self.uom)} is a whole Number."
+			nts.throw(msg, title=_("Invalid Process Loss Configuration"))
 
 
 def get_bom_item_rate(args, bom_doc):
@@ -1038,12 +1038,12 @@ def get_bom_item_rate(args, bom_doc):
 	elif bom_doc.rm_cost_as_per == "Last Purchase Rate":
 		rate = (
 			flt(args.get("last_purchase_rate"))
-			or flt(frappe.db.get_value("Item", args["item_code"], "last_purchase_rate"))
+			or flt(nts.db.get_value("Item", args["item_code"], "last_purchase_rate"))
 		) * (args.get("conversion_factor") or 1)
 	elif bom_doc.rm_cost_as_per == "Price List":
 		if not bom_doc.buying_price_list:
-			frappe.throw(_("Please select Price List"))
-		bom_args = frappe._dict(
+			nts.throw(_("Please select Price List"))
+		bom_args = nts._dict(
 			{
 				"doctype": "BOM",
 				"price_list": bom_doc.buying_price_list,
@@ -1060,7 +1060,7 @@ def get_bom_item_rate(args, bom_doc):
 				"ignore_conversion_rate": True,
 			}
 		)
-		item_doc = frappe.get_cached_doc("Item", args.get("item_code"))
+		item_doc = nts.get_cached_doc("Item", args.get("item_code"))
 		price_list_data = get_price_list_rate(bom_args, item_doc)
 		rate = price_list_data.price_list_rate
 
@@ -1073,16 +1073,16 @@ def get_valuation_rate(data):
 	2) If no value, get last valuation rate from SLE
 	3) If no value, get valuation rate from Item
 	"""
-	from frappe.query_builder.functions import Count, IfNull, Sum
+	from nts.query_builder.functions import Count, IfNull, Sum
 	from pypika import Case
 
 	item_code, company = data.get("item_code"), data.get("company")
 	valuation_rate = 0.0
 
-	bin_table = frappe.qb.DocType("Bin")
-	wh_table = frappe.qb.DocType("Warehouse")
+	bin_table = nts.qb.DocType("Bin")
+	wh_table = nts.qb.DocType("Warehouse")
 	item_valuation = (
-		frappe.qb.from_(bin_table)
+		nts.qb.from_(bin_table)
 		.join(wh_table)
 		.on(bin_table.warehouse == wh_table.name)
 		.select(
@@ -1105,20 +1105,20 @@ def get_valuation_rate(data):
 
 	if (valuation_rate is not None) and valuation_rate <= 0:
 		# Explicit null value check. If None, Bins don't exist, neither does SLE
-		sle = frappe.qb.DocType("Stock Ledger Entry")
+		sle = nts.qb.DocType("Stock Ledger Entry")
 		last_val_rate = (
-			frappe.qb.from_(sle)
+			nts.qb.from_(sle)
 			.select(sle.valuation_rate)
 			.where((sle.item_code == item_code) & (sle.valuation_rate > 0) & (sle.is_cancelled == 0))
-			.orderby(sle.posting_datetime, order=frappe.qb.desc)
-			.orderby(sle.creation, order=frappe.qb.desc)
+			.orderby(sle.posting_datetime, order=nts.qb.desc)
+			.orderby(sle.creation, order=nts.qb.desc)
 			.limit(1)
 		).run(as_dict=True)
 
 		valuation_rate = flt(last_val_rate[0].get("valuation_rate")) if last_val_rate else 0
 
 	if not valuation_rate:
-		valuation_rate = frappe.db.get_value("Item", item_code, "valuation_rate")
+		valuation_rate = nts.db.get_value("Item", item_code, "valuation_rate")
 
 	return flt(valuation_rate)
 
@@ -1182,7 +1182,7 @@ def get_bom_items_as_dict(
 				(Select idx from `tabBOM Item` where item_code = bom_item.item_code and parent = %(parent)s limit 1) as idx""",
 		)
 
-		items = frappe.db.sql(
+		items = nts.db.sql(
 			query, {"parent": bom, "qty": qty, "bom": bom, "company": company}, as_dict=True
 		)
 	elif fetch_scrap_items:
@@ -1194,7 +1194,7 @@ def get_bom_items_as_dict(
 			qty_field="stock_qty",
 		)
 
-		items = frappe.db.sql(query, {"qty": qty, "bom": bom, "company": company}, as_dict=True)
+		items = nts.db.sql(query, {"qty": qty, "bom": bom, "company": company}, as_dict=True)
 	else:
 		query = query.format(
 			table="BOM Item",
@@ -1205,7 +1205,7 @@ def get_bom_items_as_dict(
 				bom_item.operation, bom_item.include_item_in_manufacturing, bom_item.sourced_by_supplier,
 				bom_item.description, bom_item.base_rate as rate """,
 		)
-		items = frappe.db.sql(query, {"qty": qty, "bom": bom, "company": company}, as_dict=True)
+		items = nts.db.sql(query, {"qty": qty, "bom": bom, "company": company}, as_dict=True)
 
 	for item in items:
 		if item.item_code in item_dict:
@@ -1219,14 +1219,14 @@ def get_bom_items_as_dict(
 			["Cost Center", "cost_center", "cost_center"],
 			["Warehouse", "default_warehouse", ""],
 		]:
-			company_in_record = frappe.db.get_value(d[0], item_details.get(d[1]), "company")
+			company_in_record = nts.db.get_value(d[0], item_details.get(d[1]), "company")
 			if not item_details.get(d[1]) or (company_in_record and company != company_in_record):
-				item_dict[item][d[1]] = frappe.get_cached_value("Company", company, d[2]) if d[2] else None
+				item_dict[item][d[1]] = nts.get_cached_value("Company", company, d[2]) if d[2] else None
 
 	return item_dict
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_bom_items(bom, company, qty=1, fetch_exploded=1):
 	items = get_bom_items_as_dict(bom, company, qty, fetch_exploded, include_non_stock_items=True).values()
 	items = list(items)
@@ -1236,12 +1236,12 @@ def get_bom_items(bom, company, qty=1, fetch_exploded=1):
 
 def validate_bom_no(item, bom_no):
 	"""Validate BOM No of sub-contracted items"""
-	bom = frappe.get_doc("BOM", bom_no)
+	bom = nts.get_doc("BOM", bom_no)
 	if not bom.is_active:
-		frappe.throw(_("BOM {0} must be active").format(bom_no))
+		nts.throw(_("BOM {0} must be active").format(bom_no))
 	if bom.docstatus != 1:
-		if not getattr(frappe.flags, "in_test", False):
-			frappe.throw(_("BOM {0} must be submitted").format(bom_no))
+		if not getattr(nts.flags, "in_test", False):
+			nts.throw(_("BOM {0} must be submitted").format(bom_no))
 	if item:
 		rm_item_exists = False
 		for d in bom.items:
@@ -1252,36 +1252,36 @@ def validate_bom_no(item, bom_no):
 				rm_item_exists = True
 		if (
 			bom.item.lower() == item.lower()
-			or bom.item.lower() == cstr(frappe.db.get_value("Item", item, "variant_of")).lower()
+			or bom.item.lower() == cstr(nts.db.get_value("Item", item, "variant_of")).lower()
 		):
 			rm_item_exists = True
 		if not rm_item_exists:
-			frappe.throw(_("BOM {0} does not belong to Item {1}").format(bom_no, item))
+			nts.throw(_("BOM {0} does not belong to Item {1}").format(bom_no, item))
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_children(parent=None, is_root=False, **filters):
 	if not parent or parent == "BOM":
-		frappe.msgprint(_("Please select a BOM"))
+		nts.msgprint(_("Please select a BOM"))
 		return
 
 	if parent:
-		frappe.form_dict.parent = parent
+		nts.form_dict.parent = parent
 
-	if frappe.form_dict.parent:
-		bom_doc = frappe.get_cached_doc("BOM", frappe.form_dict.parent)
-		frappe.has_permission("BOM", doc=bom_doc, throw=True)
+	if nts.form_dict.parent:
+		bom_doc = nts.get_cached_doc("BOM", nts.form_dict.parent)
+		nts.has_permission("BOM", doc=bom_doc, throw=True)
 
-		bom_items = frappe.get_all(
+		bom_items = nts.get_all(
 			"BOM Item",
 			fields=["item_code", "bom_no as value", "stock_qty"],
-			filters=[["parent", "=", frappe.form_dict.parent]],
+			filters=[["parent", "=", nts.form_dict.parent]],
 			order_by="idx",
 		)
 
 		item_names = tuple(d.get("item_code") for d in bom_items)
 
-		items = frappe.get_list(
+		items = nts.get_list(
 			"Item",
 			fields=["image", "description", "name", "stock_uom", "item_name", "is_sub_contracted_item"],
 			filters=[["name", "in", item_names]],
@@ -1296,7 +1296,7 @@ def get_children(parent=None, is_root=False, **filters):
 
 			bom_item.parent_bom_qty = bom_doc.quantity
 			bom_item.expandable = 0 if bom_item.value in ("", None) else 1
-			bom_item.image = frappe.db.escape(bom_item.image)
+			bom_item.image = nts.db.escape(bom_item.image)
 
 		return bom_items
 
@@ -1304,7 +1304,7 @@ def get_children(parent=None, is_root=False, **filters):
 def add_additional_cost(stock_entry, work_order):
 	# Add non stock items cost in the additional cost
 	stock_entry.additional_costs = []
-	company_account = frappe.db.get_value(
+	company_account = nts.db.get_value(
 		"Company",
 		work_order.company,
 		["expenses_included_in_valuation", "default_operating_cost_account"],
@@ -1319,14 +1319,14 @@ def add_additional_cost(stock_entry, work_order):
 
 
 def add_non_stock_items_cost(stock_entry, work_order, expense_account):
-	bom = frappe.get_doc("BOM", work_order.bom_no)
+	bom = nts.get_doc("BOM", work_order.bom_no)
 	table = "exploded_items" if work_order.get("use_multi_level_bom") else "items"
 
 	items = {}
 	for d in bom.get(table):
 		items.setdefault(d.item_code, d.amount)
 
-	non_stock_items = frappe.get_all(
+	non_stock_items = nts.get_all(
 		"Item",
 		fields="name",
 		filters={"name": ("in", list(items.keys())), "ifnull(is_stock_item, 0)": 0},
@@ -1379,11 +1379,11 @@ def add_operations_cost(stock_entry, work_order=None, expense_account=None):
 			)
 
 	def get_max_operation_quantity():
-		from frappe.query_builder.functions import Sum
+		from nts.query_builder.functions import Sum
 
-		table = frappe.qb.DocType("Job Card")
+		table = nts.qb.DocType("Job Card")
 		query = (
-			frappe.qb.from_(table)
+			nts.qb.from_(table)
 			.select(Sum(table.total_completed_qty).as_("qty"))
 			.where(
 				(table.docstatus == 1)
@@ -1395,11 +1395,11 @@ def add_operations_cost(stock_entry, work_order=None, expense_account=None):
 		return min([d.qty for d in query.run(as_dict=True)], default=0)
 
 	def get_utilised_corrective_cost():
-		from frappe.query_builder.functions import Sum
+		from nts.query_builder.functions import Sum
 
-		table = frappe.qb.DocType("Stock Entry")
+		table = nts.qb.DocType("Stock Entry")
 		subquery = (
-			frappe.qb.from_(table)
+			nts.qb.from_(table)
 			.select(table.name)
 			.where(
 				(table.docstatus == 1)
@@ -1407,9 +1407,9 @@ def add_operations_cost(stock_entry, work_order=None, expense_account=None):
 				& (table.purpose == "Manufacture")
 			)
 		)
-		table = frappe.qb.DocType("Landed Cost Taxes and Charges")
+		table = nts.qb.DocType("Landed Cost Taxes and Charges")
 		query = (
-			frappe.qb.from_(table)
+			nts.qb.from_(table)
 			.select(Sum(table.amount).as_("amount"))
 			.where(table.parent.isin(subquery) & (table.has_corrective_cost == 1))
 		)
@@ -1419,7 +1419,7 @@ def add_operations_cost(stock_entry, work_order=None, expense_account=None):
 		work_order
 		and work_order.corrective_operation_cost
 		and cint(
-			frappe.db.get_single_value(
+			nts.db.get_single_value(
 				"Manufacturing Settings", "add_corrective_operation_cost_in_finished_good_valuation"
 			)
 		)
@@ -1437,17 +1437,17 @@ def add_operations_cost(stock_entry, work_order=None, expense_account=None):
 		)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_bom_diff(bom1, bom2):
-	from frappe.model import table_fields
+	from nts.model import table_fields
 
 	if bom1 == bom2:
-		frappe.throw(
-			_("BOM 1 {0} and BOM 2 {1} should not be same").format(frappe.bold(bom1), frappe.bold(bom2))
+		nts.throw(
+			_("BOM 1 {0} and BOM 2 {1} should not be same").format(nts.bold(bom1), nts.bold(bom2))
 		)
 
-	doc1 = frappe.get_doc("BOM", bom1)
-	doc2 = frappe.get_doc("BOM", bom2)
+	doc1 = nts.get_doc("BOM", bom1)
+	doc2 = nts.get_doc("BOM", bom2)
 
 	out = get_diff(doc1, doc2)
 	out.row_changed = []
@@ -1492,10 +1492,10 @@ def get_bom_diff(bom1, bom2):
 	return out
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def item_query(doctype, txt, searchfield, start, page_len, filters):
-	meta = frappe.get_meta("Item", cached=True)
+	meta = nts.get_meta("Item", cached=True)
 	searchfields = meta.get_search_fields()
 
 	order_by = "idx desc, name, item_name"
@@ -1513,7 +1513,7 @@ def item_query(doctype, txt, searchfield, start, page_len, filters):
 		for s_field in searchfields:
 			or_cond_filters[s_field] = ("like", f"%{txt}%")
 
-		barcodes = frappe.get_all(
+		barcodes = nts.get_all(
 			"Item Barcode",
 			fields=["distinct parent as item_code"],
 			filters={"barcode": ("like", f"%{txt}%")},
@@ -1524,7 +1524,7 @@ def item_query(doctype, txt, searchfield, start, page_len, filters):
 			or_cond_filters["name"] = ("in", barcodes)
 
 	if filters and filters.get("item_code"):
-		has_variants = frappe.get_cached_value("Item", filters.get("item_code"), "has_variants")
+		has_variants = nts.get_cached_value("Item", filters.get("item_code"), "has_variants")
 		if not has_variants:
 			query_filters["has_variants"] = 0
 
@@ -1532,7 +1532,7 @@ def item_query(doctype, txt, searchfield, start, page_len, filters):
 		for fieldname, value in filters.items():
 			query_filters[fieldname] = value
 
-	return frappe.get_list(
+	return nts.get_list(
 		"Item",
 		fields=fields,
 		filters=query_filters,
@@ -1544,7 +1544,7 @@ def item_query(doctype, txt, searchfield, start, page_len, filters):
 	)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_variant_bom(source_name, bom_no, item, variant_items, target_doc=None):
 	from prodman.manufacturing.doctype.work_order.work_order import add_variant_item
 
@@ -1586,7 +1586,7 @@ def make_variant_bom(source_name, bom_no, item, variant_items, target_doc=None):
 def get_op_cost_from_sub_assemblies(bom_no, op_cost=0):
 	# Get operating cost from sub-assemblies
 
-	bom_items = frappe.get_all(
+	bom_items = nts.get_all(
 		"BOM Item", filters={"parent": bom_no, "docstatus": 1}, fields=["bom_no"], order_by="idx asc"
 	)
 
@@ -1594,7 +1594,7 @@ def get_op_cost_from_sub_assemblies(bom_no, op_cost=0):
 		if not row.bom_no:
 			continue
 
-		if cost := frappe.get_cached_value("BOM", row.bom_no, "operating_cost_per_bom_quantity"):
+		if cost := nts.get_cached_value("BOM", row.bom_no, "operating_cost_per_bom_quantity"):
 			op_cost += flt(cost)
 			get_op_cost_from_sub_assemblies(row.bom_no, op_cost)
 
@@ -1605,7 +1605,7 @@ def get_scrap_items_from_sub_assemblies(bom_no, company, qty, scrap_items=None):
 	if not scrap_items:
 		scrap_items = {}
 
-	bom_items = frappe.get_all(
+	bom_items = nts.get_all(
 		"BOM Item",
 		filters={"parent": bom_no, "docstatus": 1},
 		fields=["bom_no", "qty"],

@@ -1,14 +1,14 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 from datetime import datetime
 
-import frappe
-from frappe import _
-from frappe.core.utils import get_parent_doc
-from frappe.model.document import Document
-from frappe.utils import (
+import nts
+from nts import _
+from nts.core.utils import get_parent_doc
+from nts.model.document import Document
+from nts.utils import (
 	add_to_date,
 	get_datetime,
 	get_datetime_str,
@@ -21,9 +21,9 @@ from frappe.utils import (
 	time_diff_in_seconds,
 	to_timedelta,
 )
-from frappe.utils.caching import redis_cache
-from frappe.utils.nestedset import get_ancestors_of
-from frappe.utils.safe_exec import get_safe_globals
+from nts.utils.caching import redis_cache
+from nts.utils.nestedset import get_ancestors_of
+from nts.utils.safe_exec import get_safe_globals
 
 from prodman.support.doctype.issue.issue import get_holidays
 
@@ -35,7 +35,7 @@ class ServiceLevelAgreement(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.support.doctype.pause_sla_on_status.pause_sla_on_status import PauseSLAOnStatus
 		from prodman.support.doctype.service_day.service_day import ServiceDay
@@ -78,7 +78,7 @@ class ServiceLevelAgreement(Document):
 		for priority in self.priorities:
 			# Check if response and resolution time is set for every priority
 			if not priority.response_time:
-				frappe.throw(
+				nts.throw(
 					_("Set Response Time for Priority {0} in row {1}.").format(
 						priority.priority, priority.idx
 					)
@@ -86,7 +86,7 @@ class ServiceLevelAgreement(Document):
 
 			if self.apply_sla_for_resolution:
 				if not priority.resolution_time:
-					frappe.throw(
+					nts.throw(
 						_("Set Response Time for Priority {0} in row {1}.").format(
 							priority.priority, priority.idx
 						)
@@ -95,7 +95,7 @@ class ServiceLevelAgreement(Document):
 				response = priority.response_time
 				resolution = priority.resolution_time
 				if response > resolution:
-					frappe.throw(
+					nts.throw(
 						_(
 							"Response Time for {0} priority in row {1} can't be greater than Resolution Time."
 						).format(priority.priority, priority.idx)
@@ -106,13 +106,13 @@ class ServiceLevelAgreement(Document):
 		# Check if repeated priority
 		if not len(set(priorities)) == len(priorities):
 			repeated_priority = get_repeated(priorities)
-			frappe.throw(_("Priority {0} has been repeated.").format(repeated_priority))
+			nts.throw(_("Priority {0} has been repeated.").format(repeated_priority))
 
 		# set default priority from priorities
 		try:
 			self.default_priority = next(d.priority for d in self.priorities if d.default_priority)
 		except Exception:
-			frappe.throw(_("Select a Default Priority."))
+			nts.throw(_("Select a Default Priority."))
 
 	def check_support_and_resolution(self):
 		week = get_weekdays()
@@ -125,7 +125,7 @@ class ServiceLevelAgreement(Document):
 			if to_timedelta(support_and_resolution.start_time) >= to_timedelta(
 				support_and_resolution.end_time
 			):
-				frappe.throw(
+				nts.throw(
 					_("Start Time can't be greater than or equal to End Time for {0}.").format(
 						support_and_resolution.workday
 					)
@@ -134,22 +134,22 @@ class ServiceLevelAgreement(Document):
 		# Check for repeated workday
 		if not len(set(support_days)) == len(support_days):
 			repeated_days = get_repeated(support_days)
-			frappe.throw(_("Workday {0} has been repeated.").format(repeated_days))
+			nts.throw(_("Workday {0} has been repeated.").format(repeated_days))
 
 	def validate_doc(self):
 		if (
 			self.enabled
 			and self.document_type == "Issue"
-			and not frappe.db.get_single_value("Support Settings", "track_service_level_agreement")
+			and not nts.db.get_single_value("Support Settings", "track_service_level_agreement")
 		):
-			frappe.throw(
+			nts.throw(
 				_("{0} is not enabled in {1}").format(
-					frappe.bold(_("Track Service Level Agreement")),
+					nts.bold(_("Track Service Level Agreement")),
 					get_link_to_form("Support Settings", "Support Settings"),
 				)
 			)
 
-		if self.default_service_level_agreement and frappe.db.exists(
+		if self.default_service_level_agreement and nts.db.exists(
 			"Service Level Agreement",
 			{
 				"document_type": self.document_type,
@@ -157,7 +157,7 @@ class ServiceLevelAgreement(Document):
 				"name": ["!=", self.name],
 			},
 		):
-			frappe.throw(
+			nts.throw(
 				_("Default Service Level Agreement for {0} already exists.").format(self.document_type)
 			)
 
@@ -167,21 +167,21 @@ class ServiceLevelAgreement(Document):
 		if (
 			self.entity_type
 			and self.entity
-			and frappe.db.exists(
+			and nts.db.exists(
 				"Service Level Agreement",
 				{"entity_type": self.entity_type, "entity": self.entity, "name": ["!=", self.name]},
 			)
 		):
-			frappe.throw(
+			nts.throw(
 				_("Service Level Agreement for {0} {1} already exists.").format(
-					frappe.bold(self.entity_type), frappe.bold(self.entity)
+					nts.bold(self.entity_type), nts.bold(self.entity)
 				)
 			)
 
 	def validate_selected_doctype(self):
-		invalid_doctypes = list(frappe.model.core_doctypes_list)
+		invalid_doctypes = list(nts.model.core_doctypes_list)
 		invalid_doctypes.extend(["Cost Center", "Company"])
-		valid_document_types = frappe.get_all(
+		valid_document_types = nts.get_all(
 			"DocType",
 			{
 				"issingle": 0,
@@ -197,29 +197,29 @@ class ServiceLevelAgreement(Document):
 		)
 
 		if self.document_type not in valid_document_types:
-			frappe.throw(msg=_("Please select valid document type."), title=_("Invalid Document Type"))
+			nts.throw(msg=_("Please select valid document type."), title=_("Invalid Document Type"))
 
 	def validate_status_field(self):
-		meta = frappe.get_meta(self.document_type)
+		meta = nts.get_meta(self.document_type)
 		if not meta.get_field("status"):
-			frappe.throw(
+			nts.throw(
 				_(
 					"The Document Type {0} must have a Status field to configure Service Level Agreement"
-				).format(frappe.bold(self.document_type))
+				).format(nts.bold(self.document_type))
 			)
 
 	def validate_condition(self):
-		temp_doc = frappe.new_doc(self.document_type)
+		temp_doc = nts.new_doc(self.document_type)
 		if self.condition:
 			try:
-				frappe.safe_eval(self.condition, None, get_context(temp_doc))
+				nts.safe_eval(self.condition, None, get_context(temp_doc))
 			except Exception:
-				frappe.throw(_("The Condition '{0}' is invalid").format(self.condition))
+				nts.throw(_("The Condition '{0}' is invalid").format(self.condition))
 
 	def get_service_level_agreement_priority(self, priority):
-		priority = frappe.get_doc("Service Level Priority", {"priority": priority, "parent": self.name})
+		priority = nts.get_doc("Service Level Priority", {"priority": priority, "parent": self.name})
 
-		return frappe._dict(
+		return nts._dict(
 			{
 				"priority": priority.priority,
 				"response_time": priority.response_time,
@@ -233,7 +233,7 @@ class ServiceLevelAgreement(Document):
 			return
 
 		service_level_agreement_fields = get_service_level_agreement_fields()
-		meta = frappe.get_meta(self.document_type, cached=False)
+		meta = nts.get_meta(self.document_type, cached=False)
 
 		if meta.custom:
 			self.create_docfields(meta, service_level_agreement_fields)
@@ -260,7 +260,7 @@ class ServiceLevelAgreement(Document):
 			if not meta.has_field(field.get("fieldname")):
 				last_index += 1
 
-				frappe.get_doc(
+				nts.get_doc(
 					{
 						"doctype": "DocField",
 						"idx": last_index,
@@ -283,12 +283,12 @@ class ServiceLevelAgreement(Document):
 				self.reset_field_properties(existing_field, "DocField", field)
 
 		# to update meta and modified timestamp
-		frappe.get_doc("DocType", self.document_type).save(ignore_permissions=True)
+		nts.get_doc("DocType", self.document_type).save(ignore_permissions=True)
 
 	def create_custom_fields(self, meta, service_level_agreement_fields):
 		for field in service_level_agreement_fields:
 			if not meta.has_field(field.get("fieldname")):
-				frappe.get_doc(
+				nts.get_doc(
 					{
 						"doctype": "Custom Field",
 						"dt": self.document_type,
@@ -309,7 +309,7 @@ class ServiceLevelAgreement(Document):
 				self.reset_field_properties(existing_field, "Custom Field", field)
 
 	def reset_field_properties(self, field, field_dt, sla_field):
-		field = frappe.get_doc(field_dt, {"fieldname": field.fieldname})
+		field = nts.get_doc(field_dt, {"fieldname": field.fieldname})
 		field.label = sla_field.get("label")
 		field.fieldname = sla_field.get("fieldname")
 		field.fieldtype = sla_field.get("fieldtype")
@@ -324,20 +324,20 @@ class ServiceLevelAgreement(Document):
 
 
 def check_agreement_status():
-	service_level_agreements = frappe.get_all(
+	service_level_agreements = nts.get_all(
 		"Service Level Agreement",
 		filters=[{"enabled": 1}, {"default_service_level_agreement": 0}],
 		fields=["name"],
 	)
 
 	for service_level_agreement in service_level_agreements:
-		doc = frappe.get_doc("Service Level Agreement", service_level_agreement.name)
-		if doc.end_date and getdate(doc.end_date) < getdate(frappe.utils.getdate()):
-			frappe.db.set_value("Service Level Agreement", service_level_agreement.name, "enabled", 0)
+		doc = nts.get_doc("Service Level Agreement", service_level_agreement.name)
+		if doc.end_date and getdate(doc.end_date) < getdate(nts.utils.getdate()):
+			nts.db.set_value("Service Level Agreement", service_level_agreement.name, "enabled", 0)
 
 
 def get_active_service_level_agreement_for(doc):
-	if not frappe.db.get_single_value("Support Settings", "track_service_level_agreement"):
+	if not nts.db.get_single_value("Support Settings", "track_service_level_agreement"):
 		return
 
 	filters = [
@@ -371,14 +371,14 @@ def get_active_service_level_agreement_for(doc):
 		or_filters.append(["Service Level Agreement", "entity_type", "is", "not set"])
 
 	default_sla_filter = [*filters, ["Service Level Agreement", "default_service_level_agreement", "=", 1]]
-	default_sla = frappe.get_all(
+	default_sla = nts.get_all(
 		"Service Level Agreement",
 		filters=default_sla_filter,
 		fields=["name", "default_priority", "apply_sla_for_resolution", "condition"],
 	)
 
 	filters += [["Service Level Agreement", "default_service_level_agreement", "=", 0]]
-	agreements = frappe.get_all(
+	agreements = nts.get_all(
 		"Service Level Agreement",
 		filters=filters,
 		or_filters=or_filters,
@@ -389,7 +389,7 @@ def get_active_service_level_agreement_for(doc):
 	filtered_agreements = []
 	for agreement in agreements:
 		condition = agreement.get("condition")
-		if not condition or (condition and frappe.safe_eval(condition, None, get_context(doc))):
+		if not condition or (condition and nts.safe_eval(condition, None, get_context(doc))):
 			filtered_agreements.append(agreement)
 
 	# if any default sla
@@ -402,13 +402,13 @@ def get_context(doc):
 	return {
 		"doc": doc.as_dict(),
 		"nowdate": nowdate,
-		"frappe": frappe._dict(utils=get_safe_globals().get("frappe").get("utils")),
+		"nts": nts._dict(utils=get_safe_globals().get("nts").get("utils")),
 	}
 
 
 def get_customer_group(customer):
 	customer_groups = []
-	customer_group = frappe.db.get_value("Customer", customer, "customer_group") if customer else None
+	customer_group = nts.db.get_value("Customer", customer, "customer_group") if customer else None
 	if customer_group:
 		ancestors = get_ancestors_of("Customer Group", customer_group)
 		customer_groups = [customer_group, *ancestors]
@@ -418,7 +418,7 @@ def get_customer_group(customer):
 
 def get_customer_territory(customer):
 	customer_territories = []
-	customer_territory = frappe.db.get_value("Customer", customer, "territory") if customer else None
+	customer_territory = nts.db.get_value("Customer", customer, "territory") if customer else None
 	if customer_territory:
 		ancestors = get_ancestors_of("Territory", customer_territory)
 		customer_territories = [customer_territory, *ancestors]
@@ -426,9 +426,9 @@ def get_customer_territory(customer):
 	return customer_territories
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_service_level_agreement_filters(doctype, name, customer=None):
-	if not frappe.db.get_single_value("Support Settings", "track_service_level_agreement"):
+	if not nts.db.get_single_value("Support Settings", "track_service_level_agreement"):
 		return
 
 	filters = [
@@ -452,12 +452,12 @@ def get_service_level_agreement_filters(doctype, name, customer=None):
 	return {
 		"priority": [
 			priority.priority
-			for priority in frappe.get_all(
+			for priority in nts.get_all(
 				"Service Level Priority", filters={"parent": name}, fields=["priority"]
 			)
 		],
 		"service_level_agreements": [
-			d.name for d in frappe.get_all("Service Level Agreement", filters=filters, or_filters=or_filters)
+			d.name for d in nts.get_all("Service Level Agreement", filters=filters, or_filters=or_filters)
 		],
 	}
 
@@ -475,7 +475,7 @@ def get_repeated(values):
 
 
 def get_documents_with_active_service_level_agreement():
-	sla_doctypes = frappe.cache.get_value("doctypes_with_active_sla")
+	sla_doctypes = nts.cache.get_value("doctypes_with_active_sla")
 
 	if sla_doctypes is None:
 		return set_documents_with_active_service_level_agreement()
@@ -485,15 +485,15 @@ def get_documents_with_active_service_level_agreement():
 
 def set_documents_with_active_service_level_agreement():
 	active = frozenset(
-		sla.document_type for sla in frappe.get_all("Service Level Agreement", fields=["document_type"])
+		sla.document_type for sla in nts.get_all("Service Level Agreement", fields=["document_type"])
 	)
-	frappe.cache.set_value("doctypes_with_active_sla", active)
+	nts.cache.set_value("doctypes_with_active_sla", active)
 	return active
 
 
 def apply(doc, method=None):
 	# Applies SLA to document on validate
-	flags = frappe.local.flags
+	flags = nts.local.flags
 
 	if (
 		flags.in_patch
@@ -534,8 +534,8 @@ def process_sla(doc, sla):
 
 
 def handle_status_change(doc, apply_sla_for_resolution):
-	now_time = frappe.flags.current_time or now_datetime(doc.get("owner"))
-	prev_status = frappe.db.get_value(doc.doctype, doc.name, "status")
+	now_time = nts.flags.current_time or now_datetime(doc.get("owner"))
+	prev_status = nts.db.get_value(doc.doctype, doc.name, "status")
 
 	hold_statuses = get_hold_statuses(doc.service_level_agreement)
 	fulfillment_statuses = get_fulfillment_statuses(doc.service_level_agreement)
@@ -615,7 +615,7 @@ def handle_status_change(doc, apply_sla_for_resolution):
 def get_fulfillment_statuses(service_level_agreement):
 	return [
 		entry.status
-		for entry in frappe.db.get_all(
+		for entry in nts.db.get_all(
 			"SLA Fulfilled On Status", filters={"parent": service_level_agreement}, fields=["status"]
 		)
 	]
@@ -624,7 +624,7 @@ def get_fulfillment_statuses(service_level_agreement):
 def get_hold_statuses(service_level_agreement):
 	return [
 		entry.status
-		for entry in frappe.db.get_all(
+		for entry in nts.db.get_all(
 			"Pause SLA On Status", filters={"parent": service_level_agreement}, fields=["status"]
 		)
 	]
@@ -695,7 +695,7 @@ def get_allotted_seconds(parameter, service_level):
 	elif parameter == "resolution":
 		allotted_seconds = service_level.get("resolution_time")
 	else:
-		frappe.throw(_("{0} parameter is invalid").format(parameter))
+		nts.throw(_("{0} parameter is invalid").format(parameter))
 
 	return allotted_seconds
 
@@ -703,7 +703,7 @@ def get_allotted_seconds(parameter, service_level):
 def get_support_days(service_level):
 	support_days = {}
 	for service in service_level.get("support_and_resolution"):
-		support_days[service.workday] = frappe._dict(
+		support_days[service.workday] = nts._dict(
 			{
 				"start_time": service.start_time,
 				"end_time": service.end_time,
@@ -721,7 +721,7 @@ def set_resolution_time(doc):
 	if not doc.meta.has_field("user_resolution_time"):
 		return
 
-	communications = frappe.get_all(
+	communications = nts.get_all(
 		"Communication",
 		filters={"reference_doctype": doc.doctype, "reference_name": doc.name},
 		fields=["sent_or_received", "name", "creation"],
@@ -746,40 +746,40 @@ def set_resolution_time(doc):
 def change_service_level_agreement_and_priority(self):
 	if (
 		self.service_level_agreement
-		and frappe.db.exists("Issue", self.name)
-		and frappe.db.get_single_value("Support Settings", "track_service_level_agreement")
+		and nts.db.exists("Issue", self.name)
+		and nts.db.get_single_value("Support Settings", "track_service_level_agreement")
 	):
-		if not self.priority == frappe.db.get_value("Issue", self.name, "priority"):
+		if not self.priority == nts.db.get_value("Issue", self.name, "priority"):
 			self.set_response_and_resolution_time(
 				priority=self.priority, service_level_agreement=self.service_level_agreement
 			)
-			frappe.msgprint(_("Priority has been changed to {0}.").format(self.priority))
+			nts.msgprint(_("Priority has been changed to {0}.").format(self.priority))
 
-		if not self.service_level_agreement == frappe.db.get_value(
+		if not self.service_level_agreement == nts.db.get_value(
 			"Issue", self.name, "service_level_agreement"
 		):
 			self.set_response_and_resolution_time(
 				priority=self.priority, service_level_agreement=self.service_level_agreement
 			)
-			frappe.msgprint(
+			nts.msgprint(
 				_("Service Level Agreement has been changed to {0}.").format(self.service_level_agreement)
 			)
 
 
 def get_response_and_resolution_duration(doc):
-	sla = frappe.get_doc("Service Level Agreement", doc.service_level_agreement)
+	sla = nts.get_doc("Service Level Agreement", doc.service_level_agreement)
 	priority = sla.get_service_level_agreement_priority(doc.priority)
 	priority.update({"support_and_resolution": sla.support_and_resolution, "holiday_list": sla.holiday_list})
 	return priority
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def reset_service_level_agreement(doctype: str, docname: str, reason, user):
-	if not frappe.db.get_single_value("Support Settings", "allow_resetting_service_level_agreement"):
-		frappe.throw(_("Allow Resetting Service Level Agreement from Support Settings."))
+	if not nts.db.get_single_value("Support Settings", "allow_resetting_service_level_agreement"):
+		nts.throw(_("Allow Resetting Service Level Agreement from Support Settings."))
 
-	doc = frappe.get_doc(doctype, docname)
-	frappe.get_doc(
+	doc = nts.get_doc(doctype, docname)
+	nts.get_doc(
 		{
 			"doctype": "Comment",
 			"comment_type": "Info",
@@ -828,7 +828,7 @@ def on_communication_update(doc, status):
 	):
 		# undo the status change in db
 		# since prev status is fetched from db
-		frappe.db.set_value(
+		nts.db.set_value(
 			parent.doctype,
 			parent.name,
 			"status",
@@ -849,7 +849,7 @@ def on_communication_update(doc, status):
 	else:
 		return
 
-	for_resolution = frappe.db.get_value(
+	for_resolution = nts.db.get_value(
 		"Service Level Agreement", parent.service_level_agreement, "apply_sla_for_resolution"
 	)
 
@@ -894,7 +894,7 @@ def set_resolution_by(doc, start_date_time, priority):
 def record_assigned_users_on_failure(doc):
 	assigned_users = doc.get_assigned_users()
 	if assigned_users:
-		from frappe.utils import get_fullname
+		from nts.utils import get_fullname
 
 		assigned_users = ", ".join(get_fullname(user) for user in assigned_users)
 		message = _("First Response SLA Failed by {}").format(assigned_users)
@@ -1024,19 +1024,19 @@ def convert_utc_to_user_timezone(utc_timestamp, user):
 
 
 def get_tz(user):
-	return frappe.db.get_value("User", user, "time_zone") or get_system_timezone()
+	return nts.db.get_value("User", user, "time_zone") or get_system_timezone()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_user_time(user, to_string=False):
 	return get_datetime_str(now_datetime(user)) if to_string else now_datetime(user)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 @redis_cache()
 def get_sla_doctypes():
 	doctypes = []
-	data = frappe.get_all("Service Level Agreement", {"enabled": 1}, ["document_type"], distinct=1)
+	data = nts.get_all("Service Level Agreement", {"enabled": 1}, ["document_type"], distinct=1)
 
 	for entry in data:
 		doctypes.append(entry.document_type)

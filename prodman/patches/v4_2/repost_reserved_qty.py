@@ -2,16 +2,16 @@
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 from prodman.stock.stock_balance import get_reserved_qty, update_bin_qty
 
 
 def execute():
 	for doctype in ("Sales Order Item", "Bin"):
-		frappe.reload_doctype(doctype)
+		nts.reload_doctype(doctype)
 
-	repost_for = frappe.db.sql(
+	repost_for = nts.db.sql(
 		"""
 		select
 			distinct item_code, warehouse
@@ -35,7 +35,7 @@ def execute():
 			continue
 		update_bin_qty(item_code, warehouse, {"reserved_qty": get_reserved_qty(item_code, warehouse)})
 
-	frappe.db.sql(
+	nts.db.sql(
 		"""delete from tabBin
 		where exists(
 			select name from tabItem where name=tabBin.item_code and ifnull(is_stock_item, 0) = 0

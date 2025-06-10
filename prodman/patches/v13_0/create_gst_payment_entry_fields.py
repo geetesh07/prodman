@@ -1,12 +1,12 @@
-# Copyright (c) 2021, Frappe and Contributors
+# Copyright (c) 2021, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
+import nts
 
 
 # Patch kept for users outside India
 def execute():
-	if frappe.db.exists("Company", {"country": "India"}):
+	if nts.db.exists("Company", {"country": "India"}):
 		return
 
 	for field in (
@@ -17,4 +17,4 @@ def execute():
 		"customer_address",
 		"customer_gstin",
 	):
-		frappe.delete_doc_if_exists("Custom Field", f"Payment Entry-{field}")
+		nts.delete_doc_if_exists("Custom Field", f"Payment Entry-{field}")

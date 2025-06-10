@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Process Loss Report"] = {
+nts.query_reports["Process Loss Report"] = {
 	filters: [
 		{
 			label: __("Company"),
@@ -9,7 +9,7 @@ frappe.query_reports["Process Loss Report"] = {
 			fieldtype: "Link",
 			options: "Company",
 			mandatory: true,
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 		},
 		{
 			label: __("Item"),
@@ -30,14 +30,14 @@ frappe.query_reports["Process Loss Report"] = {
 			fieldname: "from_date",
 			fieldtype: "Date",
 			mandatory: true,
-			default: frappe.datetime.year_start(),
+			default: nts.datetime.year_start(),
 		},
 		{
 			label: __("To Date"),
 			fieldname: "to_date",
 			fieldtype: "Date",
 			mandatory: true,
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 		},
 	],
 };

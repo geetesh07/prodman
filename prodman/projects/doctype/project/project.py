@@ -1,16 +1,16 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2017, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 from email_reply_parser import EmailReplyParser
-from frappe import _, qb
-from frappe.desk.reportview import get_match_cond
-from frappe.model.document import Document
-from frappe.query_builder import Interval
-from frappe.query_builder.functions import Count, CurDate, Date, Sum, UnixTimestamp
-from frappe.utils import add_days, flt, get_datetime, get_link_to_form, get_time, get_url, nowtime, today
-from frappe.utils.user import is_website_user
+from nts import _, qb
+from nts.desk.reportview import get_match_cond
+from nts.model.document import Document
+from nts.query_builder import Interval
+from nts.query_builder.functions import Count, CurDate, Date, Sum, UnixTimestamp
+from nts.utils import add_days, flt, get_datetime, get_link_to_form, get_time, get_url, nowtime, today
+from nts.utils.user import is_website_user
 
 from prodman import get_default_company
 from prodman.controllers.queries import get_filters_cond
@@ -25,7 +25,7 @@ class Project(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.projects.doctype.project_user.project_user import ProjectUser
 
@@ -76,7 +76,7 @@ class Project(Document):
 	def onload(self):
 		self.set_onload(
 			"activity_summary",
-			frappe.db.sql(
+			nts.db.sql(
 				"""select activity_type,
 			sum(hours) as total_hours
 			from `tabTimesheet Detail` where project=%s and docstatus < 2 group by activity_type
@@ -102,13 +102,13 @@ class Project(Document):
 		"""
 		Copy tasks from template
 		"""
-		if self.project_template and not frappe.db.get_all("Task", dict(project=self.name), limit=1):
+		if self.project_template and not nts.db.get_all("Task", dict(project=self.name), limit=1):
 			# has a template, and no loaded tasks, so lets create
 			if not self.expected_start_date:
 				# project starts today
 				self.expected_start_date = today()
 
-			template = frappe.get_doc("Project Template", self.project_template)
+			template = nts.get_doc("Project Template", self.project_template)
 
 			if not self.project_type:
 				self.project_type = template.project_type
@@ -117,7 +117,7 @@ class Project(Document):
 			project_tasks = []
 			tmp_task_details = []
 			for task in template.tasks:
-				template_task_details = frappe.get_doc("Task", task.task)
+				template_task_details = nts.get_doc("Task", task.task)
 				tmp_task_details.append(template_task_details)
 				task = self.create_task_from_template(template_task_details)
 				project_tasks.append(task)
@@ -125,7 +125,7 @@ class Project(Document):
 			self.dependency_mapping(tmp_task_details, project_tasks)
 
 	def create_task_from_template(self, task_details):
-		return frappe.get_doc(
+		return nts.get_doc(
 			dict(
 				doctype="Task",
 				subject=task_details.subject,
@@ -161,7 +161,7 @@ class Project(Document):
 
 	def dependency_mapping(self, template_tasks, project_tasks):
 		for project_task in project_tasks:
-			template_task = frappe.get_doc("Task", project_task.template_task)
+			template_task = nts.get_doc("Task", project_task.template_task)
 
 			self.check_depends_on_value(template_task, project_task, project_tasks)
 			self.check_for_parent_tasks(template_task, project_task, project_tasks)
@@ -205,15 +205,15 @@ class Project(Document):
 	def after_insert(self):
 		self.copy_from_template()  # nosemgrep
 		if self.sales_order:
-			frappe.db.set_value("Sales Order", self.sales_order, "project", self.name)
+			nts.db.set_value("Sales Order", self.sales_order, "project", self.name)
 
 	def on_trash(self):
-		frappe.db.set_value("Sales Order", {"project": self.name}, "project", "")
+		nts.db.set_value("Sales Order", {"project": self.name}, "project", "")
 
 	def update_percent_complete(self):
 		if self.status == "Completed":
 			if (
-				len(frappe.get_all("Task", dict(project=self.name))) == 0
+				len(nts.get_all("Task", dict(project=self.name))) == 0
 			):  # A project without tasks should be able to complete
 				self.percent_complete_method = "Manual"
 				self.percent_complete = 100
@@ -223,7 +223,7 @@ class Project(Document):
 				self.percent_complete = 100
 			return
 
-		total = frappe.db.count("Task", dict(project=self.name))
+		total = nts.db.count("Task", dict(project=self.name))
 
 		if not total:
 			self.percent_complete = 0
@@ -231,7 +231,7 @@ class Project(Document):
 			if (self.percent_complete_method == "Task Completion" and total > 0) or (
 				not self.percent_complete_method and total > 0
 			):
-				completed = frappe.db.sql(
+				completed = nts.db.sql(
 					"""select count(name) from tabTask where
 					project=%s and status in ('Cancelled', 'Completed')""",
 					self.name,
@@ -239,7 +239,7 @@ class Project(Document):
 				self.percent_complete = flt(flt(completed) / total * 100, 2)
 
 			if self.percent_complete_method == "Task Progress" and total > 0:
-				progress = frappe.db.sql(
+				progress = nts.db.sql(
 					"""select sum(progress) from tabTask where
 					project=%s""",
 					self.name,
@@ -247,12 +247,12 @@ class Project(Document):
 				self.percent_complete = flt(flt(progress) / total, 2)
 
 			if self.percent_complete_method == "Task Weight" and total > 0:
-				weight_sum = frappe.db.sql(
+				weight_sum = nts.db.sql(
 					"""select sum(task_weight) from tabTask where
 					project=%s""",
 					self.name,
 				)[0][0]
-				weighted_progress = frappe.db.sql(
+				weighted_progress = nts.db.sql(
 					"""select progress, task_weight from tabTask where
 					project=%s""",
 					self.name,
@@ -260,7 +260,7 @@ class Project(Document):
 				)
 				pct_complete = 0
 				for row in weighted_progress:
-					pct_complete += row["progress"] * frappe.utils.safe_div(row["task_weight"], weight_sum)
+					pct_complete += row["progress"] * nts.utils.safe_div(row["task_weight"], weight_sum)
 				self.percent_complete = flt(flt(pct_complete), 2)
 
 		# don't update status if it is cancelled
@@ -270,11 +270,11 @@ class Project(Document):
 		self.status = "Completed" if self.percent_complete == 100 else "Open"
 
 	def update_costing(self):
-		from frappe.query_builder.functions import Max, Min, Sum
+		from nts.query_builder.functions import Max, Min, Sum
 
-		TimesheetDetail = frappe.qb.DocType("Timesheet Detail")
+		TimesheetDetail = nts.qb.DocType("Timesheet Detail")
 		from_time_sheet = (
-			frappe.qb.from_(TimesheetDetail)
+			nts.qb.from_(TimesheetDetail)
 			.select(
 				Sum(TimesheetDetail.costing_amount).as_("costing_amount"),
 				Sum(TimesheetDetail.billing_amount).as_("billing_amount"),
@@ -313,7 +313,7 @@ class Project(Document):
 		self.total_purchase_cost = total_purchase_cost and total_purchase_cost[0][0] or 0
 
 	def update_sales_amount(self):
-		total_sales_amount = frappe.db.sql(
+		total_sales_amount = nts.db.sql(
 			"""select sum(base_net_total)
 			from `tabSales Order` where project = %s and docstatus=1""",
 			self.name,
@@ -325,7 +325,7 @@ class Project(Document):
 		self.total_billed_amount = self.get_billed_amount_from_parent() + self.get_billed_amount_from_child()
 
 	def get_billed_amount_from_parent(self):
-		total_billed_amount = frappe.db.sql(
+		total_billed_amount = nts.db.sql(
 			"""select sum(base_net_amount)
 			from `tabSales Invoice` si join `tabSales Invoice Item` si_item on si_item.parent = si.name
 				where si_item.project is null
@@ -338,7 +338,7 @@ class Project(Document):
 		return total_billed_amount and total_billed_amount[0][0] or 0
 
 	def get_billed_amount_from_child(self):
-		total_billed_amount = frappe.db.sql(
+		total_billed_amount = nts.db.sql(
 			"""select sum(base_net_amount)
 			from `tabSales Invoice Item`
 				where project = %s
@@ -350,7 +350,7 @@ class Project(Document):
 
 	def after_rename(self, old_name, new_name, merge=False):
 		if old_name == self.copied_from:
-			frappe.db.set_value("Project", new_name, "copied_from", new_name)
+			nts.db.set_value("Project", new_name, "copied_from", new_name)
 
 	def send_welcome_email(self):
 		label = f"{self.project_name} ({self.name})"
@@ -362,7 +362,7 @@ class Project(Document):
 
 		for user in self.users:
 			if user.welcome_email_sent == 0:
-				frappe.sendmail(
+				nts.sendmail(
 					user.user,
 					subject=_("Project Collaboration Invitation"),
 					content=content,
@@ -373,10 +373,10 @@ class Project(Document):
 def get_timeline_data(doctype: str, name: str) -> dict[int, int]:
 	"""Return timeline for attendance"""
 
-	timesheet_detail = frappe.qb.DocType("Timesheet Detail")
+	timesheet_detail = nts.qb.DocType("Timesheet Detail")
 
 	return dict(
-		frappe.qb.from_(timesheet_detail)
+		nts.qb.from_(timesheet_detail)
 		.select(UnixTimestamp(timesheet_detail.from_time), Count("*"))
 		.where(timesheet_detail.project == name)
 		.where(timesheet_detail.from_time > CurDate() - Interval(years=1))
@@ -387,10 +387,10 @@ def get_timeline_data(doctype: str, name: str) -> dict[int, int]:
 
 
 def get_project_list(doctype, txt, filters, limit_start, limit_page_length=20, order_by="modified"):
-	customers, suppliers = get_customers_suppliers("Project", frappe.session.user)
+	customers, suppliers = get_customers_suppliers("Project", nts.session.user)
 
 	ignore_permissions = False
-	if is_website_user() and frappe.session.user != "Guest":
+	if is_website_user() and nts.session.user != "Guest":
 		if not filters:
 			filters = []
 
@@ -398,7 +398,7 @@ def get_project_list(doctype, txt, filters, limit_start, limit_page_length=20, o
 			filters.append([doctype, "customer", "in", customers])
 			ignore_permissions = True
 
-	meta = frappe.get_meta(doctype)
+	meta = nts.get_meta(doctype)
 
 	fields = "distinct *"
 
@@ -421,7 +421,7 @@ def get_project_list(doctype, txt, filters, limit_start, limit_page_length=20, o
 			else:
 				filters.append([doctype, "name", "like", "%" + txt + "%"])
 
-	return frappe.get_list(
+	return nts.get_list(
 		doctype,
 		fields=fields,
 		filters=filters,
@@ -451,11 +451,11 @@ def get_list_context(context=None):
 	return list_context
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def get_users_for_project(doctype, txt, searchfield, start, page_len, filters):
 	conditions = []
-	return frappe.db.sql(
+	return nts.db.sql(
 		"""select name, concat_ws(' ', first_name, middle_name, last_name)
 		from `tabUser`
 		where enabled=1
@@ -479,9 +479,9 @@ def get_users_for_project(doctype, txt, searchfield, start, page_len, filters):
 	)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_cost_center_name(project):
-	return frappe.db.get_value("Project", project, "cost_center")
+	return nts.db.get_value("Project", project, "cost_center")
 
 
 def hourly_reminder():
@@ -535,7 +535,7 @@ def weekly_reminder():
 
 
 def allow_to_make_project_update(project, time, frequency):
-	data = frappe.db.sql(
+	data = nts.db.sql(
 		""" SELECT name from `tabProject Update`
 		WHERE project = %s and date = %s """,
 		(project, today()),
@@ -549,7 +549,7 @@ def allow_to_make_project_update(project, time, frequency):
 		return True
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def create_duplicate_project(prev_doc, project_name):
 	"""Create duplicate project based on the old project"""
 	import json
@@ -557,22 +557,22 @@ def create_duplicate_project(prev_doc, project_name):
 	prev_doc = json.loads(prev_doc)
 
 	if project_name == prev_doc.get("name"):
-		frappe.throw(_("Use a name that is different from previous project name"))
+		nts.throw(_("Use a name that is different from previous project name"))
 
 	# change the copied doc name to new project name
-	project = frappe.copy_doc(prev_doc)
+	project = nts.copy_doc(prev_doc)
 	project.name = project_name
 	project.project_template = ""
 	project.project_name = project_name
 	project.insert()
 
 	# fetch all the task linked with the old project
-	task_list = frappe.get_all("Task", filters={"project": prev_doc.get("name")}, fields=["name"])
+	task_list = nts.get_all("Task", filters={"project": prev_doc.get("name")}, fields=["name"])
 
 	# Create duplicate task for all the task
 	for task in task_list:
-		task = frappe.get_doc("Task", task)
-		new_task = frappe.copy_doc(task)
+		task = nts.get_doc("Task", task)
+		new_task = nts.copy_doc(task)
 		new_task.project = project.name
 		new_task.insert()
 
@@ -582,7 +582,7 @@ def create_duplicate_project(prev_doc, project_name):
 def get_projects_for_collect_progress(frequency, fields):
 	fields.extend(["name"])
 
-	return frappe.get_all(
+	return nts.get_all(
 		"Project",
 		fields=fields,
 		filters={"collect_progress": 1, "frequency": frequency, "status": "Open"},
@@ -590,12 +590,12 @@ def get_projects_for_collect_progress(frequency, fields):
 
 
 def send_project_update_email_to_users(project):
-	doc = frappe.get_doc("Project", project)
+	doc = nts.get_doc("Project", project)
 
 	if is_holiday(doc.holiday_list) or not doc.users:
 		return
 
-	project_update = frappe.get_doc(
+	project_update = nts.get_doc(
 		{
 			"doctype": "Project Update",
 			"project": project,
@@ -608,11 +608,11 @@ def send_project_update_email_to_users(project):
 
 	subject = "For project %s, update your status" % (project)
 
-	incoming_email_account = frappe.db.get_value(
+	incoming_email_account = nts.db.get_value(
 		"Email Account", dict(enable_incoming=1, default_incoming=1), "email_id"
 	)
 
-	frappe.sendmail(
+	nts.sendmail(
 		recipients=get_users_email(doc),
 		message=doc.message,
 		subject=_(subject),
@@ -623,8 +623,8 @@ def send_project_update_email_to_users(project):
 
 
 def collect_project_status():
-	for data in frappe.get_all("Project Update", {"date": today(), "sent": 0}):
-		replies = frappe.get_all(
+	for data in nts.get_all("Project Update", {"date": today(), "sent": 0}):
+		replies = nts.get_all(
 			"Communication",
 			fields=["content", "text_content", "sender"],
 			filters=dict(
@@ -637,8 +637,8 @@ def collect_project_status():
 		)
 
 		for d in replies:
-			doc = frappe.get_doc("Project Update", data.name)
-			user_data = frappe.db.get_values(
+			doc = nts.get_doc("Project Update", data.name)
+			user_data = nts.db.get_values(
 				"User", {"email": d.sender}, ["full_name", "user_image", "name"], as_dict=True
 			)[0]
 
@@ -648,7 +648,7 @@ def collect_project_status():
 					"user": user_data.name,
 					"full_name": user_data.full_name,
 					"image": user_data.user_image,
-					"project_status": frappe.utils.md_to_html(
+					"project_status": nts.utils.md_to_html(
 						EmailReplyParser.parse_reply(d.text_content) or d.content
 					),
 				},
@@ -660,14 +660,14 @@ def collect_project_status():
 def send_project_status_email_to_users():
 	yesterday = add_days(today(), -1)
 
-	for d in frappe.get_all("Project Update", {"date": yesterday, "sent": 0}):
-		doc = frappe.get_doc("Project Update", d.name)
+	for d in nts.get_all("Project Update", {"date": yesterday, "sent": 0}):
+		doc = nts.get_doc("Project Update", d.name)
 
-		project_doc = frappe.get_doc("Project", doc.project)
+		project_doc = nts.get_doc("Project", doc.project)
 
 		args = {"users": doc.users, "title": _("Project Summary for {0}").format(yesterday)}
 
-		frappe.sendmail(
+		nts.sendmail(
 			recipients=get_users_email(project_doc),
 			template="daily_project_summary",
 			args=args,
@@ -680,41 +680,41 @@ def send_project_status_email_to_users():
 
 
 def update_project_sales_billing():
-	sales_update_frequency = frappe.db.get_single_value("Selling Settings", "sales_update_frequency")
+	sales_update_frequency = nts.db.get_single_value("Selling Settings", "sales_update_frequency")
 	if sales_update_frequency == "Each Transaction":
 		return
-	elif sales_update_frequency == "Monthly" and frappe.utils.now_datetime().day != 1:
+	elif sales_update_frequency == "Monthly" and nts.utils.now_datetime().day != 1:
 		return
 
 	# Else simply fallback to Daily
-	for project in frappe.get_all("Project", filters={"status": ["!=", "Cancelled"]}):
-		frappe.get_doc("Project", project.name).save()
+	for project in nts.get_all("Project", filters={"status": ["!=", "Cancelled"]}):
+		nts.get_doc("Project", project.name).save()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def create_kanban_board_if_not_exists(project):
-	from frappe.desk.doctype.kanban_board.kanban_board import quick_kanban_board
+	from nts.desk.doctype.kanban_board.kanban_board import quick_kanban_board
 
-	project = frappe.get_doc("Project", project)
-	if not frappe.db.exists("Kanban Board", project.project_name):
+	project = nts.get_doc("Project", project)
+	if not nts.db.exists("Kanban Board", project.project_name):
 		quick_kanban_board("Task", project.project_name, "status", project.name)
 
 	return True
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def set_project_status(project, status):
 	"""
 	set status for project and all related tasks
 	"""
 	if status not in ("Completed", "Cancelled"):
-		frappe.throw(_("Status must be Cancelled or Completed"))
+		nts.throw(_("Status must be Cancelled or Completed"))
 
-	project = frappe.get_doc("Project", project)
-	frappe.has_permission(doc=project, throw=True)
+	project = nts.get_doc("Project", project)
+	nts.has_permission(doc=project, throw=True)
 
-	for task in frappe.get_all("Task", dict(project=project.name)):
-		frappe.db.set_value("Task", task.name, "status", status)
+	for task in nts.get_all("Task", dict(project=project.name)):
+		nts.db.set_value("Task", task.name, "status", status)
 
 	project.status = status
 	project.save()
@@ -722,18 +722,18 @@ def set_project_status(project, status):
 
 def get_holiday_list(company=None):
 	if not company:
-		company = get_default_company() or frappe.get_all("Company")[0].name
+		company = get_default_company() or nts.get_all("Company")[0].name
 
-	holiday_list = frappe.get_cached_value("Company", company, "default_holiday_list")
+	holiday_list = nts.get_cached_value("Company", company, "default_holiday_list")
 	if not holiday_list:
-		frappe.throw(
-			_("Please set a default Holiday List for Company {0}").format(frappe.bold(get_default_company()))
+		nts.throw(
+			_("Please set a default Holiday List for Company {0}").format(nts.bold(get_default_company()))
 		)
 	return holiday_list
 
 
 def get_users_email(doc):
-	return [d.email for d in doc.users if frappe.db.get_value("User", d.user, "enabled")]
+	return [d.email for d in doc.users if nts.db.get_value("User", d.user, "enabled")]
 
 
 def calculate_total_purchase_cost(project: str | None = None):
@@ -749,11 +749,11 @@ def calculate_total_purchase_cost(project: str | None = None):
 	return None
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def recalculate_project_total_purchase_cost(project: str | None = None):
 	if project:
 		total_purchase_cost = calculate_total_purchase_cost(project)
-		frappe.db.set_value(
+		nts.db.set_value(
 			"Project",
 			project,
 			"total_purchase_cost",

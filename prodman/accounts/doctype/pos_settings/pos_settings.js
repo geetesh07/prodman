@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
 let search_fields_datatypes = [
@@ -36,17 +36,17 @@ let do_not_include_fields = [
 	"web_long_description",
 ];
 
-frappe.ui.form.on("POS Settings", {
+nts .ui.form.on("POS Settings", {
 	onload: function (frm) {
 		frm.trigger("get_invoice_fields");
 		frm.trigger("add_search_options");
 	},
 
 	get_invoice_fields: function (frm) {
-		frappe.model.with_doctype("POS Invoice", () => {
-			var fields = $.map(frappe.get_doc("DocType", "POS Invoice").fields, function (d) {
+		nts .model.with_doctype("POS Invoice", () => {
+			var fields = $.map(nts .get_doc("DocType", "POS Invoice").fields, function (d) {
 				if (
-					frappe.model.no_value_type.indexOf(d.fieldtype) === -1 ||
+					nts .model.no_value_type.indexOf(d.fieldtype) === -1 ||
 					["Button"].includes(d.fieldtype)
 				) {
 					return { label: d.label + " (" + d.fieldtype + ")", value: d.fieldname };
@@ -64,8 +64,8 @@ frappe.ui.form.on("POS Settings", {
 	},
 
 	add_search_options: function (frm) {
-		frappe.model.with_doctype("Item", () => {
-			var fields = $.map(frappe.get_doc("DocType", "Item").fields, function (d) {
+		nts .model.with_doctype("Item", () => {
+			var fields = $.map(nts .get_doc("DocType", "Item").fields, function (d) {
 				if (
 					search_fields_datatypes.includes(d.fieldtype) &&
 					!do_not_include_fields.includes(d.fieldname)
@@ -82,10 +82,10 @@ frappe.ui.form.on("POS Settings", {
 	},
 });
 
-frappe.ui.form.on("POS Search Fields", {
+nts .ui.form.on("POS Search Fields", {
 	field: function (frm, doctype, name) {
-		var doc = frappe.get_doc(doctype, name);
-		var df = $.map(frappe.get_doc("DocType", "Item").fields, function (d) {
+		var doc = nts .get_doc(doctype, name);
+		var df = $.map(nts .get_doc("DocType", "Item").fields, function (d) {
 			if (doc.field == d.label && search_fields_datatypes.includes(d.fieldtype)) {
 				return d;
 			} else {
@@ -98,10 +98,10 @@ frappe.ui.form.on("POS Search Fields", {
 	},
 });
 
-frappe.ui.form.on("POS Field", {
+nts .ui.form.on("POS Field", {
 	fieldname: function (frm, doctype, name) {
-		var doc = frappe.get_doc(doctype, name);
-		var df = $.map(frappe.get_doc("DocType", "POS Invoice").fields, function (d) {
+		var doc = nts .get_doc(doctype, name);
+		var df = $.map(nts .get_doc("DocType", "POS Invoice").fields, function (d) {
 			return doc.fieldname == d.fieldname ? d : null;
 		})[0];
 

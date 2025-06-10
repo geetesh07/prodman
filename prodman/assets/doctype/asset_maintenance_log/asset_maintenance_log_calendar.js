@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.views.calendar["Asset Maintenance Log"] = {
+nts .views.calendar["Asset Maintenance Log"] = {
 	field_map: {
 		start: "due_date",
 		end: "due_date",
@@ -18,5 +18,5 @@ frappe.views.calendar["Asset Maintenance Log"] = {
 			label: __("Asset Maintenance"),
 		},
 	],
-	get_events_method: "frappe.desk.calendar.get_events",
+	get_events_method: "nts .desk.calendar.get_events",
 };

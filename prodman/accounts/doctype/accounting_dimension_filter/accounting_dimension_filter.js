@@ -1,7 +1,7 @@
-// Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2020, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Accounting Dimension Filter", {
+nts .ui.form.on("Accounting Dimension Filter", {
 	refresh: function (frm, cdt, cdn) {
 		let help_content = `<table class="table table-bordered" style="background-color: var(--scrollbar-track-color);">
 				<tr><td>
@@ -23,7 +23,7 @@ frappe.ui.form.on("Accounting Dimension Filter", {
 			};
 		});
 
-		frappe.db.get_list("Accounting Dimension", { fields: ["document_type"] }).then((res) => {
+		nts .db.get_list("Accounting Dimension", { fields: ["document_type"] }).then((res) => {
 			let options = ["Cost Center", "Project"];
 
 			res.forEach((dimension) => {
@@ -40,12 +40,12 @@ frappe.ui.form.on("Accounting Dimension Filter", {
 		let filters = {};
 
 		if (frm.doc.accounting_dimension) {
-			frappe.model.with_doctype(frm.doc.accounting_dimension, function () {
-				if (frappe.model.is_tree(frm.doc.accounting_dimension)) {
+			nts .model.with_doctype(frm.doc.accounting_dimension, function () {
+				if (nts .model.is_tree(frm.doc.accounting_dimension)) {
 					filters["is_group"] = 0;
 				}
 
-				if (frappe.meta.has_field(frm.doc.accounting_dimension, "company")) {
+				if (nts .meta.has_field(frm.doc.accounting_dimension, "company")) {
 					filters["company"] = frm.doc.company;
 				}
 
@@ -82,7 +82,7 @@ frappe.ui.form.on("Accounting Dimension Filter", {
 	},
 });
 
-frappe.ui.form.on("Allowed Dimension", {
+nts .ui.form.on("Allowed Dimension", {
 	dimensions_add: function (frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
 		row.accounting_dimension = frm.doc.accounting_dimension;

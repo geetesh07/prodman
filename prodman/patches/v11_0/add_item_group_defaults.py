@@ -1,8 +1,8 @@
-# Copyright (c) 2018, Frappe and Contributors
+# Copyright (c) 2018, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
@@ -13,11 +13,11 @@ def execute():
 
 	"""
 
-	frappe.reload_doc("stock", "doctype", "item_default")
-	frappe.reload_doc("setup", "doctype", "item_group")
+	nts.reload_doc("stock", "doctype", "item_default")
+	nts.reload_doc("setup", "doctype", "item_group")
 
-	companies = frappe.get_all("Company")
-	item_groups = frappe.db.sql(
+	companies = nts.get_all("Company")
+	item_groups = nts.db.sql(
 		"""select name, default_income_account, default_expense_account,\
 		default_cost_center from `tabItem Group`""",
 		as_dict=True,
@@ -25,7 +25,7 @@ def execute():
 
 	if len(companies) == 1:
 		for item_group in item_groups:
-			doc = frappe.get_doc("Item Group", item_group.get("name"))
+			doc = nts.get_doc("Item Group", item_group.get("name"))
 			item_group_defaults = []
 			item_group_defaults.append(
 				{
@@ -67,12 +67,12 @@ def execute():
 				["default_cost_center", "Cost Center"],
 			]:
 				if item_group.get(d[0]):
-					company = frappe.get_value(d[1], item_group.get(d[0]), "company", cache=True)
+					company = nts.get_value(d[1], item_group.get(d[0]), "company", cache=True)
 					doc_field_name = item_group_dict.get(d[0])
 
 					insert_into_item_defaults(doc_field_name, item_group.get(d[0]), company)
 
-			doc = frappe.get_doc("Item Group", item_group.get("name"))
+			doc = nts.get_doc("Item Group", item_group.get("name"))
 			doc.extend("item_group_defaults", item_group_defaults)
 			for child_doc in doc.item_group_defaults:
 				child_doc.db_insert()

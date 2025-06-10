@@ -1,11 +1,11 @@
-import frappe
+import nts
 
 from prodman.accounts.general_ledger import make_reverse_gl_entries
 
 
 def execute():
-	frappe.reload_doc("accounts", "doctype", "overdue_payment")
-	frappe.reload_doc("accounts", "doctype", "dunning")
+	nts.reload_doc("accounts", "doctype", "overdue_payment")
+	nts.reload_doc("accounts", "doctype", "dunning")
 
 	# Migrate schema of all uncancelled dunnings
 	filters = {"docstatus": ("!=", 2)}
@@ -15,10 +15,10 @@ def execute():
 		# Get dunnings after the date when accounts were frozen/closed
 		filters["posting_date"] = (">", can_edit_accounts_after)
 
-	all_dunnings = frappe.get_all("Dunning", filters=filters, pluck="name")
+	all_dunnings = nts.get_all("Dunning", filters=filters, pluck="name")
 
 	for dunning_name in all_dunnings:
-		dunning = frappe.get_doc("Dunning", dunning_name)
+		dunning = nts.get_doc("Dunning", dunning_name)
 		if not dunning.sales_invoice:
 			# nothing we can do
 			continue
@@ -27,7 +27,7 @@ def execute():
 			# something's already here, doesn't need patching
 			continue
 
-		payment_schedules = frappe.get_all(
+		payment_schedules = nts.get_all(
 			"Payment Schedule",
 			filters={"parent": dunning.sales_invoice},
 			fields=[
@@ -61,11 +61,11 @@ def execute():
 
 def get_accounts_closing_date():
 	"""Get the date when accounts were frozen/closed"""
-	accounts_frozen_till = frappe.db.get_single_value(
+	accounts_frozen_till = nts.db.get_single_value(
 		"Accounts Settings", "acc_frozen_upto"
 	)  # always returns datetime.date
 
-	period_closing_date = frappe.db.get_value(
+	period_closing_date = nts.db.get_value(
 		"Period Closing Voucher", {"docstatus": 1}, "period_end_date", order_by="period_end_date desc"
 	)
 

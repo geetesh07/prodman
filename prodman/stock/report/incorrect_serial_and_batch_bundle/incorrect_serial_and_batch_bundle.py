@@ -1,8 +1,8 @@
-# Copyright (c) 2025, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2025, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters: dict | None = None):
@@ -59,8 +59,8 @@ def get_data(filters) -> list[list]:
 	The report data is a list of rows, with each row being a list of cell values.
 	"""
 
-	SABB = frappe.qb.DocType("Serial and Batch Bundle")
-	SLE = frappe.qb.DocType("Stock Ledger Entry")
+	SABB = nts.qb.DocType("Serial and Batch Bundle")
+	SLE = nts.qb.DocType("Stock Ledger Entry")
 	ignore_voycher_types = [
 		"Installation Note",
 		"Job Card",
@@ -69,7 +69,7 @@ def get_data(filters) -> list[list]:
 	]
 
 	query = (
-		frappe.qb.from_(SABB)
+		nts.qb.from_(SABB)
 		.left_join(SLE)
 		.on(SABB.name == SLE.serial_and_batch_bundle)
 		.select(
@@ -94,14 +94,14 @@ def get_data(filters) -> list[list]:
 	return data
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def remove_sabb_entry(selected_rows):
 	if isinstance(selected_rows, str):
-		selected_rows = frappe.parse_json(selected_rows)
+		selected_rows = nts.parse_json(selected_rows)
 
 	for row in selected_rows:
-		doc = frappe.get_doc("Serial and Batch Bundle", row.get("name"))
+		doc = nts.get_doc("Serial and Batch Bundle", row.get("name"))
 		doc.cancel()
 		doc.delete()
 
-	frappe.msgprint(_("Selected Serial and Batch Bundle entries have been removed."))
+	nts.msgprint(_("Selected Serial and Batch Bundle entries have been removed."))

@@ -1,11 +1,11 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2017, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import flt
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .utils import flt
 
 
 class PaymentTermsTemplate(Document):
@@ -15,7 +15,7 @@ class PaymentTermsTemplate(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.payment_terms_template_detail.payment_terms_template_detail import (
 			PaymentTermsTemplateDetail,
@@ -36,17 +36,17 @@ class PaymentTermsTemplate(Document):
 			total_portion += flt(term.get("invoice_portion", 0))
 
 		if flt(total_portion, 2) != 100.00:
-			frappe.msgprint(_("Combined invoice portion must equal 100%"), raise_exception=1, indicator="red")
+			nts .msgprint(_("Combined invoice portion must equal 100%"), raise_exception=1, indicator="red")
 
 	def validate_terms(self):
 		terms = []
 		for term in self.terms:
 			if self.allocate_payment_based_on_payment_terms and not term.payment_term:
-				frappe.throw(_("Row {0}: Payment Term is mandatory").format(term.idx))
+				nts .throw(_("Row {0}: Payment Term is mandatory").format(term.idx))
 
 			term_info = (term.payment_term, term.credit_days, term.credit_months, term.due_date_based_on)
 			if term_info in terms:
-				frappe.msgprint(
+				nts .msgprint(
 					_("The Payment Term at row {0} is possibly a duplicate.").format(term.idx),
 					raise_exception=1,
 					indicator="red",

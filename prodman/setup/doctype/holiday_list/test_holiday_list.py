@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 import unittest
 from contextlib import contextmanager
 from datetime import date, timedelta
 
-import frappe
-from frappe.utils import getdate
+import nts
+from nts.utils import getdate
 
 from prodman.setup.doctype.holiday_list.holiday_list import local_country_name
 
@@ -22,11 +22,11 @@ class TestHolidayList(unittest.TestCase):
 				{"holiday_date": test_holiday_dates[1], "description": "test holiday2"},
 			],
 		)
-		fetched_holiday_list = frappe.get_value("Holiday List", holiday_list.name)
+		fetched_holiday_list = nts.get_value("Holiday List", holiday_list.name)
 		self.assertEqual(holiday_list.name, fetched_holiday_list)
 
 	def test_weekly_off(self):
-		holiday_list = frappe.new_doc("Holiday List")
+		holiday_list = nts.new_doc("Holiday List")
 		holiday_list.from_date = "2023-01-01"
 		holiday_list.to_date = "2023-02-28"
 		holiday_list.weekly_off = "Sunday"
@@ -47,7 +47,7 @@ class TestHolidayList(unittest.TestCase):
 		self.assertNotIn(date(2023, 3, 5), holidays)
 
 	def test_local_holidays(self):
-		holiday_list = frappe.new_doc("Holiday List")
+		holiday_list = nts.new_doc("Holiday List")
 		holiday_list.from_date = "2022-01-01"
 		holiday_list.to_date = "2024-12-31"
 		holiday_list.country = "DE"
@@ -102,14 +102,14 @@ class TestHolidayList(unittest.TestCase):
 		self.assertNotIn(date(2022, 12, 24), holidays)
 
 	def test_localized_country_names(self):
-		lang = frappe.local.lang
-		frappe.local.lang = "en-gb"
+		lang = nts.local.lang
+		nts.local.lang = "en-gb"
 		self.assertEqual(local_country_name("IN"), "India")
 		self.assertEqual(local_country_name("DE"), "Germany")
 
-		frappe.local.lang = "de"
+		nts.local.lang = "de"
 		self.assertEqual(local_country_name("DE"), "Deutschland")
-		frappe.local.lang = lang
+		nts.local.lang = lang
 
 
 def make_holiday_list(name, from_date=None, to_date=None, holiday_dates=None):
@@ -119,8 +119,8 @@ def make_holiday_list(name, from_date=None, to_date=None, holiday_dates=None):
 	if to_date is None:
 		to_date = getdate()
 
-	frappe.delete_doc_if_exists("Holiday List", name, force=1)
-	doc = frappe.get_doc(
+	nts.delete_doc_if_exists("Holiday List", name, force=1)
+	doc = nts.get_doc(
 		{
 			"doctype": "Holiday List",
 			"holiday_list_name": name,
@@ -138,7 +138,7 @@ def set_holiday_list(holiday_list, company_name):
 	Context manager for setting holiday list in tests
 	"""
 	try:
-		company = frappe.get_doc("Company", company_name)
+		company = nts.get_doc("Company", company_name)
 		previous_holiday_list = company.default_holiday_list
 
 		company.default_holiday_list = holiday_list
@@ -148,6 +148,6 @@ def set_holiday_list(holiday_list, company_name):
 
 	finally:
 		# restore holiday list setup
-		company = frappe.get_doc("Company", company_name)
+		company = nts.get_doc("Company", company_name)
 		company.default_holiday_list = previous_holiday_list
 		company.save()

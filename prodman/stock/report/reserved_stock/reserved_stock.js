@@ -1,7 +1,7 @@
-// Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2023, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Reserved Stock"] = {
+nts.query_reports["Reserved Stock"] = {
 	filters: [
 		{
 			fieldname: "company",
@@ -9,20 +9,20 @@ frappe.query_reports["Reserved Stock"] = {
 			fieldtype: "Link",
 			options: "Company",
 			reqd: 1,
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 		},
 		{
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+			default: nts.datetime.add_months(nts.datetime.get_today(), -1),
 			reqd: 1,
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 			reqd: 1,
 		},
 		{
@@ -44,7 +44,7 @@ frappe.query_reports["Reserved Stock"] = {
 			get_query: () => ({
 				filters: {
 					is_group: 0,
-					company: frappe.query_report.get_filter_value("company"),
+					company: nts.query_report.get_filter_value("company"),
 				},
 			}),
 		},
@@ -56,7 +56,7 @@ frappe.query_reports["Reserved Stock"] = {
 			get_query: () => ({
 				filters: {
 					docstatus: 1,
-					company: frappe.query_report.get_filter_value("company"),
+					company: nts.query_report.get_filter_value("company"),
 				},
 			}),
 		},
@@ -80,11 +80,11 @@ frappe.query_reports["Reserved Stock"] = {
 			get_query: () => ({
 				filters: {
 					docstatus: 1,
-					company: frappe.query_report.get_filter_value("company"),
+					company: nts.query_report.get_filter_value("company"),
 				},
 			}),
 			get_options: function () {
-				return frappe.query_report.get_filter_value("voucher_type");
+				return nts.query_report.get_filter_value("voucher_type");
 			},
 		},
 		{
@@ -106,11 +106,11 @@ frappe.query_reports["Reserved Stock"] = {
 			get_query: () => ({
 				filters: {
 					docstatus: 1,
-					company: frappe.query_report.get_filter_value("company"),
+					company: nts.query_report.get_filter_value("company"),
 				},
 			}),
 			get_options: function () {
-				return frappe.query_report.get_filter_value("from_voucher_type");
+				return nts.query_report.get_filter_value("from_voucher_type");
 			},
 		},
 		{
@@ -132,7 +132,7 @@ frappe.query_reports["Reserved Stock"] = {
 			options: "Project",
 			get_query: () => ({
 				filters: {
-					company: frappe.query_report.get_filter_value("company"),
+					company: nts.query_report.get_filter_value("company"),
 				},
 			}),
 		},

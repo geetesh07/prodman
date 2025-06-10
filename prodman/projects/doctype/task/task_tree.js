@@ -1,6 +1,6 @@
-frappe.provide("frappe.treeview_settings");
+nts.provide("nts.treeview_settings");
 
-frappe.treeview_settings["Task"] = {
+nts.treeview_settings["Task"] = {
 	get_tree_nodes: "prodman.projects.doctype.task.task.get_children",
 	add_tree_node: "prodman.projects.doctype.task.task.add_node",
 	filters: [
@@ -16,7 +16,7 @@ frappe.treeview_settings["Task"] = {
 			options: "Task",
 			label: __("Task"),
 			get_query: function () {
-				var me = frappe.treeview_settings["Task"];
+				var me = nts.treeview_settings["Task"];
 				var project = me.page.fields_dict.project.get_value();
 				var args = [["Task", "is_group", "=", 1]];
 				if (project) {
@@ -33,8 +33,8 @@ frappe.treeview_settings["Task"] = {
 	root_label: "All Tasks",
 	ignore_fields: ["parent_task"],
 	onload: function (me) {
-		frappe.treeview_settings["Task"].page = {};
-		$.extend(frappe.treeview_settings["Task"].page, me.page);
+		nts.treeview_settings["Task"].page = {};
+		$.extend(nts.treeview_settings["Task"].page, me.page);
 		me.make_tree();
 	},
 	toolbar: [
@@ -45,7 +45,7 @@ frappe.treeview_settings["Task"] = {
 			},
 			click: function (node) {
 				this.data = [];
-				const dialog = new frappe.ui.Dialog({
+				const dialog = new nts.ui.Dialog({
 					title: __("Add Multiple Tasks"),
 					fields: [
 						{
@@ -69,7 +69,7 @@ frappe.treeview_settings["Task"] = {
 					],
 					primary_action: function () {
 						dialog.hide();
-						return frappe.call({
+						return nts.call({
 							method: "prodman.projects.doctype.task.task.add_multiple_tasks",
 							args: {
 								data: dialog.get_values()["multiple_tasks"],

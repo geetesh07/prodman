@@ -1,8 +1,8 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		DELETE FROM `tabProperty Setter`
 		WHERE `tabProperty Setter`.doc_type='Issue'

@@ -1,6 +1,6 @@
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import flt, nowdate
+import nts
+from nts.tests.utils import ntsTestCase
+from nts.utils import flt, nowdate
 
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
 from prodman.accounts.utils import get_fiscal_year
@@ -13,12 +13,12 @@ from prodman.selling.report.sales_person_target_variance_based_on_item_group.tes
 )
 
 
-class TestSalesPartnerTargetVarianceBasedOnItemGroup(FrappeTestCase):
+class TestSalesPartnerTargetVarianceBasedOnItemGroup(ntsTestCase):
 	def setUp(self):
 		self.fiscal_year = get_fiscal_year(nowdate())[0]
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def test_achieved_target_and_variance_for_partner(self):
 		# Create a Target Distribution
@@ -41,7 +41,7 @@ class TestSalesPartnerTargetVarianceBasedOnItemGroup(FrappeTestCase):
 
 		# Check Achieved Target and Variance for the Sales Partner
 		result = execute(
-			frappe._dict(
+			nts._dict(
 				{
 					"fiscal_year": self.fiscal_year,
 					"doctype": "Sales Invoice",
@@ -50,7 +50,7 @@ class TestSalesPartnerTargetVarianceBasedOnItemGroup(FrappeTestCase):
 				}
 			)
 		)[1]
-		row = frappe._dict(result[0])
+		row = nts._dict(result[0])
 		self.assertSequenceEqual(
 			[flt(value, 2) for value in (row.total_target, row.total_achieved, row.total_variance)],
 			[50, 20, -30],

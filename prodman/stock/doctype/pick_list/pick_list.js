@@ -1,7 +1,7 @@
-// Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2019, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Pick List", {
+nts.ui.form.on("Pick List", {
 	after_save(frm) {
 		setTimeout(() => {
 			// Added to fix the issue of locations table not getting updated after save
@@ -75,9 +75,9 @@ frappe.ui.form.on("Pick List", {
 	},
 	set_item_locations: (frm, save) => {
 		if (!(frm.doc.locations && frm.doc.locations.length)) {
-			frappe.msgprint(__("Add items in the Item Locations table"));
+			nts.msgprint(__("Add items in the Item Locations table"));
 		} else {
-			frappe.call({
+			nts.call({
 				method: "set_item_locations",
 				doc: frm.doc,
 				args: {
@@ -98,7 +98,7 @@ frappe.ui.form.on("Pick List", {
 	refresh: (frm) => {
 		frm.trigger("add_get_items_button");
 		if (frm.doc.docstatus === 1) {
-			frappe
+			nts
 				.xcall("prodman.stock.doctype.pick_list.pick_list.target_document_exists", {
 					pick_list_name: frm.doc.name,
 					purpose: frm.doc.purpose,
@@ -140,7 +140,7 @@ frappe.ui.form.on("Pick List", {
 					frm.add_custom_button(
 						__("Unreserve"),
 						() => {
-							frappe.confirm(
+							nts.confirm(
 								__(
 									"The reserved stock will be released. Are you certain you wish to proceed?"
 								),
@@ -170,12 +170,12 @@ frappe.ui.form.on("Pick List", {
 		}
 	},
 	work_order: (frm) => {
-		frappe.db
+		nts.db
 			.get_value("Work Order", frm.doc.work_order, ["qty", "material_transferred_for_manufacturing"])
 			.then((data) => {
 				let qty_data = data.message;
 				let max = qty_data.qty - qty_data.material_transferred_for_manufacturing;
-				frappe.prompt(
+				nts.prompt(
 					{
 						fieldtype: "Float",
 						label: __("Qty of Finished Goods Item"),
@@ -186,7 +186,7 @@ frappe.ui.form.on("Pick List", {
 					(data) => {
 						frm.set_value("for_qty", data.qty);
 						if (data.qty > max) {
-							frappe.msgprint(__("Quantity must not be more than {0}", [max]));
+							nts.msgprint(__("Quantity must not be more than {0}", [max]));
 							return;
 						}
 						frm.clear_table("locations");
@@ -213,19 +213,19 @@ frappe.ui.form.on("Pick List", {
 		frm.trigger("add_get_items_button");
 	},
 	create_delivery_note: (frm) => {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.stock.doctype.pick_list.pick_list.create_delivery_note",
 			frm: frm,
 		});
 	},
 	create_stock_entry: (frm) => {
-		frappe
+		nts
 			.xcall("prodman.stock.doctype.pick_list.pick_list.create_stock_entry", {
 				pick_list: frm.doc,
 			})
 			.then((stock_entry) => {
-				frappe.model.sync(stock_entry);
-				frappe.set_route("Form", "Stock Entry", stock_entry.name);
+				nts.model.sync(stock_entry);
+				nts.set_route("Form", "Stock Entry", stock_entry.name);
 			});
 	},
 	update_pick_list_stock: (frm) => {
@@ -268,7 +268,7 @@ frappe.ui.form.on("Pick List", {
 		barcode_scanner.process_scan();
 	},
 	create_stock_reservation_entries: (frm) => {
-		frappe.call({
+		nts.call({
 			doc: frm.doc,
 			method: "create_stock_reservation_entries",
 			args: {
@@ -283,7 +283,7 @@ frappe.ui.form.on("Pick List", {
 		});
 	},
 	cancel_stock_reservation_entries: (frm) => {
-		frappe.call({
+		nts.call({
 			doc: frm.doc,
 			method: "cancel_stock_reservation_entries",
 			args: {
@@ -303,7 +303,7 @@ frappe.ui.form.on("Pick List", {
 			new Date(Math.max(...frm.doc.locations.map((e) => new Date(e.modified))))
 		).format("YYYY-MM-DD");
 
-		frappe.route_options = {
+		nts.route_options = {
 			company: frm.doc.company,
 			from_date: moment(frm.doc.creation).format("YYYY-MM-DD"),
 			to_date: to_date,
@@ -311,46 +311,46 @@ frappe.ui.form.on("Pick List", {
 			from_voucher_type: "Pick List",
 			from_voucher_no: frm.doc.name,
 		};
-		frappe.set_route("query-report", "Reserved Stock");
+		nts.set_route("query-report", "Reserved Stock");
 	},
 });
 
-frappe.ui.form.on("Pick List Item", {
+nts.ui.form.on("Pick List Item", {
 	item_code: (frm, cdt, cdn) => {
-		let row = frappe.get_doc(cdt, cdn);
+		let row = nts.get_doc(cdt, cdn);
 		if (row.item_code) {
 			get_item_details(row.item_code).then((data) => {
-				frappe.model.set_value(cdt, cdn, "uom", data.stock_uom);
-				frappe.model.set_value(cdt, cdn, "stock_uom", data.stock_uom);
-				frappe.model.set_value(cdt, cdn, "conversion_factor", 1);
+				nts.model.set_value(cdt, cdn, "uom", data.stock_uom);
+				nts.model.set_value(cdt, cdn, "stock_uom", data.stock_uom);
+				nts.model.set_value(cdt, cdn, "conversion_factor", 1);
 			});
 		}
 	},
 
 	uom: (frm, cdt, cdn) => {
-		let row = frappe.get_doc(cdt, cdn);
+		let row = nts.get_doc(cdt, cdn);
 		if (row.uom) {
 			get_item_details(row.item_code, row.uom).then((data) => {
-				frappe.model.set_value(cdt, cdn, "conversion_factor", data.conversion_factor);
+				nts.model.set_value(cdt, cdn, "conversion_factor", data.conversion_factor);
 			});
 		}
 	},
 
 	qty: (frm, cdt, cdn) => {
-		let row = frappe.get_doc(cdt, cdn);
-		frappe.model.set_value(cdt, cdn, "stock_qty", row.qty * row.conversion_factor);
+		let row = nts.get_doc(cdt, cdn);
+		nts.model.set_value(cdt, cdn, "stock_qty", row.qty * row.conversion_factor);
 	},
 
 	conversion_factor: (frm, cdt, cdn) => {
-		let row = frappe.get_doc(cdt, cdn);
-		frappe.model.set_value(cdt, cdn, "stock_qty", row.qty * row.conversion_factor);
+		let row = nts.get_doc(cdt, cdn);
+		nts.model.set_value(cdt, cdn, "stock_qty", row.qty * row.conversion_factor);
 	},
 
 	pick_serial_and_batch(frm, cdt, cdn) {
 		let item = locals[cdt][cdn];
 		let path = "assets/prodman/js/utils/serial_no_batch_selector.js";
 
-		frappe.db.get_value("Item", item.item_code, ["has_batch_no", "has_serial_no"]).then((r) => {
+		nts.db.get_value("Item", item.item_code, ["has_batch_no", "has_serial_no"]).then((r) => {
 			if (r.message && (r.message.has_batch_no || r.message.has_serial_no)) {
 				item.has_serial_no = r.message.has_serial_no;
 				item.has_batch_no = r.message.has_batch_no;
@@ -365,7 +365,7 @@ frappe.ui.form.on("Pick List Item", {
 				new prodman.SerialBatchPackageSelector(frm, item, (r) => {
 					if (r) {
 						let qty = Math.abs(r.total_qty);
-						frappe.model.set_value(item.doctype, item.name, {
+						nts.model.set_value(item.doctype, item.name, {
 							serial_and_batch_bundle: r.name,
 							use_serial_batch_fields: 0,
 							qty: qty / flt(item.conversion_factor || 1, precision("conversion_factor", item)),
@@ -379,7 +379,7 @@ frappe.ui.form.on("Pick List Item", {
 
 function get_item_details(item_code, uom = null) {
 	if (item_code) {
-		return frappe.xcall("prodman.stock.doctype.pick_list.pick_list.get_item_details", {
+		return nts.xcall("prodman.stock.doctype.pick_list.pick_list.get_item_details", {
 			item_code,
 			uom,
 		});

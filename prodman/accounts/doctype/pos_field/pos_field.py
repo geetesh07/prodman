@@ -1,9 +1,9 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2019, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-# import frappe
-from frappe.model.document import Document
+# import nts 
+from nts .model.document import Document
 
 
 class POSField(Document):
@@ -13,7 +13,7 @@ class POSField(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		default_value: DF.Data | None
 		fieldname: DF.Literal

@@ -1,9 +1,9 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_to_date, today
+import nts 
+from nts .tests.utils import nts TestCase
+from nts .utils import add_to_date, today
 
 from prodman.accounts.doctype.payment_entry.test_payment_entry import create_payment_entry
 from prodman.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
@@ -16,7 +16,7 @@ from prodman.accounts.test.accounts_mixin import AccountsTestMixin
 from prodman.accounts.utils import get_fiscal_year
 
 
-class TestTaxWithholdingDetails(AccountsTestMixin, FrappeTestCase):
+class TestTaxWithholdingDetails(AccountsTestMixin, nts TestCase):
 	def setUp(self):
 		self.create_company()
 		self.clear_old_entries()
@@ -24,12 +24,12 @@ class TestTaxWithholdingDetails(AccountsTestMixin, FrappeTestCase):
 
 	def test_tax_withholding_for_customers(self):
 		create_tax_category(cumulative_threshold=300)
-		frappe.db.set_value("Customer", "_Test Customer", "tax_withholding_category", "TCS")
+		nts .db.set_value("Customer", "_Test Customer", "tax_withholding_category", "TCS")
 		si = create_sales_invoice(rate=1000)
 		pe = create_tcs_payment_entry()
 		jv = create_tcs_journal_entry()
 
-		filters = frappe._dict(
+		filters = nts ._dict(
 			company="_Test Company", party_type="Customer", from_date=today(), to_date=today()
 		)
 		result = execute(filters)[1]
@@ -52,7 +52,7 @@ class TestTaxWithholdingDetails(AccountsTestMixin, FrappeTestCase):
 		inv_2.tax_withholding_category = "TDS - 2"
 		inv_2.submit()
 		result = execute(
-			frappe._dict(company="_Test Company", party_type="Supplier", from_date=today(), to_date=today())
+			nts ._dict(company="_Test Company", party_type="Supplier", from_date=today(), to_date=today())
 		)[1]
 		expected_values = [
 			[inv_1.name, "TDS - 1", 10, 5000, 500, 5500],
@@ -65,7 +65,7 @@ class TestTaxWithholdingDetails(AccountsTestMixin, FrappeTestCase):
 		# insert new rate in same fiscal year
 		fiscal_year = get_fiscal_year(today(), company="_Test Company")
 		mid_year = add_to_date(fiscal_year[1], months=6)
-		tds_doc = frappe.get_doc("Tax Withholding Category", "TDS - 3")
+		tds_doc = nts .get_doc("Tax Withholding Category", "TDS - 3")
 		tds_doc.rates[0].to_date = mid_year
 		tds_doc.append(
 			"rates",
@@ -96,7 +96,7 @@ class TestTaxWithholdingDetails(AccountsTestMixin, FrappeTestCase):
 		inv_2.submit()
 
 		result = execute(
-			frappe._dict(
+			nts ._dict(
 				company="_Test Company",
 				party_type="Supplier",
 				from_date=fiscal_year[1],
@@ -112,7 +112,7 @@ class TestTaxWithholdingDetails(AccountsTestMixin, FrappeTestCase):
 
 	def check_expected_values(self, result, expected_values):
 		for i in range(len(result)):
-			voucher = frappe._dict(result[i])
+			voucher = nts ._dict(result[i])
 			voucher_expected_values = expected_values[i]
 			voucher_actual_values = (
 				voucher.ref_no,
@@ -131,7 +131,7 @@ class TestTaxWithholdingDetails(AccountsTestMixin, FrappeTestCase):
 def create_tax_accounts():
 	account_names = ["TCS", "TDS"]
 	for account in account_names:
-		frappe.get_doc(
+		nts .get_doc(
 			{
 				"doctype": "Account",
 				"company": "_Test Company",
@@ -184,7 +184,7 @@ def create_tcs_payment_entry():
 
 
 def create_tcs_journal_entry():
-	jv = frappe.new_doc("Journal Entry")
+	jv = nts .new_doc("Journal Entry")
 	jv.posting_date = today()
 	jv.company = "_Test Company"
 	jv.set(

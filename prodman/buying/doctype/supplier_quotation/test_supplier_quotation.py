@@ -1,18 +1,18 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, today
+import nts
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import add_days, today
 
 from prodman.buying.doctype.supplier_quotation.supplier_quotation import make_purchase_order
 from prodman.controllers.accounts_controller import InvalidQtyError
 
 
-class TestPurchaseOrder(FrappeTestCase):
+class TestPurchaseOrder(ntsTestCase):
 	def test_supplier_quotation_qty(self):
-		sq = frappe.copy_doc(test_records[0])
+		sq = nts.copy_doc(test_records[0])
 		sq.items[0].qty = 0
 		with self.assertRaises(InvalidQtyError):
 			sq.save()
@@ -23,11 +23,11 @@ class TestPurchaseOrder(FrappeTestCase):
 		self.assertEqual(sq.items[0].qty, 1)
 
 	def test_make_purchase_order(self):
-		sq = frappe.copy_doc(test_records[0]).insert()
+		sq = nts.copy_doc(test_records[0]).insert()
 
-		self.assertRaises(frappe.ValidationError, make_purchase_order, sq.name)
+		self.assertRaises(nts.ValidationError, make_purchase_order, sq.name)
 
-		sq = frappe.get_doc("Supplier Quotation", sq.name)
+		sq = nts.get_doc("Supplier Quotation", sq.name)
 		sq.submit()
 		po = make_purchase_order(sq.name)
 
@@ -44,7 +44,7 @@ class TestPurchaseOrder(FrappeTestCase):
 
 	@change_settings("Buying Settings", {"allow_zero_qty_in_supplier_quotation": 1})
 	def test_map_purchase_order_from_zero_qty_supplier_quotation(self):
-		sq = frappe.copy_doc(test_records[0]).insert()
+		sq = nts.copy_doc(test_records[0]).insert()
 		sq.items[0].qty = 0
 		sq.submit()
 
@@ -54,4 +54,4 @@ class TestPurchaseOrder(FrappeTestCase):
 		self.assertEqual(po.get("items")[0].item_code, sq.get("items")[0].item_code)
 
 
-test_records = frappe.get_test_records("Supplier Quotation")
+test_records = nts.get_test_records("Supplier Quotation")

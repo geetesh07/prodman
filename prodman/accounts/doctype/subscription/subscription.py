@@ -1,13 +1,13 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 from datetime import date
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils.data import (
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .utils.data import (
 	add_days,
 	add_months,
 	add_to_date,
@@ -28,11 +28,11 @@ from prodman.accounts.doctype.subscription_plan.subscription_plan import get_pla
 from prodman.accounts.party import get_party_account_currency
 
 
-class InvoiceCancelled(frappe.ValidationError):
+class InvoiceCancelled(nts .ValidationError):
 	pass
 
 
-class InvoiceNotCancelled(frappe.ValidationError):
+class InvoiceNotCancelled(nts .ValidationError):
 	pass
 
 
@@ -46,7 +46,7 @@ class Subscription(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.subscription_plan_detail.subscription_plan_detail import (
 			SubscriptionPlanDetail,
@@ -171,7 +171,7 @@ class Subscription(Document):
 		same billing interval
 		"""
 		if billing_cycle_data and len(billing_cycle_data) != 1:
-			frappe.throw(_("You can only have Plans with the same billing cycle in a Subscription"))
+			nts .throw(_("You can only have Plans with the same billing cycle in a Subscription"))
 
 	def get_billing_cycle_and_interval(self) -> list[dict[str, str]]:
 		"""
@@ -180,9 +180,9 @@ class Subscription(Document):
 		"""
 		plan_names = [plan.plan for plan in self.plans]
 
-		subscription_plan = frappe.qb.DocType("Subscription Plan")
+		subscription_plan = nts .qb.DocType("Subscription Plan")
 		billing_info = (
-			frappe.qb.from_(subscription_plan)
+			nts .qb.from_(subscription_plan)
 			.select(subscription_plan.billing_interval, subscription_plan.billing_interval_count)
 			.distinct()
 			.where(subscription_plan.name.isin(plan_names))
@@ -253,7 +253,7 @@ class Subscription(Document):
 		return getdate(posting_date) > getdate(end_date)
 
 	def get_status_for_past_grace_period(self) -> str:
-		cancel_after_grace = cint(frappe.get_value("Subscription Settings", None, "cancel_after_grace"))
+		cancel_after_grace = cint(nts .get_value("Subscription Settings", None, "cancel_after_grace"))
 		status = "Unpaid"
 
 		if cancel_after_grace:
@@ -268,7 +268,7 @@ class Subscription(Document):
 		if not self.current_invoice_is_past_due():
 			return
 
-		grace_period = cint(frappe.get_value("Subscription Settings", None, "grace_period"))
+		grace_period = cint(nts .get_value("Subscription Settings", None, "grace_period"))
 		return getdate(posting_date) >= getdate(add_days(self.current_invoice.due_date, grace_period))
 
 	def current_invoice_is_past_due(self, posting_date: DateTimeLikeObject | None = None) -> bool:
@@ -302,12 +302,12 @@ class Subscription(Document):
 		Subscription should be of the same currency as the Party's default billing currency or company default.
 		"""
 		if self.party:
-			party_billing_currency = frappe.get_cached_value(
+			party_billing_currency = nts .get_cached_value(
 				self.party_type, self.party, "default_currency"
-			) or frappe.get_cached_value("Company", self.company, "default_currency")
+			) or nts .get_cached_value("Company", self.company, "default_currency")
 
 			plans = [x.plan for x in self.plans]
-			subscription_plan_currencies = frappe.db.get_all(
+			subscription_plan_currencies = nts .db.get_all(
 				"Subscription Plan", filters={"name": ("in", plans)}, fields=["name", "currency"]
 			)
 			unsupported_plans = []
@@ -319,12 +319,12 @@ class Subscription(Document):
 				unsupported_plans = [
 					_(
 						"Below Subscription Plans are of different currency to the party default billing currency/Company currency: {0}"
-					).format(frappe.bold(party_billing_currency)),
+					).format(nts .bold(party_billing_currency)),
 					*unsupported_plans,
 				]
 
-				frappe.throw(
-					unsupported_plans, frappe.ValidationError, "Unsupported Subscription Plans", as_list=True
+				nts .throw(
+					unsupported_plans, nts .ValidationError, "Unsupported Subscription Plans", as_list=True
 				)
 
 	def validate_trial_period(self) -> None:
@@ -333,20 +333,20 @@ class Subscription(Document):
 		"""
 		if self.trial_period_start and self.trial_period_end:
 			if getdate(self.trial_period_end) < getdate(self.trial_period_start):
-				frappe.throw(_("Trial Period End Date Cannot be before Trial Period Start Date"))
+				nts .throw(_("Trial Period End Date Cannot be before Trial Period Start Date"))
 
 		if self.trial_period_start and not self.trial_period_end:
-			frappe.throw(_("Both Trial Period Start Date and Trial Period End Date must be set"))
+			nts .throw(_("Both Trial Period Start Date and Trial Period End Date must be set"))
 
 		if self.trial_period_start and getdate(self.trial_period_start) > getdate(self.start_date):
-			frappe.throw(_("Trial Period Start date cannot be after Subscription Start Date"))
+			nts .throw(_("Trial Period Start date cannot be after Subscription Start Date"))
 
 	def validate_end_date(self) -> None:
 		billing_cycle_info = self.get_billing_cycle_data()
 		end_date = add_to_date(self.start_date, **billing_cycle_info)
 
 		if self.end_date and getdate(self.end_date) <= getdate(end_date):
-			frappe.throw(
+			nts .throw(
 				_("Subscription End Date must be after {0} as per the subscription plan").format(end_date)
 			)
 
@@ -357,10 +357,10 @@ class Subscription(Document):
 		billing_info = self.get_billing_cycle_and_interval()
 
 		if not self.end_date:
-			frappe.throw(_("Subscription End Date is mandatory to follow calendar months"))
+			nts .throw(_("Subscription End Date is mandatory to follow calendar months"))
 
 		if billing_info[0]["billing_interval"] != "Month":
-			frappe.throw(_("Billing Interval in Subscription Plan must be Month to follow calendar months"))
+			nts .throw(_("Billing Interval in Subscription Plan must be Month to follow calendar months"))
 
 	def generate_invoice(
 		self,
@@ -388,13 +388,13 @@ class Subscription(Document):
 		# Earlier subscription didn't had any company field
 		company = self.get("company") or get_default_company()
 		if not company:
-			frappe.throw(
+			nts .throw(
 				_(
 					"Company is mandatory for generating an invoice. Please set a default company in Global Defaults."
 				)
 			)
 
-		invoice = frappe.new_doc(self.invoice_document_type)
+		invoice = nts .new_doc(self.invoice_document_type)
 		invoice.company = company
 		invoice.set_posting_time = 1
 
@@ -411,11 +411,11 @@ class Subscription(Document):
 			invoice.customer = self.party
 		else:
 			invoice.supplier = self.party
-			if frappe.db.get_value("Supplier", self.party, "tax_withholding_category"):
+			if nts .db.get_value("Supplier", self.party, "tax_withholding_category"):
 				invoice.apply_tds = 1
 
 		# Add currency to invoice
-		invoice.currency = frappe.db.get_value("Subscription Plan", {"name": self.plans[0].plan}, "currency")
+		invoice.currency = nts .db.get_value("Subscription Plan", {"name": self.plans[0].plan}, "currency")
 
 		# Add dimensions in invoice for subscription:
 		accounting_dimensions = get_accounting_dimensions()
@@ -500,7 +500,7 @@ class Subscription(Document):
 		items = []
 		party = self.party
 		for plan in plans:
-			plan_doc = frappe.get_doc("Subscription Plan", plan.plan)
+			plan_doc = nts .get_doc("Subscription Plan", plan.plan)
 
 			item_code = plan_doc.item
 
@@ -509,7 +509,7 @@ class Subscription(Document):
 			else:
 				deferred_field = "enable_deferred_expense"
 
-			deferred = frappe.db.get_value("Item", item_code, deferred_field)
+			deferred = nts .db.get_value("Item", item_code, deferred_field)
 
 			if not prorate:
 				item = {
@@ -558,7 +558,7 @@ class Subscription(Document):
 
 		return items
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def process(self, posting_date: DateTimeLikeObject | None = None) -> bool:
 		"""
 		To be called by task periodically. It checks the subscription and takes appropriate action
@@ -632,7 +632,7 @@ class Subscription(Document):
 		"""
 		Returns the most recent generated invoice.
 		"""
-		invoice = frappe.get_all(
+		invoice = nts .get_all(
 			self.invoice_document_type,
 			{"subscription": self.name, "docstatus": ("<", 2)},
 			limit=1,
@@ -641,7 +641,7 @@ class Subscription(Document):
 		)
 
 		if invoice:
-			return frappe.get_doc(self.invoice_document_type, invoice[0])
+			return nts .get_doc(self.invoice_document_type, invoice[0])
 
 	def cancel_subscription_at_period_end(self) -> None:
 		"""
@@ -652,7 +652,7 @@ class Subscription(Document):
 
 	@property
 	def invoices(self) -> list[dict]:
-		return frappe.get_all(
+		return nts .get_all(
 			self.invoice_document_type,
 			filters={"subscription": self.name},
 			order_by="from_date asc",
@@ -669,7 +669,7 @@ class Subscription(Document):
 		"""
 		Returns `True` if the most recent invoice for the `Subscription` is not paid
 		"""
-		return frappe.db.count(
+		return nts .db.count(
 			self.invoice_document_type,
 			{
 				"subscription": self.name,
@@ -678,14 +678,14 @@ class Subscription(Document):
 			},
 		)
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def cancel_subscription(self) -> None:
 		"""
 		This sets the subscription as cancelled. It will stop invoices from being generated
 		but it will not affect already created invoices.
 		"""
 		if self.status == "Cancelled":
-			frappe.throw(_("subscription is already cancelled."), InvoiceCancelled)
+			nts .throw(_("subscription is already cancelled."), InvoiceCancelled)
 
 		to_generate_invoice = (
 			True
@@ -701,7 +701,7 @@ class Subscription(Document):
 
 		self.save()
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def restart_subscription(self, posting_date: DateTimeLikeObject | None = None) -> None:
 		"""
 		This sets the subscription as active. The subscription will be made to be like a new
@@ -709,14 +709,14 @@ class Subscription(Document):
 		it has.
 		"""
 		if not self.status == "Cancelled":
-			frappe.throw(_("You cannot restart a Subscription that is not cancelled."), InvoiceNotCancelled)
+			nts .throw(_("You cannot restart a Subscription that is not cancelled."), InvoiceNotCancelled)
 
 		self.status = "Active"
 		self.cancelation_date = None
 		self.update_subscription_period(posting_date or nowdate())
 		self.save()
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def force_fetch_subscription_updates(self):
 		"""
 		Process Subscription and create Invoices even if current date doesn't lie between current_invoice_start and currenct_invoice_end
@@ -725,7 +725,7 @@ class Subscription(Document):
 
 		# Don't process future subscriptions
 		if nowdate() < self.current_invoice_start:
-			frappe.msgprint(_("Subscription for Future dates cannot be processed."))
+			nts .msgprint(_("Subscription for Future dates cannot be processed."))
 			return
 
 		processing_date = None
@@ -740,7 +740,7 @@ class Subscription(Document):
 
 
 def is_prorate() -> int:
-	return cint(frappe.db.get_single_value("Subscription Settings", "prorate"))
+	return cint(nts .db.get_single_value("Subscription Settings", "prorate"))
 
 
 def get_prorata_factor(
@@ -765,11 +765,11 @@ def process_all(subscription: str | None = None, posting_date: DateTimeLikeObjec
 	if subscription:
 		filters["name"] = subscription
 
-	for subscription in frappe.get_all("Subscription", filters, pluck="name"):
+	for subscription in nts .get_all("Subscription", filters, pluck="name"):
 		try:
-			subscription = frappe.get_doc("Subscription", subscription)
+			subscription = nts .get_doc("Subscription", subscription)
 			subscription.process(posting_date)
-			frappe.db.commit()
-		except frappe.ValidationError:
-			frappe.db.rollback()
+			nts .db.commit()
+		except nts .ValidationError:
+			nts .db.rollback()
 			subscription.log_error("Subscription failed")

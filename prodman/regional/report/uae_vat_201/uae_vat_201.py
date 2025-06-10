@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -50,21 +50,21 @@ def append_vat_on_sales(data, filters):
 		data,
 		"2",
 		_("Tax Refunds provided to Tourists under the Tax Refunds for Tourists Scheme"),
-		frappe.format((-1) * get_tourist_tax_return_total(filters), "Currency"),
-		frappe.format((-1) * get_tourist_tax_return_tax(filters), "Currency"),
+		nts.format((-1) * get_tourist_tax_return_total(filters), "Currency"),
+		nts.format((-1) * get_tourist_tax_return_tax(filters), "Currency"),
 	)
 
 	append_data(
 		data,
 		"3",
 		_("Supplies subject to the reverse charge provision"),
-		frappe.format(get_reverse_charge_total(filters), "Currency"),
-		frappe.format(get_reverse_charge_tax(filters), "Currency"),
+		nts.format(get_reverse_charge_total(filters), "Currency"),
+		nts.format(get_reverse_charge_tax(filters), "Currency"),
 	)
 
-	append_data(data, "4", _("Zero Rated"), frappe.format(get_zero_rated_total(filters), "Currency"), "-")
+	append_data(data, "4", _("Zero Rated"), nts.format(get_zero_rated_total(filters), "Currency"), "-")
 
-	append_data(data, "5", _("Exempt Supplies"), frappe.format(get_exempt_total(filters), "Currency"), "-")
+	append_data(data, "5", _("Exempt Supplies"), nts.format(get_exempt_total(filters), "Currency"), "-")
 
 	append_data(data, "", "", "", "")
 
@@ -81,8 +81,8 @@ def standard_rated_expenses_emiratewise(data, filters):
 			"legend": emirate,
 			"raw_amount": amount,
 			"raw_vat_amount": vat,
-			"amount": frappe.format(amount, "Currency"),
-			"vat_amount": frappe.format(vat, "Currency"),
+			"amount": nts.format(amount, "Currency"),
+			"vat_amount": nts.format(vat, "Currency"),
 		}
 	amounts_by_emirate = append_emiratewise_expenses(data, emirates, amounts_by_emirate)
 	return emirates, amounts_by_emirate
@@ -100,8 +100,8 @@ def append_emiratewise_expenses(data, emirates, amounts_by_emirate):
 				data,
 				_("1{0}").format(chr(no)),
 				_("Standard rated supplies in {0}").format(emirate),
-				frappe.format(0, "Currency"),
-				frappe.format(0, "Currency"),
+				nts.format(0, "Currency"),
+				nts.format(0, "Currency"),
 			)
 	return amounts_by_emirate
 
@@ -113,15 +113,15 @@ def append_vat_on_expenses(data, filters):
 		data,
 		"9",
 		_("Standard Rated Expenses"),
-		frappe.format(get_standard_rated_expenses_total(filters), "Currency"),
-		frappe.format(get_standard_rated_expenses_tax(filters), "Currency"),
+		nts.format(get_standard_rated_expenses_total(filters), "Currency"),
+		nts.format(get_standard_rated_expenses_tax(filters), "Currency"),
 	)
 	append_data(
 		data,
 		"10",
 		_("Supplies subject to the reverse charge provision"),
-		frappe.format(get_reverse_charge_recoverable_total(filters), "Currency"),
-		frappe.format(get_reverse_charge_recoverable_tax(filters), "Currency"),
+		nts.format(get_reverse_charge_recoverable_total(filters), "Currency"),
+		nts.format(get_reverse_charge_recoverable_tax(filters), "Currency"),
 	)
 
 
@@ -134,7 +134,7 @@ def get_total_emiratewise(filters):
 	"""Returns Emiratewise Amount and Taxes."""
 	conditions = get_conditions(filters)
 	try:
-		return frappe.db.sql(
+		return nts.db.sql(
 			f"""
 			select
 				s.vat_emirate as emirate, sum(i.base_net_amount) as total, sum(i.tax_amount)
@@ -178,7 +178,7 @@ def get_reverse_charge_total(filters):
 	query_filters.append(["docstatus", "=", 1])
 	try:
 		return (
-			frappe.db.get_all(
+			nts.db.get_all(
 				"Purchase Invoice", filters=query_filters, fields=["sum(base_total)"], as_list=True, limit=1
 			)[0][0]
 			or 0
@@ -191,7 +191,7 @@ def get_reverse_charge_tax(filters):
 	"""Returns the sum of the tax of each Purchase invoice made."""
 	conditions = get_conditions_join(filters)
 	return (
-		frappe.db.sql(
+		nts.db.sql(
 			f"""
 		select sum(debit)  from
 			`tabPurchase Invoice` p inner join `tabGL Entry` gl
@@ -218,7 +218,7 @@ def get_reverse_charge_recoverable_total(filters):
 	query_filters.append(["docstatus", "=", 1])
 	try:
 		return (
-			frappe.db.get_all(
+			nts.db.get_all(
 				"Purchase Invoice", filters=query_filters, fields=["sum(base_total)"], as_list=True, limit=1
 			)[0][0]
 			or 0
@@ -231,7 +231,7 @@ def get_reverse_charge_recoverable_tax(filters):
 	"""Returns the sum of the tax of each Purchase invoice made."""
 	conditions = get_conditions_join(filters)
 	return (
-		frappe.db.sql(
+		nts.db.sql(
 			f"""
 		select
 			sum(debit * p.recoverable_reverse_charge / 100)
@@ -273,7 +273,7 @@ def get_standard_rated_expenses_total(filters):
 	query_filters.append(["docstatus", "=", 1])
 	try:
 		return (
-			frappe.db.get_all(
+			nts.db.get_all(
 				"Purchase Invoice", filters=query_filters, fields=["sum(base_total)"], as_list=True, limit=1
 			)[0][0]
 			or 0
@@ -289,7 +289,7 @@ def get_standard_rated_expenses_tax(filters):
 	query_filters.append(["docstatus", "=", 1])
 	try:
 		return (
-			frappe.db.get_all(
+			nts.db.get_all(
 				"Purchase Invoice",
 				filters=query_filters,
 				fields=["sum(recoverable_standard_rated_expenses)"],
@@ -309,7 +309,7 @@ def get_tourist_tax_return_total(filters):
 	query_filters.append(["docstatus", "=", 1])
 	try:
 		return (
-			frappe.db.get_all(
+			nts.db.get_all(
 				"Sales Invoice", filters=query_filters, fields=["sum(base_total)"], as_list=True, limit=1
 			)[0][0]
 			or 0
@@ -325,7 +325,7 @@ def get_tourist_tax_return_tax(filters):
 	query_filters.append(["docstatus", "=", 1])
 	try:
 		return (
-			frappe.db.get_all(
+			nts.db.get_all(
 				"Sales Invoice",
 				filters=query_filters,
 				fields=["sum(tourist_tax_return)"],
@@ -343,7 +343,7 @@ def get_zero_rated_total(filters):
 	conditions = get_conditions(filters)
 	try:
 		return (
-			frappe.db.sql(
+			nts.db.sql(
 				f"""
 			select
 				sum(i.base_net_amount) as total
@@ -368,7 +368,7 @@ def get_exempt_total(filters):
 	conditions = get_conditions(filters)
 	try:
 		return (
-			frappe.db.sql(
+			nts.db.sql(
 				f"""
 			select
 				sum(i.base_net_amount) as total

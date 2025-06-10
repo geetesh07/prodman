@@ -1,14 +1,14 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import flt
+import nts
+from nts import _
+from nts.utils import flt
 
 
 def execute(filters=None):
-	if not frappe.db.get_single_value("Video Settings", "enable_youtube_tracking") or not filters:
+	if not nts.db.get_single_value("Video Settings", "enable_youtube_tracking") or not filters:
 		return [], []
 
 	columns = get_columns()
@@ -30,7 +30,7 @@ def get_columns():
 
 
 def get_data(filters):
-	return frappe.db.sql(
+	return nts.db.sql(
 		"""
 		SELECT
 			publish_date, title, provider, duration,

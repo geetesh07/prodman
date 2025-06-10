@@ -1,5 +1,5 @@
-import frappe
-from frappe import _
+import nts 
+from nts  import _
 
 from prodman.accounts.report.tax_withholding_details.tax_withholding_details import (
 	get_result,
@@ -10,9 +10,9 @@ from prodman.accounts.utils import get_fiscal_year
 
 def execute(filters=None):
 	if filters.get("party_type") == "Customer":
-		party_naming_by = frappe.db.get_single_value("Selling Settings", "cust_master_name")
+		party_naming_by = nts .db.get_single_value("Selling Settings", "cust_master_name")
 	else:
-		party_naming_by = frappe.db.get_single_value("Buying Settings", "supp_master_name")
+		party_naming_by = nts .db.get_single_value("Buying Settings", "supp_master_name")
 
 	filters.update({"naming_series": party_naming_by})
 
@@ -38,12 +38,12 @@ def execute(filters=None):
 def validate_filters(filters):
 	"""Validate if dates are properly set and lie in the same fiscal year"""
 	if filters.from_date > filters.to_date:
-		frappe.throw(_("From Date must be before To Date"))
+		nts .throw(_("From Date must be before To Date"))
 
 	from_year = get_fiscal_year(filters.from_date)[0]
 	to_year = get_fiscal_year(filters.to_date)[0]
 	if from_year != to_year:
-		frappe.throw(_("From Date and To Date lie in different Fiscal Year"))
+		nts .throw(_("From Date and To Date lie in different Fiscal Year"))
 
 	filters["fiscal_year"] = from_year
 
@@ -89,9 +89,9 @@ def get_final_result(party_category_wise_map):
 
 
 def get_columns(filters):
-	pan = "pan" if frappe.db.has_column(filters.party_type, "pan") else "tax_id"
+	pan = "pan" if nts .db.has_column(filters.party_type, "pan") else "tax_id"
 	columns = [
-		{"label": _(frappe.unscrub(pan)), "fieldname": pan, "fieldtype": "Data", "width": 90},
+		{"label": _(nts .unscrub(pan)), "fieldname": pan, "fieldtype": "Data", "width": 90},
 		{
 			"label": _(filters.get("party_type")),
 			"fieldname": "party",

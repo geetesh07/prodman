@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe.utils.data import today
+import nts
+from nts.utils.data import today
 
-# test_records = frappe.get_test_records('Maintenance Visit')
+# test_records = nts.get_test_records('Maintenance Visit')
 
 
 class TestMaintenanceVisit(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestMaintenanceVisit(unittest.TestCase):
 
 
 def make_maintenance_visit():
-	mv = frappe.new_doc("Maintenance Visit")
+	mv = nts.new_doc("Maintenance Visit")
 	mv.company = "_Test Company"
 	mv.customer = "_Test Customer"
 	mv.mntc_date = today()
@@ -38,7 +38,7 @@ def make_maintenance_visit():
 
 
 def make_sales_person(name):
-	sales_person = frappe.get_doc({"doctype": "Sales Person", "sales_person_name": name})
+	sales_person = nts.get_doc({"doctype": "Sales Person", "sales_person_name": name})
 	sales_person.insert(ignore_if_duplicate=True)
 
 	return sales_person

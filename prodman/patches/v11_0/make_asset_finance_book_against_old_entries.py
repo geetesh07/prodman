@@ -1,26 +1,26 @@
-# Copyright (c) 2017, Frappe and Contributors
+# Copyright (c) 2017, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("assets", "doctype", "asset_finance_book")
-	frappe.reload_doc("assets", "doctype", "depreciation_schedule")
-	frappe.reload_doc("assets", "doctype", "asset_category")
-	frappe.reload_doc("assets", "doctype", "asset")
-	frappe.reload_doc("assets", "doctype", "asset_movement")
-	frappe.reload_doc("assets", "doctype", "asset_category_account")
+	nts.reload_doc("assets", "doctype", "asset_finance_book")
+	nts.reload_doc("assets", "doctype", "depreciation_schedule")
+	nts.reload_doc("assets", "doctype", "asset_category")
+	nts.reload_doc("assets", "doctype", "asset")
+	nts.reload_doc("assets", "doctype", "asset_movement")
+	nts.reload_doc("assets", "doctype", "asset_category_account")
 
-	if frappe.db.has_column("Asset", "warehouse"):
-		frappe.db.sql(
+	if nts.db.has_column("Asset", "warehouse"):
+		nts.db.sql(
 			""" update `tabAsset` ast, `tabWarehouse` wh
 			set ast.location = wh.warehouse_name where ast.warehouse = wh.name"""
 		)
 
-		for d in frappe.get_all("Asset"):
-			doc = frappe.get_doc("Asset", d.name)
+		for d in nts.get_all("Asset"):
+			doc = nts.get_doc("Asset", d.name)
 			if doc.calculate_depreciation:
 				fb = doc.append(
 					"finance_books",
@@ -36,13 +36,13 @@ def execute():
 
 				fb.db_update()
 
-		frappe.db.sql(
+		nts.db.sql(
 			""" update `tabDepreciation Schedule` ds, `tabAsset` ast
 			set ds.depreciation_method = ast.depreciation_method, ds.finance_book_id = 1 where ds.parent = ast.name """
 		)
 
-		for category in frappe.get_all("Asset Category"):
-			asset_category_doc = frappe.get_doc("Asset Category", category)
+		for category in nts.get_all("Asset Category"):
+			asset_category_doc = nts.get_doc("Asset Category", category)
 			row = asset_category_doc.append(
 				"finance_books",
 				{

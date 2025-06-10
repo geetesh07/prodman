@@ -1,9 +1,9 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days, today
+import nts
+from nts.tests.utils import ntsTestCase
+from nts.utils import add_days, today
 
 from prodman.buying.doctype.purchase_order.purchase_order import make_purchase_receipt
 from prodman.buying.report.requested_items_to_order_and_receive.requested_items_to_order_and_receive import (
@@ -13,14 +13,14 @@ from prodman.stock.doctype.item.test_item import create_item
 from prodman.stock.doctype.material_request.material_request import make_purchase_order
 
 
-class TestRequestedItemsToOrderAndReceive(FrappeTestCase):
+class TestRequestedItemsToOrderAndReceive(ntsTestCase):
 	def setUp(self) -> None:
 		create_item("Test MR Report Item")
 		self.setup_material_request()  # to order and receive
 		self.setup_material_request(order=True, days=1)  # to receive (ordered)
 		self.setup_material_request(order=True, receive=True, days=2)  # complete (ordered & received)
 
-		self.filters = frappe._dict(
+		self.filters = nts._dict(
 			company="_Test Company",
 			from_date=today(),
 			to_date=add_days(today(), 30),
@@ -28,7 +28,7 @@ class TestRequestedItemsToOrderAndReceive(FrappeTestCase):
 		)
 
 	def tearDown(self) -> None:
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def test_date_range(self):
 		data = get_data(self.filters)
@@ -47,9 +47,9 @@ class TestRequestedItemsToOrderAndReceive(FrappeTestCase):
 
 	def setup_material_request(self, order=False, receive=False, days=0):
 		po = None
-		test_records = frappe.get_test_records("Material Request")
+		test_records = nts.get_test_records("Material Request")
 
-		mr = frappe.copy_doc(test_records[0])
+		mr = nts.copy_doc(test_records[0])
 		mr.transaction_date = add_days(today(), days)
 		mr.schedule_date = add_days(mr.transaction_date, 1)
 		for row in mr.items:

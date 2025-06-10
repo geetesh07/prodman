@@ -1,7 +1,7 @@
-frappe.provide("prodman.demo");
+nts.provide("prodman.demo");
 
 $(document).on("toolbar_setup", function () {
-	if (frappe.boot.sysdefaults.demo_company) {
+	if (nts.boot.sysdefaults.demo_company) {
 		render_clear_demo_action();
 	}
 });
@@ -17,14 +17,14 @@ function render_clear_demo_action() {
 }
 
 prodman.demo.clear_demo = function () {
-	frappe.confirm(__("Are you sure you want to clear all demo data?"), () => {
-		frappe.call({
+	nts.confirm(__("Are you sure you want to clear all demo data?"), () => {
+		nts.call({
 			method: "prodman.setup.demo.clear_demo_data",
 			freeze: true,
 			freeze_message: __("Clearing Demo Data..."),
 			callback: function (r) {
-				frappe.ui.toolbar.clear_cache();
-				frappe.show_alert({
+				nts.ui.toolbar.clear_cache();
+				nts.show_alert({
 					message: __("Demo data cleared"),
 					indicator: "green",
 				});

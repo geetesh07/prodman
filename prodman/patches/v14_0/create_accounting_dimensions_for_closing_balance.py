@@ -1,9 +1,9 @@
-import frappe
-from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+import nts
+from nts.custom.doctype.custom_field.custom_field import create_custom_field
 
 
 def execute():
-	accounting_dimensions = frappe.db.get_all(
+	accounting_dimensions = nts.db.get_all(
 		"Accounting Dimension", fields=["fieldname", "label", "document_type", "disabled"]
 	)
 
@@ -13,7 +13,7 @@ def execute():
 	doctype = "Account Closing Balance"
 
 	for d in accounting_dimensions:
-		field = frappe.db.get_value("Custom Field", {"dt": doctype, "fieldname": d.fieldname})
+		field = nts.db.get_value("Custom Field", {"dt": doctype, "fieldname": d.fieldname})
 
 		if field:
 			continue
@@ -28,4 +28,4 @@ def execute():
 
 		create_custom_field(doctype, df, ignore_validate=True)
 
-	frappe.clear_cache(doctype=doctype)
+	nts.clear_cache(doctype=doctype)

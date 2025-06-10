@@ -1,5 +1,5 @@
-import frappe
-from frappe.utils import cstr
+import nts
+from nts.utils import cstr
 
 
 def execute():
@@ -11,13 +11,13 @@ def execute():
 		if not depreciation_schedules:
 			continue
 
-		asset_depr_schedule_doc = frappe.new_doc("Asset Depreciation Schedule")
+		asset_depr_schedule_doc = nts.new_doc("Asset Depreciation Schedule")
 		asset_depr_schedule_doc.set_draft_asset_depr_schedule_details(fb_row, fb_row)
 		asset_depr_schedule_doc.flags.ignore_validate = True
 		asset_depr_schedule_doc.insert()
 
 		if fb_row.docstatus == 1:
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Asset Depreciation Schedule",
 				asset_depr_schedule_doc.name,
 				{"docstatus": 1, "status": "Active"},
@@ -27,11 +27,11 @@ def execute():
 
 
 def get_asset_finance_books_map():
-	afb = frappe.qb.DocType("Asset Finance Book")
-	asset = frappe.qb.DocType("Asset")
+	afb = nts.qb.DocType("Asset Finance Book")
+	asset = nts.qb.DocType("Asset")
 
 	records = (
-		frappe.qb.from_(afb)
+		nts.qb.from_(afb)
 		.join(asset)
 		.on(afb.parent == asset.name)
 		.select(
@@ -56,7 +56,7 @@ def get_asset_finance_books_map():
 		.orderby(afb.idx)
 	).run(as_dict=True)
 
-	asset_finance_books_map = frappe._dict()
+	asset_finance_books_map = nts._dict()
 	for d in records:
 		asset_finance_books_map.setdefault((d.asset_name, cstr(d.finance_book)), d)
 
@@ -64,11 +64,11 @@ def get_asset_finance_books_map():
 
 
 def get_asset_depreciation_schedules_map():
-	ds = frappe.qb.DocType("Depreciation Schedule")
-	asset = frappe.qb.DocType("Asset")
+	ds = nts.qb.DocType("Depreciation Schedule")
+	asset = nts.qb.DocType("Asset")
 
 	records = (
-		frappe.qb.from_(ds)
+		nts.qb.from_(ds)
 		.join(asset)
 		.on(ds.parent == asset.name)
 		.select(
@@ -83,9 +83,9 @@ def get_asset_depreciation_schedules_map():
 	).run(as_dict=True)
 
 	if len(records) > 20000:
-		frappe.db.auto_commit_on_many_writes = True
+		nts.db.auto_commit_on_many_writes = True
 
-	asset_depreciation_schedules_map = frappe._dict()
+	asset_depreciation_schedules_map = nts._dict()
 	for d in records:
 		asset_depreciation_schedules_map.setdefault((d.asset_name, cstr(d.finance_book)), []).append(d)
 
@@ -96,11 +96,11 @@ def update_depreciation_schedules(
 	depreciation_schedules,
 	asset_depr_schedule_name,
 ):
-	ds = frappe.qb.DocType("Depreciation Schedule")
+	ds = nts.qb.DocType("Depreciation Schedule")
 
 	for idx, depr_schedule in enumerate(depreciation_schedules, start=1):
 		(
-			frappe.qb.update(ds)
+			nts.qb.update(ds)
 			.set(ds.idx, idx)
 			.set(ds.parent, asset_depr_schedule_name)
 			.set(ds.parentfield, "depreciation_schedule")

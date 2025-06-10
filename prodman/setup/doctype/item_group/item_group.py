@@ -1,11 +1,11 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 import copy
 
-import frappe
-from frappe import _
-from frappe.utils.nestedset import NestedSet
+import nts
+from nts import _
+from nts.utils.nestedset import NestedSet
 
 
 class ItemGroup(NestedSet):
@@ -15,7 +15,7 @@ class ItemGroup(NestedSet):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.stock.doctype.item_default.item_default import ItemDefault
 		from prodman.stock.doctype.item_tax.item_tax import ItemTax
@@ -32,8 +32,8 @@ class ItemGroup(NestedSet):
 	# end: auto-generated types
 
 	def validate(self):
-		if not self.parent_item_group and not frappe.flags.in_test:
-			if frappe.db.exists("Item Group", _("All Item Groups")):
+		if not self.parent_item_group and not nts.flags.in_test:
+			if nts.db.exists("Item Group", _("All Item Groups")):
 				self.parent_item_group = _("All Item Groups")
 		self.validate_item_group_defaults()
 		self.check_item_tax()
@@ -44,10 +44,10 @@ class ItemGroup(NestedSet):
 		for d in self.get("taxes"):
 			if d.item_tax_template:
 				if (d.item_tax_template, d.tax_category) in check_list:
-					frappe.throw(
+					nts.throw(
 						_("{0} entered twice {1} in Item Taxes").format(
-							frappe.bold(d.item_tax_template),
-							f"for tax category {frappe.bold(d.tax_category)}" if d.tax_category else "",
+							nts.bold(d.item_tax_template),
+							f"for tax category {nts.bold(d.tax_category)}" if d.tax_category else "",
 						)
 					)
 				else:
@@ -63,7 +63,7 @@ class ItemGroup(NestedSet):
 		self.delete_child_item_groups_key()
 
 	def delete_child_item_groups_key(self):
-		frappe.cache().hdel("child_item_groups", self.name)
+		nts.cache().hdel("child_item_groups", self.name)
 
 	def validate_item_group_defaults(self):
 		from prodman.stock.doctype.item.item import validate_item_default_company_links
@@ -72,11 +72,11 @@ class ItemGroup(NestedSet):
 
 
 def get_child_item_groups(item_group_name):
-	item_group = frappe.get_cached_value("Item Group", item_group_name, ["lft", "rgt"], as_dict=1)
+	item_group = nts.get_cached_value("Item Group", item_group_name, ["lft", "rgt"], as_dict=1)
 
 	child_item_groups = [
 		d.name
-		for d in frappe.get_all(
+		for d in nts.get_all(
 			"Item Group", filters={"lft": (">=", item_group.lft), "rgt": ("<=", item_group.rgt)}
 		)
 	]
@@ -85,8 +85,8 @@ def get_child_item_groups(item_group_name):
 
 
 def get_item_group_defaults(item, company):
-	item = frappe.get_cached_doc("Item", item)
-	item_group = frappe.get_cached_doc("Item Group", item.item_group)
+	item = nts.get_cached_doc("Item", item)
+	item_group = nts.get_cached_doc("Item Group", item.item_group)
 
 	for d in item_group.item_group_defaults or []:
 		if d.company == company:
@@ -94,4 +94,4 @@ def get_item_group_defaults(item, company):
 			row.pop("name")
 			return row
 
-	return frappe._dict()
+	return nts._dict()

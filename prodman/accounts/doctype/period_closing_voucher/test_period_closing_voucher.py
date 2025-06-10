@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import unittest
 
-import frappe
-from frappe.utils import today
+import nts 
+from nts .utils import today
 
 from prodman.accounts.doctype.finance_book.test_finance_book import create_finance_book
 from prodman.accounts.doctype.journal_entry.test_journal_entry import make_journal_entry
@@ -15,8 +15,8 @@ from prodman.accounts.utils import get_fiscal_year
 
 class TestPeriodClosingVoucher(unittest.TestCase):
 	def test_closing_entry(self):
-		frappe.db.sql("delete from `tabGL Entry` where company='Test PCV Company'")
-		frappe.db.sql("delete from `tabPeriod Closing Voucher` where company='Test PCV Company'")
+		nts .db.sql("delete from `tabGL Entry` where company='Test PCV Company'")
+		nts .db.sql("delete from `tabPeriod Closing Voucher` where company='Test PCV Company'")
 
 		company = create_company()
 		cost_center = create_cost_center("Test Cost Center 1")
@@ -56,7 +56,7 @@ class TestPeriodClosingVoucher(unittest.TestCase):
 			("Sales - TPC", 400.0, 0.0),
 		)
 
-		pcv_gle = frappe.db.sql(
+		pcv_gle = nts .db.sql(
 			"""
 			select account, debit, credit from `tabGL Entry` where voucher_no=%s order by account
 		""",
@@ -67,8 +67,8 @@ class TestPeriodClosingVoucher(unittest.TestCase):
 		self.assertEqual(pcv_gle, expected_gle)
 
 	def test_cost_center_wise_posting(self):
-		frappe.db.sql("delete from `tabGL Entry` where company='Test PCV Company'")
-		frappe.db.sql("delete from `tabPeriod Closing Voucher` where company='Test PCV Company'")
+		nts .db.sql("delete from `tabGL Entry` where company='Test PCV Company'")
+		nts .db.sql("delete from `tabPeriod Closing Voucher` where company='Test PCV Company'")
 
 		company = create_company()
 		surplus_account = create_account()
@@ -111,7 +111,7 @@ class TestPeriodClosingVoucher(unittest.TestCase):
 			("Sales - TPC", 200.0, 0.0, cost_center2),
 		)
 
-		pcv_gle = frappe.db.sql(
+		pcv_gle = nts .db.sql(
 			"""
 			select account, debit, credit, cost_center
 			from `tabGL Entry` where voucher_no=%s
@@ -126,15 +126,15 @@ class TestPeriodClosingVoucher(unittest.TestCase):
 		pcv.cancel()
 
 		self.assertFalse(
-			frappe.db.get_value(
+			nts .db.get_value(
 				"GL Entry",
 				{"voucher_type": "Period Closing Voucher", "voucher_no": pcv.name, "is_cancelled": 0},
 			)
 		)
 
 	def test_period_closing_with_finance_book_entries(self):
-		frappe.db.sql("delete from `tabGL Entry` where company='Test PCV Company'")
-		frappe.db.sql("delete from `tabPeriod Closing Voucher` where company='Test PCV Company'")
+		nts .db.sql("delete from `tabGL Entry` where company='Test PCV Company'")
+		nts .db.sql("delete from `tabPeriod Closing Voucher` where company='Test PCV Company'")
 
 		company = create_company()
 		surplus_account = create_account()
@@ -175,7 +175,7 @@ class TestPeriodClosingVoucher(unittest.TestCase):
 			("Sales - TPC", 400.0, 0.0, jv.finance_book),
 		)
 
-		pcv_gle = frappe.db.sql(
+		pcv_gle = nts .db.sql(
 			"""
 			select account, debit, credit, finance_book
 			from `tabGL Entry` where voucher_no=%s
@@ -187,8 +187,8 @@ class TestPeriodClosingVoucher(unittest.TestCase):
 		self.assertSequenceEqual(pcv_gle, expected_gle)
 
 	def test_gl_entries_restrictions(self):
-		frappe.db.sql("delete from `tabGL Entry` where company='Test PCV Company'")
-		frappe.db.sql("delete from `tabPeriod Closing Voucher` where company='Test PCV Company'")
+		nts .db.sql("delete from `tabGL Entry` where company='Test PCV Company'")
+		nts .db.sql("delete from `tabPeriod Closing Voucher` where company='Test PCV Company'")
 
 		company = create_company()
 		cost_center = create_cost_center("Test Cost Center 1")
@@ -207,12 +207,12 @@ class TestPeriodClosingVoucher(unittest.TestCase):
 		jv1.company = company
 		jv1.save()
 
-		self.assertRaises(frappe.ValidationError, jv1.submit)
+		self.assertRaises(nts .ValidationError, jv1.submit)
 
 	def test_closing_balance_with_dimensions_and_test_reposting_entry(self):
-		frappe.db.sql("delete from `tabGL Entry` where company='Test PCV Company'")
-		frappe.db.sql("delete from `tabPeriod Closing Voucher` where company='Test PCV Company'")
-		frappe.db.sql("delete from `tabAccount Closing Balance` where company='Test PCV Company'")
+		nts .db.sql("delete from `tabGL Entry` where company='Test PCV Company'")
+		nts .db.sql("delete from `tabPeriod Closing Voucher` where company='Test PCV Company'")
+		nts .db.sql("delete from `tabAccount Closing Balance` where company='Test PCV Company'")
 
 		company = create_company()
 		cost_center1 = create_cost_center("Test Cost Center 1")
@@ -246,7 +246,7 @@ class TestPeriodClosingVoucher(unittest.TestCase):
 
 		pcv1 = self.make_period_closing_voucher(posting_date="2021-03-31")
 
-		closing_balance = frappe.db.get_value(
+		closing_balance = nts .db.get_value(
 			"Account Closing Balance",
 			{
 				"account": "Sales - TPC",
@@ -277,7 +277,7 @@ class TestPeriodClosingVoucher(unittest.TestCase):
 
 		pcv2 = self.make_period_closing_voucher(posting_date="2022-03-31")
 
-		cc1_closing_balance = frappe.db.get_value(
+		cc1_closing_balance = nts .db.get_value(
 			"Account Closing Balance",
 			{
 				"account": "Sales - TPC",
@@ -289,7 +289,7 @@ class TestPeriodClosingVoucher(unittest.TestCase):
 			as_dict=1,
 		)
 
-		cc2_closing_balance = frappe.db.get_value(
+		cc2_closing_balance = nts .db.get_value(
 			"Account Closing Balance",
 			{
 				"account": "Sales - TPC",
@@ -306,9 +306,9 @@ class TestPeriodClosingVoucher(unittest.TestCase):
 		self.assertEqual(cc2_closing_balance.credit, 500)
 		self.assertEqual(cc2_closing_balance.credit_in_account_currency, 500)
 
-		warehouse = frappe.db.get_value("Warehouse", {"company": company}, "name")
+		warehouse = nts .db.get_value("Warehouse", {"company": company}, "name")
 
-		repost_doc = frappe.get_doc(
+		repost_doc = nts .get_doc(
 			{
 				"doctype": "Repost Item Valuation",
 				"company": company,
@@ -319,7 +319,7 @@ class TestPeriodClosingVoucher(unittest.TestCase):
 			}
 		)
 
-		self.assertRaises(frappe.ValidationError, repost_doc.save)
+		self.assertRaises(nts .ValidationError, repost_doc.save)
 
 		repost_doc.posting_date = today()
 		repost_doc.save()
@@ -328,7 +328,7 @@ class TestPeriodClosingVoucher(unittest.TestCase):
 		surplus_account = create_account()
 		cost_center = create_cost_center("Test Cost Center 1")
 		fy = get_fiscal_year(posting_date, company="Test PCV Company")
-		pcv = frappe.get_doc(
+		pcv = nts .get_doc(
 			{
 				"doctype": "Period Closing Voucher",
 				"transaction_date": posting_date or today(),
@@ -349,7 +349,7 @@ class TestPeriodClosingVoucher(unittest.TestCase):
 
 
 def create_company():
-	company = frappe.get_doc(
+	company = nts .get_doc(
 		{
 			"doctype": "Company",
 			"company_name": "Test PCV Company",
@@ -362,7 +362,7 @@ def create_company():
 
 
 def create_account():
-	account = frappe.get_doc(
+	account = nts .get_doc(
 		{
 			"account_name": "Reserve and Surplus",
 			"is_group": 0,
@@ -378,7 +378,7 @@ def create_account():
 
 
 def create_cost_center(cc_name):
-	costcenter = frappe.get_doc(
+	costcenter = nts .get_doc(
 		{
 			"company": "Test PCV Company",
 			"cost_center_name": cc_name,
@@ -391,4 +391,4 @@ def create_cost_center(cc_name):
 
 
 test_dependencies = ["Customer", "Cost Center"]
-test_records = frappe.get_test_records("Period Closing Voucher")
+test_records = nts .get_test_records("Period Closing Voucher")

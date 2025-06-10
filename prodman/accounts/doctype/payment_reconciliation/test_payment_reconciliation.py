@@ -1,12 +1,12 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2021, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
-import frappe
-from frappe import qb
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, add_years, flt, getdate, nowdate, today
-from frappe.utils.data import getdate as convert_to_date
+import nts 
+from nts  import qb
+from nts .tests.utils import nts TestCase, change_settings
+from nts .utils import add_days, add_years, flt, getdate, nowdate, today
+from nts .utils.data import getdate as convert_to_date
 
 from prodman import get_default_cost_center
 from prodman.accounts.doctype.payment_entry.payment_entry import get_payment_entry
@@ -21,7 +21,7 @@ from prodman.stock.doctype.item.test_item import create_item
 test_dependencies = ["Item"]
 
 
-class TestPaymentReconciliation(FrappeTestCase):
+class TestPaymentReconciliation(nts TestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_item()
@@ -31,14 +31,14 @@ class TestPaymentReconciliation(FrappeTestCase):
 		self.clear_old_entries()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def create_company(self):
 		company = None
-		if frappe.db.exists("Company", "_Test Payment Reconciliation"):
-			company = frappe.get_doc("Company", "_Test Payment Reconciliation")
+		if nts .db.exists("Company", "_Test Payment Reconciliation"):
+			company = nts .get_doc("Company", "_Test Payment Reconciliation")
 		else:
-			company = frappe.get_doc(
+			company = nts .get_doc(
 				{
 					"doctype": "Company",
 					"company_name": "_Test Payment Reconciliation",
@@ -60,10 +60,10 @@ class TestPaymentReconciliation(FrappeTestCase):
 		self.cash = "Cash - _PR"
 
 		# create bank account
-		if frappe.db.exists("Account", "HDFC - _PR"):
+		if nts .db.exists("Account", "HDFC - _PR"):
 			self.bank = "HDFC - _PR"
 		else:
-			bank_acc = frappe.get_doc(
+			bank_acc = nts .get_doc(
 				{
 					"doctype": "Account",
 					"account_name": "HDFC",
@@ -122,11 +122,11 @@ class TestPaymentReconciliation(FrappeTestCase):
 		]
 
 		for x in accounts:
-			x = frappe._dict(x)
-			if not frappe.db.get_value(
+			x = nts ._dict(x)
+			if not nts .db.get_value(
 				"Account", filters={"account_name": x.account_name, "company": self.company}
 			):
-				acc = frappe.new_doc("Account")
+				acc = nts .new_doc("Account")
 				acc.account_name = x.account_name
 				acc.parent_account = x.parent_account
 				acc.company = self.company
@@ -134,13 +134,13 @@ class TestPaymentReconciliation(FrappeTestCase):
 				acc.account_type = x.account_type
 				acc.insert()
 			else:
-				name = frappe.db.get_value(
+				name = nts .db.get_value(
 					"Account",
 					filters={"account_name": x.account_name, "company": self.company},
 					fieldname="name",
 					pluck=True,
 				)
-				acc = frappe.get_doc("Account", name)
+				acc = nts .get_doc("Account", name)
 			setattr(self, x.attribute, acc.name)
 
 	def create_sales_invoice(
@@ -271,7 +271,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 			qb.from_(qb.DocType(doctype)).delete().where(qb.DocType(doctype).company == self.company).run()
 
 	def create_payment_reconciliation(self, party_is_customer=True):
-		pr = frappe.new_doc("Payment Reconciliation")
+		pr = nts .new_doc("Payment Reconciliation")
 		pr.company = self.company
 		pr.party_type = "Customer" if party_is_customer else "Supplier"
 		pr.party = self.customer if party_is_customer else self.supplier
@@ -280,7 +280,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		return pr
 
 	def create_journal_entry(self, acc1=None, acc2=None, amount=0, posting_date=None, cost_center=None):
-		je = frappe.new_doc("Journal Entry")
+		je = nts .new_doc("Journal Entry")
 		je.posting_date = posting_date or nowdate()
 		je.company = self.company
 		je.user_remark = "test"
@@ -309,13 +309,13 @@ class TestPaymentReconciliation(FrappeTestCase):
 		# Setup cost center
 		cc_name = "Sub"
 
-		self.main_cc = frappe.get_doc("Cost Center", get_default_cost_center(self.company))
+		self.main_cc = nts .get_doc("Cost Center", get_default_cost_center(self.company))
 
-		cc_exists = frappe.db.get_list("Cost Center", filters={"cost_center_name": cc_name})
+		cc_exists = nts .db.get_list("Cost Center", filters={"cost_center_name": cc_name})
 		if cc_exists:
-			self.sub_cc = frappe.get_doc("Cost Center", cc_exists[0].name)
+			self.sub_cc = nts .get_doc("Cost Center", cc_exists[0].name)
 		else:
-			sub_cc = frappe.new_doc("Cost Center")
+			sub_cc = nts .new_doc("Cost Center")
 			sub_cc.cost_center_name = "Sub"
 			sub_cc.parent_cost_center = self.main_cc.parent_cost_center
 			sub_cc.company = self.main_cc.company
@@ -408,7 +408,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 
 		pr.get_unreconciled_entries()
@@ -456,7 +456,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pr.get_unreconciled_entries()
 		invoices = [x.as_dict() for x in pr.get("invoices")]
 		payments = [x.as_dict() for x in pr.get("payments")]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
 		# Difference amount should not be calculated for base currency accounts
 		for row in pr.allocation:
@@ -502,7 +502,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pr.get_unreconciled_entries()
 		invoices = [x.as_dict() for x in pr.get("invoices")]
 		payments = [x.as_dict() for x in pr.get("payments")]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
 		# Difference amount should not be calculated for base currency accounts
 		for row in pr.allocation:
@@ -523,7 +523,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		exc_rate1 = 80
 		exc_rate2 = 83
 
-		je = frappe.new_doc("Journal Entry")
+		je = nts .new_doc("Journal Entry")
 		je.posting_date = transaction_date
 		je.company = self.company
 		je.user_remark = "test"
@@ -580,7 +580,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pr.get_unreconciled_entries()
 		invoices = [x.as_dict() for x in pr.get("invoices")]
 		payments = [x.as_dict() for x in pr.get("payments")]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
 		# There should no difference_amount as the Journal and Payment have same exchange rate -  'exc_rate1'
 		for row in pr.allocation:
@@ -592,7 +592,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		self.assertEqual(len(pr.get("invoices")), 0)
 		self.assertEqual(len(pr.get("payments")), 0)
 
-		journals = frappe.db.get_all(
+		journals = nts .db.get_all(
 			"Journal Entry Account",
 			filters={"reference_type": je.doctype, "reference_name": je.name, "docstatus": 1},
 			fields=["parent"],
@@ -616,7 +616,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pr.get_unreconciled_entries()
 		invoices = [x.as_dict() for x in pr.get("invoices")]
 		payments = [x.as_dict() for x in pr.get("payments")]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
 		# Difference amount should not be calculated for base currency accounts
 		for row in pr.allocation:
@@ -652,7 +652,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pr.get_unreconciled_entries()
 		invoices = [x.as_dict() for x in pr.get("invoices")]
 		payments = [x.as_dict() for x in pr.get("payments")]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
 		# Difference amount should not be calculated for base currency accounts
 		for row in pr.allocation:
@@ -693,7 +693,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pr.get_unreconciled_entries()
 		invoices = [x.as_dict() for x in pr.get("invoices")]
 		payments = [x.as_dict() for x in pr.get("payments")]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
 		# Difference amount should not be calculated for base currency accounts
 		for row in pr.allocation:
@@ -721,7 +721,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pr.get_unreconciled_entries()
 		invoices = [x.as_dict() for x in pr.get("invoices")]
 		payments = [x.as_dict() for x in pr.get("payments")]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
 		# Cr Note and Invoice are of the same currency. There shouldn't any difference amount.
 		for row in pr.allocation:
@@ -759,14 +759,14 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pr.get_unreconciled_entries()
 		invoices = [x.as_dict() for x in pr.get("invoices")]
 		payments = [x.as_dict() for x in pr.get("payments")]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 
 		pr.get_unreconciled_entries()
 		self.assertEqual(pr.get("invoices"), [])
 		self.assertEqual(pr.get("payments"), [])
 
-		journals = frappe.db.get_all(
+		journals = nts .db.get_all(
 			"Journal Entry",
 			filters={
 				"is_system_generated": 1,
@@ -787,7 +787,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		cr_note.reload()
 		cr_note.cancel()
 		# 'Credit Note' Journal should be auto cancelled
-		journals = frappe.db.get_all(
+		journals = nts .db.get_all(
 			"Journal Entry",
 			filters={
 				"is_system_generated": 1,
@@ -822,7 +822,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pr.get_unreconciled_entries()
 		invoices = [x.as_dict() for x in pr.get("invoices")]
 		payments = [x.as_dict() for x in pr.get("payments")]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.allocation[0].allocated_amount = allocated_amount
 
 		# Cr Note and Invoice are of the same currency. There shouldn't any difference amount.
@@ -954,7 +954,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		# Test exact payment allocation
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [pr.payments[0].as_dict()]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
 		self.assertEqual(pr.allocation[0].allocated_amount, 100)
 		self.assertEqual(pr.allocation[0].difference_amount, -500)
@@ -964,7 +964,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pr.get_unreconciled_entries()
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [pr.payments[1].as_dict()]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.allocation[0].difference_account = "Exchange Gain/Loss - _PR"
 
 		self.assertEqual(pr.allocation[0].allocated_amount, 100)
@@ -972,7 +972,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 
 		# Check if difference journal entry gets generated for difference amount after reconciliation
 		pr.reconcile()
-		total_credit_amount = frappe.db.get_all(
+		total_credit_amount = nts .db.get_all(
 			"Journal Entry Account",
 			{"account": self.debtors_eur, "docstatus": 1, "reference_name": si.name},
 			"sum(credit) as amount",
@@ -982,13 +982,13 @@ class TestPaymentReconciliation(FrappeTestCase):
 		# total credit includes the exchange gain/loss amount
 		self.assertEqual(flt(total_credit_amount, 2), 8500)
 
-		jea_parent = frappe.db.get_all(
+		jea_parent = nts .db.get_all(
 			"Journal Entry Account",
 			filters={"account": self.debtors_eur, "docstatus": 1, "reference_name": si.name, "credit": 500},
 			fields=["parent"],
 		)[0]
 		self.assertEqual(
-			frappe.db.get_value("Journal Entry", jea_parent.parent, "voucher_type"), "Exchange Gain Or Loss"
+			nts .db.get_value("Journal Entry", jea_parent.parent, "voucher_type"), "Exchange Gain Or Loss"
 		)
 
 	def test_difference_amount_via_negative_debit_or_credit_journal_entry(self):
@@ -1048,7 +1048,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		# Test exact payment allocation
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [pr.payments[0].as_dict()]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
 		self.assertEqual(pr.allocation[0].allocated_amount, 100)
 		self.assertEqual(pr.allocation[0].difference_amount, -500)
@@ -1058,7 +1058,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pr.get_unreconciled_entries()
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [pr.payments[1].as_dict()]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.allocation[0].difference_account = "Exchange Gain/Loss - _PR"
 
 		self.assertEqual(pr.allocation[0].allocated_amount, 100)
@@ -1066,7 +1066,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 
 		# Check if difference journal entry gets generated for difference amount after reconciliation
 		pr.reconcile()
-		total_credit_amount = frappe.db.get_all(
+		total_credit_amount = nts .db.get_all(
 			"Journal Entry Account",
 			{"account": self.debtors_eur, "docstatus": 1, "reference_name": si.name},
 			"sum(credit) as amount",
@@ -1076,13 +1076,13 @@ class TestPaymentReconciliation(FrappeTestCase):
 		# total credit includes the exchange gain/loss amount
 		self.assertEqual(flt(total_credit_amount, 2), 8500)
 
-		jea_parent = frappe.db.get_all(
+		jea_parent = nts .db.get_all(
 			"Journal Entry Account",
 			filters={"account": self.debtors_eur, "docstatus": 1, "reference_name": si.name, "credit": 500},
 			fields=["parent"],
 		)[0]
 		self.assertEqual(
-			frappe.db.get_value("Journal Entry", jea_parent.parent, "voucher_type"), "Exchange Gain Or Loss"
+			nts .db.get_value("Journal Entry", jea_parent.parent, "voucher_type"), "Exchange Gain Or Loss"
 		)
 
 	def test_difference_amount_via_payment_entry(self):
@@ -1137,7 +1137,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [pr.payments[0].as_dict()]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
 		self.assertEqual(pr.allocation[0].allocated_amount, 100)
 		self.assertEqual(pr.allocation[0].difference_amount, -500)
@@ -1146,7 +1146,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pr.get_unreconciled_entries()
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [pr.payments[1].as_dict()]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
 		self.assertEqual(pr.allocation[0].allocated_amount, 100)
 		self.assertEqual(pr.allocation[0].difference_amount, -500)
@@ -1276,7 +1276,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [pr.payments[0].as_dict()]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
 		self.assertEqual(pr.allocation[0].allocated_amount, 85)
 		self.assertEqual(pr.allocation[0].difference_amount, 0)
@@ -1285,7 +1285,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		si.reload()
 		self.assertEqual(si.outstanding_amount, 0)
 		# No Exchange Gain/Loss journal should be generated
-		exc_gain_loss_journals = frappe.db.get_all(
+		exc_gain_loss_journals = nts .db.get_all(
 			"Journal Entry Account",
 			filters={"reference_type": si.doctype, "reference_name": si.name, "docstatus": 1},
 			fields=["parent"],
@@ -1301,7 +1301,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pi.credit_to = self.creditors_usd
 		pi.save().submit()
 
-		pi_return = frappe.get_doc(pi.as_dict())
+		pi_return = nts .get_doc(pi.as_dict())
 		pi_return.name = None
 		pi_return.docstatus = 0
 		pi_return.is_return = 1
@@ -1309,7 +1309,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pi_return.items[0].qty = -pi_return.items[0].qty
 		pi_return.submit()
 
-		pr = frappe.get_doc("Payment Reconciliation")
+		pr = nts .get_doc("Payment Reconciliation")
 		pr.company = self.company
 		pr.party_type = "Supplier"
 		pr.party = self.supplier
@@ -1329,9 +1329,9 @@ class TestPaymentReconciliation(FrappeTestCase):
 				payments.append(payment.as_dict())
 				break
 
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
-		# Should not raise frappe.exceptions.ValidationError: Total Debit must be equal to Total Credit.
+		# Should not raise nts .exceptions.ValidationError: Total Debit must be equal to Total Credit.
 		pr.reconcile()
 
 	def test_reconciliation_from_purchase_order_to_multiple_invoices(self):
@@ -1372,7 +1372,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		# partial allocation on pi1 and full allocate on pi2
 		pr.allocation[0].allocated_amount = 100
 		pr.reconcile()
@@ -1414,7 +1414,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [x.as_dict() for x in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 
 		# assert references and total allocated and unallocated amount
@@ -1468,7 +1468,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		# unallocated_amount will have some rounding loss - 26.749950
 		self.assertNotEqual(pe.unallocated_amount, 26.75)
 
-		pr = frappe.get_doc("Payment Reconciliation")
+		pr = nts .get_doc("Payment Reconciliation")
 		pr.company = self.company
 		pr.party_type = "Supplier"
 		pr.party = self.supplier
@@ -1478,9 +1478,9 @@ class TestPaymentReconciliation(FrappeTestCase):
 
 		invoices = [invoice.as_dict() for invoice in pr.invoices]
 		payments = [payment.as_dict() for payment in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
-		# Should not raise frappe.exceptions.ValidationError: Payment Entry has been modified after you pulled it. Please pull it again.
+		# Should not raise nts .exceptions.ValidationError: Payment Entry has been modified after you pulled it. Please pull it again.
 		pr.reconcile()
 
 	def test_reverse_payment_against_payment_for_supplier(self):
@@ -1515,7 +1515,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 
 		invoices = [invoice.as_dict() for invoice in pr.invoices]
 		payments = [payment.as_dict() for payment in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 
 		pe.reload()
@@ -1525,7 +1525,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		self.assertEqual(pe.references[0].exchange_gain_loss, 0)
 		self.assertEqual(pe.references[0].reference_name, reverse_pe.name)
 
-		journals = frappe.db.get_all(
+		journals = nts .db.get_all(
 			"Journal Entry",
 			filters={
 				"voucher_type": "Exchange Gain Or Loss",
@@ -1540,7 +1540,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		"""
 		Reconcile an Advance payment against reverse payment, for a supplier.
 		"""
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Company",
 			self.company,
 			{
@@ -1578,7 +1578,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 
 		invoices = [invoice.as_dict() for invoice in pr.invoices]
 		payments = [payment.as_dict() for payment in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 
 		pe.reload()
@@ -1588,7 +1588,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		self.assertEqual(pe.references[0].exchange_gain_loss, 0)
 		self.assertEqual(pe.references[0].reference_name, reverse_pe.name)
 
-		journals = frappe.db.get_all(
+		journals = nts .db.get_all(
 			"Journal Entry",
 			filters={
 				"voucher_type": "Exchange Gain Or Loss",
@@ -1600,7 +1600,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		self.assertEqual(journals, [])
 
 		# Assert Ledger Entries
-		gl_entries = frappe.db.get_all(
+		gl_entries = nts .db.get_all(
 			"GL Entry",
 			filters={"voucher_no": pe.name},
 			fields=["account", "voucher_no", "against_voucher", "debit", "credit"],
@@ -1637,7 +1637,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 			},
 		]
 		self.assertEqual(gl_entries, expected_gle)
-		pl_entries = frappe.db.get_all(
+		pl_entries = nts .db.get_all(
 			"Payment Ledger Entry",
 			filters={"voucher_no": pe.name},
 			fields=["account", "voucher_no", "against_voucher_no", "amount"],
@@ -1666,7 +1666,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		self.assertEqual(pl_entries, expected_ple)
 
 	def test_advance_payment_reconciliation_date(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Company",
 			self.company,
 			{
@@ -1699,23 +1699,23 @@ class TestPaymentReconciliation(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [invoice.as_dict() for invoice in pr.invoices]
 		payments = [payment.as_dict() for payment in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 
 		# Assert Ledger Entries
-		gl_entries = frappe.db.get_all(
+		gl_entries = nts .db.get_all(
 			"GL Entry",
 			filters={"voucher_no": pe.name, "is_cancelled": 0, "posting_date": pe.posting_date},
 		)
 		self.assertEqual(len(gl_entries), 4)
-		pl_entries = frappe.db.get_all(
+		pl_entries = nts .db.get_all(
 			"Payment Ledger Entry",
 			filters={"voucher_no": pe.name, "delinked": 0, "posting_date": pe.posting_date},
 		)
 		self.assertEqual(len(pl_entries), 3)
 
 	def test_advance_payment_reconciliation_against_journal_for_customer(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Company",
 			self.company,
 			{
@@ -1741,22 +1741,22 @@ class TestPaymentReconciliation(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [invoice.as_dict() for invoice in pr.invoices]
 		payments = [payment.as_dict() for payment in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 
 		# Assert Ledger Entries
-		gl_entries = frappe.db.get_all(
+		gl_entries = nts .db.get_all(
 			"GL Entry",
 			filters={"voucher_no": pe.name, "is_cancelled": 0},
 		)
 		self.assertEqual(len(gl_entries), 4)
-		pl_entries = frappe.db.get_all(
+		pl_entries = nts .db.get_all(
 			"Payment Ledger Entry",
 			filters={"voucher_no": pe.name, "delinked": 0},
 		)
 		self.assertEqual(len(pl_entries), 3)
 
-		gl_entries = frappe.db.get_all(
+		gl_entries = nts .db.get_all(
 			"GL Entry",
 			filters={"voucher_no": pe.name, "is_cancelled": 0},
 			fields=["account", "voucher_no", "against_voucher", "debit", "credit"],
@@ -1794,7 +1794,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		]
 		self.assertEqual(gl_entries, expected_gle)
 
-		pl_entries = frappe.db.get_all(
+		pl_entries = nts .db.get_all(
 			"Payment Ledger Entry",
 			filters={"voucher_no": pe.name},
 			fields=["account", "voucher_no", "against_voucher_no", "amount"],
@@ -1824,7 +1824,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 
 	def test_advance_payment_reconciliation_against_journal_for_supplier(self):
 		self.supplier = make_supplier("_Test Supplier")
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Company",
 			self.company,
 			{
@@ -1856,22 +1856,22 @@ class TestPaymentReconciliation(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 1)
 		invoices = [invoice.as_dict() for invoice in pr.invoices]
 		payments = [payment.as_dict() for payment in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 
 		# Assert Ledger Entries
-		gl_entries = frappe.db.get_all(
+		gl_entries = nts .db.get_all(
 			"GL Entry",
 			filters={"voucher_no": pe.name, "is_cancelled": 0},
 		)
 		self.assertEqual(len(gl_entries), 4)
-		pl_entries = frappe.db.get_all(
+		pl_entries = nts .db.get_all(
 			"Payment Ledger Entry",
 			filters={"voucher_no": pe.name, "delinked": 0},
 		)
 		self.assertEqual(len(pl_entries), 3)
 
-		gl_entries = frappe.db.get_all(
+		gl_entries = nts .db.get_all(
 			"GL Entry",
 			filters={"voucher_no": pe.name, "is_cancelled": 0},
 			fields=["account", "voucher_no", "against_voucher", "debit", "credit"],
@@ -1909,7 +1909,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		]
 		self.assertEqual(gl_entries, expected_gle)
 
-		pl_entries = frappe.db.get_all(
+		pl_entries = nts .db.get_all(
 			"Payment Ledger Entry",
 			filters={"voucher_no": pe.name},
 			fields=["account", "voucher_no", "against_voucher_no", "amount"],
@@ -1956,7 +1956,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		self.assertEqual(len(pr.payments), 6)
 		invoices = [x.as_dict() for x in pr.get("invoices")]
 		payments = [x.as_dict() for x in pr.get("payments")]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 
 		pr.get_unreconciled_entries()
@@ -1979,7 +1979,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 
 	def test_reconciliation_on_closed_period_payment(self):
 		# create backdated fiscal year
-		first_fy_start_date = frappe.db.get_value("Fiscal Year", {"disabled": 0}, "min(year_start_date)")
+		first_fy_start_date = nts .db.get_value("Fiscal Year", {"disabled": 0}, "min(year_start_date)")
 		prev_fy_start_date = add_years(first_fy_start_date, -1)
 		prev_fy_end_date = add_days(first_fy_start_date, -1)
 		create_fiscal_year(
@@ -1987,7 +1987,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		)
 
 		# make journal entry for previous year
-		je_1 = frappe.new_doc("Journal Entry")
+		je_1 = nts .new_doc("Journal Entry")
 		je_1.posting_date = add_days(prev_fy_start_date, 20)
 		je_1.company = self.company
 		je_1.user_remark = "test"
@@ -2040,7 +2040,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pr.get_unreconciled_entries()
 		invoices = [invoice.as_dict() for invoice in pr.invoices]
 		payments = [payment.as_dict() for payment in pr.payments]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		je_1.reload()
 		je_2.reload()
@@ -2050,7 +2050,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		self.assertEqual(pr.get("payments"), [])
 
 	def test_advance_reconciliation_effect_on_same_date(self):
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Company",
 			self.company,
 			{
@@ -2076,7 +2076,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		pr.get_unreconciled_entries()
 		invoices = [x.as_dict() for x in pr.get("invoices")]
 		payments = [x.as_dict() for x in pr.get("payments")]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 
 		# Difference amount should not be calculated for base currency accounts
 		for row in pr.allocation:
@@ -2092,7 +2092,7 @@ class TestPaymentReconciliation(FrappeTestCase):
 		self.assertEqual(pr.get("payments"), [])
 
 		# Assert Ledger Entries
-		gl_entries = frappe.db.get_all(
+		gl_entries = nts .db.get_all(
 			"GL Entry",
 			filters={"voucher_no": pe.name},
 			fields=["account", "posting_date", "voucher_no", "against_voucher", "debit", "credit"],
@@ -2147,8 +2147,8 @@ class TestPaymentReconciliation(FrappeTestCase):
 
 
 def make_customer(customer_name, currency=None):
-	if not frappe.db.exists("Customer", customer_name):
-		customer = frappe.new_doc("Customer")
+	if not nts .db.exists("Customer", customer_name):
+		customer = nts .new_doc("Customer")
 		customer.customer_name = customer_name
 		customer.type = "Individual"
 
@@ -2161,8 +2161,8 @@ def make_customer(customer_name, currency=None):
 
 
 def make_supplier(supplier_name, currency=None):
-	if not frappe.db.exists("Supplier", supplier_name):
-		supplier = frappe.new_doc("Supplier")
+	if not nts .db.exists("Supplier", supplier_name):
+		supplier = nts .new_doc("Supplier")
 		supplier.supplier_name = supplier_name
 		supplier.type = "Individual"
 
@@ -2175,11 +2175,11 @@ def make_supplier(supplier_name, currency=None):
 
 
 def create_fiscal_year(company, year_start_date, year_end_date):
-	fy_docname = frappe.db.exists(
+	fy_docname = nts .db.exists(
 		"Fiscal Year", {"year_start_date": year_start_date, "year_end_date": year_end_date}
 	)
 	if not fy_docname:
-		fy_doc = frappe.get_doc(
+		fy_doc = nts .get_doc(
 			{
 				"doctype": "Fiscal Year",
 				"year": f"{getdate(year_start_date).year}-{getdate(year_end_date).year}",
@@ -2190,8 +2190,8 @@ def create_fiscal_year(company, year_start_date, year_end_date):
 		).save()
 		return fy_doc
 	else:
-		fy_doc = frappe.get_doc("Fiscal Year", fy_docname)
-		if not frappe.db.exists("Fiscal Year Company", {"parent": fy_docname, "company": company}):
+		fy_doc = nts .get_doc("Fiscal Year", fy_docname)
+		if not nts .db.exists("Fiscal Year Company", {"parent": fy_docname, "company": company}):
 			fy_doc.append("companies", {"company": company})
 			fy_doc.save()
 		return fy_doc
@@ -2200,7 +2200,7 @@ def create_fiscal_year(company, year_start_date, year_end_date):
 def make_period_closing_voucher(company, cost_center, posting_date=None, submit=True):
 	from prodman.accounts.doctype.account.test_account import create_account
 
-	parent_account = frappe.db.get_value(
+	parent_account = nts .db.get_value(
 		"Account", {"company": company, "account_name": "Current Liabilities", "is_group": 1}, "name"
 	)
 	surplus_account = create_account(
@@ -2214,7 +2214,7 @@ def make_period_closing_voucher(company, cost_center, posting_date=None, submit=
 		doctype="Account",
 	)
 	fy = get_fiscal_year(posting_date, company=company)
-	pcv = frappe.get_doc(
+	pcv = nts .get_doc(
 		{
 			"doctype": "Period Closing Voucher",
 			"transaction_date": posting_date or today(),

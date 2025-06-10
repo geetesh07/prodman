@@ -1,9 +1,9 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import today
+import nts 
+from nts .tests.utils import nts TestCase
+from nts .utils import today
 
 from prodman.accounts.doctype.payment_entry.test_payment_entry import create_payment_entry
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
@@ -13,7 +13,7 @@ from prodman.selling.doctype.sales_order.sales_order import make_sales_invoice
 from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
 
 
-class TestUnreconcilePayment(AccountsTestMixin, FrappeTestCase):
+class TestUnreconcilePayment(AccountsTestMixin, nts TestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_customer()
@@ -22,7 +22,7 @@ class TestUnreconcilePayment(AccountsTestMixin, FrappeTestCase):
 		self.clear_old_entries()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def create_sales_invoice(self, do_not_submit=False):
 		si = create_sales_invoice(
@@ -84,7 +84,7 @@ class TestUnreconcilePayment(AccountsTestMixin, FrappeTestCase):
 		self.assertEqual(si2.outstanding_amount, 0)
 		self.assertEqual(pe.unallocated_amount, 0)
 
-		unreconcile = frappe.get_doc(
+		unreconcile = nts .get_doc(
 			{
 				"doctype": "Unreconcile Payment",
 				"company": self.company,
@@ -149,7 +149,7 @@ class TestUnreconcilePayment(AccountsTestMixin, FrappeTestCase):
 		self.assertEqual(pe1.unallocated_amount, 0.0)
 		self.assertEqual(pe2.unallocated_amount, 0.0)
 
-		unreconcile = frappe.get_doc(
+		unreconcile = nts .get_doc(
 			{
 				"doctype": "Unreconcile Payment",
 				"company": self.company,
@@ -207,7 +207,7 @@ class TestUnreconcilePayment(AccountsTestMixin, FrappeTestCase):
 		)
 		pe.save().submit()
 
-		unreconcile = frappe.get_doc(
+		unreconcile = nts .get_doc(
 			{
 				"doctype": "Unreconcile Payment",
 				"company": self.company,
@@ -234,7 +234,7 @@ class TestUnreconcilePayment(AccountsTestMixin, FrappeTestCase):
 
 		# Exc gain/loss JE should've been cancelled as well
 		self.assertEqual(
-			frappe.db.count(
+			nts .db.count(
 				"Journal Entry Account",
 				filters={"reference_type": si1.doctype, "reference_name": si1.name, "docstatus": 1},
 			),
@@ -294,7 +294,7 @@ class TestUnreconcilePayment(AccountsTestMixin, FrappeTestCase):
 		)
 		pe2.save().submit()
 
-		unreconcile = frappe.get_doc(
+		unreconcile = nts .get_doc(
 			{
 				"doctype": "Unreconcile Payment",
 				"company": self.company,
@@ -323,7 +323,7 @@ class TestUnreconcilePayment(AccountsTestMixin, FrappeTestCase):
 
 		# Exc gain/loss JE from PE1 should be available
 		self.assertEqual(
-			frappe.db.count(
+			nts .db.count(
 				"Journal Entry Account",
 				filters={"reference_type": si1.doctype, "reference_name": si1.name, "docstatus": 1},
 			),
@@ -346,7 +346,7 @@ class TestUnreconcilePayment(AccountsTestMixin, FrappeTestCase):
 		so.reload()
 		self.assertEqual(so.advance_paid, 100)
 
-		unreconcile = frappe.get_doc(
+		unreconcile = nts .get_doc(
 			{
 				"doctype": "Unreconcile Payment",
 				"company": self.company,
@@ -396,7 +396,7 @@ class TestUnreconcilePayment(AccountsTestMixin, FrappeTestCase):
 		so2.reload()
 		self.assertEqual(so2.advance_paid, 110)
 
-		unreconcile = frappe.get_doc(
+		unreconcile = nts .get_doc(
 			{
 				"doctype": "Unreconcile Payment",
 				"company": self.company,
@@ -441,7 +441,7 @@ class TestUnreconcilePayment(AccountsTestMixin, FrappeTestCase):
 		si = make_sales_invoice(so.name)
 		si.insert().submit()
 
-		pr = frappe.get_doc(
+		pr = nts .get_doc(
 			{
 				"doctype": "Payment Reconciliation",
 				"company": self.company,
@@ -457,7 +457,7 @@ class TestUnreconcilePayment(AccountsTestMixin, FrappeTestCase):
 		self.assertEqual(len(pr.get("payments")), 1)
 		invoices = [x.as_dict() for x in pr.get("invoices")]
 		payments = [x.as_dict() for x in pr.get("payments")]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 
 		self.assertEqual(len(pr.get("invoices")), 0)

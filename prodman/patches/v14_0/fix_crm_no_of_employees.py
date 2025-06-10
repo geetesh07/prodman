@@ -1,4 +1,4 @@
-import frappe
+import nts
 
 
 def execute():
@@ -12,9 +12,9 @@ def execute():
 	}
 
 	for doctype in ("Lead", "Opportunity", "Prospect"):
-		frappe.reload_doctype(doctype)
+		nts.reload_doctype(doctype)
 		for key, value in options.items():
-			frappe.db.sql(
+			nts.db.sql(
 				f"""
                 update `tab{doctype}`
                 set no_of_employees = %s

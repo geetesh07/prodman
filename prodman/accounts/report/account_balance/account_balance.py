@@ -1,15 +1,15 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts 
+from nts  import _
 
 from prodman.accounts.utils import get_balance_on
 
 
 def execute(filters=None):
-	filters = frappe._dict(filters or {})
+	filters = nts ._dict(filters or {})
 	columns = get_columns(filters)
 	data = get_data(filters)
 	return columns, data
@@ -62,7 +62,7 @@ def get_conditions(filters):
 def get_data(filters):
 	data = []
 	conditions = get_conditions(filters)
-	accounts = frappe.db.get_all(
+	accounts = nts .db.get_all(
 		"Account", fields=["name", "account_currency"], filters=conditions, order_by="name"
 	)
 

@@ -15,20 +15,20 @@
 		<div class="section-head section-head-job-card">
 			{{ d.operation }} - {{ d.production_item }}
 			<span class="ml-2 collapse-indicator-job mb-1" style="">
-				{{frappe.utils.icon("es-line-down", "sm", "mb-1")}}
+				{{nts.utils.icon("es-line-down", "sm", "mb-1")}}
 			</span>
 		</div>
 		<div class="row form-section" style="width:100%;margin-bottom:10px">
 			<div class="form-column col-sm-3">
-				<div class="frappe-control" title="{{__('Job Card')}}" style="text-decoration:underline">
+				<div class="nts-control" title="{{__('Job Card')}}" style="text-decoration:underline">
 					{{ d.job_card_link }}
 				</div>
-				<div class="frappe-control" title="{{__('Work Order')}}" style="text-decoration:underline">
+				<div class="nts-control" title="{{__('Work Order')}}" style="text-decoration:underline">
 					{{ d.work_order_link }}
 				</div>
 			</div>
 			<div class="form-column col-sm-2">
-				<div class="frappe-control timer" title="{{__('Timer')}}" style="text-align:center;font-size:14px;" data-job-card = {{escape(d.name)}}>
+				<div class="nts-control timer" title="{{__('Timer')}}" style="text-align:center;font-size:14px;" data-job-card = {{escape(d.name)}}>
 					<span class="hours">00</span>
 					<span class="colon">:</span>
 					<span class="minutes">00</span>
@@ -37,29 +37,29 @@
 				</div>
 
 				{% if(d.status === "Open") { %}
-					<div class="frappe-control" title="{{__('Expected Start Date')}}" style="text-align:center;font-size:11px;padding-top: 4px;">
-						{{ frappe.format(d.expected_start_date, { fieldtype: 'Datetime' }) }}
+					<div class="nts-control" title="{{__('Expected Start Date')}}" style="text-align:center;font-size:11px;padding-top: 4px;">
+						{{ nts.format(d.expected_start_date, { fieldtype: 'Datetime' }) }}
 					</div>
 				{% } else { %}
-					<div class="frappe-control" title="{{__('Expected End Date')}}" style="text-align:center;font-size:11px;padding-top: 4px;">
-						{{ frappe.format(d.expected_end_date, { fieldtype: 'Datetime' }) }}
+					<div class="nts-control" title="{{__('Expected End Date')}}" style="text-align:center;font-size:11px;padding-top: 4px;">
+						{{ nts.format(d.expected_end_date, { fieldtype: 'Datetime' }) }}
 					</div>
 				{% } %}
 
 			</div>
 			<div class="form-column col-sm-2">
-				<div class="frappe-control job-card-status" title="{{__('Status')}}" style="background:{{d.status_color}};text-align:center;border-radius:var(--border-radius-full)">
+				<div class="nts-control job-card-status" title="{{__('Status')}}" style="background:{{d.status_color}};text-align:center;border-radius:var(--border-radius-full)">
 					{{ d.status }}
 				</div>
 			</div>
 			<div class="form-column col-sm-2">
-				<div class="frappe-control" title="{{__('Qty to Manufacture')}}">
+				<div class="nts-control" title="{{__('Qty to Manufacture')}}">
 					<div class="progress" title = "{{d.progress_title}}">
 						<div class="progress-bar progress-bar-success" style="width: {{d.progress_percent}}%">
 						</div>
 					</div>
 				</div>
-				<div class="frappe-control" style="text-align: center; font-size: 10px;">
+				<div class="nts-control" style="text-align: center; font-size: 10px;">
 					{{ d.for_quantity }} / {{ d.total_completed_qty }}
 				</div>
 			</div>

@@ -1,6 +1,6 @@
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days
+import nts
+from nts.tests.utils import ntsTestCase
+from nts.utils import add_days
 
 from prodman.selling.doctype.sales_order.sales_order import make_delivery_note, make_sales_invoice
 from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
@@ -10,7 +10,7 @@ from prodman.stock.doctype.item.test_item import create_item
 test_dependencies = ["Sales Order", "Item", "Sales Invoice", "Delivery Note"]
 
 
-class TestSalesOrderAnalysis(FrappeTestCase):
+class TestSalesOrderAnalysis(ntsTestCase):
 	def create_sales_order(self, transaction_date, do_not_save=False, do_not_submit=False):
 		item = create_item(item_code="_Test Excavator", is_stock_item=0)
 		so = make_sales_order(
@@ -65,7 +65,7 @@ class TestSalesOrderAnalysis(FrappeTestCase):
 		expected_value = {
 			"status": "To Deliver and Bill",
 			"sales_order": so.name,
-			"delay_days": frappe.utils.date_diff(frappe.utils.datetime.date.today(), so.delivery_date),
+			"delay_days": nts.utils.date_diff(nts.utils.datetime.date.today(), so.delivery_date),
 			"qty": 10,
 			"delivered_qty": 0,
 			"pending_qty": 10,
@@ -92,7 +92,7 @@ class TestSalesOrderAnalysis(FrappeTestCase):
 		expected_value = {
 			"status": "To Deliver",
 			"sales_order": so.name,
-			"delay_days": frappe.utils.date_diff(frappe.utils.datetime.date.today(), so.delivery_date),
+			"delay_days": nts.utils.date_diff(nts.utils.datetime.date.today(), so.delivery_date),
 			"qty": 10,
 			"delivered_qty": 0,
 			"pending_qty": 10,
@@ -119,7 +119,7 @@ class TestSalesOrderAnalysis(FrappeTestCase):
 		expected_value = {
 			"status": "To Bill",
 			"sales_order": so.name,
-			"delay_days": frappe.utils.date_diff(frappe.utils.datetime.date.today(), so.delivery_date),
+			"delay_days": nts.utils.date_diff(nts.utils.datetime.date.today(), so.delivery_date),
 			"qty": 10,
 			"delivered_qty": 10,
 			"pending_qty": 0,
@@ -147,7 +147,7 @@ class TestSalesOrderAnalysis(FrappeTestCase):
 		expected_value = {
 			"status": "Completed",
 			"sales_order": so.name,
-			"delay_days": frappe.utils.date_diff(frappe.utils.datetime.date.today(), so.delivery_date),
+			"delay_days": nts.utils.date_diff(nts.utils.datetime.date.today(), so.delivery_date),
 			"qty": 10,
 			"delivered_qty": 10,
 			"pending_qty": 0,
@@ -204,7 +204,7 @@ class TestSalesOrderAnalysis(FrappeTestCase):
 		expected_value = {
 			"status": "To Deliver and Bill",
 			"sales_order": so.name,
-			"delay_days": frappe.utils.date_diff(frappe.utils.datetime.date.today(), so.delivery_date),
+			"delay_days": nts.utils.date_diff(nts.utils.datetime.date.today(), so.delivery_date),
 			"qty": 10,
 			"delivered_qty": 3,
 			"pending_qty": 7,
@@ -240,7 +240,7 @@ class TestSalesOrderAnalysis(FrappeTestCase):
 		expected_value = {
 			"status": "To Bill",
 			"sales_order": so.name,
-			"delay_days": frappe.utils.date_diff(frappe.utils.datetime.date.today(), so.delivery_date),
+			"delay_days": nts.utils.date_diff(nts.utils.datetime.date.today(), so.delivery_date),
 			"qty": 10,
 			"delivered_qty": 10,
 			"pending_qty": 0,

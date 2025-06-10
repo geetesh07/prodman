@@ -1,14 +1,14 @@
-import frappe
+import nts
 
 
 def execute():
-	name = frappe.db.sql(
+	name = nts.db.sql(
 		""" select name from `tabPatch Log` \
 		where \
-			patch like 'execute:frappe.db.sql("update `tabProduction Order` pro set description%' """
+			patch like 'execute:nts.db.sql("update `tabProduction Order` pro set description%' """
 	)
 	if not name:
-		frappe.db.sql(
+		nts.db.sql(
 			"update `tabProduction Order` pro \
 			set \
 				description = (select description from tabItem where name=pro.production_item) \

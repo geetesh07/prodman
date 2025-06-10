@@ -1,10 +1,10 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils.nestedset import NestedSet, get_root_of
+import nts
+from nts import _
+from nts.utils.nestedset import NestedSet, get_root_of
 
 
 class SupplierGroup(NestedSet):
@@ -14,7 +14,7 @@ class SupplierGroup(NestedSet):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.accounts.doctype.party_account.party_account import PartyAccount
 
@@ -41,10 +41,10 @@ class SupplierGroup(NestedSet):
 			advance_account_currency = None
 
 			if x.account:
-				payable_account_currency = frappe.get_cached_value("Account", x.account, "account_currency")
+				payable_account_currency = nts.get_cached_value("Account", x.account, "account_currency")
 
 			if x.advance_account:
-				advance_account_currency = frappe.get_cached_value(
+				advance_account_currency = nts.get_cached_value(
 					"Account", x.advance_account, "account_currency"
 				)
 
@@ -53,13 +53,13 @@ class SupplierGroup(NestedSet):
 				and advance_account_currency
 				and payable_account_currency != advance_account_currency
 			):
-				frappe.throw(
+				nts.throw(
 					_(
 						"Both Payable Account: {0} and Advance Account: {1} must be of same currency for company: {2}"
 					).format(
-						frappe.bold(x.account),
-						frappe.bold(x.advance_account),
-						frappe.bold(x.company),
+						nts.bold(x.account),
+						nts.bold(x.advance_account),
+						nts.bold(x.company),
 					)
 				)
 
@@ -69,4 +69,4 @@ class SupplierGroup(NestedSet):
 
 	def on_trash(self):
 		NestedSet.validate_if_child_exists(self)
-		frappe.utils.nestedset.update_nsm(self)
+		nts.utils.nestedset.update_nsm(self)

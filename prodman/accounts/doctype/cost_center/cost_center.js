@@ -1,9 +1,9 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.accounts");
+nts .provide("prodman.accounts");
 
-frappe.ui.form.on("Cost Center", {
+nts .ui.form.on("Cost Center", {
 	onload: function (frm) {
 		frm.set_query("parent_cost_center", function () {
 			return {
@@ -39,16 +39,16 @@ frappe.ui.form.on("Cost Center", {
 
 		if (!frm.doc.__islocal) {
 			frm.add_custom_button(__("Chart of Cost Centers"), function () {
-				frappe.set_route("Tree", "Cost Center");
+				nts .set_route("Tree", "Cost Center");
 			});
 
 			frm.add_custom_button(__("Budget"), function () {
-				frappe.set_route("List", "Budget", { cost_center: frm.doc.name });
+				nts .set_route("List", "Budget", { cost_center: frm.doc.name });
 			});
 		}
 	},
 	update_cost_center_number: function (frm) {
-		var d = new frappe.ui.Dialog({
+		var d = new nts .ui.Dialog({
 			title: __("Update Cost Center Name / Number"),
 			fields: [
 				{
@@ -80,8 +80,8 @@ frappe.ui.form.on("Cost Center", {
 					d.hide();
 					return;
 				}
-				frappe.dom.freeze();
-				frappe.call({
+				nts .dom.freeze();
+				nts .call({
 					method: "prodman.accounts.utils.update_cost_center",
 					args: {
 						docname: frm.doc.name,
@@ -91,10 +91,10 @@ frappe.ui.form.on("Cost Center", {
 						merge: data.merge,
 					},
 					callback: function (r) {
-						frappe.dom.unfreeze();
+						nts .dom.unfreeze();
 						if (!r.exc) {
 							if (r.message) {
-								frappe.set_route("Form", "Cost Center", r.message);
+								nts .set_route("Form", "Cost Center", r.message);
 							} else {
 								frm.set_value("cost_center_name", data.cost_center_name);
 								frm.set_value("cost_center_number", data.cost_center_number);
@@ -111,7 +111,7 @@ frappe.ui.form.on("Cost Center", {
 
 	parent_cost_center(frm) {
 		if (!frm.doc.company) {
-			frappe.msgprint(__("Please enter company name first"));
+			nts .msgprint(__("Please enter company name first"));
 		}
 	},
 

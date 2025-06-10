@@ -1,15 +1,15 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 from datetime import timedelta
 
-import frappe
-import frappe.desk.notifications
+import nts
+import nts.desk.notifications
 from dateutil.relativedelta import relativedelta
-from frappe import _
-from frappe.core.doctype.user.user import STANDARD_USERS
-from frappe.utils import (
+from nts import _
+from nts.core.doctype.user.user import STANDARD_USERS
+from nts.utils import (
 	add_to_date,
 	flt,
 	fmt_money,
@@ -26,7 +26,7 @@ from prodman.accounts.utils import get_balance_on, get_count_on, get_fiscal_year
 
 user_specific_content = ["calendar_events", "todo_list"]
 
-from frappe.model.document import Document
+from nts.model.document import Document
 
 
 class EmailDigest(Document):
@@ -36,7 +36,7 @@ class EmailDigest(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.setup.doctype.email_digest_recipient.email_digest_recipient import (
 			EmailDigestRecipient,
@@ -80,12 +80,12 @@ class EmailDigest(Document):
 		self.from_date, self.to_date = self.get_from_to_date()
 		self.set_dates()
 		self._accounts = {}
-		self.currency = frappe.db.get_value("Company", self.company, "default_currency")
+		self.currency = nts.db.get_value("Company", self.company, "default_currency")
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_users(self):
 		"""get list of users"""
-		user_list = frappe.db.sql(
+		user_list = nts.db.sql(
 			"""
 			select name, enabled from tabUser
 			where name not in ({})
@@ -102,14 +102,14 @@ class EmailDigest(Document):
 		for p in user_list:
 			p["checked"] = p["name"] in recipient_list and 1 or 0
 
-		frappe.response["user_list"] = user_list
+		nts.response["user_list"] = user_list
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def send(self):
 		# send email only to enabled users
 		valid_users = [
 			p[0]
-			for p in frappe.db.sql(
+			for p in nts.db.sql(
 				"""select name from `tabUser`
 			where enabled=1"""
 			)
@@ -119,7 +119,7 @@ class EmailDigest(Document):
 			for row in self.recipients:
 				msg_for_this_recipient = self.get_msg_html()
 				if msg_for_this_recipient and row.recipient in valid_users:
-					frappe.sendmail(
+					nts.sendmail(
 						recipients=row.recipient,
 						subject=_("{0} Digest").format(_(self.frequency)),
 						message=msg_for_this_recipient,
@@ -130,10 +130,10 @@ class EmailDigest(Document):
 
 	def get_msg_html(self):
 		"""Build email digest content"""
-		frappe.flags.ignore_account_permission = True
+		nts.flags.ignore_account_permission = True
 		from prodman.setup.doctype.email_digest.quotes import get_random_quote
 
-		context = frappe._dict()
+		context = nts._dict()
 		context.update(self.__dict__)
 
 		self.set_title(context)
@@ -163,15 +163,15 @@ class EmailDigest(Document):
 				context.purchase_orders_items_overdue_list,
 			) = self.get_purchase_orders_items_overdue_list()
 			if not context.purchase_order_list:
-				frappe.throw(_("No items to be received are overdue"))
+				nts.throw(_("No items to be received are overdue"))
 
 		if not context:
 			return None
 
-		frappe.flags.ignore_account_permission = False
+		nts.flags.ignore_account_permission = False
 
 		# style
-		return frappe.render_template(
+		return nts.render_template(
 			"prodman/setup/doctype/email_digest/templates/default.html", context, is_path=True
 		)
 
@@ -201,7 +201,7 @@ class EmailDigest(Document):
 
 	def get_notifications(self):
 		"""Get notifications for user"""
-		notifications = frappe.desk.notifications.get_notifications()
+		notifications = nts.desk.notifications.get_notifications()
 
 		notifications = sorted(notifications.get("open_count_doctype", {}).items(), key=lambda a: a[1])
 
@@ -213,7 +213,7 @@ class EmailDigest(Document):
 
 	def get_calendar_events(self):
 		"""Get calendar events for given user"""
-		from frappe.desk.doctype.event.event import get_events
+		from nts.desk.doctype.event.event import get_events
 
 		from_date, to_date = get_future_date_for_calendaer_event(self.frequency)
 
@@ -232,9 +232,9 @@ class EmailDigest(Document):
 	def get_todo_list(self, user_id=None):
 		"""Get to-do list"""
 		if not user_id:
-			user_id = frappe.session.user
+			user_id = nts.session.user
 
-		todo_list = frappe.db.sql(
+		todo_list = nts.db.sql(
 			"""select *
 			from `tabToDo` where (owner=%s or assigned_by=%s) and status='Open'
 			order by field(priority, 'High', 'Medium', 'Low') asc, date asc limit 20""",
@@ -250,9 +250,9 @@ class EmailDigest(Document):
 	def get_todo_count(self, user_id=None):
 		"""Get count of Todo"""
 		if not user_id:
-			user_id = frappe.session.user
+			user_id = nts.session.user
 
-		return frappe.db.sql(
+		return nts.db.sql(
 			"""select count(*) from `tabToDo`
 			where status='Open' and (owner=%s or assigned_by=%s)""",
 			(user_id, user_id),
@@ -261,14 +261,14 @@ class EmailDigest(Document):
 	def get_issue_list(self, user_id=None):
 		"""Get issue list"""
 		if not user_id:
-			user_id = frappe.session.user
+			user_id = nts.session.user
 
-		meta = frappe.get_meta("Issue")
-		role_permissions = frappe.permissions.get_role_permissions(meta, user_id)
+		meta = nts.get_meta("Issue")
+		role_permissions = nts.permissions.get_role_permissions(meta, user_id)
 		if not role_permissions.get("read"):
 			return None
 
-		issue_list = frappe.db.sql(
+		issue_list = nts.db.sql(
 			"""select *
 			from `tabIssue` where status in ("Replied","Open")
 			order by modified asc limit 10""",
@@ -282,7 +282,7 @@ class EmailDigest(Document):
 
 	def get_issue_count(self):
 		"""Get count of Issue"""
-		return frappe.db.sql(
+		return nts.db.sql(
 			"""select count(*) from `tabIssue`
 			where status in ('Open','Replied') """
 		)[0][0]
@@ -290,9 +290,9 @@ class EmailDigest(Document):
 	def get_project_list(self, user_id=None):
 		"""Get project list"""
 		if not user_id:
-			user_id = frappe.session.user
+			user_id = nts.session.user
 
-		project_list = frappe.db.sql(
+		project_list = nts.db.sql(
 			"""select *
 			from `tabProject` where status='Open' and project_type='External'
 			order by modified asc limit 10""",
@@ -306,7 +306,7 @@ class EmailDigest(Document):
 
 	def get_project_count(self):
 		"""Get count of Project"""
-		return frappe.db.sql(
+		return nts.db.sql(
 			"""select count(*) from `tabProject`
 			where status='Open' and project_type='External'"""
 		)[0][0]
@@ -314,7 +314,7 @@ class EmailDigest(Document):
 	def set_accounting_cards(self, context):
 		"""Create accounting cards if checked"""
 
-		cache = frappe.cache()
+		cache = nts.cache()
 		context.cards = []
 		for key in (
 			"income",
@@ -341,10 +341,10 @@ class EmailDigest(Document):
 				card = cache.get(cache_key)
 
 				if card:
-					card = frappe.safe_eval(card)
+					card = nts.safe_eval(card)
 
 				else:
-					card = frappe._dict(getattr(self, "get_" + key)())
+					card = nts._dict(getattr(self, "get_" + key)())
 
 					# format values
 					if card.last_value:
@@ -387,7 +387,7 @@ class EmailDigest(Document):
 		"""Get income for given period"""
 		income, past_income, count = self.get_period_amounts(self.get_roots("income"), "income")
 
-		income_account = frappe.db.get_all(
+		income_account = nts.db.get_all(
 			"Account",
 			fields=["name"],
 			filters={"root_type": "Income", "parent_account": "", "company": self.company},
@@ -458,7 +458,7 @@ class EmailDigest(Document):
 	def get_expenses_booked(self):
 		expenses, past_expenses, count = self.get_period_amounts(self.get_roots("expense"), "expenses_booked")
 
-		expense_account = frappe.db.get_all(
+		expense_account = nts.db.get_all(
 			"Account",
 			fields=["name"],
 			filters={"root_type": "Expense", "parent_account": "", "company": self.company},
@@ -490,7 +490,7 @@ class EmailDigest(Document):
 	def get_sales_orders_to_bill(self):
 		"""Get value not billed"""
 
-		value, count = frappe.db.sql(
+		value, count = nts.db.sql(
 			"""select ifnull((sum(grand_total)) - (sum(grand_total*per_billed/100)),0),
                     count(*) from `tabSales Order`
 					where (transaction_date <= %(to_date)s) and billing_status != "Fully Billed" and company = %(company)s
@@ -516,7 +516,7 @@ class EmailDigest(Document):
 	def get_sales_orders_to_deliver(self):
 		"""Get value not delivered"""
 
-		value, count = frappe.db.sql(
+		value, count = nts.db.sql(
 			"""select ifnull((sum(grand_total)) - (sum(grand_total*per_delivered/100)),0),
 					count(*) from `tabSales Order`
 					where (transaction_date <= %(to_date)s) and delivery_status != "Fully Delivered" and company = %(company)s
@@ -542,7 +542,7 @@ class EmailDigest(Document):
 	def get_purchase_orders_to_receive(self):
 		"""Get value not received"""
 
-		value, count = frappe.db.sql(
+		value, count = nts.db.sql(
 			"""select ifnull((sum(grand_total))-(sum(grand_total*per_received/100)),0),
                     count(*) from `tabPurchase Order`
 					where (transaction_date <= %(to_date)s) and per_received < 100 and company = %(company)s
@@ -568,7 +568,7 @@ class EmailDigest(Document):
 	def get_purchase_orders_to_bill(self):
 		"""Get purchase not billed"""
 
-		value, count = frappe.db.sql(
+		value, count = nts.db.sql(
 			"""select ifnull((sum(grand_total)) - (sum(grand_total*per_billed/100)),0),
                     count(*) from `tabPurchase Order`
 					where (transaction_date <= %(to_date)s) and per_billed < 100 and company = %(company)s
@@ -595,7 +595,7 @@ class EmailDigest(Document):
 		if root_type:
 			accounts = [
 				d.name
-				for d in frappe.db.get_all(
+				for d in nts.db.get_all(
 					"Account",
 					filters={
 						"account_type": account_type,
@@ -608,7 +608,7 @@ class EmailDigest(Document):
 		else:
 			accounts = [
 				d.name
-				for d in frappe.db.get_all(
+				for d in nts.db.get_all(
 					"Account", filters={"account_type": account_type, "company": self.company, "is_group": 0}
 				)
 			]
@@ -665,7 +665,7 @@ class EmailDigest(Document):
 	def get_roots(self, root_type):
 		return [
 			d.name
-			for d in frappe.db.get_all(
+			for d in nts.db.get_all(
 				"Account",
 				filters={
 					"root_type": root_type.title(),
@@ -680,7 +680,7 @@ class EmailDigest(Document):
 		if root_type not in self._accounts:
 			self._accounts[root_type] = [
 				d.name
-				for d in frappe.db.get_all(
+				for d in nts.db.get_all(
 					"Account",
 					filters={"root_type": root_type.title(), "company": self.company, "is_group": 0},
 				)
@@ -712,7 +712,7 @@ class EmailDigest(Document):
 		return self.get_summary_of_pending_quotations("pending_quotations")
 
 	def get_summary_of_pending(self, doc_type, fieldname, getfield):
-		value, count, billed_value, delivered_value = frappe.db.sql(
+		value, count, billed_value, delivered_value = nts.db.sql(
 			"""select ifnull(sum(grand_total),0), count(*),
 			ifnull(sum(grand_total*per_billed/100),0), ifnull(sum(grand_total*{}/100),0)  from `tab{}`
 			where (transaction_date <= %(to_date)s)
@@ -730,7 +730,7 @@ class EmailDigest(Document):
 		}
 
 	def get_summary_of_pending_quotations(self, fieldname):
-		value, count = frappe.db.sql(
+		value, count = nts.db.sql(
 			"""select ifnull(sum(grand_total),0), count(*) from `tabQuotation`
 			where (transaction_date <= %(to_date)s)
 			and company = %(company)s
@@ -738,7 +738,7 @@ class EmailDigest(Document):
 			{"to_date": self.future_to_date, "company": self.company},
 		)[0]
 
-		last_value = frappe.db.sql(
+		last_value = nts.db.sql(
 			"""select ifnull(sum(grand_total),0) from `tabQuotation`
 			where (transaction_date <= %(to_date)s)
 			and company = %(company)s
@@ -792,7 +792,7 @@ class EmailDigest(Document):
 			"posting_date" if doc_type in ["Sales Invoice", "Purchase Invoice"] else "transaction_date"
 		)
 
-		return frappe.get_all(
+		return nts.get_all(
 			doc_type,
 			filters={
 				date_field: ["between", (from_date, to_date)],
@@ -878,8 +878,8 @@ class EmailDigest(Document):
 			left join `tabPurchase Order` on `tabPurchase Order`.name = `tabPurchase Order Item`.parent
 			where status<>'Closed' and `tabPurchase Order Item`.docstatus=1 and CURRENT_DATE > `tabPurchase Order Item`.schedule_date
 			and received_qty < qty order by `tabPurchase Order Item`.idx"""
-		purchase_order_list = frappe.db.sql(sql_po, as_dict=True)
-		purchase_order_items_overdue_list = frappe.db.sql(sql_poi, as_dict=True)
+		purchase_order_list = nts.db.sql(sql_po, as_dict=True)
+		purchase_order_items_overdue_list = nts.db.sql(sql_poi, as_dict=True)
 
 		for t in purchase_order_items_overdue_list:
 			t.link = get_url_to_form("Purchase Order", t.parent)
@@ -891,19 +891,19 @@ class EmailDigest(Document):
 def send():
 	now_date = now_datetime().date()
 
-	for ed in frappe.db.sql(
+	for ed in nts.db.sql(
 		"""select name from `tabEmail Digest`
 			where enabled=1 and docstatus<2""",
 		as_list=1,
 	):
-		ed_obj = frappe.get_doc("Email Digest", ed[0])
+		ed_obj = nts.get_doc("Email Digest", ed[0])
 		if now_date == ed_obj.get_next_sending():
 			ed_obj.send()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_digest_msg(name):
-	return frappe.get_doc("Email Digest", name).get_msg_html()
+	return nts.get_doc("Email Digest", name).get_msg_html()
 
 
 def get_incomes_expenses_for_period(account, from_date, to_date):

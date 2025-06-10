@@ -1,9 +1,9 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2019, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-from frappe.model.document import Document
-from frappe.utils import cint
+from nts.model.document import Document
+from nts.utils import cint
 
 
 class HomepageSection(Document):
@@ -13,7 +13,7 @@ class HomepageSection(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.portal.doctype.homepage_section_card.homepage_section_card import (
 			HomepageSectionCard,

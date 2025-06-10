@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _, msgprint
-from frappe.model.meta import get_field_precision
-from frappe.query_builder.custom import ConstantColumn
-from frappe.utils import flt, getdate
+import nts 
+from nts  import _, msgprint
+from nts .model.meta import get_field_precision
+from nts .query_builder.custom import ConstantColumn
+from nts .utils import flt, getdate
 from pypika import Order
 
 from prodman.accounts.party import get_party_account
@@ -29,11 +29,11 @@ def execute(filters=None):
 
 def _execute(filters, additional_table_columns=None):
 	if not filters:
-		filters = frappe._dict({})
+		filters = nts ._dict({})
 
 	include_payments = filters.get("include_payments")
 	if filters.get("include_payments") and not filters.get("customer"):
-		frappe.throw(_("Please select a customer for fetching payments."))
+		nts .throw(_("Please select a customer for fetching payments."))
 	invoice_list = get_invoices(filters, get_query_columns(additional_table_columns))
 	if filters.get("include_payments"):
 		invoice_list += get_payments(filters)
@@ -54,7 +54,7 @@ def _execute(filters, additional_table_columns=None):
 	# Cost Center & Warehouse Map
 	invoice_cc_wh_map = get_invoice_cc_wh_map(invoice_list)
 	invoice_so_dn_map = get_invoice_so_dn_map(invoice_list)
-	company_currency = frappe.get_cached_value("Company", filters.get("company"), "default_currency")
+	company_currency = nts .get_cached_value("Company", filters.get("company"), "default_currency")
 	mode_of_payments = get_mode_of_payments([inv.name for inv in invoice_list])
 	customers = list(set(d.customer for d in invoice_list))
 	customer_details = get_party_details("Customer", customers)
@@ -113,12 +113,12 @@ def _execute(filters, additional_table_columns=None):
 				income_amount = flt(invoice_income_map.get(inv.name, {}).get(income_acc))
 
 			base_net_total += income_amount
-			row.update({frappe.scrub(income_acc): income_amount})
+			row.update({nts .scrub(income_acc): income_amount})
 
 		# Add amount in unrealized account
 		for account in unrealized_profit_loss_accounts:
 			row.update(
-				{frappe.scrub(account + "_unrealized"): flt(internal_invoice_map.get((inv.name, account)))}
+				{nts .scrub(account + "_unrealized"): flt(internal_invoice_map.get((inv.name, account)))}
 			)
 
 		# net total
@@ -130,14 +130,14 @@ def _execute(filters, additional_table_columns=None):
 			if tax_acc not in income_accounts:
 				tax_amount_precision = (
 					get_field_precision(
-						frappe.get_meta("Sales Taxes and Charges").get_field("tax_amount"),
+						nts .get_meta("Sales Taxes and Charges").get_field("tax_amount"),
 						currency=company_currency,
 					)
 					or 2
 				)
 				tax_amount = flt(invoice_tax_map.get(inv.name, {}).get(tax_acc), tax_amount_precision)
 				total_tax += tax_amount
-				row.update({frappe.scrub(tax_acc): tax_amount})
+				row.update({nts .scrub(tax_acc): tax_amount})
 
 		# total tax, grand total, outstanding amount & rounded total
 
@@ -346,7 +346,7 @@ def get_account_columns(invoice_list, include_payments):
 	unrealized_profit_loss_account_columns = []
 
 	if invoice_list:
-		income_accounts = frappe.db.sql_list(
+		income_accounts = nts .db.sql_list(
 			"""select distinct income_account
 			from `tabSales Invoice Item` where docstatus = 1 and parent in (%s)
 			order by income_account"""
@@ -363,7 +363,7 @@ def get_account_columns(invoice_list, include_payments):
 			advance_tax_accounts = advance_taxes_query.run(as_dict=True, pluck="account_head")
 			tax_accounts = set(tax_accounts + advance_tax_accounts)
 
-		unrealized_profit_loss_accounts = frappe.db.sql_list(
+		unrealized_profit_loss_accounts = nts .db.sql_list(
 			"""SELECT distinct unrealized_profit_loss_account
 			from `tabSales Invoice` where docstatus = 1 and name in (%s)
 			and is_internal_customer = 1
@@ -377,7 +377,7 @@ def get_account_columns(invoice_list, include_payments):
 		income_columns.append(
 			{
 				"label": account,
-				"fieldname": frappe.scrub(account),
+				"fieldname": nts .scrub(account),
 				"fieldtype": "Currency",
 				"options": "currency",
 				"width": 120,
@@ -389,7 +389,7 @@ def get_account_columns(invoice_list, include_payments):
 			tax_columns.append(
 				{
 					"label": account,
-					"fieldname": frappe.scrub(account),
+					"fieldname": nts .scrub(account),
 					"fieldtype": "Currency",
 					"options": "currency",
 					"width": 120,
@@ -400,7 +400,7 @@ def get_account_columns(invoice_list, include_payments):
 		unrealized_profit_loss_account_columns.append(
 			{
 				"label": account,
-				"fieldname": frappe.scrub(account + "_unrealized"),
+				"fieldname": nts .scrub(account + "_unrealized"),
 				"fieldtype": "Currency",
 				"options": "currency",
 				"width": 120,
@@ -414,9 +414,9 @@ def get_account_columns(invoice_list, include_payments):
 
 
 def get_invoices(filters, additional_query_columns):
-	si = frappe.qb.DocType("Sales Invoice")
+	si = nts .qb.DocType("Sales Invoice")
 	query = (
-		frappe.qb.from_(si)
+		nts .qb.from_(si)
 		.select(
 			ConstantColumn("Sales Invoice").as_("doctype"),
 			si.name,
@@ -456,7 +456,7 @@ def get_invoices(filters, additional_query_columns):
 		filters, query, doctype="Sales Invoice", child_doctype="Sales Invoice Item"
 	)
 
-	from frappe.desk.reportview import build_match_conditions
+	from nts .desk.reportview import build_match_conditions
 
 	query, params = query.walk()
 	match_conditions = build_match_conditions("Sales Invoice")
@@ -466,16 +466,16 @@ def get_invoices(filters, additional_query_columns):
 
 	query += " order by posting_date desc, name desc"
 
-	return frappe.db.sql(query, params, as_dict=True)
+	return nts .db.sql(query, params, as_dict=True)
 
 
 def get_conditions(filters, query, doctype):
-	parent_doc = frappe.qb.DocType(doctype)
+	parent_doc = nts .qb.DocType(doctype)
 	if filters.get("owner"):
 		query = query.where(parent_doc.owner == filters.owner)
 
 	if filters.get("mode_of_payment"):
-		payment_doc = frappe.qb.DocType("Sales Invoice Payment")
+		payment_doc = nts .qb.DocType("Sales Invoice Payment")
 		query = query.inner_join(payment_doc).on(parent_doc.name == payment_doc.parent)
 		query = query.where(payment_doc.mode_of_payment == filters.mode_of_payment).distinct()
 
@@ -483,7 +483,7 @@ def get_conditions(filters, query, doctype):
 
 
 def get_payments(filters):
-	args = frappe._dict(
+	args = nts ._dict(
 		account="debit_to",
 		account_fieldname="paid_from",
 		party="customer",
@@ -496,7 +496,7 @@ def get_payments(filters):
 
 
 def get_invoice_income_map(invoice_list):
-	income_details = frappe.db.sql(
+	income_details = nts .db.sql(
 		"""select parent, income_account, sum(base_net_amount) as amount
 		from `tabSales Invoice Item` where parent in (%s) group by parent, income_account"""
 		% ", ".join(["%s"] * len(invoice_list)),
@@ -506,14 +506,14 @@ def get_invoice_income_map(invoice_list):
 
 	invoice_income_map = {}
 	for d in income_details:
-		invoice_income_map.setdefault(d.parent, frappe._dict()).setdefault(d.income_account, [])
+		invoice_income_map.setdefault(d.parent, nts ._dict()).setdefault(d.income_account, [])
 		invoice_income_map[d.parent][d.income_account] = flt(d.amount)
 
 	return invoice_income_map
 
 
 def get_internal_invoice_map(invoice_list):
-	unrealized_amount_details = frappe.db.sql(
+	unrealized_amount_details = nts .db.sql(
 		"""SELECT name, unrealized_profit_loss_account,
 		base_net_total as amount from `tabSales Invoice` where name in (%s)
 		and is_internal_customer = 1 and company = represents_company"""
@@ -531,7 +531,7 @@ def get_internal_invoice_map(invoice_list):
 
 
 def get_invoice_tax_map(invoice_list, invoice_income_map, income_accounts, include_payments=False):
-	tax_details = frappe.db.sql(
+	tax_details = nts .db.sql(
 		"""select parent, account_head,
 		sum(base_tax_amount_after_discount_amount) as tax_amount
 		from `tabSales Taxes and Charges` where parent in (%s) and parenttype = 'Sales Invoice'
@@ -552,14 +552,14 @@ def get_invoice_tax_map(invoice_list, invoice_income_map, income_accounts, inclu
 			else:
 				invoice_income_map[d.parent][d.account_head] = flt(d.tax_amount)
 		else:
-			invoice_tax_map.setdefault(d.parent, frappe._dict()).setdefault(d.account_head, [])
+			invoice_tax_map.setdefault(d.parent, nts ._dict()).setdefault(d.account_head, [])
 			invoice_tax_map[d.parent][d.account_head] = flt(d.tax_amount)
 
 	return invoice_income_map, invoice_tax_map
 
 
 def get_invoice_so_dn_map(invoice_list):
-	si_items = frappe.db.sql(
+	si_items = nts .db.sql(
 		"""select parent, sales_order, delivery_note, so_detail
 		from `tabSales Invoice Item` where parent in (%s)
 		and (sales_order != '' or delivery_note != '')"""
@@ -571,7 +571,7 @@ def get_invoice_so_dn_map(invoice_list):
 	invoice_so_dn_map = {}
 	for d in si_items:
 		if d.sales_order:
-			invoice_so_dn_map.setdefault(d.parent, frappe._dict()).setdefault("sales_order", []).append(
+			invoice_so_dn_map.setdefault(d.parent, nts ._dict()).setdefault("sales_order", []).append(
 				d.sales_order
 			)
 
@@ -579,14 +579,14 @@ def get_invoice_so_dn_map(invoice_list):
 		if d.delivery_note:
 			delivery_note_list = [d.delivery_note]
 		elif d.sales_order:
-			delivery_note_list = frappe.db.sql_list(
+			delivery_note_list = nts .db.sql_list(
 				"""select distinct parent from `tabDelivery Note Item`
 				where docstatus=1 and so_detail=%s""",
 				d.so_detail,
 			)
 
 		if delivery_note_list:
-			invoice_so_dn_map.setdefault(d.parent, frappe._dict()).setdefault(
+			invoice_so_dn_map.setdefault(d.parent, nts ._dict()).setdefault(
 				"delivery_note", delivery_note_list
 			)
 
@@ -594,7 +594,7 @@ def get_invoice_so_dn_map(invoice_list):
 
 
 def get_invoice_cc_wh_map(invoice_list):
-	si_items = frappe.db.sql(
+	si_items = nts .db.sql(
 		"""select parent, cost_center, warehouse
 		from `tabSales Invoice Item` where parent in (%s)
 		and (cost_center != '' or warehouse != '')"""
@@ -606,12 +606,12 @@ def get_invoice_cc_wh_map(invoice_list):
 	invoice_cc_wh_map = {}
 	for d in si_items:
 		if d.cost_center:
-			invoice_cc_wh_map.setdefault(d.parent, frappe._dict()).setdefault("cost_center", []).append(
+			invoice_cc_wh_map.setdefault(d.parent, nts ._dict()).setdefault("cost_center", []).append(
 				d.cost_center
 			)
 
 		if d.warehouse:
-			invoice_cc_wh_map.setdefault(d.parent, frappe._dict()).setdefault("warehouse", []).append(
+			invoice_cc_wh_map.setdefault(d.parent, nts ._dict()).setdefault("warehouse", []).append(
 				d.warehouse
 			)
 
@@ -621,7 +621,7 @@ def get_invoice_cc_wh_map(invoice_list):
 def get_mode_of_payments(invoice_list):
 	mode_of_payments = {}
 	if invoice_list:
-		inv_mop = frappe.db.sql(
+		inv_mop = nts .db.sql(
 			"""select parent, mode_of_payment
 			from `tabSales Invoice Payment` where parent in (%s) group by parent, mode_of_payment"""
 			% ", ".join(["%s"] * len(invoice_list)),

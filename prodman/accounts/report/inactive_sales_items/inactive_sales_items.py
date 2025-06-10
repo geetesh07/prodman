@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import cint
+import nts 
+from nts  import _
+from nts .utils import cint
 
 
 def execute(filters=None):
@@ -96,7 +96,7 @@ def get_sales_details(filters):
 
 	date_field = "s.transaction_date" if filters["based_on"] == "Sales Order" else "s.posting_date"
 
-	sales_data = frappe.db.sql(
+	sales_data = nts .db.sql(
 		"""
 		select s.territory, s.customer, si.item_group, si.item_code, si.qty, {date_field} as last_order_date,
 		DATEDIFF(CURRENT_DATE, {date_field}) as days_since_last_order
@@ -119,7 +119,7 @@ def get_territories(filters):
 	if filters.get("territory"):
 		filter_dict.update({"name": filters["territory"]})
 
-	territories = frappe.get_all("Territory", fields=["name"], filters=filter_dict)
+	territories = nts .get_all("Territory", fields=["name"], filters=filter_dict)
 
 	return territories
 
@@ -133,7 +133,7 @@ def get_items(filters):
 	if filters.get("item"):
 		filters_dict.update({"name": filters["item"]})
 
-	items = frappe.get_all(
+	items = nts .get_all(
 		"Item",
 		fields=["name", "item_group", "item_name", "item_code"],
 		filters=filters_dict,

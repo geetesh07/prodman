@@ -1,14 +1,14 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import copy
 from collections import OrderedDict
 
-import frappe
-from frappe import _, qb
-from frappe.query_builder import CustomFunction
-from frappe.query_builder.functions import Max
-from frappe.utils import date_diff, flt, getdate
+import nts
+from nts import _, qb
+from nts.query_builder import CustomFunction
+from nts.query_builder.functions import Max
+from nts.utils import date_diff, flt, getdate
 
 
 def execute(filters=None):
@@ -34,9 +34,9 @@ def validate_filters(filters):
 	from_date, to_date = filters.get("from_date"), filters.get("to_date")
 
 	if not from_date and to_date:
-		frappe.throw(_("From and To Dates are required."))
+		nts.throw(_("From and To Dates are required."))
 	elif date_diff(to_date, from_date) < 0:
-		frappe.throw(_("To Date cannot be before From Date."))
+		nts.throw(_("To Date cannot be before From Date."))
 
 
 def get_conditions(filters):
@@ -60,7 +60,7 @@ def get_conditions(filters):
 
 
 def get_data(conditions, filters):
-	data = frappe.db.sql(
+	data = nts.db.sql(
 		f"""
 		SELECT
 			so.transaction_date as date,

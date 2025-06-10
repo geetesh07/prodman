@@ -1,15 +1,15 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _, bold
-from frappe.model.document import Document
-from frappe.query_builder import Criterion
-from frappe.query_builder.functions import Cast_
+import nts
+from nts import _, bold
+from nts.model.document import Document
+from nts.query_builder import Criterion
+from nts.query_builder.functions import Cast_
 
 
-class ItemPriceDuplicateItem(frappe.ValidationError):
+class ItemPriceDuplicateItem(nts.ValidationError):
 	pass
 
 
@@ -20,7 +20,7 @@ class ItemPrice(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		batch_no: DF.Link | None
 		brand: DF.Link | None
@@ -52,38 +52,38 @@ class ItemPrice(Document):
 		self.validate_item_template()
 
 	def validate_item(self):
-		if not frappe.db.exists("Item", self.item_code):
-			frappe.throw(_("Item {0} not found.").format(self.item_code))
+		if not nts.db.exists("Item", self.item_code):
+			nts.throw(_("Item {0} not found.").format(self.item_code))
 
 	def update_price_list_details(self):
 		if self.price_list:
-			price_list_details = frappe.db.get_value(
+			price_list_details = nts.db.get_value(
 				"Price List", {"name": self.price_list, "enabled": 1}, ["buying", "selling", "currency"]
 			)
 
 			if not price_list_details:
-				link = frappe.utils.get_link_to_form("Price List", self.price_list)
-				frappe.throw(f"The price list {link} does not exist or is disabled")
+				link = nts.utils.get_link_to_form("Price List", self.price_list)
+				nts.throw(f"The price list {link} does not exist or is disabled")
 
 			self.buying, self.selling, self.currency = price_list_details
 
 	def update_item_details(self):
 		if self.item_code:
-			self.item_name, self.item_description = frappe.db.get_value(
+			self.item_name, self.item_description = nts.db.get_value(
 				"Item", self.item_code, ["item_name", "description"]
 			)
 
 	def validate_item_template(self):
-		if frappe.get_cached_value("Item", self.item_code, "has_variants"):
+		if nts.get_cached_value("Item", self.item_code, "has_variants"):
 			msg = f"Item Price cannot be created for the template item {bold(self.item_code)}"
 
-			frappe.throw(_(msg))
+			nts.throw(_(msg))
 
 	def check_duplicates(self):
-		item_price = frappe.qb.DocType("Item Price")
+		item_price = nts.qb.DocType("Item Price")
 
 		query = (
-			frappe.qb.from_(item_price)
+			nts.qb.from_(item_price)
 			.select(item_price.price_list_rate)
 			.where(
 				(item_price.item_code == self.item_code)
@@ -131,7 +131,7 @@ class ItemPrice(Document):
 		price_list_rate = query.run(as_dict=True)
 
 		if price_list_rate:
-			frappe.throw(
+			nts.throw(
 				_(
 					"Item Price appears multiple times based on Price List, Supplier/Customer, Currency, Item, Batch, UOM, Qty, and Dates."
 				),

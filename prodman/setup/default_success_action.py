@@ -1,4 +1,4 @@
-from frappe import _
+from nts import _
 
 doctype_list = [
 	"Purchase Receipt",

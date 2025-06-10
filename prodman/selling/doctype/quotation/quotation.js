@@ -1,4 +1,4 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 cur_frm.cscript.tax_table = "Sales Taxes and Charges";
@@ -8,7 +8,7 @@ prodman.accounts.taxes.setup_tax_filters("Sales Taxes and Charges");
 prodman.pre_sales.set_as_lost("Quotation");
 prodman.sales_common.setup_selling_controller();
 
-frappe.ui.form.on("Quotation", {
+nts.ui.form.on("Quotation", {
 	setup: function (frm) {
 		(frm.custom_make_buttons = {
 			"Sales Order": "Sales Order",
@@ -93,7 +93,7 @@ prodman.selling.QuotationController = class QuotationController extends prodman.
 	}
 	refresh(doc, dt, dn) {
 		super.refresh(doc, dt, dn);
-		frappe.dynamic_link = {
+		nts.dynamic_link = {
 			doc: this.frm.doc,
 			fieldname: "party_name",
 			doctype: doc.quotation_to,
@@ -102,24 +102,24 @@ prodman.selling.QuotationController = class QuotationController extends prodman.
 		var me = this;
 
 		if (doc.__islocal && !doc.valid_till) {
-			if (frappe.boot.sysdefaults.quotation_valid_till) {
+			if (nts.boot.sysdefaults.quotation_valid_till) {
 				this.frm.set_value(
 					"valid_till",
-					frappe.datetime.add_days(
+					nts.datetime.add_days(
 						doc.transaction_date,
-						frappe.boot.sysdefaults.quotation_valid_till
+						nts.boot.sysdefaults.quotation_valid_till
 					)
 				);
 			} else {
-				this.frm.set_value("valid_till", frappe.datetime.add_months(doc.transaction_date, 1));
+				this.frm.set_value("valid_till", nts.datetime.add_months(doc.transaction_date, 1));
 			}
 		}
 
 		if (doc.docstatus == 1 && !["Lost", "Ordered"].includes(doc.status)) {
 			if (
-				frappe.boot.sysdefaults.allow_sales_order_creation_for_expired_quotation ||
+				nts.boot.sysdefaults.allow_sales_order_creation_for_expired_quotation ||
 				!doc.valid_till ||
-				frappe.datetime.get_diff(doc.valid_till, frappe.datetime.get_today()) >= 0
+				nts.datetime.get_diff(doc.valid_till, nts.datetime.get_today()) >= 0
 			) {
 				this.frm.add_custom_button(__("Sales Order"), () => this.make_sales_order(), __("Create"));
 			}
@@ -178,7 +178,7 @@ prodman.selling.QuotationController = class QuotationController extends prodman.
 		if (has_alternative_item) {
 			this.show_alternative_items_dialog();
 		} else {
-			frappe.model.open_mapped_doc({
+			nts.model.open_mapped_doc({
 				method: "prodman.selling.doctype.quotation.quotation.make_sales_order",
 				frm: me.frm,
 			});
@@ -215,9 +215,9 @@ prodman.selling.QuotationController = class QuotationController extends prodman.
 
 	address_query(doc) {
 		return {
-			query: "frappe.contacts.doctype.address.address.address_query",
+			query: "nts.contacts.doctype.address.address.address_query",
 			filters: {
-				link_doctype: frappe.dynamic_link.doctype,
+				link_doctype: nts.dynamic_link.doctype,
 				link_name: doc.party_name,
 			},
 		};
@@ -225,7 +225,7 @@ prodman.selling.QuotationController = class QuotationController extends prodman.
 
 	validate_company_and_party(party_field) {
 		if (!this.frm.doc.quotation_to) {
-			frappe.msgprint(
+			nts.msgprint(
 				__("Please select a value for {0} quotation_to {1}", [
 					this.frm.doc.doctype,
 					this.frm.doc.name,
@@ -245,7 +245,7 @@ prodman.selling.QuotationController = class QuotationController extends prodman.
 			return;
 		}
 
-		frappe.call({
+		nts.call({
 			method: "prodman.crm.doctype.lead.lead.get_lead_details",
 			args: {
 				lead: this.frm.doc.party_name,
@@ -320,7 +320,7 @@ prodman.selling.QuotationController = class QuotationController extends prodman.
 				};
 			});
 
-		const dialog = new frappe.ui.Dialog({
+		const dialog = new nts.ui.Dialog({
 			title: __("Select Alternative Items for Sales Order"),
 			fields: [
 				{
@@ -344,7 +344,7 @@ prodman.selling.QuotationController = class QuotationController extends prodman.
 				},
 			],
 			primary_action: function () {
-				frappe.model.open_mapped_doc({
+				nts.model.open_mapped_doc({
 					method: "prodman.selling.doctype.quotation.quotation.make_sales_order",
 					frm: me.frm,
 					args: {
@@ -394,7 +394,7 @@ prodman.selling.QuotationController = class QuotationController extends prodman.
 
 cur_frm.script_manager.make(prodman.selling.QuotationController);
 
-frappe.ui.form.on(
+nts.ui.form.on(
 	"Quotation Item",
 	"items_on_form_rendered",
 	"packed_items_on_form_rendered",
@@ -403,8 +403,8 @@ frappe.ui.form.on(
 	}
 );
 
-frappe.ui.form.on("Quotation Item", "stock_balance", function (frm, cdt, cdn) {
-	var d = frappe.model.get_doc(cdt, cdn);
-	frappe.route_options = { item_code: d.item_code };
-	frappe.set_route("query-report", "Stock Balance");
+nts.ui.form.on("Quotation Item", "stock_balance", function (frm, cdt, cdn) {
+	var d = nts.model.get_doc(cdt, cdn);
+	nts.route_options = { item_code: d.item_code };
+	nts.set_route("query-report", "Stock Balance");
 });

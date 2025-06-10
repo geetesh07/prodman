@@ -1,13 +1,13 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("setup", "doctype", "uom")
+	nts.reload_doc("setup", "doctype", "uom")
 
-	uom = frappe.qb.DocType("UOM")
+	uom = nts.qb.DocType("UOM")
 
 	(
-		frappe.qb.update(uom)
+		nts.qb.update(uom)
 		.set(uom.enabled, 1)
 		.where(uom.creation >= "2021-10-18")  # date when this field was released
 	).run()

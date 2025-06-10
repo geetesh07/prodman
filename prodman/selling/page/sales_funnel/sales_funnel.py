@@ -1,49 +1,49 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 from itertools import groupby
 
-import frappe
-from frappe import _
-from frappe.utils import flt
+import nts
+from nts import _
+from nts.utils import flt
 
 from prodman.accounts.report.utils import convert
 
 
 def validate_filters(from_date, to_date, company):
 	if from_date and to_date and (from_date >= to_date):
-		frappe.throw(_("To Date must be greater than From Date"))
+		nts.throw(_("To Date must be greater than From Date"))
 
 	if not company:
-		frappe.throw(_("Please Select a Company"))
+		nts.throw(_("Please Select a Company"))
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_funnel_data(from_date, to_date, company):
 	validate_filters(from_date, to_date, company)
 
-	active_leads = frappe.db.sql(
+	active_leads = nts.db.sql(
 		"""select count(*) from `tabLead`
 		where (date(`creation`) between %s and %s)
 		and company=%s""",
 		(from_date, to_date, company),
 	)[0][0]
 
-	opportunities = frappe.db.sql(
+	opportunities = nts.db.sql(
 		"""select count(*) from `tabOpportunity`
 		where (date(`creation`) between %s and %s)
 		and opportunity_from='Lead' and company=%s""",
 		(from_date, to_date, company),
 	)[0][0]
 
-	quotations = frappe.db.sql(
+	quotations = nts.db.sql(
 		"""select count(*) from `tabQuotation`
 		where docstatus = 1 and (date(`creation`) between %s and %s)
 		and (opportunity!="" or quotation_to="Lead") and company=%s""",
 		(from_date, to_date, company),
 	)[0][0]
 
-	converted = frappe.db.sql(
+	converted = nts.db.sql(
 		"""select count(*) from `tabCustomer`
 		JOIN `tabLead` ON `tabLead`.name = `tabCustomer`.lead_name
 		WHERE (date(`tabCustomer`.creation) between %s and %s)
@@ -59,11 +59,11 @@ def get_funnel_data(from_date, to_date, company):
 	]
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_opp_by_lead_source(from_date, to_date, company):
 	validate_filters(from_date, to_date, company)
 
-	opportunities = frappe.get_all(
+	opportunities = nts.get_all(
 		"Opportunity",
 		filters=[
 			["status", "in", ["Open", "Quotation", "Replied"]],
@@ -74,7 +74,7 @@ def get_opp_by_lead_source(from_date, to_date, company):
 	)
 
 	if opportunities:
-		default_currency = frappe.get_cached_value("Global Defaults", "None", "default_currency")
+		default_currency = nts.get_cached_value("Global Defaults", "None", "default_currency")
 
 		cp_opportunities = [
 			dict(
@@ -111,11 +111,11 @@ def get_opp_by_lead_source(from_date, to_date, company):
 		return "empty"
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_pipeline_data(from_date, to_date, company):
 	validate_filters(from_date, to_date, company)
 
-	opportunities = frappe.get_all(
+	opportunities = nts.get_all(
 		"Opportunity",
 		filters=[
 			["status", "in", ["Open", "Quotation", "Replied"]],
@@ -126,7 +126,7 @@ def get_pipeline_data(from_date, to_date, company):
 	)
 
 	if opportunities:
-		default_currency = frappe.get_cached_value("Global Defaults", "None", "default_currency")
+		default_currency = nts.get_cached_value("Global Defaults", "None", "default_currency")
 
 		cp_opportunities = [
 			dict(

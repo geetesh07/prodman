@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # License: MIT. See LICENSE
 
-import frappe
-from frappe import _, qb, query_builder
-from frappe.query_builder import Criterion, functions
-from frappe.utils.dateutils import getdate
+import nts
+from nts import _, qb, query_builder
+from nts.query_builder import Criterion, functions
+from nts.utils.dateutils import getdate
 
 
 def get_columns():
@@ -91,8 +91,8 @@ def get_descendants_of(doctype, group_name):
 	return child_nodes
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def get_customers_or_items(doctype, txt, searchfield, start, page_len, filters):
 	filter_list = []
 	if isinstance(filters, list):
@@ -113,7 +113,7 @@ def get_customers_or_items(doctype, txt, searchfield, start, page_len, filters):
 	if searchfield and txt:
 		filter_list.append([doctype, searchfield, "like", "%%%s%%" % txt])
 
-	return frappe.desk.reportview.execute(
+	return nts.desk.reportview.execute(
 		doctype,
 		filters=filter_list,
 		fields=["name", "customer_group"] if doctype == "Customer" else ["name", "item_group"],
@@ -127,18 +127,18 @@ def get_conditions(filters):
 	"""
 	Convert filter options to conditions used in query
 	"""
-	filters = frappe._dict(filters) if filters else frappe._dict({})
-	conditions = frappe._dict({})
+	filters = nts._dict(filters) if filters else nts._dict({})
+	conditions = nts._dict({})
 
-	conditions.company = filters.company or frappe.defaults.get_user_default("company")
-	conditions.end_date = filters.period_end_date or frappe.utils.today()
-	conditions.start_date = filters.period_start_date or frappe.utils.add_months(conditions.end_date, -1)
+	conditions.company = filters.company or nts.defaults.get_user_default("company")
+	conditions.end_date = filters.period_end_date or nts.utils.today()
+	conditions.start_date = filters.period_start_date or nts.utils.add_months(conditions.end_date, -1)
 
 	return conditions
 
 
 def build_filter_criterions(filters):
-	filters = frappe._dict(filters) if filters else frappe._dict({})
+	filters = nts._dict(filters) if filters else nts._dict({})
 	qb_criterions = []
 
 	if filters.customer_group:
@@ -243,7 +243,7 @@ def set_payment_terms_statuses(sales_orders, invoices, filters):
 	"""
 
 	for so in sales_orders:
-		so.currency = frappe.get_cached_value("Company", filters.get("company"), "default_currency")
+		so.currency = nts.get_cached_value("Company", filters.get("company"), "default_currency")
 		so.invoices = ""
 		for inv in [x for x in invoices if x.sales_order == so.name and x.invoice_amount > 0]:
 			if so.base_payment_amount - so.paid_amount > 0:

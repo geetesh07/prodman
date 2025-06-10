@@ -1,8 +1,8 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 // render
-frappe.listview_settings["POS Closing Entry"] = {
+nts .listview_settings["POS Closing Entry"] = {
 	get_indicator: function (doc) {
 		var status_color = {
 			Draft: "red",

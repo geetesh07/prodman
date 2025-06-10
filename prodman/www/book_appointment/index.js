@@ -1,4 +1,4 @@
-frappe.ready(async () => {
+nts.ready(async () => {
 	initialise_select_date();
 });
 
@@ -13,12 +13,12 @@ async function initialise_select_date() {
 async function get_global_variables() {
 	// Using await through this file instead of then.
 	window.appointment_settings = (
-		await frappe.call({
+		await nts.call({
 			method: "prodman.www.book_appointment.index.get_appointment_settings",
 		})
 	).message;
 	window.timezones = (
-		await frappe.call({
+		await nts.call({
 			method: "prodman.www.book_appointment.index.get_timezones",
 		})
 	).message;
@@ -49,7 +49,7 @@ function setup_date_picker() {
 function hide_next_button() {
 	let next_button = document.getElementById("next-button");
 	next_button.disabled = true;
-	next_button.onclick = () => frappe.msgprint(__("Please select a date and time"));
+	next_button.onclick = () => nts.msgprint(__("Please select a date and time"));
 }
 
 function show_next_button() {
@@ -64,7 +64,7 @@ function on_date_or_timezone_select() {
 	if (date_picker.value === "") {
 		clear_time_slots();
 		hide_next_button();
-		frappe.throw(__("Please select a date"));
+		nts.throw(__("Please select a date"));
 	}
 	window.selected_date = date_picker.value;
 	window.selected_timezone = timezone.value;
@@ -75,7 +75,7 @@ function on_date_or_timezone_select() {
 
 async function get_time_slots(date, timezone) {
 	let slots = (
-		await frappe.call({
+		await nts.call({
 			method: "prodman.www.book_appointment.index.get_appointment_slots",
 			args: {
 				date: date,
@@ -222,7 +222,7 @@ async function submit() {
 		return;
 	}
 	let contact = get_form_data();
-	let appointment = frappe.call({
+	let appointment = nts.call({
 		method: "prodman.www.book_appointment.index.create_appointment",
 		args: {
 			date: window.selected_date,
@@ -232,9 +232,9 @@ async function submit() {
 		},
 		callback: (response) => {
 			if (response.message.status == "Unverified") {
-				frappe.show_alert(__("Please check your email to confirm the appointment"));
+				nts.show_alert(__("Please check your email to confirm the appointment"));
 			} else {
-				frappe.show_alert(__("Appointment Created Successfully"));
+				nts.show_alert(__("Appointment Created Successfully"));
 			}
 			setTimeout(() => {
 				let redirect_url = "/";
@@ -245,7 +245,7 @@ async function submit() {
 			}, 5000);
 		},
 		error: (err) => {
-			frappe.show_alert(__("Something went wrong please try again"));
+			nts.show_alert(__("Something went wrong please try again"));
 			button.disabled = false;
 		},
 	});

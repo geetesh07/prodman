@@ -1,17 +1,17 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts 
 
 
 class TestAssetCategory(unittest.TestCase):
 	def test_mandatory_fields(self):
-		asset_category = frappe.new_doc("Asset Category")
+		asset_category = nts .new_doc("Asset Category")
 		asset_category.asset_category_name = "Computers"
 
-		self.assertRaises(frappe.MandatoryError, asset_category.insert)
+		self.assertRaises(nts .MandatoryError, asset_category.insert)
 
 		asset_category.total_number_of_depreciations = 3
 		asset_category.frequency_of_depreciation = 3
@@ -27,14 +27,14 @@ class TestAssetCategory(unittest.TestCase):
 
 		try:
 			asset_category.insert(ignore_if_duplicate=True)
-		except frappe.DuplicateEntryError:
+		except nts .DuplicateEntryError:
 			pass
 
 	def test_cwip_accounting(self):
-		frappe.db.get_value("Company", "_Test Company", "capital_work_in_progress_account")
-		frappe.db.set_value("Company", "_Test Company", "capital_work_in_progress_account", "")
+		nts .db.get_value("Company", "_Test Company", "capital_work_in_progress_account")
+		nts .db.set_value("Company", "_Test Company", "capital_work_in_progress_account", "")
 
-		asset_category = frappe.new_doc("Asset Category")
+		asset_category = nts .new_doc("Asset Category")
 		asset_category.asset_category_name = "Computers"
 		asset_category.enable_cwip_accounting = 1
 
@@ -50,4 +50,4 @@ class TestAssetCategory(unittest.TestCase):
 			},
 		)
 
-		self.assertRaises(frappe.ValidationError, asset_category.insert)
+		self.assertRaises(nts .ValidationError, asset_category.insert)

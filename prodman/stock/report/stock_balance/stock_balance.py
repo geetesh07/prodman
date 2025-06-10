@@ -1,16 +1,16 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 from operator import itemgetter
 from typing import Any, TypedDict
 
-import frappe
-from frappe import _
-from frappe.query_builder import Order
-from frappe.query_builder.functions import Coalesce
-from frappe.utils import add_days, cint, date_diff, flt, getdate
-from frappe.utils.nestedset import get_descendants_of
+import nts
+from nts import _
+from nts.query_builder import Order
+from nts.query_builder.functions import Coalesce
+from nts.utils import add_days, cint, date_diff, flt, getdate
+from nts.utils.nestedset import get_descendants_of
 
 import prodman
 from prodman.stock.doctype.inventory_dimension.inventory_dimension import get_inventory_dimensions
@@ -55,10 +55,10 @@ class StockBalanceReport:
 		if self.filters.get("company"):
 			self.company_currency = prodman.get_company_currency(self.filters.get("company"))
 		else:
-			self.company_currency = frappe.db.get_single_value("Global Defaults", "default_currency")
+			self.company_currency = nts.db.get_single_value("Global Defaults", "default_currency")
 
 	def run(self):
-		self.float_precision = cint(frappe.db.get_default("float_precision")) or 3
+		self.float_precision = cint(nts.db.get_default("float_precision")) or 3
 
 		self.inventory_dimensions = self.get_inventory_dimension_fields()
 		self.prepare_opening_data_from_closing_balance()
@@ -73,17 +73,17 @@ class StockBalanceReport:
 		return self.columns, self.data
 
 	def prepare_opening_data_from_closing_balance(self) -> None:
-		self.opening_data = frappe._dict({})
+		self.opening_data = nts._dict({})
 
 		closing_balance = self.get_closing_balance()
 		if not closing_balance:
 			return
 
 		self.start_from = add_days(closing_balance[0].to_date, 1)
-		res = frappe.get_doc("Closing Stock Balance", closing_balance[0].name).get_prepared_data()
+		res = nts.get_doc("Closing Stock Balance", closing_balance[0].name).get_prepared_data()
 
 		for entry in res.data:
-			entry = frappe._dict(entry)
+			entry = nts._dict(entry)
 
 			group_by_key = self.get_group_by_key(entry)
 			if group_by_key not in self.opening_data:
@@ -156,8 +156,8 @@ class StockBalanceReport:
 			self.sle_entries = self.sle_query.run(as_dict=True)
 
 		# HACK: This is required to avoid causing db query in flt
-		_system_settings = frappe.get_cached_doc("System Settings")
-		with frappe.db.unbuffered_cursor():
+		_system_settings = nts.get_cached_doc("System Settings")
+		with nts.db.unbuffered_cursor():
 			if not self.filters.get("show_stock_ageing_data"):
 				self.sle_entries = self.sle_query.run(as_dict=True, as_iterator=True)
 
@@ -229,7 +229,7 @@ class StockBalanceReport:
 	def initialize_data(self, item_warehouse_map, group_by_key, entry):
 		opening_data = self.opening_data.get(group_by_key, {})
 
-		item_warehouse_map[group_by_key] = frappe._dict(
+		item_warehouse_map[group_by_key] = nts._dict(
 			{
 				"item_code": entry.item_code,
 				"warehouse": entry.warehouse,
@@ -267,10 +267,10 @@ class StockBalanceReport:
 		if self.filters.get("ignore_closing_balance"):
 			return []
 
-		table = frappe.qb.DocType("Closing Stock Balance")
+		table = nts.qb.DocType("Closing Stock Balance")
 
 		query = (
-			frappe.qb.from_(table)
+			nts.qb.from_(table)
 			.select(table.name, table.to_date)
 			.where(
 				(table.docstatus == 1)
@@ -289,11 +289,11 @@ class StockBalanceReport:
 		return query.run(as_dict=True)
 
 	def prepare_stock_ledger_entries(self):
-		sle = frappe.qb.DocType("Stock Ledger Entry")
-		item_table = frappe.qb.DocType("Item")
+		sle = nts.qb.DocType("Stock Ledger Entry")
+		item_table = nts.qb.DocType("Item")
 
 		query = (
-			frappe.qb.from_(sle)
+			nts.qb.from_(sle)
 			.inner_join(item_table)
 			.on(sle.item_code == item_table.name)
 			.select(
@@ -343,7 +343,7 @@ class StockBalanceReport:
 		return query
 
 	def apply_warehouse_filters(self, query, sle) -> str:
-		warehouse_table = frappe.qb.DocType("Warehouse")
+		warehouse_table = nts.qb.DocType("Warehouse")
 
 		if self.filters.get("warehouse"):
 			query = apply_warehouse_filter(query, sle, self.filters)
@@ -525,9 +525,9 @@ class StockBalanceReport:
 		if self.filters.item_code or self.filters.item_group:
 			items = [d.item_code for d in self.data]
 
-		table = frappe.qb.DocType("UOM Conversion Detail")
+		table = nts.qb.DocType("UOM Conversion Detail")
 		query = (
-			frappe.qb.from_(table)
+			nts.qb.from_(table)
 			.select(
 				table.conversion_factor,
 				table.parent,
@@ -555,7 +555,7 @@ class StockBalanceReport:
 		if items:
 			filters = {"parent": ("in", items)}
 
-		attribute_info = frappe.get_all(
+		attribute_info = nts.get_all(
 			"Item Variant Attribute",
 			fields=["parent", "attribute", "attribute_value"],
 			filters=filters,
@@ -570,18 +570,18 @@ class StockBalanceReport:
 	def get_opening_vouchers(self):
 		opening_vouchers = {"Stock Entry": [], "Stock Reconciliation": []}
 
-		se = frappe.qb.DocType("Stock Entry")
-		sr = frappe.qb.DocType("Stock Reconciliation")
+		se = nts.qb.DocType("Stock Entry")
+		sr = nts.qb.DocType("Stock Reconciliation")
 
 		vouchers_data = (
-			frappe.qb.from_(
+			nts.qb.from_(
 				(
-					frappe.qb.from_(se)
+					nts.qb.from_(se)
 					.select(se.name, Coalesce("Stock Entry").as_("voucher_type"))
 					.where((se.docstatus == 1) & (se.posting_date <= self.to_date) & (se.is_opening == "Yes"))
 				)
 				+ (
-					frappe.qb.from_(sr)
+					nts.qb.from_(sr)
 					.select(sr.name, Coalesce("Stock Reconciliation").as_("voucher_type"))
 					.where(
 						(sr.docstatus == 1)
@@ -651,4 +651,4 @@ def filter_items_with_no_transactions(
 
 def get_variants_attributes() -> list[str]:
 	"""Return all item variant attributes."""
-	return frappe.get_all("Item Attribute", pluck="name")
+	return nts.get_all("Item Attribute", pluck="name")

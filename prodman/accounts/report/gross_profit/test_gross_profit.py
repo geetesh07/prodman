@@ -1,7 +1,7 @@
-import frappe
-from frappe import qb
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import flt, nowdate
+import nts 
+from nts  import qb
+from nts .tests.utils import nts TestCase
+from nts .utils import flt, nowdate
 
 from prodman.accounts.doctype.sales_invoice.sales_invoice import make_delivery_note
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
@@ -12,7 +12,7 @@ from prodman.stock.doctype.item.test_item import create_item
 from prodman.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
 
 
-class TestGrossProfit(FrappeTestCase):
+class TestGrossProfit(nts TestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_item()
@@ -22,15 +22,15 @@ class TestGrossProfit(FrappeTestCase):
 		self.clear_old_entries()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def create_company(self):
 		company_name = "_Test Gross Profit"
 		abbr = "_GP"
-		if frappe.db.exists("Company", company_name):
-			company = frappe.get_doc("Company", company_name)
+		if nts .db.exists("Company", company_name):
+			company = nts .get_doc("Company", company_name)
 		else:
-			company = frappe.get_doc(
+			company = nts .get_doc(
 				{
 					"doctype": "Company",
 					"company_name": company_name,
@@ -76,10 +76,10 @@ class TestGrossProfit(FrappeTestCase):
 
 	def create_customer(self):
 		name = "_Test GP Customer"
-		if frappe.db.exists("Customer", name):
+		if nts .db.exists("Customer", name):
 			self.customer = name
 		else:
-			customer = frappe.new_doc("Customer")
+			customer = nts .new_doc("Customer")
 			customer.customer_name = name
 			customer.type = "Individual"
 			customer.save()
@@ -202,7 +202,7 @@ class TestGrossProfit(FrappeTestCase):
 			expense_account=self.expense_account,
 		)
 
-		filters = frappe._dict(
+		filters = nts ._dict(
 			company=self.company, from_date=nowdate(), to_date=nowdate(), group_by="Invoice"
 		)
 
@@ -214,7 +214,7 @@ class TestGrossProfit(FrappeTestCase):
 			"currency": "INR",
 			"sales_invoice": self.item,
 			"customer": self.customer,
-			"posting_date": frappe.utils.datetime.date.fromisoformat(nowdate()),
+			"posting_date": nts .utils.datetime.date.fromisoformat(nowdate()),
 			"item_code": self.item,
 			"item_name": self.item,
 			"warehouse": "Stores - _GP",
@@ -242,7 +242,7 @@ class TestGrossProfit(FrappeTestCase):
 			"currency": "INR",
 			"sales_invoice": self.item,
 			"customer": self.customer,
-			"posting_date": frappe.utils.datetime.date.fromisoformat(nowdate()),
+			"posting_date": nts .utils.datetime.date.fromisoformat(nowdate()),
 			"item_code": self.item,
 			"item_name": self.item,
 			"warehouse": "Stores - _GP",
@@ -298,7 +298,7 @@ class TestGrossProfit(FrappeTestCase):
 		sinv = make_sales_invoice(dnote.name)
 		sinv = sinv.save().submit()
 
-		filters = frappe._dict(
+		filters = nts ._dict(
 			company=self.company,
 			from_date=nowdate(),
 			to_date=nowdate(),
@@ -363,7 +363,7 @@ class TestGrossProfit(FrappeTestCase):
 		make_delivery_note(so.name).submit()
 		sinv = make_sales_invoice(so.name).submit()
 
-		filters = frappe._dict(
+		filters = nts ._dict(
 			company=self.company, from_date=nowdate(), to_date=nowdate(), group_by="Invoice"
 		)
 
@@ -373,7 +373,7 @@ class TestGrossProfit(FrappeTestCase):
 			"currency": "INR",
 			"sales_invoice": self.item,
 			"customer": self.customer,
-			"posting_date": frappe.utils.datetime.date.fromisoformat(nowdate()),
+			"posting_date": nts .utils.datetime.date.fromisoformat(nowdate()),
 			"item_code": self.item,
 			"item_name": self.item,
 			"warehouse": "Stores - _GP",
@@ -396,14 +396,14 @@ class TestGrossProfit(FrappeTestCase):
 
 		# Invoice with an item added twice
 		sinv = self.create_sales_invoice(qty=1, rate=100, posting_date=nowdate(), do_not_submit=True)
-		sinv.append("items", frappe.copy_doc(sinv.items[0], ignore_no_copy=False))
+		sinv.append("items", nts .copy_doc(sinv.items[0], ignore_no_copy=False))
 		sinv = sinv.save().submit()
 
 		# Create Credit Note for Invoice
 		cr_note = make_sales_return(sinv.name)
 		cr_note = cr_note.save().submit()
 
-		filters = frappe._dict(
+		filters = nts ._dict(
 			company=self.company, from_date=nowdate(), to_date=nowdate(), group_by="Invoice"
 		)
 
@@ -413,7 +413,7 @@ class TestGrossProfit(FrappeTestCase):
 			"currency": "INR",
 			"sales_invoice": self.item,
 			"customer": self.customer,
-			"posting_date": frappe.utils.datetime.date.fromisoformat(nowdate()),
+			"posting_date": nts .utils.datetime.date.fromisoformat(nowdate()),
 			"item_code": self.item,
 			"item_name": self.item,
 			"warehouse": "Stores - _GP",
@@ -442,7 +442,7 @@ class TestGrossProfit(FrappeTestCase):
 		sinv.is_return = 1
 		sinv = sinv.save().submit()
 
-		filters = frappe._dict(
+		filters = nts ._dict(
 			company=self.company, from_date=nowdate(), to_date=nowdate(), group_by="Invoice"
 		)
 
@@ -452,7 +452,7 @@ class TestGrossProfit(FrappeTestCase):
 			"currency": "INR",
 			"sales_invoice": self.item,
 			"customer": self.customer,
-			"posting_date": frappe.utils.datetime.date.fromisoformat(nowdate()),
+			"posting_date": nts .utils.datetime.date.fromisoformat(nowdate()),
 			"item_code": self.item,
 			"item_name": self.item,
 			"warehouse": "Stores - _GP",
@@ -534,7 +534,7 @@ class TestGrossProfit(FrappeTestCase):
 		sinv.items[0].rate = 800
 		sinv.save().submit()
 
-		filters = frappe._dict(
+		filters = nts ._dict(
 			company=self.company, from_date=nowdate(), to_date=nowdate(), group_by="Invoice"
 		)
 
@@ -544,7 +544,7 @@ class TestGrossProfit(FrappeTestCase):
 			"currency": "INR",
 			"sales_invoice": self.item,
 			"customer": self.customer,
-			"posting_date": frappe.utils.datetime.date.fromisoformat(nowdate()),
+			"posting_date": nts .utils.datetime.date.fromisoformat(nowdate()),
 			"item_code": self.item,
 			"item_name": self.item,
 			"warehouse": "Stores - _GP",
@@ -563,7 +563,7 @@ class TestGrossProfit(FrappeTestCase):
 		"""
 		Test Valuation rate calculation when stock ledger is empty and invoices are against different warehouses
 		"""
-		stock_settings = frappe.get_doc("Stock Settings")
+		stock_settings = nts .get_doc("Stock Settings")
 		stock_settings.valuation_method = "FIFO"
 		stock_settings.save()
 
@@ -593,7 +593,7 @@ class TestGrossProfit(FrappeTestCase):
 		sinv2.items[0].warehouse = self.finished_warehouse
 		sinv2.save().submit()
 
-		filters = frappe._dict(
+		filters = nts ._dict(
 			company=self.company, from_date=nowdate(), to_date=nowdate(), group_by="Invoice"
 		)
 		columns, data = execute(filters=filters)
@@ -624,7 +624,7 @@ class TestGrossProfit(FrappeTestCase):
 			expense_account=self.expense_account,
 		)
 
-		filters = frappe._dict(
+		filters = nts ._dict(
 			company=self.company, from_date=nowdate(), to_date=nowdate(), group_by="Invoice"
 		)
 

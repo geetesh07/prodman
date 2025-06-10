@@ -1,4 +1,4 @@
-frappe.ui.form.ControlData = class ControlData extends frappe.ui.form.ControlData {
+nts.ui.form.ControlData = class ControlData extends nts.ui.form.ControlData {
 	make_input() {
 		super.make_input();
 		if (this.df.options == "Phone") {
@@ -19,7 +19,7 @@ frappe.ui.form.ControlData = class ControlData extends frappe.ui.form.ControlDat
 		}
 	}
 	setup_phone() {
-		if (frappe.phone_call.handler) {
+		if (nts.phone_call.handler) {
 			let control = this.df.read_only ? ".control-value" : ".control-input";
 			this.$wrapper
 				.find(control)
@@ -27,13 +27,13 @@ frappe.ui.form.ControlData = class ControlData extends frappe.ui.form.ControlDat
 					`
 					<span class="phone-btn">
 						<a class="btn-open no-decoration" title="${__("Make a call")}">
-							${frappe.utils.icon("call")}
+							${nts.utils.icon("call")}
 					</span>
 				`
 				)
 				.find(".phone-btn")
 				.click(() => {
-					frappe.phone_call.handler(this.get_value(), this.frm);
+					nts.phone_call.handler(this.get_value(), this.frm);
 				});
 		}
 	}

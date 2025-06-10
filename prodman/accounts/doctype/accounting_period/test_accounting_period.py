@@ -1,10 +1,10 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe.utils import add_months, nowdate
+import nts 
+from nts .utils import add_months, nowdate
 
 from prodman.accounts.doctype.accounting_period.accounting_period import (
 	ClosedAccountingPeriod,
@@ -38,14 +38,14 @@ class TestAccountingPeriod(unittest.TestCase):
 		self.assertRaises(ClosedAccountingPeriod, doc.save)
 
 	def tearDown(self):
-		for d in frappe.get_all("Accounting Period"):
-			frappe.delete_doc("Accounting Period", d.name)
+		for d in nts .get_all("Accounting Period"):
+			nts .delete_doc("Accounting Period", d.name)
 
 
 def create_accounting_period(**args):
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 
-	accounting_period = frappe.new_doc("Accounting Period")
+	accounting_period = nts .new_doc("Accounting Period")
 	accounting_period.start_date = args.start_date or nowdate()
 	accounting_period.end_date = args.end_date or add_months(nowdate(), 1)
 	accounting_period.company = args.company or "_Test Company"

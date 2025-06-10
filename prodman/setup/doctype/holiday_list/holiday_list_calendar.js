@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.views.calendar["Holiday List"] = {
+nts.views.calendar["Holiday List"] = {
 	field_map: {
 		start: "holiday_date",
 		end: "holiday_date",

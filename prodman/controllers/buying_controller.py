@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import ValidationError, _, msgprint
-from frappe.contacts.doctype.address.address import render_address
-from frappe.utils import cint, flt, getdate
-from frappe.utils.data import nowtime
+import nts
+from nts import ValidationError, _, msgprint
+from nts.contacts.doctype.address.address import render_address
+from nts.utils import cint, flt, getdate
+from nts.utils.data import nowtime
 
 import prodman
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import get_dimensions
@@ -32,7 +32,7 @@ class BuyingController(SubcontractingController):
 
 		super().validate()
 		if getattr(self, "supplier", None) and not self.supplier_name:
-			self.supplier_name = frappe.db.get_value("Supplier", self.supplier, "supplier_name")
+			self.supplier_name = nts.db.get_value("Supplier", self.supplier, "supplier_name")
 
 		self.validate_items()
 		self.set_qty_as_per_stock_uom()
@@ -67,13 +67,13 @@ class BuyingController(SubcontractingController):
 		super().onload()
 		self.set_onload(
 			"backflush_based_on",
-			frappe.db.get_single_value("Buying Settings", "backflush_raw_materials_of_subcontract_based_on"),
+			nts.db.get_single_value("Buying Settings", "backflush_raw_materials_of_subcontract_based_on"),
 		)
 
 		if self.docstatus == 1 and self.doctype in ["Purchase Receipt", "Purchase Invoice"]:
 			self.set_onload(
 				"allow_to_make_qc_after_submission",
-				frappe.db.get_single_value(
+				nts.db.get_single_value(
 					"Stock Settings", "allow_to_make_quality_inspection_after_purchase_or_delivery"
 				),
 			)
@@ -91,7 +91,7 @@ class BuyingController(SubcontractingController):
 			ids = [d.get(field) for d in self.get("items") if d.get(field)]
 			bundle_ids = {}
 			if ids:
-				for bundle in frappe.get_all(
+				for bundle in nts.get_all(
 					doctype, filters={"name": ("in", ids)}, fields=["serial_and_batch_bundle", "name"]
 				):
 					bundle_ids[bundle.name] = bundle.serial_and_batch_bundle
@@ -120,7 +120,7 @@ class BuyingController(SubcontractingController):
 						None,
 					)
 					and len(
-						sabe := frappe.get_all(
+						sabe := nts.get_all(
 							"Serial and Batch Entry",
 							filters={"parent": item.serial_and_batch_bundle, "serial_no": ["is", "not set"]},
 							pluck="name",
@@ -128,7 +128,7 @@ class BuyingController(SubcontractingController):
 					)
 					== 1
 				):
-					frappe.set_value("Serial and Batch Entry", sabe[0], "qty", item.qty)
+					nts.set_value("Serial and Batch Entry", sabe[0], "qty", item.qty)
 
 	def set_rate_for_standalone_debit_note(self):
 		if self.get("is_return") and self.get("update_stock") and not self.return_against:
@@ -183,14 +183,14 @@ class BuyingController(SubcontractingController):
 	def set_supplier_from_item_default(self):
 		if self.meta.get_field("supplier") and not self.supplier:
 			for d in self.get("items"):
-				supplier = frappe.db.get_value(
+				supplier = nts.db.get_value(
 					"Item Default", {"parent": d.item_code, "company": self.company}, "default_supplier"
 				)
 				if supplier:
 					self.supplier = supplier
 				else:
-					item_group = frappe.db.get_value("Item", d.item_code, "item_group")
-					supplier = frappe.db.get_value(
+					item_group = nts.db.get_value("Item", d.item_code, "item_group")
+					supplier = nts.db.get_value(
 						"Item Default", {"parent": item_group, "company": self.company}, "default_supplier"
 					)
 					if supplier:
@@ -222,11 +222,11 @@ class BuyingController(SubcontractingController):
 		if self.return_against:
 			not_cancelled_asset = [
 				d.name
-				for d in frappe.db.get_all("Asset", {purchase_doc_field: self.return_against, "docstatus": 1})
+				for d in nts.db.get_all("Asset", {purchase_doc_field: self.return_against, "docstatus": 1})
 			]
 
 		if self.is_return and len(not_cancelled_asset):
-			frappe.throw(
+			nts.throw(
 				_(
 					"{} has submitted assets linked to it. You need to cancel the assets to create purchase return."
 				).format(self.return_against),
@@ -241,7 +241,7 @@ class BuyingController(SubcontractingController):
 
 	def set_landed_cost_voucher_amount(self):
 		for d in self.get("items"):
-			lc_voucher_data = frappe.db.sql(
+			lc_voucher_data = nts.db.sql(
 				"""select sum(applicable_charges), cost_center
 				from `tabLanded Cost Item`
 				where docstatus = 1 and purchase_receipt_item = %s and receipt_document = %s""",
@@ -254,12 +254,12 @@ class BuyingController(SubcontractingController):
 	def validate_from_warehouse(self):
 		for item in self.get("items"):
 			if item.get("from_warehouse") and (item.get("from_warehouse") == item.get("warehouse")):
-				frappe.throw(
+				nts.throw(
 					_("Row #{0}: Accepted Warehouse and Supplier Warehouse cannot be same").format(item.idx)
 				)
 
 			if item.get("from_warehouse") and self.get("is_subcontracted"):
-				frappe.throw(
+				nts.throw(
 					_(
 						"Row #{0}: Cannot select Supplier Warehouse while suppling raw materials to subcontractor"
 					).format(item.idx)
@@ -280,7 +280,7 @@ class BuyingController(SubcontractingController):
 				)
 
 	def set_total_in_words(self):
-		from frappe.utils import money_in_words
+		from nts.utils import money_in_words
 
 		if self.meta.get_field("base_in_words"):
 			if self.meta.get_field("base_rounded_total") and not self.is_rounded_total_disabled():
@@ -391,7 +391,7 @@ class BuyingController(SubcontractingController):
 
 		self.set_sales_incoming_rate_for_internal_transfer()
 
-		allow_at_arms_length_price = frappe.get_cached_value(
+		allow_at_arms_length_price = nts.get_cached_value(
 			"Stock Settings", None, "allow_internal_transfer_at_arms_length_price"
 		)
 		if allow_at_arms_length_price:
@@ -406,7 +406,7 @@ class BuyingController(SubcontractingController):
 				continue
 
 			d.rate = d.sales_incoming_rate
-			frappe.msgprint(
+			nts.msgprint(
 				_(
 					"Row {0}: Item rate has been updated as per valuation rate since its an internal stock transfer"
 				).format(d.idx),
@@ -425,7 +425,7 @@ class BuyingController(SubcontractingController):
 
 		ref_doctype = ref_doctype_map.get(self.doctype)
 		for d in self.get("items"):
-			if not d.get(frappe.scrub(ref_doctype)):
+			if not d.get(nts.scrub(ref_doctype)):
 				posting_time = self.get("posting_time")
 				if not posting_time:
 					posting_time = nowtime()
@@ -451,7 +451,7 @@ class BuyingController(SubcontractingController):
 			else:
 				field = "incoming_rate" if self.get("is_internal_supplier") else "rate"
 				d.sales_incoming_rate = flt(
-					frappe.db.get_value(ref_doctype, d.get(frappe.scrub(ref_doctype)), field)
+					nts.db.get_value(ref_doctype, d.get(nts.scrub(ref_doctype)), field)
 					* (d.conversion_factor or 1),
 					d.precision("rate"),
 				)
@@ -459,24 +459,24 @@ class BuyingController(SubcontractingController):
 	def validate_for_subcontracting(self):
 		if self.is_subcontracted and self.get("is_old_subcontracting_flow"):
 			if self.doctype in ["Purchase Receipt", "Purchase Invoice"] and not self.supplier_warehouse:
-				frappe.throw(_("Supplier Warehouse mandatory for sub-contracted {0}").format(self.doctype))
+				nts.throw(_("Supplier Warehouse mandatory for sub-contracted {0}").format(self.doctype))
 
 			for item in self.get("items"):
 				if item in self.sub_contracted_items and not item.bom:
-					frappe.throw(_("Please select BOM in BOM field for Item {0}").format(item.item_code))
+					nts.throw(_("Please select BOM in BOM field for Item {0}").format(item.item_code))
 			if self.doctype != "Purchase Order":
 				return
 			for row in self.get("supplied_items"):
 				if not row.reserve_warehouse:
-					msg = f"Reserved Warehouse is mandatory for the Item {frappe.bold(row.rm_item_code)} in Raw Materials supplied"
-					frappe.throw(_(msg))
+					msg = f"Reserved Warehouse is mandatory for the Item {nts.bold(row.rm_item_code)} in Raw Materials supplied"
+					nts.throw(_(msg))
 		else:
 			for item in self.get("items"):
 				if item.get("bom"):
 					item.bom = None
 
 	def set_qty_as_per_stock_uom(self):
-		allow_to_edit_stock_qty = frappe.db.get_single_value(
+		allow_to_edit_stock_qty = nts.db.get_single_value(
 			"Stock Settings", "allow_to_edit_stock_uom_qty_for_purchase"
 		)
 
@@ -485,7 +485,7 @@ class BuyingController(SubcontractingController):
 				# Check if item code is present
 				# Conversion factor should not be mandatory for non itemized items
 				if not d.conversion_factor and d.item_code:
-					frappe.throw(_("Row {0}: Conversion Factor is mandatory").format(d.idx))
+					nts.throw(_("Row {0}: Conversion Factor is mandatory").format(d.idx))
 				d.stock_qty = flt(d.qty) * flt(d.conversion_factor)
 
 				if self.doctype == "Purchase Receipt" and d.meta.get_field("received_stock_qty"):
@@ -502,7 +502,7 @@ class BuyingController(SubcontractingController):
 	def validate_purchase_return(self):
 		for d in self.get("items"):
 			if self.is_return and flt(d.rejected_qty) != 0:
-				frappe.throw(_("Row #{0}: Rejected Qty can not be entered in Purchase Return").format(d.idx))
+				nts.throw(_("Row #{0}: Rejected Qty can not be entered in Purchase Return").format(d.idx))
 
 			# validate rate with ref PR
 
@@ -520,7 +520,7 @@ class BuyingController(SubcontractingController):
 				message = _(
 					"Row #{0}: Received Qty must be equal to Accepted + Rejected Qty for Item {1}"
 				).format(d.idx, d.item_code)
-				frappe.throw(msg=message, title=_("Mismatch"), exc=QtyMismatchError)
+				nts.throw(msg=message, title=_("Mismatch"), exc=QtyMismatchError)
 
 	def validate_negative_quantity(self, item_row, field_list):
 		if self.is_return:
@@ -529,10 +529,10 @@ class BuyingController(SubcontractingController):
 		item_row = item_row.as_dict()
 		for fieldname in field_list:
 			if flt(item_row[fieldname]) < 0:
-				frappe.throw(
+				nts.throw(
 					_("Row #{0}: {1} can not be negative for item {2}").format(
 						item_row["idx"],
-						frappe.get_meta(item_row.doctype).get_label(fieldname),
+						nts.get_meta(item_row.doctype).get_label(fieldname),
 						item_row["item_code"],
 					)
 				)
@@ -540,9 +540,9 @@ class BuyingController(SubcontractingController):
 	def check_for_on_hold_or_closed_status(self, ref_doctype, ref_fieldname):
 		for d in self.get("items"):
 			if d.get(ref_fieldname):
-				status = frappe.db.get_value(ref_doctype, d.get(ref_fieldname), "status")
+				status = nts.db.get_value(ref_doctype, d.get(ref_fieldname), "status")
 				if status in ("Closed", "On Hold"):
-					frappe.throw(_("{0} {1} is {2}").format(ref_doctype, d.get(ref_fieldname), status))
+					nts.throw(_("{0} {1} is {2}").format(ref_doctype, d.get(ref_fieldname), status))
 
 	def update_stock_ledger(self, allow_negative_stock=False, via_landed_cost_voucher=False):
 		self.update_ordered_and_reserved_qty()
@@ -564,7 +564,7 @@ class BuyingController(SubcontractingController):
 					):
 						serial_and_batch_bundle = d.get("serial_and_batch_bundle")
 						if self.is_internal_transfer() and self.is_return and self.docstatus == 2:
-							serial_and_batch_bundle = frappe.db.get_value(
+							serial_and_batch_bundle = nts.db.get_value(
 								"Stock Ledger Entry",
 								{"voucher_detail_no": d.name, "warehouse": d.from_warehouse},
 								"serial_and_batch_bundle",
@@ -635,7 +635,7 @@ class BuyingController(SubcontractingController):
 					):
 						serial_and_batch_bundle = None
 						if self.is_internal_transfer() and self.docstatus == 2:
-							serial_and_batch_bundle = frappe.db.get_value(
+							serial_and_batch_bundle = nts.db.get_value(
 								"Stock Ledger Entry",
 								{"voucher_detail_no": d.name, "warehouse": d.warehouse},
 								"serial_and_batch_bundle",
@@ -659,7 +659,7 @@ class BuyingController(SubcontractingController):
 
 			if flt(d.rejected_qty) != 0:
 				valuation_rate_for_rejected_item = 0.0
-				if frappe.db.get_single_value("Buying Settings", "set_valuation_rate_for_rejected_materials"):
+				if nts.db.get_single_value("Buying Settings", "set_valuation_rate_for_rejected_materials"):
 					valuation_rate_for_rejected_item = d.valuation_rate
 
 				sl_entries.append(
@@ -708,12 +708,12 @@ class BuyingController(SubcontractingController):
 
 		for po, po_item_rows in po_map.items():
 			if po and po_item_rows:
-				po_obj = frappe.get_doc("Purchase Order", po)
+				po_obj = nts.get_doc("Purchase Order", po)
 
 				if po_obj.status in ["Closed", "Cancelled"]:
-					frappe.throw(
+					nts.throw(
 						_("{0} {1} is cancelled or closed").format(_("Purchase Order"), po),
-						frappe.InvalidStatusError,
+						nts.InvalidStatusError,
 					)
 
 				po_obj.update_ordered_qty(po_item_rows)
@@ -731,7 +731,7 @@ class BuyingController(SubcontractingController):
 			"Purchase Order",
 			"Purchase Receipt",
 			"Purchase Invoice",
-		] and not frappe.db.get_single_value("Buying Settings", "disable_last_purchase_rate"):
+		] and not nts.db.get_single_value("Buying Settings", "disable_last_purchase_rate"):
 			update_last_purchase_rate(self, is_submit=1)
 
 	def on_cancel(self):
@@ -744,7 +744,7 @@ class BuyingController(SubcontractingController):
 			"Purchase Order",
 			"Purchase Receipt",
 			"Purchase Invoice",
-		] and not frappe.db.get_single_value("Buying Settings", "disable_last_purchase_rate"):
+		] and not nts.db.get_single_value("Buying Settings", "disable_last_purchase_rate"):
 			update_last_purchase_rate(self, is_submit=0)
 
 		if self.doctype in ["Purchase Receipt", "Purchase Invoice"]:
@@ -805,50 +805,50 @@ class BuyingController(SubcontractingController):
 							# dont show asset form links if more than 5 assets are created
 							messages.append(
 								_("{} Assets created for {}").format(
-									len(created_assets), frappe.bold(d.item_code)
+									len(created_assets), nts.bold(d.item_code)
 								)
 							)
 						else:
 							assets_link = list(
-								map(lambda d: frappe.utils.get_link_to_form("Asset", d), created_assets)
+								map(lambda d: nts.utils.get_link_to_form("Asset", d), created_assets)
 							)
-							assets_link = frappe.bold(",".join(assets_link))
+							assets_link = nts.bold(",".join(assets_link))
 
 							is_plural = "s" if len(created_assets) != 1 else ""
 							messages.append(
 								_("Asset{is_plural} {assets_link} created for {item_code}").format(
 									is_plural=is_plural,
 									assets_link=assets_link,
-									item_code=frappe.bold(d.item_code),
+									item_code=nts.bold(d.item_code),
 								)
 							)
 					else:
-						frappe.throw(
+						nts.throw(
 							_(
 								"Row {}: Asset Naming Series is mandatory for the auto creation for item {}"
-							).format(d.idx, frappe.bold(d.item_code))
+							).format(d.idx, nts.bold(d.item_code))
 						)
 				else:
 					messages.append(
 						_("Assets not created for {0}. You will have to create asset manually.").format(
-							frappe.bold(d.item_code)
+							nts.bold(d.item_code)
 						)
 					)
 
 		for message in messages:
-			frappe.msgprint(message, title="Success", indicator="green")
+			nts.msgprint(message, title="Success", indicator="green")
 
 	def make_asset(self, row, accounting_dimensions, is_grouped_asset=False):
 		if not row.asset_location:
-			frappe.throw(_("Row {0}: Enter location for the asset item {1}").format(row.idx, row.item_code))
+			nts.throw(_("Row {0}: Enter location for the asset item {1}").format(row.idx, row.item_code))
 
-		item_data = frappe.get_cached_value(
+		item_data = nts.get_cached_value(
 			"Item", row.item_code, ["asset_naming_series", "asset_category"], as_dict=1
 		)
 		asset_quantity = row.qty if is_grouped_asset else 1
 		purchase_amount = flt(row.valuation_rate) * asset_quantity
 
-		asset = frappe.get_doc(
+		asset = nts.get_doc(
 			{
 				"doctype": "Asset",
 				"item_code": row.item_code,
@@ -887,14 +887,14 @@ class BuyingController(SubcontractingController):
 	def update_fixed_asset(self, field, delete_asset=False):
 		for d in self.get("items"):
 			if d.is_fixed_asset:
-				is_auto_create_enabled = frappe.db.get_value("Item", d.item_code, "auto_create_assets")
-				assets = frappe.db.get_all("Asset", filters={field: self.name, "item_code": d.item_code})
+				is_auto_create_enabled = nts.db.get_value("Item", d.item_code, "auto_create_assets")
+				assets = nts.db.get_all("Asset", filters={field: self.name, "item_code": d.item_code})
 
 				for asset in assets:
-					asset = frappe.get_doc("Asset", asset.name)
+					asset = nts.get_doc("Asset", asset.name)
 					if delete_asset and is_auto_create_enabled:
 						# need to delete movements to delete assets otherwise throws link exists error
-						movements = frappe.db.sql(
+						movements = nts.db.sql(
 							"""SELECT asm.name
 							FROM `tabAsset Movement` asm, `tabAsset Movement Item` asm_item
 							WHERE asm_item.parent=asm.name and asm_item.asset=%s""",
@@ -902,8 +902,8 @@ class BuyingController(SubcontractingController):
 							as_dict=1,
 						)
 						for movement in movements:
-							frappe.delete_doc("Asset Movement", movement.name, force=1)
-						frappe.delete_doc("Asset", asset.name, force=1)
+							nts.delete_doc("Asset Movement", movement.name, force=1)
+						nts.delete_doc("Asset", asset.name, force=1)
 						continue
 
 					if self.docstatus == 2:
@@ -913,10 +913,10 @@ class BuyingController(SubcontractingController):
 							asset.set(field, None)
 							asset.supplier = None
 						if asset.docstatus == 1 and delete_asset:
-							frappe.throw(
+							nts.throw(
 								_(
 									"Cannot cancel this document as it is linked with submitted asset {0}. Please cancel it to continue."
-								).format(frappe.utils.get_link_to_form("Asset", asset.name))
+								).format(nts.utils.get_link_to_form("Asset", asset.name))
 							)
 
 					asset.flags.ignore_validate_update_after_submit = True
@@ -930,8 +930,8 @@ class BuyingController(SubcontractingController):
 		if self.doctype == "Purchase Invoice" and not self.get("update_stock"):
 			return
 
-		asset_movement = frappe.db.get_value("Asset Movement", {"reference_name": self.name}, "name")
-		frappe.delete_doc("Asset Movement", asset_movement, force=1)
+		asset_movement = nts.db.get_value("Asset Movement", {"reference_name": self.name}, "name")
+		nts.delete_doc("Asset Movement", asset_movement, force=1)
 
 	def validate_schedule_date(self):
 		if not self.get("items"):
@@ -953,9 +953,9 @@ class BuyingController(SubcontractingController):
 					and self.transaction_date
 					and getdate(d.schedule_date) < getdate(self.transaction_date)
 				):
-					frappe.throw(_("Row #{0}: Reqd by Date cannot be before Transaction Date").format(d.idx))
+					nts.throw(_("Row #{0}: Reqd by Date cannot be before Transaction Date").format(d.idx))
 		else:
-			frappe.throw(_("Please enter Reqd by Date"))
+			nts.throw(_("Please enter Reqd by Date"))
 
 	def validate_items(self):
 		# validate items to see if they have is_purchase_item or is_subcontracted_item enabled
@@ -970,7 +970,7 @@ class BuyingController(SubcontractingController):
 
 def get_asset_item_details(asset_items):
 	asset_items_data = {}
-	for d in frappe.get_all(
+	for d in nts.get_all(
 		"Item",
 		fields=["name", "auto_create_assets", "asset_naming_series", "is_grouped_asset"],
 		filters={"name": ("in", asset_items)},
@@ -988,11 +988,11 @@ def validate_item_type(doc, fieldname, message):
 	if not items:
 		return
 
-	item_list = ", ".join(["%s" % frappe.db.escape(d) for d in items])
+	item_list = ", ".join(["%s" % nts.db.escape(d) for d in items])
 
 	invalid_items = [
 		d[0]
-		for d in frappe.db.sql(
+		for d in nts.db.sql(
 			f"""
 		select item_code from tabItem where name in ({item_list}) and {fieldname}=0
 		""",
@@ -1012,7 +1012,7 @@ def validate_item_type(doc, fieldname, message):
 				"Following item {0} is not marked as {1} item. You can enable them as {1} item from its Item master"
 			).format(items, message)
 
-		frappe.throw(error_message)
+		nts.throw(error_message)
 
 
 @prodman.allow_regional

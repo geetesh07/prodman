@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2020, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
 function time_to_seconds(time_str) {
@@ -61,7 +61,7 @@ function validate_call_schedule_timeslot(schedule) {
 	}
 
 	if (errors.length > 0) {
-		frappe.throw(errors.join("<br/>"));
+		nts.throw(errors.join("<br/>"));
 	}
 }
 
@@ -91,12 +91,12 @@ function validate_call_schedule_overlaps(schedule) {
 	let group_by_day = groupby(schedule, "day_of_week");
 	for (const [day, day_schedule] of Object.entries(group_by_day)) {
 		if (is_call_schedule_overlapped(day_schedule)) {
-			frappe.throw(__("Please fix overlapping time slots for {0}", [day]));
+			nts.throw(__("Please fix overlapping time slots for {0}", [day]));
 		}
 	}
 }
 
-frappe.ui.form.on("Incoming Call Settings", {
+nts.ui.form.on("Incoming Call Settings", {
 	validate(frm) {
 		validate_call_schedule(frm.doc.call_handling_schedule);
 	},

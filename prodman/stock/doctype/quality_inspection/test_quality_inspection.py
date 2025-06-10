@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import nowdate
+import nts
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import nowdate
 
 from prodman.controllers.stock_controller import (
 	QualityInspectionNotSubmittedError,
@@ -15,14 +15,14 @@ from prodman.stock.doctype.delivery_note.test_delivery_note import create_delive
 from prodman.stock.doctype.item.test_item import create_item
 from prodman.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
 
-# test_records = frappe.get_test_records('Quality Inspection')
+# test_records = nts.get_test_records('Quality Inspection')
 
 
-class TestQualityInspection(FrappeTestCase):
+class TestQualityInspection(ntsTestCase):
 	def setUp(self):
 		super().setUp()
 		create_item("_Test Item with QA")
-		frappe.db.set_value("Item", "_Test Item with QA", "inspection_required_before_delivery", 1)
+		nts.db.set_value("Item", "_Test Item with QA", "inspection_required_before_delivery", 1)
 
 	def test_qa_for_delivery(self):
 		make_stock_entry(
@@ -38,7 +38,7 @@ class TestQualityInspection(FrappeTestCase):
 		dn.reload()
 		self.assertRaises(QualityInspectionRejectedError, dn.submit)
 
-		frappe.db.set_value("Quality Inspection", qa.name, "status", "Accepted")
+		nts.db.set_value("Quality Inspection", qa.name, "status", "Accepted")
 		dn.reload()
 		dn.submit()
 
@@ -145,7 +145,7 @@ class TestQualityInspection(FrappeTestCase):
 
 		# cleanup
 		for qi in quality_inspections:
-			frappe.delete_doc("Quality Inspection", qi)
+			nts.delete_doc("Quality Inspection", qi)
 		dn.delete()
 
 	def test_rejected_qi_validation(self):
@@ -165,13 +165,13 @@ class TestQualityInspection(FrappeTestCase):
 			reference_type="Stock Entry", reference_name=se.name, readings=readings, status="Rejected"
 		)
 
-		frappe.db.set_single_value("Stock Settings", "action_if_quality_inspection_is_rejected", "Stop")
+		nts.db.set_single_value("Stock Settings", "action_if_quality_inspection_is_rejected", "Stop")
 		se.reload()
 		self.assertRaises(
 			QualityInspectionRejectedError, se.submit
 		)  # when blocked in Stock settings, block rejected QI
 
-		frappe.db.set_single_value("Stock Settings", "action_if_quality_inspection_is_rejected", "Warn")
+		nts.db.set_single_value("Stock Settings", "action_if_quality_inspection_is_rejected", "Warn")
 		se.reload()
 		se.submit()  # when allowed in Stock settings, allow rejected QI
 
@@ -180,7 +180,7 @@ class TestQualityInspection(FrappeTestCase):
 		qa.cancel()
 		se.reload()
 		se.cancel()
-		frappe.db.set_single_value("Stock Settings", "action_if_quality_inspection_is_rejected", "Stop")
+		nts.db.set_single_value("Stock Settings", "action_if_quality_inspection_is_rejected", "Stop")
 
 	def test_qi_status(self):
 		make_stock_entry(
@@ -216,7 +216,7 @@ class TestQualityInspection(FrappeTestCase):
 
 	@change_settings("System Settings", {"number_format": "#.###,##"})
 	def test_diff_number_format(self):
-		self.assertEqual(frappe.db.get_default("number_format"), "#.###,##")  # sanity check
+		self.assertEqual(nts.db.get_default("number_format"), "#.###,##")  # sanity check
 
 		# Test QI based on acceptance values (Non formula)
 		dn = create_delivery_note(item_code="_Test Item with QA", do_not_submit=True)
@@ -277,15 +277,15 @@ class TestQualityInspection(FrappeTestCase):
 
 
 def create_quality_inspection(**args):
-	args = frappe._dict(args)
-	qa = frappe.new_doc("Quality Inspection")
+	args = nts._dict(args)
+	qa = nts.new_doc("Quality Inspection")
 	qa.report_date = nowdate()
 	qa.inspection_type = args.inspection_type or "Outgoing"
 	qa.reference_type = args.reference_type
 	qa.reference_name = args.reference_name
 	qa.item_code = args.item_code or "_Test Item with QA"
 	qa.sample_size = 1
-	qa.inspected_by = frappe.session.user
+	qa.inspected_by = nts.session.user
 	qa.status = args.status or "Accepted"
 
 	if not args.readings:
@@ -312,7 +312,7 @@ def create_quality_inspection(**args):
 
 
 def create_quality_inspection_parameter(parameter):
-	if not frappe.db.exists("Quality Inspection Parameter", parameter):
-		frappe.get_doc(
+	if not nts.db.exists("Quality Inspection Parameter", parameter):
+		nts.get_doc(
 			{"doctype": "Quality Inspection Parameter", "parameter": parameter, "description": parameter}
 		).insert()

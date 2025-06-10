@@ -1,9 +1,9 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts
 
 from prodman.setup.doctype.employee.test_employee import make_employee
 
@@ -14,14 +14,14 @@ class TestEmployeeGroup(unittest.TestCase):
 
 def make_employee_group():
 	employee = make_employee("testemployee@example.com")
-	employee_group = frappe.get_doc(
+	employee_group = nts.get_doc(
 		{
 			"doctype": "Employee Group",
 			"employee_group_name": "_Test Employee Group",
 			"employee_list": [{"employee": employee}],
 		}
 	)
-	employee_group_exist = frappe.db.exists("Employee Group", "_Test Employee Group")
+	employee_group_exist = nts.db.exists("Employee Group", "_Test Employee Group")
 	if not employee_group_exist:
 		employee_group.insert()
 		return employee_group.employee_group_name
@@ -30,5 +30,5 @@ def make_employee_group():
 
 
 def get_employee_group():
-	employee_group = frappe.db.exists("Employee Group", "_Test Employee Group")
+	employee_group = nts.db.exists("Employee Group", "_Test Employee Group")
 	return employee_group

@@ -1,11 +1,11 @@
 import click
-import frappe
+import nts
 
 
 def execute():
 	if (
-		not frappe.db.exists("Company", {"country": "India"})
-		or "india_compliance" in frappe.get_installed_apps()
+		not nts.db.exists("Company", {"country": "India"})
+		or "india_compliance" in nts.get_installed_apps()
 	):
 		return
 

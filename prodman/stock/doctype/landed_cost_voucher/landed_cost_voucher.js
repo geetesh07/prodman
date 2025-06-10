@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.stock");
+nts.provide("prodman.stock");
 
 prodman.landed_cost_taxes_and_charges.setup_triggers("Landed Cost Voucher");
 prodman.stock.LandedCostVoucher = class LandedCostVoucher extends prodman.stock.StockController {
@@ -23,7 +23,7 @@ prodman.stock.LandedCostVoucher = class LandedCostVoucher extends prodman.stock.
 				filters.push(["Purchase Invoice", "update_stock", "=", "1"]);
 			}
 
-			if (!me.frm.doc.company) frappe.msgprint(__("Please enter company first"));
+			if (!me.frm.doc.company) nts.msgprint(__("Please enter company first"));
 			return {
 				filters: filters,
 			};
@@ -65,7 +65,7 @@ prodman.stock.LandedCostVoucher = class LandedCostVoucher extends prodman.stock.
 		set_field_options("landed_cost_help", help_content);
 
 		if (this.frm.doc.company) {
-			let company_currency = frappe.get_doc(":Company", this.frm.doc.company).default_currency;
+			let company_currency = nts.get_doc(":Company", this.frm.doc.company).default_currency;
 			this.frm.set_currency_labels(["total_taxes_and_charges"], company_currency);
 		}
 	}
@@ -73,7 +73,7 @@ prodman.stock.LandedCostVoucher = class LandedCostVoucher extends prodman.stock.
 	get_items_from_purchase_receipts() {
 		var me = this;
 		if (!this.frm.doc.purchase_receipts.length) {
-			frappe.msgprint(__("Please enter Purchase Receipt first"));
+			nts.msgprint(__("Please enter Purchase Receipt first"));
 		} else {
 			return this.frm.call({
 				doc: me.frm.doc,
@@ -141,7 +141,7 @@ prodman.stock.LandedCostVoucher = class LandedCostVoucher extends prodman.stock.
 
 cur_frm.script_manager.make(prodman.stock.LandedCostVoucher);
 
-frappe.ui.form.on("Landed Cost Taxes and Charges", {
+nts.ui.form.on("Landed Cost Taxes and Charges", {
 	expense_account: function (frm, cdt, cdn) {
 		frm.events.set_account_currency(frm, cdt, cdn);
 	},

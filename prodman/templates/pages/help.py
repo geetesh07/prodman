@@ -1,12 +1,12 @@
 import json
 
-import frappe
+import nts
 import requests
 
 
 def get_context(context):
 	context.no_cache = 1
-	settings = frappe.get_doc("Support Settings", "Support Settings")
+	settings = nts.get_doc("Support Settings", "Support Settings")
 	s = settings
 
 	# Get Started sections
@@ -20,8 +20,8 @@ def get_context(context):
 	context.topics = topics_data[:3]
 
 	# Issues
-	if frappe.session.user != "Guest":
-		context.issues = frappe.get_list("Issue", fields=["name", "status", "subject", "modified"])[:3]
+	if nts.session.user != "Guest":
+		context.issues = nts.get_list("Issue", fields=["name", "status", "subject", "modified"])[:3]
 	else:
 		context.issues = []
 

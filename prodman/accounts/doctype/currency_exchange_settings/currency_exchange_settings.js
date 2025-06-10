@@ -1,7 +1,7 @@
-// Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2022, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Currency Exchange Settings", {
+nts .ui.form.on("Currency Exchange Settings", {
 	service_provider: function (frm) {
 		frm.call({
 			method: "prodman.accounts.doctype.currency_exchange_settings.currency_exchange_settings.get_api_endpoint",

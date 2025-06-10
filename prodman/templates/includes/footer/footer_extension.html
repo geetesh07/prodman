@@ -12,7 +12,7 @@
 </div>
 
 <script>
-frappe.ready(function() {
+nts.ready(function() {
 	$("#footer-subscribe-button").click(function() {
 
 		if($("#footer-subscribe-email").val() && validate_email($("#footer-subscribe-email").val())) {
@@ -34,7 +34,7 @@ frappe.ready(function() {
 			});
 		}
 		else
-			frappe.msgprint(frappe._("Please enter valid email address"))
+			nts.msgprint(nts._("Please enter valid email address"))
 	});
 });
 </script>

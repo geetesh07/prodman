@@ -1,9 +1,9 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2019, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe.model.document import Document
+import nts
+from nts.model.document import Document
 
 
 class StockEntryType(Document):
@@ -13,7 +13,7 @@ class StockEntryType(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		add_to_transit: DF.Check
 		is_standard: DF.Check
@@ -48,4 +48,4 @@ class StockEntryType(Document):
 			"Send to Subcontractor",
 			"Disassemble",
 		]:
-			frappe.throw(f"Stock Entry Type {self.name} cannot be set as standard")
+			nts.throw(f"Stock Entry Type {self.name} cannot be set as standard")

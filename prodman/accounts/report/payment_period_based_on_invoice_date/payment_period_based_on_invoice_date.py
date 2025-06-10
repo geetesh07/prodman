@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _, qb
-from frappe.query_builder import Criterion
-from frappe.query_builder.functions import Abs
-from frappe.utils import flt, getdate
+import nts 
+from nts  import _, qb
+from nts .query_builder import Criterion
+from nts .query_builder.functions import Abs
+from nts .utils import flt, getdate
 
 from prodman.accounts.report.accounts_receivable.accounts_receivable import ReceivablePayableReport
 
@@ -23,7 +23,7 @@ def execute(filters=None):
 
 	data = []
 	for d in entries:
-		invoice = invoice_details.get(d.against_voucher_no) or frappe._dict()
+		invoice = invoice_details.get(d.against_voucher_no) or nts ._dict()
 		payment_amount = d.amount
 
 		d.update({"range1": 0, "range2": 0, "range3": 0, "range4": 0, "outstanding": payment_amount})
@@ -61,7 +61,7 @@ def validate_filters(filters):
 	if (filters.get("payment_type") == _("Incoming") and filters.get("party_type") == "Supplier") or (
 		filters.get("payment_type") == _("Outgoing") and filters.get("party_type") == "Customer"
 	):
-		frappe.throw(
+		nts .throw(
 			_("{0} payment entries can not be filtered by {1}").format(
 				filters.payment_type, filters.party_type
 			)

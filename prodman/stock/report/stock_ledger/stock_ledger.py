@@ -1,14 +1,14 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import copy
 from collections import defaultdict
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import CombineDatetime, Sum
-from frappe.utils import cint, flt, get_datetime
+import nts
+from nts import _
+from nts.query_builder.functions import CombineDatetime, Sum
+from nts.utils import cint, flt, get_datetime
 
 from prodman.stock.doctype.inventory_dimension.inventory_dimension import get_inventory_dimensions
 from prodman.stock.doctype.serial_no.serial_no import get_serial_nos
@@ -32,7 +32,7 @@ def execute(filters=None):
 	else:
 		opening_row = get_opening_balance(filters, columns, sl_entries)
 
-	precision = cint(frappe.db.get_single_value("System Settings", "float_precision"))
+	precision = cint(nts.db.get_single_value("System Settings", "float_precision"))
 	bundle_details = {}
 
 	if filters.get("segregate_serial_batch_bundle"):
@@ -52,7 +52,7 @@ def execute(filters=None):
 	available_serial_nos = {}
 	inventory_dimension_filters_applied = check_inventory_dimension_filters_applied(filters)
 
-	batch_balance_dict = frappe._dict({})
+	batch_balance_dict = nts._dict({})
 	if actual_qty and filters.get("batch_no"):
 		batch_balance_dict[filters.batch_no] = [actual_qty, stock_value]
 
@@ -154,14 +154,14 @@ def get_serial_batch_bundle_details(sl_entries, filters=None):
 			bundle_details.append(sle.serial_and_batch_bundle)
 
 	if not bundle_details:
-		return frappe._dict({})
+		return nts._dict({})
 
 	query_filers = {"parent": ("in", bundle_details)}
 	if filters.get("batch_no"):
 		query_filers["batch_no"] = filters.batch_no
 
-	_bundle_details = frappe._dict({})
-	batch_entries = frappe.get_all(
+	_bundle_details = nts._dict({})
+	batch_entries = nts.get_all(
 		"Serial and Batch Entry",
 		filters=query_filers,
 		fields=["parent", "qty", "incoming_rate", "stock_value_difference", "batch_no", "serial_no"],
@@ -370,9 +370,9 @@ def get_stock_ledger_entries(filters, items):
 	from_date = get_datetime(filters.from_date + " 00:00:00")
 	to_date = get_datetime(filters.to_date + " 23:59:59")
 
-	sle = frappe.qb.DocType("Stock Ledger Entry")
+	sle = nts.qb.DocType("Stock Ledger Entry")
 	query = (
-		frappe.qb.from_(sle)
+		nts.qb.from_(sle)
 		.select(
 			sle.item_code,
 			sle.posting_datetime.as_("date"),
@@ -428,11 +428,11 @@ def get_stock_ledger_entries(filters, items):
 
 
 def get_serial_and_batch_bundles(filters):
-	SBB = frappe.qb.DocType("Serial and Batch Bundle")
-	SBE = frappe.qb.DocType("Serial and Batch Entry")
+	SBB = nts.qb.DocType("Serial and Batch Bundle")
+	SBE = nts.qb.DocType("Serial and Batch Entry")
 
 	query = (
-		frappe.qb.from_(SBE)
+		nts.qb.from_(SBE)
 		.inner_join(SBB)
 		.on(SBE.parent == SBB.name)
 		.select(SBE.parent)
@@ -452,8 +452,8 @@ def get_inventory_dimension_fields():
 
 
 def get_items(filters):
-	item = frappe.qb.DocType("Item")
-	query = frappe.qb.from_(item).select(item.name)
+	item = nts.qb.DocType("Item")
+	query = nts.qb.from_(item).select(item.name)
 	conditions = []
 
 	if item_code := filters.get("item_code"):
@@ -482,15 +482,15 @@ def get_item_details(items, sl_entries, include_uom):
 	if not items:
 		return item_details
 
-	item = frappe.qb.DocType("Item")
+	item = nts.qb.DocType("Item")
 	query = (
-		frappe.qb.from_(item)
+		nts.qb.from_(item)
 		.select(item.name, item.item_name, item.description, item.item_group, item.brand, item.stock_uom)
 		.where(item.name.isin(items))
 	)
 
 	if include_uom:
-		ucd = frappe.qb.DocType("UOM Conversion Detail")
+		ucd = nts.qb.DocType("UOM Conversion Detail")
 		query = (
 			query.left_join(ucd)
 			.on((ucd.parent == item.name) & (ucd.uom == include_uom))
@@ -538,7 +538,7 @@ def get_opening_balance_from_batch(filters, columns, sl_entries):
 		if filters.get(fields):
 			query_filters[fields] = filters.get(fields)
 
-	opening_data = frappe.get_all(
+	opening_data = nts.get_all(
 		"Stock Ledger Entry",
 		fields=["sum(actual_qty) as qty_after_transaction", "sum(stock_value_difference) as stock_value"],
 		filters=query_filters,
@@ -548,10 +548,10 @@ def get_opening_balance_from_batch(filters, columns, sl_entries):
 		if opening_data.get(field) is None:
 			opening_data[field] = 0.0
 
-	table = frappe.qb.DocType("Stock Ledger Entry")
-	sabb_table = frappe.qb.DocType("Serial and Batch Entry")
+	table = nts.qb.DocType("Stock Ledger Entry")
+	sabb_table = nts.qb.DocType("Serial and Batch Entry")
 	query = (
-		frappe.qb.from_(table)
+		nts.qb.from_(table)
 		.inner_join(sabb_table)
 		.on(table.serial_and_batch_bundle == sabb_table.parent)
 		.select(
@@ -608,7 +608,7 @@ def get_opening_balance(filters, columns, sl_entries):
 		if (
 			sle.get("voucher_type") == "Stock Reconciliation"
 			and sle.posting_date == filters.from_date
-			and frappe.db.get_value("Stock Reconciliation", sle.voucher_no, "purpose") == "Opening Stock"
+			and nts.db.get_value("Stock Reconciliation", sle.voucher_no, "purpose") == "Opening Stock"
 		):
 			last_entry = sle
 			sl_entries.remove(sle)
@@ -624,7 +624,7 @@ def get_opening_balance(filters, columns, sl_entries):
 
 
 def get_warehouse_condition(warehouse):
-	warehouse_details = frappe.db.get_value("Warehouse", warehouse, ["lft", "rgt"], as_dict=1)
+	warehouse_details = nts.db.get_value("Warehouse", warehouse, ["lft", "rgt"], as_dict=1)
 	if warehouse_details:
 		return f" exists (select name from `tabWarehouse` wh \
 			where wh.lft >= {warehouse_details.lft} and wh.rgt <= {warehouse_details.rgt} and warehouse = wh.name)"
@@ -633,12 +633,12 @@ def get_warehouse_condition(warehouse):
 
 
 def get_item_group_condition(item_group, item_table=None):
-	item_group_details = frappe.db.get_value("Item Group", item_group, ["lft", "rgt"], as_dict=1)
+	item_group_details = nts.db.get_value("Item Group", item_group, ["lft", "rgt"], as_dict=1)
 	if item_group_details:
 		if item_table:
-			ig = frappe.qb.DocType("Item Group")
+			ig = nts.qb.DocType("Item Group")
 			return item_table.item_group.isin(
-				frappe.qb.from_(ig)
+				nts.qb.from_(ig)
 				.select(ig.name)
 				.where(
 					(ig.lft >= item_group_details.lft)

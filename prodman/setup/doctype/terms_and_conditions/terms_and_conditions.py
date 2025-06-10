@@ -1,14 +1,14 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 
-import frappe
-from frappe import _, throw
-from frappe.model.document import Document
-from frappe.utils import cint
-from frappe.utils.jinja import validate_template
+import nts
+from nts import _, throw
+from nts.model.document import Document
+from nts.utils import cint
+from nts.utils.jinja import validate_template
 
 
 class TermsandConditions(Document):
@@ -18,7 +18,7 @@ class TermsandConditions(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		buying: DF.Check
 		disabled: DF.Check
@@ -34,12 +34,12 @@ class TermsandConditions(Document):
 			throw(_("At least one of the Applicable Modules should be selected"))
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_terms_and_conditions(template_name, doc):
 	if isinstance(doc, str):
 		doc = json.loads(doc)
 
-	terms_and_conditions = frappe.get_doc("Terms and Conditions", template_name)
+	terms_and_conditions = nts.get_doc("Terms and Conditions", template_name)
 
 	if terms_and_conditions.terms:
-		return frappe.render_template(terms_and_conditions.terms, doc)
+		return nts.render_template(terms_and_conditions.terms, doc)

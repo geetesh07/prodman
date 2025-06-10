@@ -1,9 +1,9 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe.model.document import Document
-from frappe.utils import flt
+import nts
+from nts.model.document import Document
+from nts.utils import flt
 
 
 class WorkstationType(Document):
@@ -13,7 +13,7 @@ class WorkstationType(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		description: DF.SmallText | None
 		hour_rate: DF.Currency
@@ -37,7 +37,7 @@ class WorkstationType(Document):
 
 
 def get_workstations(workstation_type):
-	workstations = frappe.get_all(
+	workstations = nts.get_all(
 		"Workstation", filters={"workstation_type": workstation_type}, order_by="creation"
 	)
 

@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import unittest
 
-import frappe
-from frappe.model.naming import parse_naming_series
+import nts 
+from nts .model.naming import parse_naming_series
 
 from prodman.accounts.doctype.gl_entry.gl_entry import rename_gle_sle_docs
 from prodman.accounts.doctype.journal_entry.test_journal_entry import make_journal_entry
@@ -13,8 +13,8 @@ from prodman.accounts.doctype.journal_entry.test_journal_entry import make_journ
 
 class TestGLEntry(unittest.TestCase):
 	def test_round_off_entry(self):
-		frappe.db.set_value("Company", "_Test Company", "round_off_account", "_Test Write Off - _TC")
-		frappe.db.set_value("Company", "_Test Company", "round_off_cost_center", "_Test Cost Center - _TC")
+		nts .db.set_value("Company", "_Test Company", "round_off_account", "_Test Write Off - _TC")
+		nts .db.set_value("Company", "_Test Company", "round_off_cost_center", "_Test Cost Center - _TC")
 
 		jv = make_journal_entry(
 			"_Test Account Cost for Goods Sold - _TC",
@@ -28,7 +28,7 @@ class TestGLEntry(unittest.TestCase):
 		jv.flags.ignore_validate = True
 		jv.submit()
 
-		round_off_entry = frappe.db.sql(
+		round_off_entry = nts .db.sql(
 			"""select name from `tabGL Entry`
 			where voucher_type='Journal Entry' and voucher_no = %s
 			and account='_Test Write Off - _TC' and cost_center='_Test Cost Center - _TC'
@@ -43,13 +43,13 @@ class TestGLEntry(unittest.TestCase):
 			"_Test Account Cost for Goods Sold - _TC", "_Test Bank - _TC", 100, submit=True
 		)
 		rename_gle_sle_docs()
-		naming_series = parse_naming_series(parts=frappe.get_meta("GL Entry").autoname.split(".")[:-1])
+		naming_series = parse_naming_series(parts=nts .get_meta("GL Entry").autoname.split(".")[:-1])
 
 		je = make_journal_entry(
 			"_Test Account Cost for Goods Sold - _TC", "_Test Bank - _TC", 100, submit=True
 		)
 
-		gl_entries = frappe.get_all(
+		gl_entries = nts .get_all(
 			"GL Entry",
 			fields=["name", "to_rename"],
 			filters={"voucher_type": "Journal Entry", "voucher_no": je.name},
@@ -57,13 +57,13 @@ class TestGLEntry(unittest.TestCase):
 		)
 
 		self.assertTrue(all(entry.to_rename == 1 for entry in gl_entries))
-		old_naming_series_current_value = frappe.db.sql(
+		old_naming_series_current_value = nts .db.sql(
 			"SELECT current from tabSeries where name = %s", naming_series
 		)[0][0]
 
 		rename_gle_sle_docs()
 
-		new_gl_entries = frappe.get_all(
+		new_gl_entries = nts .get_all(
 			"GL Entry",
 			fields=["name", "to_rename"],
 			filters={"voucher_type": "Journal Entry", "voucher_no": je.name},
@@ -75,7 +75,7 @@ class TestGLEntry(unittest.TestCase):
 			all(new.name != old.name for new, old in zip(gl_entries, new_gl_entries, strict=False))
 		)
 
-		new_naming_series_current_value = frappe.db.sql(
+		new_naming_series_current_value = nts .db.sql(
 			"SELECT current from tabSeries where name = %s", naming_series
 		)[0][0]
 		self.assertEqual(old_naming_series_current_value + 2, new_naming_series_current_value)

@@ -1,13 +1,13 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2021, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import json
 
-import frappe
+import nts 
 
 # import prodman
-from frappe import _
-from frappe.utils import cint, flt, get_link_to_form
+from nts  import _
+from nts .utils import cint, flt, get_link_to_form
 
 import prodman
 from prodman.assets.doctype.asset.asset import get_asset_value_after_depreciation
@@ -54,7 +54,7 @@ class AssetCapitalization(StockController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.assets.doctype.asset_capitalization_asset_item.asset_capitalization_asset_item import (
 			AssetCapitalizationAssetItem,
@@ -186,15 +186,15 @@ class AssetCapitalization(StockController):
 					d.set(k, v)
 
 	def validate_target_item(self):
-		target_item = frappe.get_cached_doc("Item", self.target_item_code)
+		target_item = nts .get_cached_doc("Item", self.target_item_code)
 
 		if not target_item.is_fixed_asset:
-			frappe.throw(_("Target Item {0} must be a Fixed Asset item").format(target_item.name))
+			nts .throw(_("Target Item {0} must be a Fixed Asset item").format(target_item.name))
 
 		if target_item.is_fixed_asset:
 			self.target_qty = 1
 		if flt(self.target_qty) <= 0:
-			frappe.throw(_("Target Qty must be a positive number"))
+			nts .throw(_("Target Qty must be a positive number"))
 		if not target_item.has_batch_no:
 			self.target_batch_no = None
 		if not target_item.has_serial_no:
@@ -207,27 +207,27 @@ class AssetCapitalization(StockController):
 			target_asset = self.get_asset_for_validation(self.target_asset)
 
 			if not target_asset.is_composite_asset:
-				frappe.throw(_("Target Asset {0} needs to be composite asset").format(target_asset.name))
+				nts .throw(_("Target Asset {0} needs to be composite asset").format(target_asset.name))
 
 			if target_asset.item_code != self.target_item_code:
-				frappe.throw(
+				nts .throw(
 					_("Asset {0} does not belong to Item {1}").format(
 						self.target_asset, self.target_item_code
 					)
 				)
 
 			if target_asset.status in ("Scrapped", "Sold", "Capitalized"):
-				frappe.throw(
+				nts .throw(
 					_("Target Asset {0} cannot be {1}").format(target_asset.name, target_asset.status)
 				)
 
 			if target_asset.docstatus == 1:
-				frappe.throw(_("Target Asset {0} cannot be submitted").format(target_asset.name))
+				nts .throw(_("Target Asset {0} cannot be submitted").format(target_asset.name))
 			elif target_asset.docstatus == 2:
-				frappe.throw(_("Target Asset {0} cannot be cancelled").format(target_asset.name))
+				nts .throw(_("Target Asset {0} cannot be cancelled").format(target_asset.name))
 
 			if target_asset.company != self.company:
-				frappe.throw(
+				nts .throw(
 					_("Target Asset {0} does not belong to company {1}").format(
 						target_asset.name, self.company
 					)
@@ -236,13 +236,13 @@ class AssetCapitalization(StockController):
 	def validate_consumed_stock_item(self):
 		for d in self.stock_items:
 			if d.item_code:
-				item = frappe.get_cached_doc("Item", d.item_code)
+				item = nts .get_cached_doc("Item", d.item_code)
 
 				if not item.is_stock_item:
-					frappe.throw(_("Row #{0}: Item {1} is not a stock item").format(d.idx, d.item_code))
+					nts .throw(_("Row #{0}: Item {1} is not a stock item").format(d.idx, d.item_code))
 
 				if flt(d.stock_qty) <= 0:
-					frappe.throw(_("Row #{0}: Qty must be a positive number").format(d.idx))
+					nts .throw(_("Row #{0}: Qty must be a positive number").format(d.idx))
 
 				self.validate_item(item)
 
@@ -250,7 +250,7 @@ class AssetCapitalization(StockController):
 		for d in self.asset_items:
 			if d.asset:
 				if d.asset == self.target_asset:
-					frappe.throw(
+					nts .throw(
 						_("Row #{0}: Consumed Asset {1} cannot be the same as the Target Asset").format(
 							d.idx, d.asset
 						)
@@ -259,21 +259,21 @@ class AssetCapitalization(StockController):
 				asset = self.get_asset_for_validation(d.asset)
 
 				if asset.status in ("Draft", "Scrapped", "Sold", "Capitalized"):
-					frappe.throw(
+					nts .throw(
 						_("Row #{0}: Consumed Asset {1} cannot be {2}").format(
 							d.idx, asset.name, asset.status
 						)
 					)
 
 				if asset.docstatus == 0:
-					frappe.throw(_("Row #{0}: Consumed Asset {1} cannot be Draft").format(d.idx, asset.name))
+					nts .throw(_("Row #{0}: Consumed Asset {1} cannot be Draft").format(d.idx, asset.name))
 				elif asset.docstatus == 2:
-					frappe.throw(
+					nts .throw(
 						_("Row #{0}: Consumed Asset {1} cannot be cancelled").format(d.idx, asset.name)
 					)
 
 				if asset.company != self.company:
-					frappe.throw(
+					nts .throw(
 						_("Row #{0}: Consumed Asset {1} does not belong to company {2}").format(
 							d.idx, asset.name, self.company
 						)
@@ -282,34 +282,34 @@ class AssetCapitalization(StockController):
 	def validate_service_item(self):
 		for d in self.service_items:
 			if d.item_code:
-				item = frappe.get_cached_doc("Item", d.item_code)
+				item = nts .get_cached_doc("Item", d.item_code)
 
 				if item.is_stock_item or item.is_fixed_asset:
-					frappe.throw(_("Row #{0}: Item {1} is not a service item").format(d.idx, d.item_code))
+					nts .throw(_("Row #{0}: Item {1} is not a service item").format(d.idx, d.item_code))
 
 				if flt(d.qty) <= 0:
-					frappe.throw(_("Row #{0}: Qty must be a positive number").format(d.idx))
+					nts .throw(_("Row #{0}: Qty must be a positive number").format(d.idx))
 
 				if flt(d.rate) <= 0:
-					frappe.throw(_("Row #{0}: Amount must be a positive number").format(d.idx))
+					nts .throw(_("Row #{0}: Amount must be a positive number").format(d.idx))
 
 				self.validate_item(item)
 
 			if not d.cost_center:
-				d.cost_center = frappe.get_cached_value("Company", self.company, "cost_center")
+				d.cost_center = nts .get_cached_value("Company", self.company, "cost_center")
 
 	def validate_source_mandatory(self):
 		if self.capitalization_method == "Create a new composite asset" and not (
 			self.get("stock_items") or self.get("asset_items")
 		):
-			frappe.throw(
+			nts .throw(
 				_(
 					"Consumed Stock Items or Consumed Asset Items are mandatory for creating new composite asset"
 				)
 			)
 
 		elif not (self.get("stock_items") or self.get("asset_items") or self.get("service_items")):
-			frappe.throw(
+			nts .throw(
 				_(
 					"Consumed Stock Items, Consumed Asset Items or Consumed Service Items is mandatory for Capitalization"
 				)
@@ -321,14 +321,14 @@ class AssetCapitalization(StockController):
 		validate_end_of_life(item.name, item.end_of_life, item.disabled)
 
 	def get_asset_for_validation(self, asset):
-		return frappe.db.get_value(
+		return nts .db.get_value(
 			"Asset",
 			asset,
 			["name", "item_code", "company", "status", "docstatus", "is_composite_asset"],
 			as_dict=1,
 		)
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def set_warehouse_details(self):
 		for d in self.get("stock_items"):
 			if d.item_code and d.warehouse:
@@ -336,7 +336,7 @@ class AssetCapitalization(StockController):
 				warehouse_details = get_warehouse_details(args)
 				d.update(warehouse_details)
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def set_asset_values(self):
 		for d in self.get("asset_items"):
 			if d.asset:
@@ -349,7 +349,7 @@ class AssetCapitalization(StockController):
 				)
 
 	def get_args_for_incoming_rate(self, item):
-		return frappe._dict(
+		return nts ._dict(
 			{
 				"item_code": item.item_code,
 				"warehouse": item.warehouse,
@@ -446,7 +446,7 @@ class AssetCapitalization(StockController):
 	def get_target_account(self):
 		from prodman.assets.doctype.asset.asset import is_cwip_accounting_enabled
 
-		asset_category = frappe.get_cached_value("Asset", self.target_asset, "asset_category")
+		asset_category = nts .get_cached_value("Asset", self.target_asset, "asset_category")
 		if is_cwip_accounting_enabled(asset_category):
 			target_account = get_asset_category_account(
 				"capital_work_in_progress_account",
@@ -489,7 +489,7 @@ class AssetCapitalization(StockController):
 	def get_gl_entries_for_consumed_asset_items(self, gl_entries, target_account, target_against, precision):
 		# Consumed Assets
 		for item in self.asset_items:
-			asset = frappe.get_doc("Asset", item.asset)
+			asset = nts .get_doc("Asset", item.asset)
 
 			if asset.calculate_depreciation:
 				notes = _(
@@ -563,7 +563,7 @@ class AssetCapitalization(StockController):
 
 		total_target_asset_value = flt(self.total_value, self.precision("total_value"))
 
-		asset_doc = frappe.new_doc("Asset")
+		asset_doc = nts .new_doc("Asset")
 		asset_doc.company = self.company
 		asset_doc.item_code = self.target_item_code
 		asset_doc.is_composite_asset = 1
@@ -590,7 +590,7 @@ class AssetCapitalization(StockController):
 			),
 		)
 
-		frappe.msgprint(
+		nts .msgprint(
 			_("Asset {0} has been created. Please set the depreciation details if any and submit it.").format(
 				get_link_to_form("Asset", asset_doc.name)
 			)
@@ -602,14 +602,14 @@ class AssetCapitalization(StockController):
 
 		total_target_asset_value = flt(self.total_value, self.precision("total_value"))
 
-		asset_doc = frappe.get_doc("Asset", self.target_asset)
+		asset_doc = nts .get_doc("Asset", self.target_asset)
 		asset_doc.gross_purchase_amount += total_target_asset_value
 		asset_doc.purchase_amount += total_target_asset_value
 		asset_doc.set_status("Work In Progress")
 		asset_doc.flags.ignore_validate = True
 		asset_doc.save()
 
-		frappe.msgprint(
+		nts .msgprint(
 			_("Asset {0} has been updated. Please set the depreciation details if any and submit it.").format(
 				get_link_to_form("Asset", asset_doc.name)
 			)
@@ -617,7 +617,7 @@ class AssetCapitalization(StockController):
 
 	def restore_consumed_asset_items(self):
 		for item in self.asset_items:
-			asset = frappe.get_doc("Asset", item.asset)
+			asset = nts .get_doc("Asset", item.asset)
 			asset.db_set("disposal_date", None)
 			self.set_consumed_asset_status(asset)
 
@@ -650,14 +650,14 @@ class AssetCapitalization(StockController):
 			)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_target_item_details(item_code=None, company=None):
-	out = frappe._dict()
+	out = nts ._dict()
 
 	# Get Item Details
-	item = frappe._dict()
+	item = nts ._dict()
 	if item_code:
-		item = frappe.get_cached_doc("Item", item_code)
+		item = nts .get_cached_doc("Item", item_code)
 
 	# Set Item Details
 	out.target_item_name = item.item_name
@@ -678,7 +678,7 @@ def get_target_item_details(item_code=None, company=None):
 	item_group_defaults = get_item_group_defaults(item.name, company)
 	brand_defaults = get_brand_defaults(item.name, company)
 	out.cost_center = get_default_cost_center(
-		frappe._dict({"item_code": item.name, "company": company}),
+		nts ._dict({"item_code": item.name, "company": company}),
 		item_defaults,
 		item_group_defaults,
 		brand_defaults,
@@ -687,16 +687,16 @@ def get_target_item_details(item_code=None, company=None):
 	return out
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_target_asset_details(asset=None, company=None):
-	out = frappe._dict()
+	out = nts ._dict()
 
 	# Get Asset Details
-	asset_details = frappe._dict()
+	asset_details = nts ._dict()
 	if asset:
-		asset_details = frappe.db.get_value("Asset", asset, ["asset_name", "item_code"], as_dict=1)
+		asset_details = nts .db.get_value("Asset", asset, ["asset_name", "item_code"], as_dict=1)
 		if not asset_details:
-			frappe.throw(_("Asset {0} does not exist").format(asset))
+			nts .throw(_("Asset {0} does not exist").format(asset))
 
 		# Re-set item code from Asset
 		out.target_item_code = asset_details.item_code
@@ -714,17 +714,17 @@ def get_target_asset_details(asset=None, company=None):
 	return out
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_consumed_stock_item_details(args):
 	if isinstance(args, str):
 		args = json.loads(args)
 
-	args = frappe._dict(args)
-	out = frappe._dict()
+	args = nts ._dict(args)
+	out = nts ._dict()
 
-	item = frappe._dict()
+	item = nts ._dict()
 	if args.item_code:
-		item = frappe.get_cached_doc("Item", args.item_code)
+		item = nts .get_cached_doc("Item", args.item_code)
 
 	out.item_name = item.item_name
 	out.batch_no = None
@@ -742,7 +742,7 @@ def get_consumed_stock_item_details(args):
 	out.cost_center = get_default_cost_center(args, item_defaults, item_group_defaults, brand_defaults)
 
 	if args.item_code and out.warehouse:
-		incoming_rate_args = frappe._dict(
+		incoming_rate_args = nts ._dict(
 			{
 				"item_code": args.item_code,
 				"warehouse": out.warehouse,
@@ -764,12 +764,12 @@ def get_consumed_stock_item_details(args):
 	return out
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_warehouse_details(args):
 	if isinstance(args, str):
 		args = json.loads(args)
 
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 
 	out = {}
 	if args.warehouse and args.item_code:
@@ -780,21 +780,21 @@ def get_warehouse_details(args):
 	return out
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_consumed_asset_details(args):
 	if isinstance(args, str):
 		args = json.loads(args)
 
-	args = frappe._dict(args)
-	out = frappe._dict()
+	args = nts ._dict(args)
+	out = nts ._dict()
 
-	asset_details = frappe._dict()
+	asset_details = nts ._dict()
 	if args.asset:
-		asset_details = frappe.db.get_value(
+		asset_details = nts .db.get_value(
 			"Asset", args.asset, ["asset_name", "item_code", "item_name"], as_dict=1
 		)
 		if not asset_details:
-			frappe.throw(_("Asset {0} does not exist").format(args.asset))
+			nts .throw(_("Asset {0} does not exist").format(args.asset))
 
 	out.item_code = asset_details.item_code
 	out.asset_name = asset_details.asset_name
@@ -821,7 +821,7 @@ def get_consumed_asset_details(args):
 
 	# Cost Center
 	if asset_details.item_code:
-		item = frappe.get_cached_doc("Item", asset_details.item_code)
+		item = nts .get_cached_doc("Item", asset_details.item_code)
 		item_defaults = get_item_defaults(item.name, args.company)
 		item_group_defaults = get_item_group_defaults(item.name, args.company)
 		brand_defaults = get_brand_defaults(item.name, args.company)
@@ -829,17 +829,17 @@ def get_consumed_asset_details(args):
 	return out
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_service_item_details(args):
 	if isinstance(args, str):
 		args = json.loads(args)
 
-	args = frappe._dict(args)
-	out = frappe._dict()
+	args = nts ._dict(args)
+	out = nts ._dict()
 
-	item = frappe._dict()
+	item = nts ._dict()
 	if args.item_code:
-		item = frappe.get_cached_doc("Item", args.item_code)
+		item = nts .get_cached_doc("Item", args.item_code)
 
 	out.item_name = item.item_name
 	out.qty = flt(args.qty) or 1
@@ -857,7 +857,7 @@ def get_service_item_details(args):
 	return out
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_items_tagged_to_wip_composite_asset(params):
 	if isinstance(params, str):
 		params = json.loads(params)
@@ -879,7 +879,7 @@ def get_items_tagged_to_wip_composite_asset(params):
 		"name as purchase_receipt_item",
 	]
 
-	pr_items = frappe.get_all(
+	pr_items = nts .get_all(
 		"Purchase Receipt Item",
 		filters={"wip_composite_asset": params.get("target_asset"), "docstatus": 1},
 		fields=fields,
@@ -902,7 +902,7 @@ def get_items_tagged_to_wip_composite_asset(params):
 
 
 def process_stock_item(d):
-	stock_capitalized = frappe.db.exists(
+	stock_capitalized = nts .db.exists(
 		"Asset Capitalization Stock Item",
 		{
 			"purchase_receipt_item": d.purchase_receipt_item,
@@ -915,13 +915,13 @@ def process_stock_item(d):
 	if stock_capitalized:
 		return None
 
-	stock_item_data = frappe._dict(d)
+	stock_item_data = nts ._dict(d)
 	stock_item_data.purchase_receipt_item = d.purchase_receipt_item
 	return stock_item_data
 
 
 def process_fixed_asset(d):
-	asset_details = frappe.db.get_value(
+	asset_details = nts .db.get_value(
 		"Asset",
 		{
 			"item_code": d.item_code,
@@ -937,5 +937,5 @@ def process_fixed_asset(d):
 		asset_details.update(get_consumed_asset_details(asset_details))
 		d.update(asset_details)
 
-		return frappe._dict(d)
+		return nts ._dict(d)
 	return None

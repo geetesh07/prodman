@@ -23,9 +23,9 @@
 		{% endif %}
 		<h5 style="float: right;">
 			{{ _("Date: ") }}
-			<b>{{ frappe.format(filters.from_date, 'Date')}}
+			<b>{{ nts .format(filters.from_date, 'Date')}}
 			{{ _("to") }}
-			{{ frappe.format(filters.to_date, 'Date')}}</b>
+			{{ nts .format(filters.to_date, 'Date')}}</b>
 			</h5>
 	</div>
 	<br>
@@ -45,7 +45,7 @@
 		{% for row in data %}
 			<tr>
 			{% if(row.posting_date) %}
-				<td>{{ frappe.format(row.posting_date, 'Date') }}</td>
+				<td>{{ nts .format(row.posting_date, 'Date') }}</td>
 				<td>{{ row.voucher_type }}
 					<br>{{ row.voucher_no }}</td>
 				<td>
@@ -60,22 +60,22 @@
 					{% endif %}
 					</td>
 					<td style="text-align: right">
-						{{ frappe.utils.fmt_money(row.debit, currency=filters.presentation_currency) }}</td>
+						{{ nts .utils.fmt_money(row.debit, currency=filters.presentation_currency) }}</td>
 					<td style="text-align: right">
-						{{ frappe.utils.fmt_money(row.credit, currency=filters.presentation_currency) }}</td>
+						{{ nts .utils.fmt_money(row.credit, currency=filters.presentation_currency) }}</td>
 			{% else %}
 				<td></td>
 				<td></td>
-				<td><b>{{ frappe.format(row.account, {fieldtype: "Link"}) or "&nbsp;" }}</b></td>
+				<td><b>{{ nts .format(row.account, {fieldtype: "Link"}) or "&nbsp;" }}</b></td>
 				<td style="text-align: right">
-					{{ row.get('account', '') and frappe.utils.fmt_money(row.debit, currency=filters.presentation_currency) }}
+					{{ row.get('account', '') and nts .utils.fmt_money(row.debit, currency=filters.presentation_currency) }}
 				</td>
 				<td style="text-align: right">
-					{{ row.get('account', '') and frappe.utils.fmt_money(row.credit, currency=filters.presentation_currency) }}
+					{{ row.get('account', '') and nts .utils.fmt_money(row.credit, currency=filters.presentation_currency) }}
 				</td>
 			{% endif %}
 				<td style="text-align: right">
-					{{ frappe.utils.fmt_money(row.balance, currency=filters.presentation_currency) }}
+					{{ nts .utils.fmt_money(row.balance, currency=filters.presentation_currency) }}
 				</td>
 			</tr>
 		{% endfor %}
@@ -84,7 +84,7 @@
 	<br>
 	{% if ageing %}
 	<h4 class="text-center">{{ _("Ageing Report based on ") }} {{ ageing.ageing_based_on }}
-		{{ _("up to " ) }}  {{ frappe.format(filters.to_date, 'Date')}}
+		{{ _("up to " ) }}  {{ nts .format(filters.to_date, 'Date')}}
 	</h4>
 	<table class="table table-bordered">
 		<thead>
@@ -98,11 +98,11 @@
 		</thead>
 		<tbody>
 			<tr>
-				<td>{{ frappe.utils.fmt_money(ageing.range1, currency=filters.presentation_currency) }}</td>
-				<td>{{ frappe.utils.fmt_money(ageing.range2, currency=filters.presentation_currency) }}</td>
-				<td>{{ frappe.utils.fmt_money(ageing.range3, currency=filters.presentation_currency) }}</td>
-				<td>{{ frappe.utils.fmt_money(ageing.range4, currency=filters.presentation_currency) }}</td>
-				<td>{{ frappe.utils.fmt_money(ageing.range5, currency=filters.presentation_currency) }}</td>
+				<td>{{ nts .utils.fmt_money(ageing.range1, currency=filters.presentation_currency) }}</td>
+				<td>{{ nts .utils.fmt_money(ageing.range2, currency=filters.presentation_currency) }}</td>
+				<td>{{ nts .utils.fmt_money(ageing.range3, currency=filters.presentation_currency) }}</td>
+				<td>{{ nts .utils.fmt_money(ageing.range4, currency=filters.presentation_currency) }}</td>
+				<td>{{ nts .utils.fmt_money(ageing.range5, currency=filters.presentation_currency) }}</td>
 			</tr>
 		</tbody>
 	</table>

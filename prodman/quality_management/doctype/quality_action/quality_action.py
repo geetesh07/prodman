@@ -1,8 +1,8 @@
-# Copyright (c) 2018, Frappe and contributors
+# Copyright (c) 2018, nts and contributors
 # For license information, please see license.txt
 
 
-from frappe.model.document import Document
+from nts.model.document import Document
 
 
 class QualityAction(Document):
@@ -12,7 +12,7 @@ class QualityAction(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.quality_management.doctype.quality_action_resolution.quality_action_resolution import (
 			QualityActionResolution,

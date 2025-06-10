@@ -1,5 +1,5 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.delete_doc("DocType", "Amazon MWS Settings", ignore_missing=True)
+	nts.delete_doc("DocType", "Amazon MWS Settings", ignore_missing=True)

@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import flt
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .utils import flt
 
 
 class CashierClosing(Document):
@@ -15,7 +15,7 @@ class CashierClosing(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.cashier_closing_payments.cashier_closing_payments import (
 			CashierClosingPayments,
@@ -43,7 +43,7 @@ class CashierClosing(Document):
 		self.make_calculations()
 
 	def get_outstanding(self):
-		values = frappe.db.sql(
+		values = nts .db.sql(
 			"""
 			select sum(outstanding_amount)
 			from `tabSales Invoice`
@@ -64,4 +64,4 @@ class CashierClosing(Document):
 
 	def validate_time(self):
 		if self.from_time >= self.time:
-			frappe.throw(_("From Time Should Be Less Than To Time"))
+			nts .throw(_("From Time Should Be Less Than To Time"))

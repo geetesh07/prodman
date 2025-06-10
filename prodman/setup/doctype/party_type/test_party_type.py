@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-# test_records = frappe.get_test_records('Party Type')
+# test_records = nts.get_test_records('Party Type')
 
 
 class TestPartyType(unittest.TestCase):

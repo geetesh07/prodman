@@ -1,13 +1,13 @@
-import frappe
+import nts
 
 from prodman.selling.doctype.sales_order.sales_order import update_produced_qty_in_so_item
 
 
 def execute():
-	frappe.reload_doctype("Sales Order Item")
-	frappe.reload_doctype("Sales Order")
+	nts.reload_doctype("Sales Order Item")
+	nts.reload_doctype("Sales Order")
 
-	for d in frappe.get_all(
+	for d in nts.get_all(
 		"Work Order",
 		fields=["sales_order", "sales_order_item"],
 		filters={"sales_order": ("!=", ""), "sales_order_item": ("!=", "")},

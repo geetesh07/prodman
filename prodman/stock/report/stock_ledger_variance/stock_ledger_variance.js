@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2023, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
 const DIFFERENCE_FIELD_NAMES = [
@@ -11,7 +11,7 @@ const DIFFERENCE_FIELD_NAMES = [
 	"diff_value_diff",
 ];
 
-frappe.query_reports["Stock Ledger Variance"] = {
+nts.query_reports["Stock Ledger Variance"] = {
 	filters: [
 		{
 			fieldname: "company",
@@ -19,7 +19,7 @@ frappe.query_reports["Stock Ledger Variance"] = {
 			fieldtype: "Link",
 			options: "Company",
 			reqd: 1,
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 		},
 		{
 			fieldname: "item_code",
@@ -100,15 +100,15 @@ frappe.query_reports["Stock Ledger Variance"] = {
 					</p>
 					<p>Are you sure you want to create Reposting Entries?</p>
 				</div>`;
-			let indexes = frappe.query_report.datatable.rowmanager.getCheckedRows();
-			let selected_rows = indexes.map((i) => frappe.query_report.data[i]);
+			let indexes = nts.query_report.datatable.rowmanager.getCheckedRows();
+			let selected_rows = indexes.map((i) => nts.query_report.data[i]);
 
 			if (!selected_rows.length) {
-				frappe.throw(__("Please select rows to create Reposting Entries"));
+				nts.throw(__("Please select rows to create Reposting Entries"));
 			}
 
-			frappe.confirm(__(message), () => {
-				frappe.call({
+			nts.confirm(__(message), () => {
+				nts.call({
 					method: "prodman.stock.report.stock_ledger_invariant_check.stock_ledger_invariant_check.create_reposting_entries",
 					args: {
 						rows: selected_rows,

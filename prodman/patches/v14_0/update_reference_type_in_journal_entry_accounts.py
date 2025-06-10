@@ -1,4 +1,4 @@
-import frappe
+import nts
 
 
 def execute():
@@ -6,7 +6,7 @@ def execute():
 	Update Propery Setters for Journal Entry with new 'Entry Type'
 	"""
 	new_reference_type = "Payment Entry"
-	prop_setter = frappe.db.get_list(
+	prop_setter = nts.db.get_list(
 		"Property Setter",
 		filters={
 			"doc_type": "Journal Entry Account",
@@ -15,7 +15,7 @@ def execute():
 		},
 	)
 	if prop_setter:
-		property_setter_doc = frappe.get_doc("Property Setter", prop_setter[0].get("name"))
+		property_setter_doc = nts.get_doc("Property Setter", prop_setter[0].get("name"))
 
 		if new_reference_type not in property_setter_doc.value.split("\n"):
 			property_setter_doc.value += "\n" + new_reference_type

@@ -46,7 +46,7 @@ doctype_list_js = {
 
 override_doctype_class = {"Address": "prodman.accounts.custom.address.prodmanAddress"}
 
-override_whitelisted_methods = {"frappe.www.contact.send_message": "prodman.templates.utils.send_message"}
+override_whitelisted_methods = {"nts.www.contact.send_message": "prodman.templates.utils.send_message"}
 
 welcome_email = "prodman.setup.utils.welcome_email"
 
@@ -58,7 +58,7 @@ setup_wizard_test = "prodman.setup.setup_wizard.test_setup_wizard.run_setup_wiza
 
 before_install = [
 	"prodman.setup.install.check_setup_wizard_not_completed",
-	"prodman.setup.install.check_frappe_version",
+	"prodman.setup.install.check_nts_version",
 ]
 after_install = "prodman.setup.install.after_install"
 
@@ -339,7 +339,7 @@ doc_events = {
 		"on_cancel": "prodman.stock.doctype.material_request.material_request.update_completed_and_requested_qty",
 	},
 	"User": {
-		"after_insert": "frappe.contacts.doctype.contact.contact.update_contact",
+		"after_insert": "nts.contacts.doctype.contact.contact.update_contact",
 		"validate": "prodman.setup.doctype.employee.employee.validate_employee_role",
 		"on_update": [
 			"prodman.setup.doctype.employee.employee.update_user_permissions",
@@ -490,7 +490,7 @@ default_mail_footer = """
 	</span>
 """
 
-get_translated_dict = {("doctype", "Global Defaults"): "frappe.geo.country_info.get_translated_dict"}
+get_translated_dict = {("doctype", "Global Defaults"): "nts.geo.country_info.get_translated_dict"}
 
 bot_parsers = [
 	"prodman.utilities.bot.FindItemBot",

@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 from pypika import Order
 
 from prodman.stock.doctype.warehouse.warehouse import get_child_warehouses
@@ -15,7 +15,7 @@ def execute(filters=None):
 
 class ProductionPlanReport:
 	def __init__(self, filters=None):
-		self.filters = frappe._dict(filters or {})
+		self.filters = nts._dict(filters or {})
 		self.raw_materials_dict = {}
 		self.data = []
 
@@ -33,12 +33,12 @@ class ProductionPlanReport:
 	def get_open_orders(self):
 		doctype, order_by = self.filters.based_on, self.filters.order_by
 
-		parent = frappe.qb.DocType(doctype)
+		parent = nts.qb.DocType(doctype)
 		query = None
 
 		if doctype == "Work Order":
 			query = (
-				frappe.qb.from_(parent)
+				nts.qb.from_(parent)
 				.select(
 					parent.production_item,
 					parent.item_name.as_("production_item_name"),
@@ -59,9 +59,9 @@ class ProductionPlanReport:
 				query = query.where(parent.name.isin(self.filters.docnames))
 
 		else:
-			child = frappe.qb.DocType(f"{doctype} Item")
+			child = nts.qb.DocType(f"{doctype} Item")
 			query = (
-				frappe.qb.from_(parent)
+				nts.qb.from_(parent)
 				.from_(child)
 				.select(
 					child.bom_no,
@@ -122,7 +122,7 @@ class ProductionPlanReport:
 			work_orders = [d.name for d in self.orders]
 
 			raw_materials = (
-				frappe.get_all(
+				nts.get_all(
 					"Work Order Item",
 					fields=[
 						"parent",
@@ -141,7 +141,7 @@ class ProductionPlanReport:
 			bom_nos = []
 
 			for d in self.orders:
-				bom_no = d.bom_no or frappe.get_cached_value("Item", d.production_item, "default_bom")
+				bom_no = d.bom_no or nts.get_cached_value("Item", d.production_item, "default_bom")
 
 				if not d.bom_no:
 					d.bom_no = bom_no
@@ -152,8 +152,8 @@ class ProductionPlanReport:
 				"BOM Explosion Item" if self.filters.include_subassembly_raw_materials else "BOM Item"
 			)
 
-			bom = frappe.qb.DocType("BOM")
-			bom_item = frappe.qb.DocType(bom_item_doctype)
+			bom = nts.qb.DocType("BOM")
+			bom_item = nts.qb.DocType(bom_item_doctype)
 
 			if self.filters.include_subassembly_raw_materials:
 				qty_field = bom_item.qty_consumed_per_unit
@@ -161,7 +161,7 @@ class ProductionPlanReport:
 				qty_field = bom_item.qty / bom.quantity
 
 			raw_materials = (
-				frappe.qb.from_(bom)
+				nts.qb.from_(bom)
 				.from_(bom_item)
 				.select(
 					bom_item.parent,
@@ -189,7 +189,7 @@ class ProductionPlanReport:
 			return
 
 		self.item_details = {}
-		for d in frappe.get_all(
+		for d in nts.get_all(
 			"Item Default",
 			fields=["parent", "default_warehouse"],
 			filters={"company": self.filters.company, "parent": ("in", self.item_codes)},
@@ -206,7 +206,7 @@ class ProductionPlanReport:
 			self.mrp_warehouses.extend(get_child_warehouses(self.filters.raw_material_warehouse))
 			self.warehouses.extend(self.mrp_warehouses)
 
-		for d in frappe.get_all(
+		for d in nts.get_all(
 			"Bin",
 			fields=["warehouse", "item_code", "actual_qty", "ordered_qty", "projected_qty"],
 			filters={"item_code": ("in", self.item_codes), "warehouse": ("in", self.warehouses)},
@@ -221,7 +221,7 @@ class ProductionPlanReport:
 
 		self.purchase_details = {}
 
-		purchased_items = frappe.get_all(
+		purchased_items = nts.get_all(
 			"Purchase Order Item",
 			fields=["item_code", "min(schedule_date) as arrival_date", "qty as arrival_qty", "warehouse"],
 			filters={
@@ -332,7 +332,7 @@ class ProductionPlanReport:
 				self.data.append(row)
 
 	def get_args(self):
-		return frappe._dict(
+		return nts._dict(
 			{
 				"work_order": "",
 				"sales_order": "",

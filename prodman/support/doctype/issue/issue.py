@@ -1,20 +1,20 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 from datetime import timedelta
 
-import frappe
-from frappe import _
-from frappe.core.utils import get_parent_doc
-from frappe.email.inbox import link_communication_to_document
-from frappe.model.document import Document
-from frappe.model.mapper import get_mapped_doc
-from frappe.query_builder import Interval
-from frappe.query_builder.functions import Now
-from frappe.utils import date_diff, get_datetime, now_datetime, time_diff_in_seconds
-from frappe.utils.user import is_website_user
+import nts
+from nts import _
+from nts.core.utils import get_parent_doc
+from nts.email.inbox import link_communication_to_document
+from nts.model.document import Document
+from nts.model.mapper import get_mapped_doc
+from nts.query_builder import Interval
+from nts.query_builder.functions import Now
+from nts.utils import date_diff, get_datetime, now_datetime, time_diff_in_seconds
+from nts.utils.user import is_website_user
 
 
 class Issue(Document):
@@ -24,7 +24,7 @@ class Issue(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		agreement_status: DF.Literal["First Response Due", "Resolution Due", "Fulfilled", "Failed"]
 		attachment: DF.Attach | None
@@ -67,7 +67,7 @@ class Issue(Document):
 			self.flags.create_communication = True
 
 		if not self.raised_by:
-			self.raised_by = frappe.session.user
+			self.raised_by = nts.session.user
 
 		self.set_lead_contact(self.raised_by)
 
@@ -83,22 +83,22 @@ class Issue(Document):
 		email_id = email.utils.parseaddr(email_id)[1]
 		if email_id:
 			if not self.lead:
-				self.lead = frappe.db.get_value("Lead", {"email_id": email_id})
+				self.lead = nts.db.get_value("Lead", {"email_id": email_id})
 
 			if not self.contact and not self.customer:
-				self.contact = frappe.db.get_value("Contact", {"email_id": email_id})
+				self.contact = nts.db.get_value("Contact", {"email_id": email_id})
 
 				if self.contact:
-					contact = frappe.get_doc("Contact", self.contact)
+					contact = nts.get_doc("Contact", self.contact)
 					self.customer = contact.get_link_for("Customer")
 
 			if not self.company:
-				self.company = frappe.db.get_value("Lead", self.lead, "company") or frappe.db.get_default(
+				self.company = nts.db.get_value("Lead", self.lead, "company") or nts.db.get_default(
 					"Company"
 				)
 
 	def create_communication(self):
-		communication = frappe.new_doc("Communication")
+		communication = nts.new_doc("Communication")
 		communication.update(
 			{
 				"communication_type": "Communication",
@@ -117,7 +117,7 @@ class Issue(Document):
 		communication.flags.ignore_mandatory = True
 		communication.save()
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def split_issue(self, subject, communication_id):
 		# Bug: Pressing enter doesn't send subject
 		from copy import deepcopy
@@ -138,12 +138,12 @@ class Issue(Document):
 			replicated_issue.resolution_by = None
 			replicated_issue.reset_issue_metrics()
 
-		frappe.get_doc(replicated_issue).insert()
+		nts.get_doc(replicated_issue).insert()
 
 		# Replicate linked Communications
 		# TODO: get all communications in timeline before this, and modify them to append them to new doc
-		comm_to_split_from = frappe.get_doc("Communication", communication_id)
-		communications = frappe.get_all(
+		comm_to_split_from = nts.get_doc("Communication", communication_id)
+		communications = nts.get_all(
 			"Communication",
 			filters={
 				"reference_doctype": "Issue",
@@ -153,18 +153,18 @@ class Issue(Document):
 		)
 
 		for communication in communications:
-			doc = frappe.get_doc("Communication", communication.name)
+			doc = nts.get_doc("Communication", communication.name)
 			doc.reference_name = replicated_issue.name
 			doc.save(ignore_permissions=True)
 
-		frappe.get_doc(
+		nts.get_doc(
 			{
 				"doctype": "Comment",
 				"comment_type": "Info",
 				"reference_doctype": "Issue",
 				"reference_name": replicated_issue.name,
 				"content": " - Split the Issue from <a href='/app/Form/Issue/{}'>{}</a>".format(
-					self.name, frappe.bold(self.name)
+					self.name, nts.bold(self.name)
 				),
 			}
 		).insert(ignore_permissions=True)
@@ -188,14 +188,14 @@ def get_list_context(context=None):
 
 
 def get_issue_list(doctype, txt, filters, limit_start, limit_page_length=20, order_by=None):
-	from frappe.www.list import get_list
+	from nts.www.list import get_list
 
-	user = frappe.session.user
-	contact = frappe.db.get_value("Contact", {"user": user}, "name")
+	user = nts.session.user
+	contact = nts.db.get_value("Contact", {"user": user}, "name")
 	customer = None
 
 	if contact:
-		contact_doc = frappe.get_doc("Contact", contact)
+		contact_doc = nts.get_doc("Contact", contact)
 		customer = contact_doc.get_link_for("Customer")
 
 	ignore_permissions = False
@@ -215,26 +215,26 @@ def get_issue_list(doctype, txt, filters, limit_start, limit_page_length=20, ord
 	)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def set_multiple_status(names, status):
 	for name in json.loads(names):
-		frappe.db.set_value("Issue", name, "status", status)
+		nts.db.set_value("Issue", name, "status", status)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def set_status(name, status):
-	frappe.db.set_value("Issue", name, "status", status)
+	nts.db.set_value("Issue", name, "status", status)
 
 
 def auto_close_tickets():
 	"""Auto-close replied support tickets after 7 days"""
 	auto_close_after_days = (
-		frappe.db.get_value("Support Settings", "Support Settings", "close_issue_after_days") or 7
+		nts.db.get_value("Support Settings", "Support Settings", "close_issue_after_days") or 7
 	)
 
-	table = frappe.qb.DocType("Issue")
+	table = nts.qb.DocType("Issue")
 	issues = (
-		frappe.qb.from_(table)
+		nts.qb.from_(table)
 		.select(table.name)
 		.where(
 			(table.modified < (Now() - Interval(days=auto_close_after_days))) & (table.status == "Replied")
@@ -242,7 +242,7 @@ def auto_close_tickets():
 	).run(pluck=True)
 
 	for issue in issues:
-		doc = frappe.get_doc("Issue", issue)
+		doc = nts.get_doc("Issue", issue)
 		doc.status = "Closed"
 		doc.flags.ignore_permissions = True
 		doc.flags.ignore_mandatory = True
@@ -259,20 +259,20 @@ def has_website_permission(doc, ptype, user, verbose=False):
 
 def update_issue(contact, method):
 	"""Called when Contact is deleted"""
-	frappe.db.sql("""UPDATE `tabIssue` set contact='' where contact=%s""", contact.name)
+	nts.db.sql("""UPDATE `tabIssue` set contact='' where contact=%s""", contact.name)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_task(source_name, target_doc=None):
 	return get_mapped_doc("Issue", source_name, {"Issue": {"doctype": "Task"}}, target_doc)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_issue_from_communication(communication, ignore_communication_links=False):
 	"""raise a issue from email"""
 
-	doc = frappe.get_doc("Communication", communication)
-	issue = frappe.get_doc(
+	doc = nts.get_doc("Communication", communication)
+	issue = nts.get_doc(
 		{
 			"doctype": "Issue",
 			"subject": doc.subject,
@@ -303,7 +303,7 @@ def set_first_response_time(communication, method):
 
 
 def is_first_response(issue):
-	responses = frappe.get_all(
+	responses = nts.get_all(
 		"Communication", filters={"reference_name": issue.name, "sent_or_received": "Sent"}
 	)
 	if len(responses) == 1:
@@ -315,7 +315,7 @@ def calculate_first_response_time(issue, first_responded_on):
 	issue_creation_date = issue.service_level_agreement_creation or issue.creation
 	issue_creation_time = get_time_in_seconds(issue_creation_date)
 	first_responded_on_in_seconds = get_time_in_seconds(first_responded_on)
-	support_hours = frappe.get_cached_doc(
+	support_hours = nts.get_cached_doc(
 		"Service Level Agreement", issue.service_level_agreement
 	).support_and_resolution
 
@@ -383,14 +383,14 @@ def get_time_in_seconds(date):
 
 def get_working_hours(date, support_hours):
 	if is_work_day(date, support_hours):
-		weekday = frappe.utils.get_weekday(date)
+		weekday = nts.utils.get_weekday(date)
 		for day in support_hours:
 			if day.workday == weekday:
 				return day.start_time, day.end_time
 
 
 def is_work_day(date, support_hours):
-	weekday = frappe.utils.get_weekday(date)
+	weekday = nts.utils.get_weekday(date)
 	for day in support_hours:
 		if day.workday == weekday:
 			return True
@@ -429,6 +429,6 @@ def is_before_working_hours(date, support_hours):
 
 
 def get_holidays(holiday_list_name):
-	holiday_list = frappe.get_cached_doc("Holiday List", holiday_list_name)
+	holiday_list = nts.get_cached_doc("Holiday List", holiday_list_name)
 	holidays = [holiday.holiday_date for holiday in holiday_list.holidays]
 	return holidays

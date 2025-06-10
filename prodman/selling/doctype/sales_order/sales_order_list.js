@@ -1,4 +1,4 @@
-frappe.listview_settings["Sales Order"] = {
+nts.listview_settings["Sales Order"] = {
 	add_fields: [
 		"base_grand_total",
 		"customer_name",
@@ -21,7 +21,7 @@ frappe.listview_settings["Sales Order"] = {
 		} else if (doc.status === "Completed") {
 			return [__("Completed"), "green", "status,=,Completed"];
 		} else if (!doc.skip_delivery_note && flt(doc.per_delivered) < 100) {
-			if (frappe.datetime.get_diff(doc.delivery_date) < 0) {
+			if (nts.datetime.get_diff(doc.delivery_date) < 0) {
 				// not delivered & overdue
 				return [
 					__("Overdue"),
@@ -68,19 +68,19 @@ frappe.listview_settings["Sales Order"] = {
 			listview.call_for_selected_items(method, { status: "Submitted" });
 		});
 
-		if (frappe.model.can_create("Sales Invoice")) {
+		if (nts.model.can_create("Sales Invoice")) {
 			listview.page.add_action_item(__("Sales Invoice"), () => {
 				prodman.bulk_transaction_processing.create(listview, "Sales Order", "Sales Invoice");
 			});
 		}
 
-		if (frappe.model.can_create("Delivery Note")) {
+		if (nts.model.can_create("Delivery Note")) {
 			listview.page.add_action_item(__("Delivery Note"), () => {
 				prodman.bulk_transaction_processing.create(listview, "Sales Order", "Delivery Note");
 			});
 		}
 
-		if (frappe.model.can_create("Payment Entry")) {
+		if (nts.model.can_create("Payment Entry")) {
 			listview.page.add_action_item(__("Advance Payment"), () => {
 				prodman.bulk_transaction_processing.create(listview, "Sales Order", "Payment Entry");
 			});

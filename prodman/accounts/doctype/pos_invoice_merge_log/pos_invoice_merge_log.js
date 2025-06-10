@@ -1,7 +1,7 @@
-// Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2020, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("POS Invoice Merge Log", {
+nts .ui.form.on("POS Invoice Merge Log", {
 	setup: function (frm) {
 		frm.set_query("pos_invoice", "pos_invoices", (doc) => {
 			return {

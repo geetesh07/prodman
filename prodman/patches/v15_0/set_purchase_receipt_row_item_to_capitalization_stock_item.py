@@ -1,9 +1,9 @@
-import frappe
+import nts
 
 
 def execute():
 	# nosemgrep
-	frappe.db.sql(
+	nts.db.sql(
 		"""
         UPDATE `tabAsset Capitalization Stock Item` ACSI
         JOIN `tabAsset Capitalization` AC

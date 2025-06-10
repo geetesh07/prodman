@@ -1,7 +1,7 @@
-// Copyright (c) 2025, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2025, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Incorrect Serial and Batch Bundle"] = {
+nts.query_reports["Incorrect Serial and Batch Bundle"] = {
 	filters: [
 		{
 			fieldname: "item_code",
@@ -25,20 +25,20 @@ frappe.query_reports["Incorrect Serial and Batch Bundle"] = {
 
 	onload(report) {
 		report.page.add_inner_button(__("Remove SABB Entry"), () => {
-			let indexes = frappe.query_report.datatable.rowmanager.getCheckedRows();
-			let selected_rows = indexes.map((i) => frappe.query_report.data[i]);
+			let indexes = nts.query_report.datatable.rowmanager.getCheckedRows();
+			let selected_rows = indexes.map((i) => nts.query_report.data[i]);
 
 			if (!selected_rows.length) {
-				frappe.throw(__("Please select a row to create a Reposting Entry"));
+				nts.throw(__("Please select a row to create a Reposting Entry"));
 			} else {
-				frappe.call({
+				nts.call({
 					method: "prodman.stock.report.incorrect_serial_and_batch_bundle.incorrect_serial_and_batch_bundle.remove_sabb_entry",
 					freeze: true,
 					args: {
 						selected_rows: selected_rows,
 					},
 					callback: function (r) {
-						frappe.query_report.refresh();
+						nts.query_report.refresh();
 					},
 				});
 			}

@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _, throw
-from frappe.model.document import Document
-from frappe.utils import cint
+import nts
+from nts import _, throw
+from nts.model.document import Document
+from nts.utils import cint
 
 
 class PriceList(Document):
@@ -15,7 +15,7 @@ class PriceList(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.stock.doctype.price_list_country.price_list_country import PriceListCountry
 
@@ -39,15 +39,15 @@ class PriceList(Document):
 
 	def set_default_if_missing(self):
 		if cint(self.selling):
-			if not frappe.db.get_value("Selling Settings", None, "selling_price_list"):
-				frappe.set_value("Selling Settings", "Selling Settings", "selling_price_list", self.name)
+			if not nts.db.get_value("Selling Settings", None, "selling_price_list"):
+				nts.set_value("Selling Settings", "Selling Settings", "selling_price_list", self.name)
 
 		elif cint(self.buying):
-			if not frappe.db.get_value("Buying Settings", None, "buying_price_list"):
-				frappe.set_value("Buying Settings", "Buying Settings", "buying_price_list", self.name)
+			if not nts.db.get_value("Buying Settings", None, "buying_price_list"):
+				nts.set_value("Buying Settings", "Buying Settings", "buying_price_list", self.name)
 
 	def update_item_price(self):
-		frappe.db.sql(
+		nts.db.sql(
 			"""update `tabItem Price` set currency=%s,
 			buying=%s, selling=%s, modified=NOW() where price_list=%s""",
 			(self.currency, cint(self.buying), cint(self.selling), self.name),
@@ -57,7 +57,7 @@ class PriceList(Document):
 		self.delete_price_list_details_key()
 
 		def _update_default_price_list(module):
-			b = frappe.get_doc(module + " Settings")
+			b = nts.get_doc(module + " Settings")
 			price_list_fieldname = module.lower() + "_price_list"
 
 			if self.name == b.get(price_list_fieldname):
@@ -69,20 +69,20 @@ class PriceList(Document):
 			_update_default_price_list(module)
 
 	def delete_price_list_details_key(self):
-		frappe.cache().hdel("price_list_details", self.name)
+		nts.cache().hdel("price_list_details", self.name)
 
 
 def get_price_list_details(price_list):
-	price_list_details = frappe.cache().hget("price_list_details", price_list)
+	price_list_details = nts.cache().hget("price_list_details", price_list)
 
 	if not price_list_details:
-		price_list_details = frappe.get_cached_value(
+		price_list_details = nts.get_cached_value(
 			"Price List", price_list, ["currency", "price_not_uom_dependent", "enabled"], as_dict=1
 		)
 
 		if not price_list_details or not price_list_details.get("enabled"):
 			throw(_("Price List {0} is disabled or does not exist").format(price_list))
 
-		frappe.cache().hset("price_list_details", price_list, price_list_details)
+		nts.cache().hset("price_list_details", price_list, price_list_details)
 
 	return price_list_details or {}

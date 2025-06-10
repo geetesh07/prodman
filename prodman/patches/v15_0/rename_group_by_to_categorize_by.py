@@ -1,11 +1,11 @@
-import frappe
-from frappe.model.utils.rename_field import rename_field
+import nts
+from nts.model.utils.rename_field import rename_field
 
 
 def execute():
 	rename_field("Process Statement Of Accounts", "group_by", "categorize_by")
 
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		UPDATE
     		`tabProcess Statement Of Accounts`

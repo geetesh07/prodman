@@ -1,8 +1,8 @@
-// Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2022, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
-frappe.provide("prodman.asset");
+nts .provide("prodman.asset");
 
-frappe.ui.form.on("Asset Depreciation Schedule", {
+nts .ui.form.on("Asset Depreciation Schedule", {
 	onload: function (frm) {
 		frm.events.make_schedules_editable(frm);
 	},
@@ -24,11 +24,11 @@ frappe.ui.form.on("Asset Depreciation Schedule", {
 	},
 });
 
-frappe.ui.form.on("Depreciation Schedule", {
+nts .ui.form.on("Depreciation Schedule", {
 	make_depreciation_entry: function (frm, cdt, cdn) {
 		var row = locals[cdt][cdn];
 		if (!row.journal_entry) {
-			frappe.call({
+			nts .call({
 				method: "prodman.assets.doctype.asset.depreciation.make_depreciation_entry",
 				args: {
 					asset_depr_schedule_name: frm.doc.name,
@@ -36,7 +36,7 @@ frappe.ui.form.on("Depreciation Schedule", {
 				},
 				debounce: 1000,
 				callback: function (r) {
-					frappe.model.sync(r.message);
+					nts .model.sync(r.message);
 					frm.refresh();
 				},
 			});
@@ -55,7 +55,7 @@ prodman.asset.set_accumulated_depreciation = function (frm) {
 
 	$.each(frm.doc.depreciation_schedule || [], function (i, row) {
 		accumulated_depreciation += flt(row.depreciation_amount);
-		frappe.model.set_value(
+		nts .model.set_value(
 			row.doctype,
 			row.name,
 			"accumulated_depreciation_amount",

@@ -1,4 +1,4 @@
-import frappe
+import nts
 
 from prodman.assets.doctype.asset_depreciation_schedule.asset_depreciation_schedule import (
 	get_depr_schedule,
@@ -6,13 +6,13 @@ from prodman.assets.doctype.asset_depreciation_schedule.asset_depreciation_sched
 
 
 def execute():
-	if frappe.db.has_column("Asset Finance Book", "total_number_of_booked_depreciations"):
-		assets = frappe.get_all(
+	if nts.db.has_column("Asset Finance Book", "total_number_of_booked_depreciations"):
+		assets = nts.get_all(
 			"Asset", filters={"docstatus": 1}, fields=["name", "opening_number_of_booked_depreciations"]
 		)
 
 		for asset in assets:
-			asset_doc = frappe.get_doc("Asset", asset.name)
+			asset_doc = nts.get_doc("Asset", asset.name)
 
 			for fb_row in asset_doc.get("finance_books"):
 				depr_schedule = get_depr_schedule(asset.name, "Active", fb_row.finance_book)
@@ -22,7 +22,7 @@ def execute():
 					for je in depr_schedule:
 						if je.journal_entry:
 							total_number_of_booked_depreciations += 1
-				frappe.db.set_value(
+				nts.db.set_value(
 					"Asset Finance Book",
 					fb_row.name,
 					"total_number_of_booked_depreciations",

@@ -10,9 +10,9 @@
 </div>
 
 <script>
-frappe.ready(function() {
-	if(frappe.utils.get_url_arg("q")){
-	var txt = frappe.utils.get_url_arg("q");
+nts.ready(function() {
+	if(nts.utils.get_url_arg("q")){
+	var txt = nts.utils.get_url_arg("q");
 	$(".project-search-results").html("Search results for : " + encodeURIComponent(txt));
 	$(".clear").toggle(true);
 	}

@@ -1,11 +1,11 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2020, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
+import nts
 from apiclient.discovery import build
-from frappe import _
-from frappe.model.document import Document
+from nts import _
+from nts.model.document import Document
 
 
 class VideoSettings(Document):
@@ -15,7 +15,7 @@ class VideoSettings(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		api_key: DF.Data | None
 		enable_youtube_tracking: DF.Check
@@ -32,4 +32,4 @@ class VideoSettings(Document):
 			except Exception:
 				title = _("Failed to Authenticate the API key.")
 				self.log_error("Failed to authenticate API key")
-				frappe.throw(title + " Please check the error logs.", title=_("Invalid Credentials"))
+				nts.throw(title + " Please check the error logs.", title=_("Invalid Credentials"))

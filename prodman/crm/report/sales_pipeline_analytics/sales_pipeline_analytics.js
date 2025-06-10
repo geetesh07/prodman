@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Sales Pipeline Analytics"] = {
+nts.query_reports["Sales Pipeline Analytics"] = {
 	filters: [
 		{
 			fieldname: "pipeline_by",
@@ -51,7 +51,7 @@ frappe.query_reports["Sales Pipeline Analytics"] = {
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 		},
 		{
 			fieldname: "opportunity_source",

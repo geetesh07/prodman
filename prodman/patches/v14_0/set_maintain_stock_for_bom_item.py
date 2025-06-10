@@ -1,12 +1,12 @@
-import frappe
+import nts
 
 
 def execute():
-	if not frappe.db.exists("BOM", {"docstatus": 1}):
+	if not nts.db.exists("BOM", {"docstatus": 1}):
 		return
 
 	# Added is_stock_item to handle Read Only based on condition for the rate field
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		UPDATE
 			`tabBOM Item` boi,

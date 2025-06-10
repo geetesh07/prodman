@@ -1,21 +1,21 @@
 import json
 
-import frappe
+import nts
 
 
 def get_company_for_dashboards():
-	company = frappe.defaults.get_defaults().company
+	company = nts.defaults.get_defaults().company
 	if company:
 		return company
 	else:
-		company_list = frappe.get_list("Company")
+		company_list = nts.get_list("Company")
 		if company_list:
 			return company_list[0].name
 	return None
 
 
 def get_default_dashboards():
-	company = frappe.get_doc("Company", get_company_for_dashboards())
+	company = nts.get_doc("Company", get_company_for_dashboards())
 	income_account = company.default_income_account or get_account("Income Account", company.name)
 	expense_account = company.default_expense_account or get_account("Expense Account", company.name)
 	bank_account = company.default_bank_account or get_account("Bank", company.name)
@@ -146,6 +146,6 @@ def get_default_dashboards():
 
 
 def get_account(account_type, company):
-	accounts = frappe.get_list("Account", filters={"account_type": account_type, "company": company})
+	accounts = nts.get_list("Account", filters={"account_type": account_type, "company": company})
 	if accounts:
 		return accounts[0].name

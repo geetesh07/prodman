@@ -1,4 +1,4 @@
-# import frappe
+# import nts
 from prodman.setup.install import add_standard_navbar_items
 
 

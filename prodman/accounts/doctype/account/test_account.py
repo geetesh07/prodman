@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import unittest
 
-import frappe
-from frappe.test_runner import make_test_records
-from frappe.utils import nowdate
+import nts 
+from nts .test_runner import make_test_records
+from nts .utils import nowdate
 
 from prodman.accounts.doctype.account.account import (
 	InvalidAccountMergeError,
@@ -20,15 +20,15 @@ test_dependencies = ["Company"]
 
 class TestAccount(unittest.TestCase):
 	def test_rename_account(self):
-		if not frappe.db.exists("Account", "1210 - Debtors - _TC"):
-			acc = frappe.new_doc("Account")
+		if not nts .db.exists("Account", "1210 - Debtors - _TC"):
+			acc = nts .new_doc("Account")
 			acc.account_name = "Debtors"
 			acc.parent_account = "Accounts Receivable - _TC"
 			acc.account_number = "1210"
 			acc.company = "_Test Company"
 			acc.insert()
 
-		account_number, account_name = frappe.db.get_value(
+		account_number, account_name = nts .db.get_value(
 			"Account", "1210 - Debtors - _TC", ["account_number", "account_name"]
 		)
 		self.assertEqual(account_number, "1210")
@@ -39,7 +39,7 @@ class TestAccount(unittest.TestCase):
 
 		update_account_number("1210 - Debtors - _TC", new_account_name, new_account_number)
 
-		new_acc = frappe.db.get_value(
+		new_acc = nts .db.get_value(
 			"Account",
 			"1211-11-4 - 6 - - Debtors 1 - Test - - _TC",
 			["account_name", "account_number"],
@@ -49,7 +49,7 @@ class TestAccount(unittest.TestCase):
 		self.assertEqual(new_acc.account_name, "Debtors 1 - Test -")
 		self.assertEqual(new_acc.account_number, "1211-11-4 - 6 -")
 
-		frappe.delete_doc("Account", "1211-11-4 - 6 - Debtors 1 - Test - - _TC")
+		nts .delete_doc("Account", "1211-11-4 - 6 - Debtors 1 - Test - - _TC")
 
 	def test_merge_account(self):
 		create_account(
@@ -93,19 +93,19 @@ class TestAccount(unittest.TestCase):
 			account_currency="USD",
 		)
 
-		parent = frappe.db.get_value("Account", "Earnest Money - _TC", "parent_account")
+		parent = nts .db.get_value("Account", "Earnest Money - _TC", "parent_account")
 
 		self.assertEqual(parent, "Securities and Deposits - _TC")
 
 		merge_account("Securities and Deposits - _TC", "Cash In Hand - _TC")
 
-		parent = frappe.db.get_value("Account", "Earnest Money - _TC", "parent_account")
+		parent = nts .db.get_value("Account", "Earnest Money - _TC", "parent_account")
 
 		# Parent account of the child account changes after merging
 		self.assertEqual(parent, "Cash In Hand - _TC")
 
 		# Old account doesn't exist after merging
-		self.assertFalse(frappe.db.exists("Account", "Securities and Deposits - _TC"))
+		self.assertFalse(nts .db.exists("Account", "Securities and Deposits - _TC"))
 
 		# Raise error as is_group property doesn't match
 		self.assertRaises(
@@ -132,38 +132,38 @@ class TestAccount(unittest.TestCase):
 		)
 
 	def test_account_sync(self):
-		frappe.local.flags.pop("ignore_root_company_validation", None)
+		nts .local.flags.pop("ignore_root_company_validation", None)
 
-		acc = frappe.new_doc("Account")
+		acc = nts .new_doc("Account")
 		acc.account_name = "Test Sync Account"
 		acc.parent_account = "Temporary Accounts - _TC3"
 		acc.company = "_Test Company 3"
 		acc.insert()
 
-		acc_tc_4 = frappe.db.get_value(
+		acc_tc_4 = nts .db.get_value(
 			"Account", {"account_name": "Test Sync Account", "company": "_Test Company 4"}
 		)
-		acc_tc_5 = frappe.db.get_value(
+		acc_tc_5 = nts .db.get_value(
 			"Account", {"account_name": "Test Sync Account", "company": "_Test Company 5"}
 		)
 		self.assertEqual(acc_tc_4, "Test Sync Account - _TC4")
 		self.assertEqual(acc_tc_5, "Test Sync Account - _TC5")
 
 	def test_add_account_to_a_group(self):
-		frappe.db.set_value("Account", "Office Rent - _TC3", "is_group", 1)
+		nts .db.set_value("Account", "Office Rent - _TC3", "is_group", 1)
 
-		acc = frappe.new_doc("Account")
+		acc = nts .new_doc("Account")
 		acc.account_name = "Test Group Account"
 		acc.parent_account = "Office Rent - _TC3"
 		acc.company = "_Test Company 3"
-		self.assertRaises(frappe.ValidationError, acc.insert)
+		self.assertRaises(nts .ValidationError, acc.insert)
 
-		frappe.db.set_value("Account", "Office Rent - _TC3", "is_group", 0)
+		nts .db.set_value("Account", "Office Rent - _TC3", "is_group", 0)
 
 	def test_account_rename_sync(self):
-		frappe.local.flags.pop("ignore_root_company_validation", None)
+		nts .local.flags.pop("ignore_root_company_validation", None)
 
-		acc = frappe.new_doc("Account")
+		acc = nts .new_doc("Account")
 		acc.account_name = "Test Rename Account"
 		acc.parent_account = "Temporary Accounts - _TC3"
 		acc.company = "_Test Company 3"
@@ -174,7 +174,7 @@ class TestAccount(unittest.TestCase):
 
 		# Check if renamed in children
 		self.assertTrue(
-			frappe.db.exists(
+			nts .db.exists(
 				"Account",
 				{
 					"account_name": "Test Rename Sync Account",
@@ -184,7 +184,7 @@ class TestAccount(unittest.TestCase):
 			)
 		)
 		self.assertTrue(
-			frappe.db.exists(
+			nts .db.exists(
 				"Account",
 				{
 					"account_name": "Test Rename Sync Account",
@@ -194,9 +194,9 @@ class TestAccount(unittest.TestCase):
 			)
 		)
 
-		frappe.delete_doc("Account", "1234 - Test Rename Sync Account - _TC3")
-		frappe.delete_doc("Account", "1234 - Test Rename Sync Account - _TC4")
-		frappe.delete_doc("Account", "1234 - Test Rename Sync Account - _TC5")
+		nts .delete_doc("Account", "1234 - Test Rename Sync Account - _TC3")
+		nts .delete_doc("Account", "1234 - Test Rename Sync Account - _TC4")
+		nts .delete_doc("Account", "1234 - Test Rename Sync Account - _TC5")
 
 	def test_account_currency_sync(self):
 		"""
@@ -205,10 +205,10 @@ class TestAccount(unittest.TestCase):
 
 		make_test_records("Company")
 
-		frappe.local.flags.pop("ignore_root_company_validation", None)
+		nts .local.flags.pop("ignore_root_company_validation", None)
 
 		def create_bank_account():
-			acc = frappe.new_doc("Account")
+			acc = nts .new_doc("Account")
 			acc.account_name = "_Test Bank JPY"
 
 			acc.parent_account = "Temporary Accounts - _TC6"
@@ -220,7 +220,7 @@ class TestAccount(unittest.TestCase):
 		acc.account_currency = "JPY"
 		acc.insert()
 		self.assertTrue(
-			frappe.db.exists(
+			nts .db.exists(
 				{
 					"doctype": "Account",
 					"account_name": "_Test Bank JPY",
@@ -230,14 +230,14 @@ class TestAccount(unittest.TestCase):
 			)
 		)
 
-		frappe.delete_doc("Account", "_Test Bank JPY - _TC6")
-		frappe.delete_doc("Account", "_Test Bank JPY - _TC7")
+		nts .delete_doc("Account", "_Test Bank JPY - _TC6")
+		nts .delete_doc("Account", "_Test Bank JPY - _TC7")
 
 		acc = create_bank_account()
 		# default currency is used
 		acc.insert()
 		self.assertTrue(
-			frappe.db.exists(
+			nts .db.exists(
 				{
 					"doctype": "Account",
 					"account_name": "_Test Bank JPY",
@@ -247,13 +247,13 @@ class TestAccount(unittest.TestCase):
 			)
 		)
 
-		frappe.delete_doc("Account", "_Test Bank JPY - _TC6")
-		frappe.delete_doc("Account", "_Test Bank JPY - _TC7")
+		nts .delete_doc("Account", "_Test Bank JPY - _TC6")
+		nts .delete_doc("Account", "_Test Bank JPY - _TC7")
 
 	def test_child_company_account_rename_sync(self):
-		frappe.local.flags.pop("ignore_root_company_validation", None)
+		nts .local.flags.pop("ignore_root_company_validation", None)
 
-		acc = frappe.new_doc("Account")
+		acc = nts .new_doc("Account")
 		acc.account_name = "Test Group Account"
 		acc.parent_account = "Temporary Accounts - _TC3"
 		acc.is_group = 1
@@ -261,29 +261,29 @@ class TestAccount(unittest.TestCase):
 		acc.insert()
 
 		self.assertTrue(
-			frappe.db.exists("Account", {"account_name": "Test Group Account", "company": "_Test Company 4"})
+			nts .db.exists("Account", {"account_name": "Test Group Account", "company": "_Test Company 4"})
 		)
 		self.assertTrue(
-			frappe.db.exists("Account", {"account_name": "Test Group Account", "company": "_Test Company 5"})
+			nts .db.exists("Account", {"account_name": "Test Group Account", "company": "_Test Company 5"})
 		)
 
 		# Try renaming child company account
-		acc_tc_5 = frappe.db.get_value(
+		acc_tc_5 = nts .db.get_value(
 			"Account", {"account_name": "Test Group Account", "company": "_Test Company 5"}
 		)
-		self.assertRaises(frappe.ValidationError, update_account_number, acc_tc_5, "Test Modified Account")
+		self.assertRaises(nts .ValidationError, update_account_number, acc_tc_5, "Test Modified Account")
 
 		# Rename child company account with allow_account_creation_against_child_company enabled
-		frappe.db.set_value("Company", "_Test Company 5", "allow_account_creation_against_child_company", 1)
+		nts .db.set_value("Company", "_Test Company 5", "allow_account_creation_against_child_company", 1)
 
 		update_account_number(acc_tc_5, "Test Modified Account")
 		self.assertTrue(
-			frappe.db.exists(
+			nts .db.exists(
 				"Account", {"name": "Test Modified Account - _TC5", "company": "_Test Company 5"}
 			)
 		)
 
-		frappe.db.set_value("Company", "_Test Company 5", "allow_account_creation_against_child_company", 0)
+		nts .db.set_value("Company", "_Test Company 5", "allow_account_creation_against_child_company", 0)
 
 		to_delete = [
 			"Test Group Account - _TC3",
@@ -291,19 +291,19 @@ class TestAccount(unittest.TestCase):
 			"Test Modified Account - _TC5",
 		]
 		for doc in to_delete:
-			frappe.delete_doc("Account", doc)
+			nts .delete_doc("Account", doc)
 
 	def test_validate_account_currency(self):
 		from prodman.accounts.doctype.journal_entry.test_journal_entry import make_journal_entry
 
-		if not frappe.db.get_value("Account", "Test Currency Account - _TC"):
-			acc = frappe.new_doc("Account")
+		if not nts .db.get_value("Account", "Test Currency Account - _TC"):
+			acc = nts .new_doc("Account")
 			acc.account_name = "Test Currency Account"
 			acc.parent_account = "Tax Assets - _TC"
 			acc.company = "_Test Company"
 			acc.insert()
 		else:
-			acc = frappe.get_doc("Account", "Test Currency Account - _TC")
+			acc = nts .get_doc("Account", "Test Currency Account - _TC")
 
 		self.assertEqual(acc.account_currency, "INR")
 
@@ -311,13 +311,13 @@ class TestAccount(unittest.TestCase):
 		make_journal_entry("Test Currency Account - _TC", "Miscellaneous Expenses - _TC", 100, submit=True)
 
 		acc.account_currency = "USD"
-		self.assertRaises(frappe.ValidationError, acc.save)
+		self.assertRaises(nts .ValidationError, acc.save)
 
 	def test_account_balance(self):
 		from prodman.accounts.utils import get_balance_on
 
-		if not frappe.db.exists("Account", "Test Percent Account %5 - _TC"):
-			acc = frappe.new_doc("Account")
+		if not nts .db.exists("Account", "Test Percent Account %5 - _TC"):
+			acc = nts .new_doc("Account")
 			acc.account_name = "Test Percent Account %5"
 			acc.parent_account = "Tax Assets - _TC"
 			acc.company = "_Test Company"
@@ -328,7 +328,7 @@ class TestAccount(unittest.TestCase):
 
 
 def _make_test_records(verbose=None):
-	from frappe.test_runner import make_test_objects
+	from nts .test_runner import make_test_objects
 
 	accounts = [
 		# [account_name, parent_account, is_group]
@@ -396,7 +396,7 @@ def _make_test_records(verbose=None):
 def get_inventory_account(company, warehouse=None):
 	account = None
 	if warehouse:
-		account = get_warehouse_account(frappe.get_doc("Warehouse", warehouse))
+		account = get_warehouse_account(nts .get_doc("Warehouse", warehouse))
 	else:
 		account = get_company_default_inventory_account(company)
 
@@ -404,11 +404,11 @@ def get_inventory_account(company, warehouse=None):
 
 
 def create_account(**kwargs):
-	account = frappe.db.get_value(
+	account = nts .db.get_value(
 		"Account", filters={"account_name": kwargs.get("account_name"), "company": kwargs.get("company")}
 	)
 	if account:
-		account = frappe.get_doc("Account", account)
+		account = nts .get_doc("Account", account)
 		account.update(
 			dict(
 				is_group=kwargs.get("is_group", 0),
@@ -418,7 +418,7 @@ def create_account(**kwargs):
 		account.save()
 		return account.name
 	else:
-		account = frappe.get_doc(
+		account = nts .get_doc(
 			dict(
 				doctype="Account",
 				is_group=kwargs.get("is_group", 0),

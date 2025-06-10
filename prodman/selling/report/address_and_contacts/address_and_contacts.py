@@ -1,8 +1,8 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
+import nts
 
 field_map = {
 	"Contact": ["first_name", "last_name", "phone", "mobile_no", "email_id", "is_primary_contact"],
@@ -28,7 +28,7 @@ def get_columns(filters):
 	party_type_value = get_party_group(party_type)
 	return [
 		f"{party_type}:Link/{party_type}",
-		f"{frappe.unscrub(str(party_type_value))}::150",
+		f"{nts.unscrub(str(party_type_value))}::150",
 		"Address Line 1",
 		"Address Line 2",
 		"Postal Code",
@@ -56,7 +56,7 @@ def get_data(filters):
 def get_party_addresses_and_contact(party_type, party, party_group):
 	data = []
 	filters = None
-	party_details = frappe._dict()
+	party_details = nts._dict()
 
 	if not party_type:
 		return []
@@ -64,7 +64,7 @@ def get_party_addresses_and_contact(party_type, party, party_group):
 	if party:
 		filters = {"name": party}
 
-	fetch_party_list = frappe.get_list(
+	fetch_party_list = nts.get_list(
 		party_type, filters=filters, fields=["name", party_group], as_list=True
 	)
 	party_list = [d[0] for d in fetch_party_list]
@@ -73,7 +73,7 @@ def get_party_addresses_and_contact(party_type, party, party_group):
 		party_groups[d[0]] = d[1]
 
 	for d in party_list:
-		party_details.setdefault(d, frappe._dict())
+		party_details.setdefault(d, nts._dict())
 
 	party_details = get_party_details(party_type, party_list, "Address", party_details)
 	party_details = get_party_details(party_type, party_list, "Contact", party_details)
@@ -111,10 +111,10 @@ def get_party_details(party_type, party_list, doctype, party_details):
 	]
 	fields = ["`tabDynamic Link`.link_name", *field_map.get(doctype, [])]
 
-	records = frappe.get_list(doctype, filters=filters, fields=fields, as_list=True)
+	records = nts.get_list(doctype, filters=filters, fields=fields, as_list=True)
 	for d in records:
 		details = party_details.get(d[0])
-		details.setdefault(frappe.scrub(doctype), []).append(d[1:])
+		details.setdefault(nts.scrub(doctype), []).append(d[1:])
 
 	return party_details
 

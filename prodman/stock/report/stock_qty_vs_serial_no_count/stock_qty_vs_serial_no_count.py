@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -16,8 +16,8 @@ def execute(filters=None):
 def validate_warehouse(filters):
 	company = filters.company
 	warehouse = filters.warehouse
-	if not frappe.db.exists("Warehouse", {"name": warehouse, "company": company}):
-		frappe.throw(_("Warehouse: {0} does not belong to {1}").format(warehouse, company))
+	if not nts.db.exists("Warehouse", {"name": warehouse, "company": company}):
+		nts.throw(_("Warehouse: {0} does not belong to {1}").format(warehouse, company))
 
 
 def get_columns():
@@ -39,7 +39,7 @@ def get_columns():
 
 
 def get_data(warehouse):
-	serial_item_list = frappe.get_all(
+	serial_item_list = nts.get_all(
 		"Item",
 		filters={
 			"has_serial_no": True,
@@ -50,16 +50,16 @@ def get_data(warehouse):
 	status_list = ["Active", "Expired"]
 	data = []
 	for item in serial_item_list:
-		total_serial_no = frappe.db.count(
+		total_serial_no = nts.db.count(
 			"Serial No",
 			filters={"item_code": item.item_code, "status": ("in", status_list), "warehouse": warehouse},
 		)
 
-		actual_qty = frappe.db.get_value(
+		actual_qty = nts.db.get_value(
 			"Bin", fieldname=["actual_qty"], filters={"warehouse": warehouse, "item_code": item.item_code}
 		)
 
-		# frappe.db.get_value returns null if no record exist.
+		# nts.db.get_value returns null if no record exist.
 		if not actual_qty:
 			actual_qty = 0
 

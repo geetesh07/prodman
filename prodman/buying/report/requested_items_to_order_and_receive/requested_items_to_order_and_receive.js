@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Requested Items to Order and Receive"] = {
+nts.query_reports["Requested Items to Order and Receive"] = {
 	filters: [
 		{
 			fieldname: "company",
@@ -10,7 +10,7 @@ frappe.query_reports["Requested Items to Order and Receive"] = {
 			width: "80",
 			options: "Company",
 			reqd: 1,
-			default: frappe.defaults.get_default("company"),
+			default: nts.defaults.get_default("company"),
 		},
 		{
 			fieldname: "from_date",
@@ -18,7 +18,7 @@ frappe.query_reports["Requested Items to Order and Receive"] = {
 			fieldtype: "Date",
 			width: "80",
 			reqd: 1,
-			default: frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+			default: nts.datetime.add_months(nts.datetime.get_today(), -1),
 		},
 		{
 			fieldname: "to_date",
@@ -26,7 +26,7 @@ frappe.query_reports["Requested Items to Order and Receive"] = {
 			fieldtype: "Date",
 			width: "80",
 			reqd: 1,
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 		},
 		{
 			fieldname: "material_request",

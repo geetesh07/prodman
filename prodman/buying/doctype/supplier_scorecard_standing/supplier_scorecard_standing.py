@@ -1,9 +1,9 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe.model.document import Document
+import nts
+from nts.model.document import Document
 
 
 class SupplierScorecardStanding(Document):
@@ -13,7 +13,7 @@ class SupplierScorecardStanding(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		employee_link: DF.Link | None
 		max_grade: DF.Percent
@@ -31,16 +31,16 @@ class SupplierScorecardStanding(Document):
 	pass
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_scoring_standing(standing_name):
-	standing = frappe.get_doc("Supplier Scorecard Standing", standing_name)
+	standing = nts.get_doc("Supplier Scorecard Standing", standing_name)
 
 	return standing
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_standings_list():
-	standings = frappe.db.sql(
+	standings = nts.db.sql(
 		"""
 		SELECT
 			scs.name

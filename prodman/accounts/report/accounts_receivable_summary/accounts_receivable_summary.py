@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _, scrub
-from frappe.utils import cint, flt
+import nts 
+from nts  import _, scrub
+from nts .utils import cint, flt
 
 from prodman.accounts.party import get_partywise_advanced_payment_amount
 from prodman.accounts.report.accounts_receivable.accounts_receivable import ReceivablePayableReport
@@ -24,7 +24,7 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 	def run(self, args):
 		self.account_type = args.get("account_type")
 		self.party_type = get_party_types_from_account_type(self.account_type)
-		self.party_naming_by = frappe.db.get_value(args.get("naming_by")[0], None, args.get("naming_by")[1])
+		self.party_naming_by = nts .db.get_value(args.get("naming_by")[0], None, args.get("naming_by")[1])
 		self.get_columns()
 		self.get_data(args)
 		return self.columns, self.data
@@ -59,7 +59,7 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 			if flt(party_dict.outstanding, self.currency_precision) == 0:
 				continue
 
-			row = frappe._dict()
+			row = nts ._dict()
 
 			row.party = party
 			if self.party_naming_by == "Naming Series":
@@ -69,7 +69,7 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 				else:
 					doctype = "Customer"
 					fieldname = "customer_name"
-				row.party_name = frappe.get_cached_value(doctype, party, fieldname)
+				row.party_name = nts .get_cached_value(doctype, party, fieldname)
 
 			row.update(party_dict)
 
@@ -90,7 +90,7 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 			self.data.append(row)
 
 	def get_party_total(self, args):
-		self.party_total = frappe._dict()
+		self.party_total = nts ._dict()
 
 		for d in self.receivables:
 			self.init_party_total(d)
@@ -120,7 +120,7 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 
 		self.party_total.setdefault(
 			row.party,
-			frappe._dict(default_dict),
+			nts ._dict(default_dict),
 		)
 
 	def set_party_details(self, row):
@@ -207,8 +207,8 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 
 
 def get_gl_balance(report_date, company):
-	return frappe._dict(
-		frappe.db.get_all(
+	return nts ._dict(
+		nts .db.get_all(
 			"GL Entry",
 			fields=["party", "sum(debit -  credit)"],
 			filters={"posting_date": ("<=", report_date), "is_cancelled": 0, "company": company},

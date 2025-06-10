@@ -28,8 +28,8 @@ dependencies = [
 requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"
 
-[tool.bench.frappe-dependencies]
-frappe = ">=15.40.4,<16.0.0"
+[tool.bench.nts-dependencies]
+nts = ">=15.40.4,<16.0.0"
 
 [tool.ruff]
 line-length = 110
@@ -61,7 +61,7 @@ ignore = [
     "W191", # indentation contains tabs
     "RUF001", # string contains ambiguous unicode character
 ]
-typing-modules = ["frappe.types.DF"]
+typing-modules = ["nts.types.DF"]
 
 [tool.ruff.format]
 quote-style = "double"

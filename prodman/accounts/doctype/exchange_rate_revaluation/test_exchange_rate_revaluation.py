@@ -1,17 +1,17 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, flt, today
+import nts 
+from nts .tests.utils import nts TestCase, change_settings
+from nts .utils import add_days, flt, today
 
 from prodman.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
 from prodman.accounts.test.accounts_mixin import AccountsTestMixin
 
 
-class TestExchangeRateRevaluation(AccountsTestMixin, FrappeTestCase):
+class TestExchangeRateRevaluation(AccountsTestMixin, nts TestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_usd_receivable_account()
@@ -21,17 +21,17 @@ class TestExchangeRateRevaluation(AccountsTestMixin, FrappeTestCase):
 		self.set_system_and_company_settings()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def set_system_and_company_settings(self):
 		# set number and currency precision
-		system_settings = frappe.get_doc("System Settings")
+		system_settings = nts .get_doc("System Settings")
 		system_settings.float_precision = 2
 		system_settings.currency_precision = 2
 		system_settings.save()
 
 		# Using Exchange Gain/Loss account for unrealized as well.
-		company_doc = frappe.get_doc("Company", self.company)
+		company_doc = nts .get_doc("Company", self.company)
 		company_doc.unrealized_exchange_gain_loss_account = company_doc.exchange_gain_loss_account
 		company_doc.save()
 
@@ -59,7 +59,7 @@ class TestExchangeRateRevaluation(AccountsTestMixin, FrappeTestCase):
 		si.conversion_rate = 80
 		si.save().submit()
 
-		err = frappe.new_doc("Exchange Rate Revaluation")
+		err = nts .new_doc("Exchange Rate Revaluation")
 		err.company = self.company
 		err.posting_date = today()
 		accounts = err.get_accounts_data()
@@ -73,7 +73,7 @@ class TestExchangeRateRevaluation(AccountsTestMixin, FrappeTestCase):
 
 		# Create JV for ERR
 		err_journals = err.make_jv_entries()
-		je = frappe.get_doc("Journal Entry", err_journals.get("revaluation_jv"))
+		je = nts .get_doc("Journal Entry", err_journals.get("revaluation_jv"))
 		je = je.submit()
 
 		je.reload()
@@ -81,7 +81,7 @@ class TestExchangeRateRevaluation(AccountsTestMixin, FrappeTestCase):
 		self.assertEqual(je.total_debit, 8500.0)
 		self.assertEqual(je.total_credit, 8500.0)
 
-		acc_balance = frappe.db.get_all(
+		acc_balance = nts .db.get_all(
 			"GL Entry",
 			filters={"account": self.debtors_usd, "is_cancelled": 0},
 			fields=["sum(debit)-sum(credit) as balance"],
@@ -118,12 +118,12 @@ class TestExchangeRateRevaluation(AccountsTestMixin, FrappeTestCase):
 		pe.save().submit()
 
 		# Cancel the auto created gain/loss JE to simulate balance only in base currency
-		je = frappe.db.get_all("Journal Entry Account", filters={"reference_name": si.name}, pluck="parent")[
+		je = nts .db.get_all("Journal Entry Account", filters={"reference_name": si.name}, pluck="parent")[
 			0
 		]
-		frappe.get_doc("Journal Entry", je).cancel()
+		nts .get_doc("Journal Entry", je).cancel()
 
-		err = frappe.new_doc("Exchange Rate Revaluation")
+		err = nts .new_doc("Exchange Rate Revaluation")
 		err.company = self.company
 		err.posting_date = today()
 		err.fetch_and_calculate_accounts_data()
@@ -132,7 +132,7 @@ class TestExchangeRateRevaluation(AccountsTestMixin, FrappeTestCase):
 		# Create JV for ERR
 		self.assertTrue(err.check_journal_entry_condition())
 		err_journals = err.make_jv_entries()
-		je = frappe.get_doc("Journal Entry", err_journals.get("zero_balance_jv"))
+		je = nts .get_doc("Journal Entry", err_journals.get("zero_balance_jv"))
 		je = je.submit()
 
 		je.reload()
@@ -146,7 +146,7 @@ class TestExchangeRateRevaluation(AccountsTestMixin, FrappeTestCase):
 		self.assertEqual(je.total_debit, 500.0)
 		self.assertEqual(je.total_credit, 500.0)
 
-		acc_balance = frappe.db.get_all(
+		acc_balance = nts .db.get_all(
 			"GL Entry",
 			filters={"account": self.debtors_usd, "is_cancelled": 0},
 			fields=[
@@ -166,7 +166,7 @@ class TestExchangeRateRevaluation(AccountsTestMixin, FrappeTestCase):
 		"""
 		Test Revaluation on Forex account with balance only in account currency
 		"""
-		precision = frappe.db.get_single_value("System Settings", "currency_precision")
+		precision = nts .db.get_single_value("System Settings", "currency_precision")
 
 		# posting on previous date to make sure that ERR picks up the Payment entry's exchange
 		# rate while calculating gain/loss for account currency balance
@@ -193,7 +193,7 @@ class TestExchangeRateRevaluation(AccountsTestMixin, FrappeTestCase):
 		pe.references = []
 		pe.save().submit()
 
-		acc_balance = frappe.db.get_all(
+		acc_balance = nts .db.get_all(
 			"GL Entry",
 			filters={"account": self.debtors_usd, "is_cancelled": 0},
 			fields=[
@@ -205,7 +205,7 @@ class TestExchangeRateRevaluation(AccountsTestMixin, FrappeTestCase):
 		self.assertEqual(flt(acc_balance.balance, precision), 0.0)
 		self.assertEqual(flt(acc_balance.balance_in_account_currency, precision), 5.0)  # in USD
 
-		err = frappe.new_doc("Exchange Rate Revaluation")
+		err = nts .new_doc("Exchange Rate Revaluation")
 		err.company = self.company
 		err.posting_date = today()
 		err.fetch_and_calculate_accounts_data()
@@ -215,7 +215,7 @@ class TestExchangeRateRevaluation(AccountsTestMixin, FrappeTestCase):
 		# Create JV for ERR
 		self.assertTrue(err.check_journal_entry_condition())
 		err_journals = err.make_jv_entries()
-		je = frappe.get_doc("Journal Entry", err_journals.get("zero_balance_jv"))
+		je = nts .get_doc("Journal Entry", err_journals.get("zero_balance_jv"))
 		je = je.submit()
 
 		je.reload()
@@ -235,7 +235,7 @@ class TestExchangeRateRevaluation(AccountsTestMixin, FrappeTestCase):
 		self.assertEqual(flt(je.total_debit, precision), 0.0)
 		self.assertEqual(flt(je.total_credit, precision), 0.0)
 
-		acc_balance = frappe.db.get_all(
+		acc_balance = nts .db.get_all(
 			"GL Entry",
 			filters={"account": self.debtors_usd, "is_cancelled": 0},
 			fields=[

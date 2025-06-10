@@ -1,23 +1,23 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 # For license information, please see license.txt
 
 
-import frappe
+import nts
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def query_task(doctype, txt, searchfield, start, page_len, filters):
-	from frappe.desk.reportview import build_match_conditions
+	from nts.desk.reportview import build_match_conditions
 
 	search_string = "%%%s%%" % txt
 	order_by_string = "%s%%" % txt
 	match_conditions = build_match_conditions("Task")
 	match_conditions = ("and" + match_conditions) if match_conditions else ""
 
-	return frappe.db.sql(
+	return nts.db.sql(
 		"""select name, subject from `tabTask`
 		where (`{}` like {} or `subject` like {}) {}
 		order by

@@ -1,9 +1,9 @@
-import frappe
+import nts
 
 
 def execute():
 	# nosemgrep
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		DELETE FROM `tabAsset Movement Item`
 		WHERE parent NOT IN (SELECT name FROM `tabAsset Movement`)

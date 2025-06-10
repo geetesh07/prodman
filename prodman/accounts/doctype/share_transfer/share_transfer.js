@@ -1,9 +1,9 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.provide("prodman.share_transfer");
+nts .provide("prodman.share_transfer");
 
-frappe.ui.form.on("Share Transfer", {
+nts .ui.form.on("Share Transfer", {
 	refresh: function (frm) {
 		// Don't show Parties which are a Company
 		let shareholders = ["from_shareholder", "to_shareholder"];
@@ -34,7 +34,7 @@ frappe.ui.form.on("Share Transfer", {
 	},
 	company: async function (frm) {
 		if (frm.doc.company) {
-			let currency = (await frappe.db.get_value("Company", frm.doc.company, "default_currency")).message
+			let currency = (await nts .db.get_value("Company", frm.doc.company, "default_currency")).message
 				.default_currency;
 			frm.set_query("equity_or_liability_account", function () {
 				return {
@@ -99,7 +99,7 @@ prodman.share_transfer.make_jv = function (frm) {
 		debit_applicant_type = "Shareholder";
 		debit_applicant = frm.doc.from_shareholder;
 	}
-	frappe.call({
+	nts .call({
 		args: {
 			company: frm.doc.company,
 			account: account,
@@ -112,8 +112,8 @@ prodman.share_transfer.make_jv = function (frm) {
 		},
 		method: "prodman.accounts.doctype.share_transfer.share_transfer.make_jv_entry",
 		callback: function (r) {
-			var doc = frappe.model.sync(r.message)[0];
-			frappe.set_route("Form", doc.doctype, doc.name);
+			var doc = nts .model.sync(r.message)[0];
+			nts .set_route("Form", doc.doctype, doc.name);
 		},
 	});
 };

@@ -1,7 +1,7 @@
-// Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Dunning", {
+nts .ui.form.on("Dunning", {
 	setup: function (frm) {
 		frm.set_query("sales_invoice", "overdue_payments", () => {
 			return {
@@ -79,7 +79,7 @@ frappe.ui.form.on("Dunning", {
 			});
 		}
 
-		frappe.dynamic_link = { doc: frm.doc, fieldname: "customer", doctype: "Customer" };
+		nts .dynamic_link = { doc: frm.doc, fieldname: "customer", doctype: "Customer" };
 
 		frm.toggle_display(
 			"customer_name",
@@ -89,7 +89,7 @@ frappe.ui.form.on("Dunning", {
 	// When multiple companies are set up. in case company name is changed set default company address
 	company: function (frm) {
 		if (frm.doc.company) {
-			frappe.call({
+			nts .call({
 				method: "prodman.setup.doctype.company.company.get_default_company_address",
 				args: { name: frm.doc.company, existing_address: frm.doc.company_address || "" },
 				debounce: 2000,
@@ -110,7 +110,7 @@ frappe.ui.form.on("Dunning", {
 				}
 			}
 
-			const company_doc = frappe.get_doc(":Company", frm.doc.company);
+			const company_doc = nts .get_doc(":Company", frm.doc.company);
 			if (company_doc.default_letter_head) {
 				if (frm.fields_dict.letter_head) {
 					frm.set_value("letter_head", company_doc.default_letter_head);
@@ -123,7 +123,7 @@ frappe.ui.form.on("Dunning", {
 		const company_currency = prodman.get_currency(frm.doc.company);
 		// Added `ignore_pricing_rule` to determine if document is loading after mapping from another doc
 		if (frm.doc.currency && frm.doc.currency !== company_currency) {
-			frappe.call({
+			nts .call({
 				method: "prodman.setup.utils.get_exchange_rate",
 				args: {
 					transaction_date: frm.doc.posting_date,
@@ -169,7 +169,7 @@ frappe.ui.form.on("Dunning", {
 	},
 	get_dunning_letter_text: function (frm) {
 		if (frm.doc.dunning_type) {
-			frappe.call({
+			nts .call({
 				method: "prodman.accounts.doctype.dunning.dunning.get_dunning_letter_text",
 				args: {
 					dunning_type: frm.doc.dunning_type,
@@ -208,7 +208,7 @@ frappe.ui.form.on("Dunning", {
 		frm.doc.overdue_payments.forEach((row) => {
 			if (frm.doc.posting_date && row.due_date) {
 				const overdue_days = moment(frm.doc.posting_date).diff(row.due_date, "days");
-				frappe.model.set_value(row.doctype, row.name, "overdue_days", overdue_days);
+				nts .model.set_value(row.doctype, row.name, "overdue_days", overdue_days);
 			}
 		});
 	},
@@ -219,7 +219,7 @@ frappe.ui.form.on("Dunning", {
 				interest_per_day * row.overdue_days * row.outstanding,
 				precision("interest", row)
 			);
-			frappe.model.set_value(row.doctype, row.name, "interest", interest);
+			nts .model.set_value(row.doctype, row.name, "interest", interest);
 		});
 	},
 	calculate_totals: function (frm) {
@@ -240,21 +240,21 @@ frappe.ui.form.on("Dunning", {
 		setWithPrecison("grand_total", grand_total);
 	},
 	make_payment_entry: function (frm) {
-		return frappe.call({
+		return nts .call({
 			method: "prodman.accounts.doctype.payment_entry.payment_entry.get_payment_entry",
 			args: {
 				dt: frm.doc.doctype,
 				dn: frm.doc.name,
 			},
 			callback: function (r) {
-				var doc = frappe.model.sync(r.message);
-				frappe.set_route("Form", doc[0].doctype, doc[0].name);
+				var doc = nts .model.sync(r.message);
+				nts .set_route("Form", doc[0].doctype, doc[0].name);
 			},
 		});
 	},
 });
 
-frappe.ui.form.on("Overdue Payment", {
+nts .ui.form.on("Overdue Payment", {
 	interest: function (frm) {
 		frm.trigger("calculate_totals");
 	},

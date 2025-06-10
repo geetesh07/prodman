@@ -1,4 +1,4 @@
-frappe.listview_settings["Process Payment Reconciliation Log"] = {
+nts .listview_settings["Process Payment Reconciliation Log"] = {
 	add_fields: ["status"],
 	get_indicator: function (doc) {
 		var colors = {

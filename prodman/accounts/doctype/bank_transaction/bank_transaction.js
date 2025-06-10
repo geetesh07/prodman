@@ -1,12 +1,12 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Bank Transaction", {
+nts .ui.form.on("Bank Transaction", {
 	setup: function (frm) {
 		frm.set_query("party_type", function () {
 			return {
 				filters: {
-					name: ["in", Object.keys(frappe.boot.party_account_types)],
+					name: ["in", Object.keys(nts .boot.party_account_types)],
 				},
 			};
 		});

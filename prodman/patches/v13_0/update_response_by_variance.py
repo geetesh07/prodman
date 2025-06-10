@@ -1,13 +1,13 @@
-# Copyright (c) 2020, Frappe and Contributors
+# Copyright (c) 2020, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	if frappe.db.exists("DocType", "Issue") and frappe.db.count("Issue"):
-		invalid_issues = frappe.get_all(
+	if nts.db.exists("DocType", "Issue") and nts.db.count("Issue"):
+		invalid_issues = nts.get_all(
 			"Issue",
 			{"first_responded_on": ["is", "set"], "response_by_variance": ["<", 0]},
 			[
@@ -22,7 +22,7 @@ def execute():
 		invalid_issues = [d for d in invalid_issues if d.get("variance") > 0]
 
 		for issue in invalid_issues:
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Issue",
 				issue.get("name"),
 				"response_by_variance",
@@ -30,7 +30,7 @@ def execute():
 				update_modified=False,
 			)
 
-		invalid_issues = frappe.get_all(
+		invalid_issues = nts.get_all(
 			"Issue",
 			{"resolution_date": ["is", "set"], "resolution_by_variance": ["<", 0]},
 			[
@@ -45,7 +45,7 @@ def execute():
 		invalid_issues = [d for d in invalid_issues if d.get("variance") > 0]
 
 		for issue in invalid_issues:
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Issue",
 				issue.get("name"),
 				"resolution_by_variance",

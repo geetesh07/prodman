@@ -1,10 +1,10 @@
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute():
-	frappe.reload_doctype("Selling Settings")
-	selling_settings = frappe.get_single("Selling Settings")
+	nts.reload_doctype("Selling Settings")
+	selling_settings = nts.get_single("Selling Settings")
 
 	if selling_settings.customer_group in (_("All Customer Groups"), "All Customer Groups"):
 		selling_settings.customer_group = None

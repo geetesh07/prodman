@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import flt
+import nts
+from nts import _
+from nts.utils import flt
 
 
 def execute(filters=None):
@@ -49,7 +49,7 @@ def get_columns():
 
 
 def get_data():
-	sales_order_entry = frappe.db.sql(
+	sales_order_entry = nts.db.sql(
 		"""
 		SELECT
 			so_item.item_code,
@@ -73,7 +73,7 @@ def get_data():
 	)
 
 	sales_orders = [row.name for row in sales_order_entry]
-	mr_records = frappe.get_all(
+	mr_records = nts.get_all(
 		"Material Request Item",
 		{"sales_order": ("in", sales_orders), "docstatus": 1},
 		["parent", "qty", "sales_order", "item_code"],
@@ -143,7 +143,7 @@ def get_data():
 
 
 def get_items_with_product_bundle(item_list):
-	bundled_items = frappe.get_all(
+	bundled_items = nts.get_all(
 		"Product Bundle", filters=[("new_item_code", "IN", item_list)], fields=["new_item_code"]
 	)
 
@@ -151,13 +151,13 @@ def get_items_with_product_bundle(item_list):
 
 
 def get_packed_items(sales_order_list):
-	packed_items = frappe.get_all(
+	packed_items = nts.get_all(
 		"Packed Item",
 		filters=[("parent", "IN", sales_order_list)],
 		fields=["parent_item", "item_code", "qty", "item_name", "description", "parent"],
 	)
 
-	bundled_item_map = frappe._dict()
+	bundled_item_map = nts._dict()
 	for d in packed_items:
 		bundled_item_map.setdefault((d.parent, d.parent_item), []).append(d)
 

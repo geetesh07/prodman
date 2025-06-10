@@ -1,9 +1,9 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Manufacturing Settings", {});
+nts.ui.form.on("Manufacturing Settings", {});
 
-frappe.tour["Manufacturing Settings"] = [
+nts.tour["Manufacturing Settings"] = [
 	{
 		fieldname: "material_consumption",
 		title: __("Allow Multiple Material Consumption"),

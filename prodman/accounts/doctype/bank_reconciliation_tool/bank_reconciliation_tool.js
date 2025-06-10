@@ -1,8 +1,8 @@
-// Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2020, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
-frappe.provide("prodman.accounts.bank_reconciliation");
+nts .provide("prodman.accounts.bank_reconciliation");
 
-frappe.ui.form.on("Bank Reconciliation Tool", {
+nts .ui.form.on("Bank Reconciliation Tool", {
 	setup: function (frm) {
 		frm.set_query("bank_account", function () {
 			return {
@@ -20,12 +20,12 @@ frappe.ui.form.on("Bank Reconciliation Tool", {
 
 	onload: function (frm) {
 		if (!frm.doc.company) {
-			frm.set_value("company", frappe.defaults.get_default("company"));
+			frm.set_value("company", nts .defaults.get_default("company"));
 		}
 
 		// Set default filter dates
-		let today = frappe.datetime.get_today();
-		frm.doc.bank_statement_from_date = frappe.datetime.add_months(today, -1);
+		let today = nts .datetime.get_today();
+		frm.doc.bank_statement_from_date = nts .datetime.add_months(today, -1);
 		frm.doc.bank_statement_to_date = today;
 
 		frm.trigger("bank_account");
@@ -43,10 +43,10 @@ frappe.ui.form.on("Bank Reconciliation Tool", {
 
 	refresh: function (frm) {
 		frm.disable_save();
-		frappe.require("bank-reconciliation-tool.bundle.js", () => frm.trigger("make_reconciliation_tool"));
+		nts .require("bank-reconciliation-tool.bundle.js", () => frm.trigger("make_reconciliation_tool"));
 
 		frm.add_custom_button(__("Upload Bank Statement"), () =>
-			frappe.call({
+			nts .call({
 				method: "prodman.accounts.doctype.bank_statement_import.bank_statement_import.upload_bank_statement",
 				args: {
 					dt: frm.doc.doctype,
@@ -56,8 +56,8 @@ frappe.ui.form.on("Bank Reconciliation Tool", {
 				},
 				callback: function (r) {
 					if (!r.exc) {
-						var doc = frappe.model.sync(r.message);
-						frappe.set_route("Form", doc[0].doctype, doc[0].name);
+						var doc = nts .model.sync(r.message);
+						nts .set_route("Form", doc[0].doctype, doc[0].name);
 					}
 				},
 			})
@@ -65,10 +65,10 @@ frappe.ui.form.on("Bank Reconciliation Tool", {
 
 		frm.add_custom_button(__("Auto Reconcile"), function () {
 			if (!frm.doc.bank_account) {
-				frappe.msgprint(__("Please select Bank Account"));
+				nts .msgprint(__("Please select Bank Account"));
 				return;
 			}
-			frappe.call({
+			nts .call({
 				method: "prodman.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool.auto_reconcile_vouchers",
 				args: {
 					bank_account: frm.doc.bank_account,
@@ -88,8 +88,8 @@ frappe.ui.form.on("Bank Reconciliation Tool", {
 	},
 
 	bank_account: function (frm) {
-		frappe.db.get_value("Bank Account", frm.doc.bank_account, "account", (r) => {
-			frappe.db.get_value("Account", r.account, "account_currency", (r) => {
+		nts .db.get_value("Bank Account", frm.doc.bank_account, "account", (r) => {
+			nts .db.get_value("Account", r.account, "account_currency", (r) => {
 				frm.doc.account_currency = r.account_currency;
 				frm.trigger("render_chart");
 			});
@@ -112,7 +112,7 @@ frappe.ui.form.on("Bank Reconciliation Tool", {
 				) {
 					frm.trigger("render_chart");
 					frm.trigger("render");
-					frappe.utils.scroll_to(frm.get_field("reconciliation_tool_cards").$wrapper, true, 30);
+					nts .utils.scroll_to(frm.get_field("reconciliation_tool_cards").$wrapper, true, 30);
 				}
 			});
 		}
@@ -120,11 +120,11 @@ frappe.ui.form.on("Bank Reconciliation Tool", {
 
 	get_account_opening_balance(frm) {
 		if (frm.doc.company && frm.doc.bank_account && frm.doc.bank_statement_from_date) {
-			frappe.call({
+			nts .call({
 				method: "prodman.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool.get_account_balance",
 				args: {
 					bank_account: frm.doc.bank_account,
-					till_date: frappe.datetime.add_days(frm.doc.bank_statement_from_date, -1),
+					till_date: nts .datetime.add_days(frm.doc.bank_statement_from_date, -1),
 					company: frm.doc.company,
 				},
 				callback: (response) => {
@@ -136,7 +136,7 @@ frappe.ui.form.on("Bank Reconciliation Tool", {
 
 	get_cleared_balance(frm) {
 		if (frm.doc.company && frm.doc.bank_account && frm.doc.bank_statement_to_date) {
-			return frappe.call({
+			return nts .call({
 				method: "prodman.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool.get_account_balance",
 				args: {
 					bank_account: frm.doc.bank_account,

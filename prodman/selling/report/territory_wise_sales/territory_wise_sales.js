@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Territory-wise Sales"] = {
+nts.query_reports["Territory-wise Sales"] = {
 	breadcrumb: "Selling",
 	filters: [
 		{
@@ -9,8 +9,8 @@ frappe.query_reports["Territory-wise Sales"] = {
 			label: __("Transaction Date"),
 			fieldtype: "DateRange",
 			default: [
-				frappe.datetime.add_months(frappe.datetime.get_today(), -1),
-				frappe.datetime.get_today(),
+				nts.datetime.add_months(nts.datetime.get_today(), -1),
+				nts.datetime.get_today(),
 			],
 		},
 		{

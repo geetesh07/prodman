@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.ui.form.on("Workstation", {
+nts.ui.form.on("Workstation", {
 	set_illustration_image(frm) {
 		let status_image_field =
 			frm.doc.status == "Production" ? frm.doc.on_status_image : frm.doc.off_status_image;
@@ -27,7 +27,7 @@ frappe.ui.form.on("Workstation", {
 
 	onload(frm) {
 		if (frm.is_new()) {
-			frappe.call({
+			nts.call({
 				type: "GET",
 				method: "prodman.manufacturing.doctype.workstation.workstation.get_default_holiday_list",
 				callback: function (r) {
@@ -52,7 +52,7 @@ frappe.ui.form.on("Workstation", {
 	},
 });
 
-frappe.tour["Workstation"] = [
+nts.tour["Workstation"] = [
 	{
 		fieldname: "workstation_name",
 		title: "Workstation Name",
@@ -90,7 +90,7 @@ class WorkstationDashboard {
 	}
 
 	prepapre_dashboard() {
-		frappe.call({
+		nts.call({
 			method: "prodman.manufacturing.doctype.workstation.workstation.get_job_cards",
 			args: {
 				workstation: this.frm.doc.name,
@@ -105,7 +105,7 @@ class WorkstationDashboard {
 	}
 
 	render_job_cards() {
-		let template = frappe.render_template("workstation_job_card", {
+		let template = nts.render_template("workstation_job_card", {
 			data: this.job_cards,
 		});
 
@@ -127,8 +127,8 @@ class WorkstationDashboard {
 					.find(".section-body-job-card")
 					.hasClass("hide")
 			)
-				$(e.currentTarget).html(frappe.utils.icon("es-line-down", "sm", "mb-1"));
-			else $(e.currentTarget).html(frappe.utils.icon("es-line-up", "sm", "mb-1"));
+				$(e.currentTarget).html(nts.utils.icon("es-line-down", "sm", "mb-1"));
+			else $(e.currentTarget).html(nts.utils.icon("es-line-up", "sm", "mb-1"));
 		});
 	}
 
@@ -152,14 +152,14 @@ class WorkstationDashboard {
 
 	start_job(job_card) {
 		let me = this;
-		frappe.prompt(
+		nts.prompt(
 			[
 				{
 					fieldtype: "Datetime",
 					label: __("Start Time"),
 					fieldname: "start_time",
 					reqd: 1,
-					default: frappe.datetime.now_datetime(),
+					default: nts.datetime.now_datetime(),
 				},
 				{
 					label: __("Operator"),
@@ -206,15 +206,15 @@ class WorkstationDashboard {
 				fieldtype: "Datetime",
 				label: __("End Time"),
 				fieldname: "end_time",
-				default: frappe.datetime.now_datetime(),
+				default: nts.datetime.now_datetime(),
 			},
 		];
 
-		frappe.prompt(
+		nts.prompt(
 			fields,
 			(data) => {
 				if (data.qty <= 0) {
-					frappe.throw(__("Quantity should be greater than 0"));
+					nts.throw(__("Quantity should be greater than 0"));
 				}
 
 				this.frm.call({
@@ -241,15 +241,15 @@ class WorkstationDashboard {
 	}
 
 	make_material_request(job_card) {
-		frappe.call({
+		nts.call({
 			method: "prodman.manufacturing.doctype.job_card.job_card.make_material_request",
 			args: {
 				source_name: job_card,
 			},
 			callback: (r) => {
 				if (r.message) {
-					var doc = frappe.model.sync(r.message)[0];
-					frappe.set_route("Form", doc.doctype, doc.name);
+					var doc = nts.model.sync(r.message)[0];
+					nts.set_route("Form", doc.doctype, doc.name);
 				}
 			},
 		});
@@ -332,7 +332,7 @@ class WorkstationDashboard {
 					current_time += this.get_seconds_diff(d.to_time, d.from_time);
 				}
 			} else {
-				current_time += this.get_seconds_diff(frappe.datetime.now_datetime(), d.from_time);
+				current_time += this.get_seconds_diff(nts.datetime.now_datetime(), d.from_time);
 			}
 		});
 

@@ -1,12 +1,12 @@
-import frappe
+import nts
 
 
 def execute():
-	if frappe.db.has_column("Asset", "purchase_invoice_item") and frappe.db.has_column(
+	if nts.db.has_column("Asset", "purchase_invoice_item") and nts.db.has_column(
 		"Asset", "purchase_receipt_item"
 	):
 		# Get all assets with their related Purchase Invoice and Purchase Receipt
-		assets = frappe.get_all(
+		assets = nts.get_all(
 			"Asset",
 			filters={"docstatus": 0},
 			fields=[
@@ -31,7 +31,7 @@ def execute():
 					asset.gross_purchase_amount,
 					asset.asset_quantity,
 				)
-				frappe.db.set_value("Asset", asset.name, "purchase_invoice_item", purchase_invoice_item)
+				nts.db.set_value("Asset", asset.name, "purchase_invoice_item", purchase_invoice_item)
 
 			# Get Purchase Receipt Items
 			if asset.purchase_receipt and not asset.purchase_receipt_item:
@@ -42,11 +42,11 @@ def execute():
 					asset.gross_purchase_amount,
 					asset.asset_quantity,
 				)
-				frappe.db.set_value("Asset", asset.name, "purchase_receipt_item", purchase_receipt_item)
+				nts.db.set_value("Asset", asset.name, "purchase_receipt_item", purchase_receipt_item)
 
 
 def get_linked_item(doctype, parent, item_code, amount, quantity):
-	items = frappe.get_all(
+	items = nts.get_all(
 		doctype,
 		filters={
 			"parenttype": doctype.replace(" Item", ""),

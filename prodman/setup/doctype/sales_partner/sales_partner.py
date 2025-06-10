@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.contacts.address_and_contact import load_address_and_contact
-from frappe.utils import cstr, filter_strip_join
-from frappe.website.website_generator import WebsiteGenerator
+import nts
+from nts.contacts.address_and_contact import load_address_and_contact
+from nts.utils import cstr, filter_strip_join
+from nts.website.website_generator import WebsiteGenerator
 
 
 class SalesPartner(WebsiteGenerator):
@@ -15,7 +15,7 @@ class SalesPartner(WebsiteGenerator):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.setup.doctype.target_detail.target_detail import TargetDetail
 
@@ -33,7 +33,7 @@ class SalesPartner(WebsiteGenerator):
 		territory: DF.Link
 	# end: auto-generated types
 
-	website = frappe._dict(
+	website = nts._dict(
 		page_title_field="partner_name",
 		condition_field="show_in_website",
 		template="templates/generators/sales_partner.html",
@@ -54,7 +54,7 @@ class SalesPartner(WebsiteGenerator):
 			self.partner_website = "http://" + self.partner_website
 
 	def get_context(self, context):
-		address = frappe.db.get_value(
+		address = nts.db.get_value(
 			"Address", {"sales_partner": self.name, "is_primary_address": 1}, "*", as_dict=True
 		)
 		if address:

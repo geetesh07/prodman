@@ -1,14 +1,14 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _, qb
-from frappe.model.document import Document
-from frappe.model.meta import get_field_precision
-from frappe.query_builder import Criterion, Order
-from frappe.query_builder.functions import NullIf, Sum
-from frappe.utils import flt, get_link_to_form
+import nts 
+from nts  import _, qb
+from nts .model.document import Document
+from nts .model.meta import get_field_precision
+from nts .query_builder import Criterion, Order
+from nts .query_builder.functions import NullIf, Sum
+from nts .utils import flt, get_link_to_form
 
 import prodman
 from prodman.accounts.doctype.journal_entry.journal_entry import get_balance_on
@@ -23,7 +23,7 @@ class ExchangeRateRevaluation(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.exchange_rate_revaluation_account.exchange_rate_revaluation_account import (
 			ExchangeRateRevaluationAccount,
@@ -45,7 +45,7 @@ class ExchangeRateRevaluation(Document):
 
 	def validate_rounding_loss_allowance(self):
 		if not (self.rounding_loss_allowance >= 0 and self.rounding_loss_allowance < 1):
-			frappe.throw(_("Rounding Loss Allowance should be between 0 and 1"))
+			nts .throw(_("Rounding Loss Allowance should be between 0 and 1"))
 
 	def set_total_gain_loss(self):
 		total_gain_loss = 0
@@ -72,7 +72,7 @@ class ExchangeRateRevaluation(Document):
 
 	def validate_mandatory(self):
 		if not (self.company and self.posting_date):
-			frappe.throw(_("Please select Company and Posting Date to getting entries"))
+			nts .throw(_("Please select Company and Posting Date to getting entries"))
 
 	def before_submit(self):
 		self.remove_accounts_without_gain_loss()
@@ -81,9 +81,9 @@ class ExchangeRateRevaluation(Document):
 		self.accounts = [account for account in self.accounts if account.gain_loss]
 
 		if not self.accounts:
-			frappe.throw(_("At least one account with exchange gain or loss is required"))
+			nts .throw(_("At least one account with exchange gain or loss is required"))
 
-		frappe.msgprint(
+		nts .msgprint(
 			_("Removing rows without exchange gain or loss"),
 			alert=True,
 			indicator="yellow",
@@ -92,7 +92,7 @@ class ExchangeRateRevaluation(Document):
 	def on_cancel(self):
 		self.ignore_linked_doctypes = "GL Entry"
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def check_journal_entry_condition(self):
 		exchange_gain_loss_account = self.get_for_unrealized_gain_loss_account()
 
@@ -136,7 +136,7 @@ class ExchangeRateRevaluation(Document):
 			for acc in accounts:
 				self.append("accounts", acc)
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def get_accounts_data(self):
 		self.validate_mandatory()
 		account_details = self.get_account_balance_from_gle(
@@ -250,7 +250,7 @@ class ExchangeRateRevaluation(Document):
 		accounts = []
 		company_currency = prodman.get_company_currency(company)
 		precision = get_field_precision(
-			frappe.get_meta("Exchange Rate Revaluation Account").get_field("new_balance_in_base_currency"),
+			nts .get_meta("Exchange Rate Revaluation Account").get_field("new_balance_in_base_currency"),
 			company_currency,
 		)
 
@@ -327,29 +327,29 @@ class ExchangeRateRevaluation(Document):
 			message = _("No outstanding invoices require exchange rate revaluation")
 		else:
 			message = _("No outstanding invoices found")
-		frappe.msgprint(message)
+		nts .msgprint(message)
 
 	def get_for_unrealized_gain_loss_account(self):
-		unrealized_exchange_gain_loss_account = frappe.get_cached_value(
+		unrealized_exchange_gain_loss_account = nts .get_cached_value(
 			"Company", self.company, "unrealized_exchange_gain_loss_account"
 		)
 		if not unrealized_exchange_gain_loss_account:
-			frappe.throw(
+			nts .throw(
 				_("Please set Unrealized Exchange Gain/Loss Account in Company {0}").format(self.company)
 			)
 		return unrealized_exchange_gain_loss_account
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def make_jv_entries(self):
 		zero_balance_jv = self.make_jv_for_zero_balance()
 		if zero_balance_jv:
-			frappe.msgprint(
+			nts .msgprint(
 				f"Zero Balance Journal: {get_link_to_form('Journal Entry', zero_balance_jv.name)}"
 			)
 
 		revaluation_jv = self.make_jv_for_revaluation()
 		if revaluation_jv:
-			frappe.msgprint(f"Revaluation Journal: {get_link_to_form('Journal Entry', revaluation_jv.name)}")
+			nts .msgprint(f"Revaluation Journal: {get_link_to_form('Journal Entry', revaluation_jv.name)}")
 
 		return {
 			"revaluation_jv": revaluation_jv.name if revaluation_jv else None,
@@ -367,7 +367,7 @@ class ExchangeRateRevaluation(Document):
 
 		unrealized_exchange_gain_loss_account = self.get_for_unrealized_gain_loss_account()
 
-		journal_entry = frappe.new_doc("Journal Entry")
+		journal_entry = nts .new_doc("Journal Entry")
 		journal_entry.voucher_type = "Exchange Gain Or Loss"
 		journal_entry.company = self.company
 		journal_entry.posting_date = self.posting_date
@@ -375,7 +375,7 @@ class ExchangeRateRevaluation(Document):
 
 		journal_entry_accounts = []
 		for d in accounts:
-			journal_account = frappe._dict(
+			journal_account = nts ._dict(
 				{
 					"account": d.get("account"),
 					"party_type": d.get("party_type"),
@@ -479,7 +479,7 @@ class ExchangeRateRevaluation(Document):
 
 		unrealized_exchange_gain_loss_account = self.get_for_unrealized_gain_loss_account()
 
-		journal_entry = frappe.new_doc("Journal Entry")
+		journal_entry = nts .new_doc("Journal Entry")
 		journal_entry.voucher_type = "Exchange Rate Revaluation"
 		journal_entry.company = self.company
 		journal_entry.posting_date = self.posting_date
@@ -611,19 +611,19 @@ def calculate_exchange_rate_using_last_gle(company, account, party_type, party):
 	return last_exchange_rate
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_account_details(
 	company, posting_date, account, party_type=None, party=None, rounding_loss_allowance: float | None = None
 ):
 	if not (company and posting_date):
-		frappe.throw(_("Company and Posting Date is mandatory"))
+		nts .throw(_("Company and Posting Date is mandatory"))
 
-	account_currency, account_type = frappe.get_cached_value(
+	account_currency, account_type = nts .get_cached_value(
 		"Account", account, ["account_currency", "account_type"]
 	)
 
 	if account_type in ["Receivable", "Payable"] and not (party_type and party):
-		frappe.throw(_("Party Type and Party is mandatory for {0} account").format(account_type))
+		nts .throw(_("Party Type and Party is mandatory for {0} account").format(account_type))
 
 	account_details = {}
 	prodman.get_company_currency(company)

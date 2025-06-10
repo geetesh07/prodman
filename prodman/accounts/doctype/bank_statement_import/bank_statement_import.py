@@ -1,4 +1,4 @@
-# Copyright (c) 2019, Frappe Technologies and contributors
+# Copyright (c) 2019, nts  Technologies and contributors
 # For license information, please see license.txt
 
 
@@ -6,13 +6,13 @@ import csv
 import json
 import re
 
-import frappe
+import nts 
 import openpyxl
-from frappe import _
-from frappe.core.doctype.data_import.data_import import DataImport
-from frappe.core.doctype.data_import.importer import Importer, ImportFile
-from frappe.utils.background_jobs import enqueue
-from frappe.utils.xlsxutils import ILLEGAL_CHARACTERS_RE, handle_html
+from nts  import _
+from nts .core.doctype.data_import.data_import import DataImport
+from nts .core.doctype.data_import.importer import Importer, ImportFile
+from nts .utils.background_jobs import enqueue
+from nts .utils.xlsxutils import ILLEGAL_CHARACTERS_RE, handle_html
 from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
 
@@ -26,7 +26,7 @@ class BankStatementImport(DataImport):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		bank: DF.Link | None
 		bank_account: DF.Link
@@ -57,7 +57,7 @@ class BankStatementImport(DataImport):
 		):
 			template_options_dict = {}
 			column_to_field_map = {}
-			bank = frappe.get_doc("Bank", self.bank)
+			bank = nts .get_doc("Bank", self.bank)
 			for i in bank.bank_transaction_mapping:
 				column_to_field_map[i.file_field] = i.bank_transaction_field
 			template_options_dict["column_to_field_map"] = column_to_field_map
@@ -69,18 +69,18 @@ class BankStatementImport(DataImport):
 		self.validate_google_sheets_url()
 
 	def start_import(self):
-		preview = frappe.get_doc("Bank Statement Import", self.name).get_preview_from_template(
+		preview = nts .get_doc("Bank Statement Import", self.name).get_preview_from_template(
 			self.import_file, self.google_sheets_url
 		)
 
 		if "Bank Account" not in json.dumps(preview["columns"]):
-			frappe.throw(_("Please add the Bank Account column"))
+			nts .throw(_("Please add the Bank Account column"))
 
-		from frappe.utils.background_jobs import is_job_enqueued
-		from frappe.utils.scheduler import is_scheduler_inactive
+		from nts .utils.background_jobs import is_job_enqueued
+		from nts .utils.scheduler import is_scheduler_inactive
 
-		if is_scheduler_inactive() and not frappe.flags.in_test:
-			frappe.throw(_("Scheduler is inactive. Cannot import data."), title=_("Scheduler Inactive"))
+		if is_scheduler_inactive() and not nts .flags.in_test:
+			nts .throw(_("Scheduler is inactive. Cannot import data."), title=_("Scheduler Inactive"))
 
 		job_id = f"bank_statement_import::{self.name}"
 		if not is_job_enqueued(job_id):
@@ -96,34 +96,34 @@ class BankStatementImport(DataImport):
 				google_sheets_url=self.google_sheets_url,
 				bank=self.bank,
 				template_options=self.template_options,
-				now=frappe.conf.developer_mode or frappe.flags.in_test,
+				now=nts .conf.developer_mode or nts .flags.in_test,
 			)
 			return True
 
 		return False
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_preview_from_template(data_import, import_file=None, google_sheets_url=None):
-	return frappe.get_doc("Bank Statement Import", data_import).get_preview_from_template(
+	return nts .get_doc("Bank Statement Import", data_import).get_preview_from_template(
 		import_file, google_sheets_url
 	)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def form_start_import(data_import):
-	return frappe.get_doc("Bank Statement Import", data_import).start_import()
+	return nts .get_doc("Bank Statement Import", data_import).start_import()
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def download_errored_template(data_import_name):
-	data_import = frappe.get_doc("Bank Statement Import", data_import_name)
+	data_import = nts .get_doc("Bank Statement Import", data_import_name)
 	data_import.export_errored_rows()
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def download_import_log(data_import_name):
-	return frappe.get_doc("Bank Statement Import", data_import_name).download_import_log()
+	return nts .get_doc("Bank Statement Import", data_import_name).download_import_log()
 
 
 def parse_data_from_template(raw_data):
@@ -144,7 +144,7 @@ def start_import(data_import, bank_account, import_file_path, google_sheets_url,
 
 	update_mapping_db(bank, template_options)
 
-	data_import = frappe.get_doc("Bank Statement Import", data_import)
+	data_import = nts .get_doc("Bank Statement Import", data_import)
 	file = import_file_path if import_file_path else google_sheets_url
 
 	import_file = ImportFile("Bank Transaction", file=file, import_type="Insert New Records")
@@ -162,17 +162,17 @@ def start_import(data_import, bank_account, import_file_path, google_sheets_url,
 		i = Importer(data_import.reference_doctype, data_import=data_import)
 		i.import_data()
 	except Exception:
-		frappe.db.rollback()
+		nts .db.rollback()
 		data_import.db_set("status", "Error")
 		data_import.log_error("Bank Statement Import failed")
 	finally:
-		frappe.flags.in_import = False
+		nts .flags.in_import = False
 
-	frappe.publish_realtime("data_import_refresh", {"data_import": data_import.name})
+	nts .publish_realtime("data_import_refresh", {"data_import": data_import.name})
 
 
 def update_mapping_db(bank, template_options):
-	bank = frappe.get_doc("Bank", bank)
+	bank = nts .get_doc("Bank", bank)
 	for d in bank.bank_transaction_mapping:
 		d.delete()
 
@@ -247,14 +247,14 @@ def write_xlsx(data, sheet_name, wb=None, column_widths=None, file_path=None):
 	return True
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_import_status(docname):
 	import_status = {}
 
-	data_import = frappe.get_doc("Bank Statement Import", docname)
+	data_import = nts .get_doc("Bank Statement Import", docname)
 	import_status["status"] = data_import.status
 
-	logs = frappe.get_all(
+	logs = nts .get_all(
 		"Data Import Log",
 		fields=["count(*) as count", "success"],
 		filters={"data_import": docname},
@@ -275,11 +275,11 @@ def get_import_status(docname):
 	return import_status
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_import_logs(docname: str):
-	frappe.has_permission("Bank Statement Import")
+	nts .has_permission("Bank Statement Import")
 
-	return frappe.get_all(
+	return nts .get_all(
 		"Data Import Log",
 		fields=["success", "docname", "messages", "exception", "row_indexes"],
 		filters={"data_import": docname},
@@ -288,10 +288,10 @@ def get_import_logs(docname: str):
 	)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def upload_bank_statement(**args):
-	args = frappe._dict(args)
-	bsi = frappe.new_doc("Bank Statement Import")
+	args = nts ._dict(args)
+	bsi = nts .new_doc("Bank Statement Import")
 
 	if args.company:
 		bsi.update(

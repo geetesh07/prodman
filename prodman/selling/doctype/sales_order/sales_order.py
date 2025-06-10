@@ -1,19 +1,19 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 from typing import Literal
 
-import frappe
-import frappe.utils
-from frappe import _, qb
-from frappe.contacts.doctype.address.address import get_company_address
-from frappe.desk.notifications import clear_doctype_notifications
-from frappe.model.mapper import get_mapped_doc
-from frappe.model.utils import get_fetch_values
-from frappe.query_builder.functions import Sum
-from frappe.utils import add_days, cint, cstr, flt, get_link_to_form, getdate, nowdate, strip_html
+import nts
+import nts.utils
+from nts import _, qb
+from nts.contacts.doctype.address.address import get_company_address
+from nts.desk.notifications import clear_doctype_notifications
+from nts.model.mapper import get_mapped_doc
+from nts.model.utils import get_fetch_values
+from nts.query_builder.functions import Sum
+from nts.utils import add_days, cint, cstr, flt, get_link_to_form, getdate, nowdate, strip_html
 
 from prodman.accounts.doctype.sales_invoice.sales_invoice import (
 	unlink_inter_company_doc,
@@ -41,7 +41,7 @@ from prodman.stock.stock_balance import get_reserved_qty, update_bin_qty
 form_grid_templates = {"items": "templates/form_grid/item_grid.html"}
 
 
-class WarehouseRequired(frappe.ValidationError):
+class WarehouseRequired(nts.ValidationError):
 	pass
 
 
@@ -52,7 +52,7 @@ class SalesOrder(SellingController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.accounts.doctype.payment_schedule.payment_schedule import PaymentSchedule
 		from prodman.accounts.doctype.pricing_rule_detail.pricing_rule_detail import PricingRuleDetail
@@ -189,7 +189,7 @@ class SalesOrder(SellingController):
 	def onload(self) -> None:
 		super().onload()
 
-		if frappe.db.get_single_value("Stock Settings", "enable_stock_reservation"):
+		if nts.db.get_single_value("Stock Settings", "enable_stock_reservation"):
 			if self.has_unreserved_stock():
 				self.set_onload("has_unreserved_stock", True)
 
@@ -240,7 +240,7 @@ class SalesOrder(SellingController):
 		"""
 		If permitted in settings and any item has 0 qty, the SO has unit price items.
 		"""
-		if not frappe.db.get_single_value("Selling Settings", "allow_zero_qty_in_sales_order"):
+		if not nts.db.get_single_value("Selling Settings", "allow_zero_qty_in_sales_order"):
 			return
 
 		self.has_unit_price_items = any(
@@ -252,14 +252,14 @@ class SalesOrder(SellingController):
 		if self.po_date and not self.skip_delivery_note:
 			for d in self.get("items"):
 				if d.delivery_date and getdate(self.po_date) > getdate(d.delivery_date):
-					frappe.throw(
+					nts.throw(
 						_("Row #{0}: Expected Delivery Date cannot be before Purchase Order Date").format(
 							d.idx
 						)
 					)
 
 		if self.po_no and self.customer and not self.skip_delivery_note:
-			so = frappe.db.sql(
+			so = nts.db.sql(
 				"select name from `tabSales Order` \
 				where ifnull(po_no, '') = %s and name != %s and docstatus < 2\
 				and customer = %s",
@@ -267,22 +267,22 @@ class SalesOrder(SellingController):
 			)
 			if so and so[0][0]:
 				if cint(
-					frappe.db.get_single_value("Selling Settings", "allow_against_multiple_purchase_orders")
+					nts.db.get_single_value("Selling Settings", "allow_against_multiple_purchase_orders")
 				):
-					frappe.msgprint(
+					nts.msgprint(
 						_(
 							"Warning: Sales Order {0} already exists against Customer's Purchase Order {1}"
-						).format(frappe.bold(so[0][0]), frappe.bold(self.po_no)),
+						).format(nts.bold(so[0][0]), nts.bold(self.po_no)),
 						alert=True,
 					)
 				else:
-					frappe.throw(
+					nts.throw(
 						_(
 							"Sales Order {0} already exists against Customer's Purchase Order {1}. To allow multiple Sales Orders, Enable {2} in {3}"
 						).format(
-							frappe.bold(so[0][0]),
-							frappe.bold(self.po_no),
-							frappe.bold(
+							nts.bold(so[0][0]),
+							nts.bold(self.po_no),
+							nts.bold(
 								_("'Allow Multiple Sales Orders Against a Customer's Purchase Order'")
 							),
 							get_link_to_form("Selling Settings", "Selling Settings"),
@@ -294,7 +294,7 @@ class SalesOrder(SellingController):
 			# used for production plan
 			d.transaction_date = self.transaction_date
 
-			tot_avail_qty = frappe.db.sql(
+			tot_avail_qty = nts.db.sql(
 				"select projected_qty from `tabBin` \
 				where item_code = %s and warehouse = %s",
 				(d.item_code, d.warehouse),
@@ -304,7 +304,7 @@ class SalesOrder(SellingController):
 	def product_bundle_has_stock_item(self, product_bundle):
 		"""Returns true if product bundle has stock item"""
 		ret = len(
-			frappe.db.sql(
+			nts.db.sql(
 				"""select i.name from tabItem i, `tabProduct Bundle Item` pbi
 			where pbi.parent = %s and pbi.item_code = i.name and i.is_stock_item = 1""",
 				product_bundle,
@@ -315,12 +315,12 @@ class SalesOrder(SellingController):
 	def validate_sales_mntc_quotation(self):
 		for d in self.get("items"):
 			if d.prevdoc_docname:
-				res = frappe.db.sql(
+				res = nts.db.sql(
 					"select name from `tabQuotation` where name=%s and order_type = %s",
 					(d.prevdoc_docname, self.order_type),
 				)
 				if not res:
-					frappe.msgprint(
+					nts.msgprint(
 						_("Quotation {0} not of type {1}").format(d.prevdoc_docname, self.order_type)
 					)
 
@@ -337,26 +337,26 @@ class SalesOrder(SellingController):
 					if not d.delivery_date:
 						d.delivery_date = self.delivery_date
 					if getdate(self.transaction_date) > getdate(d.delivery_date):
-						frappe.msgprint(
+						nts.msgprint(
 							_("Expected Delivery Date should be after Sales Order Date"),
 							indicator="orange",
 							title=_("Invalid Delivery Date"),
 							raise_exception=True,
 						)
 			else:
-				frappe.throw(_("Please enter Delivery Date"))
+				nts.throw(_("Please enter Delivery Date"))
 
 		self.validate_sales_mntc_quotation()
 
 	def validate_proj_cust(self):
 		if self.project and self.customer_name:
-			res = frappe.db.sql(
+			res = nts.db.sql(
 				"""select name from `tabProject` where name = %s
 				and (customer = %s or ifnull(customer,'')='')""",
 				(self.project, self.customer),
 			)
 			if not res:
-				frappe.throw(
+				nts.throw(
 					_("Customer {0} does not belong to project {1}").format(self.customer, self.project)
 				)
 
@@ -366,7 +366,7 @@ class SalesOrder(SellingController):
 		for d in self.get("items"):
 			if (
 				(
-					frappe.get_cached_value("Item", d.item_code, "is_stock_item") == 1
+					nts.get_cached_value("Item", d.item_code, "is_stock_item") == 1
 					or (
 						self.has_product_bundle(d.item_code)
 						and self.product_bundle_has_stock_item(d.item_code)
@@ -375,7 +375,7 @@ class SalesOrder(SellingController):
 				and not d.warehouse
 				and not cint(d.delivered_by_supplier)
 			):
-				frappe.throw(
+				nts.throw(
 					_("Delivery warehouse required for stock item {0}").format(d.item_code), WarehouseRequired
 				)
 
@@ -392,23 +392,23 @@ class SalesOrder(SellingController):
 			}
 		)
 
-		if cint(frappe.db.get_single_value("Selling Settings", "maintain_same_sales_rate")):
+		if cint(nts.db.get_single_value("Selling Settings", "maintain_same_sales_rate")):
 			self.validate_rate_with_reference_doc([["Quotation", "prevdoc_docname", "quotation_item"]])
 
 	def update_enquiry_status(self, prevdoc, flag):
-		enq = frappe.db.sql(
+		enq = nts.db.sql(
 			"select t2.prevdoc_docname from `tabQuotation` t1, `tabQuotation Item` t2 where t2.parent = t1.name and t1.name=%s",
 			prevdoc,
 		)
 		if enq:
-			frappe.db.sql("update `tabOpportunity` set status = %s where name=%s", (flag, enq[0][0]))
+			nts.db.sql("update `tabOpportunity` set status = %s where name=%s", (flag, enq[0][0]))
 
 	def update_prevdoc_status(self, flag=None):
 		for quotation in set(d.prevdoc_docname for d in self.get("items")):
 			if quotation:
-				doc = frappe.get_doc("Quotation", quotation)
+				doc = nts.get_doc("Quotation", quotation)
 				if doc.docstatus.is_cancelled():
-					frappe.throw(_("Quotation {0} is cancelled").format(quotation))
+					nts.throw(_("Quotation {0} is cancelled").format(quotation))
 
 				doc.set_status(update=True)
 				doc.update_opportunity("Converted" if flag == "submit" else "Quotation")
@@ -416,13 +416,13 @@ class SalesOrder(SellingController):
 	def validate_drop_ship(self):
 		for d in self.get("items"):
 			if d.delivered_by_supplier and not d.supplier:
-				frappe.throw(_("Row #{0}: Set Supplier for item {1}").format(d.idx, d.item_code))
+				nts.throw(_("Row #{0}: Set Supplier for item {1}").format(d.idx, d.item_code))
 
 	def on_submit(self):
 		self.check_credit_limit()
 		self.update_reserved_qty()
 
-		frappe.get_doc("Authorization Control").validate_approving_authority(
+		nts.get_doc("Authorization Control").validate_approving_authority(
 			self.doctype, self.company, self.base_grand_total, self
 		)
 		self.update_project()
@@ -451,7 +451,7 @@ class SalesOrder(SellingController):
 
 		# Cannot cancel closed SO
 		if self.status == "Closed":
-			frappe.throw(_("Closed order cannot be cancelled. Unclose to cancel."))
+			nts.throw(_("Closed order cannot be cancelled. Unclose to cancel."))
 
 		self.check_nextdoc_docstatus()
 		self.update_reserved_qty()
@@ -470,11 +470,11 @@ class SalesOrder(SellingController):
 			update_coupon_code_count(self.coupon_code, "cancelled")
 
 	def update_project(self):
-		if frappe.db.get_single_value("Selling Settings", "sales_update_frequency") != "Each Transaction":
+		if nts.db.get_single_value("Selling Settings", "sales_update_frequency") != "Each Transaction":
 			return
 
 		if self.project:
-			project = frappe.get_doc("Project", self.project)
+			project = nts.get_doc("Project", self.project)
 			project.update_sales_amount()
 			project.db_update()
 
@@ -482,7 +482,7 @@ class SalesOrder(SellingController):
 		# if bypass credit limit check is set to true (1) at sales order level,
 		# then we need not to check credit limit and vise versa
 		if not cint(
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Customer Credit Limit",
 				{"parent": self.customer, "parenttype": "Customer", "company": self.company},
 				"bypass_credit_limit_check",
@@ -491,7 +491,7 @@ class SalesOrder(SellingController):
 			check_credit_limit(self.customer, self.company)
 
 	def check_nextdoc_docstatus(self):
-		linked_invoices = frappe.db.sql_list(
+		linked_invoices = nts.db.sql_list(
 			"""select distinct t1.name
 			from `tabSales Invoice` t1,`tabSales Invoice Item` t2
 			where t1.name = t2.parent and t2.sales_order = %s and t1.docstatus = 0""",
@@ -500,17 +500,17 @@ class SalesOrder(SellingController):
 
 		if linked_invoices:
 			linked_invoices = [get_link_to_form("Sales Invoice", si) for si in linked_invoices]
-			frappe.throw(
+			nts.throw(
 				_("Sales Invoice {0} must be deleted before cancelling this Sales Order").format(
 					", ".join(linked_invoices)
 				)
 			)
 
 	def check_modified_date(self):
-		mod_db = frappe.db.get_value("Sales Order", self.name, "modified")
-		date_diff = frappe.db.sql(f"select TIMEDIFF('{mod_db}', '{cstr(self.modified)}')")
+		mod_db = nts.db.get_value("Sales Order", self.name, "modified")
+		date_diff = nts.db.sql(f"select TIMEDIFF('{mod_db}', '{cstr(self.modified)}')")
 		if date_diff and date_diff[0][0]:
-			frappe.throw(_("{0} {1} has been modified. Please refresh.").format(self.doctype, self.name))
+			nts.throw(_("{0} {1} has been modified. Please refresh.").format(self.doctype, self.name))
 
 	def update_status(self, status):
 		self.check_modified_date()
@@ -532,7 +532,7 @@ class SalesOrder(SellingController):
 				item_code
 				and warehouse
 				and [item_code, warehouse] not in item_wh_list
-				and frappe.get_cached_value("Item", item_code, "is_stock_item")
+				and nts.get_cached_value("Item", item_code, "is_stock_item")
 			):
 				item_wh_list.append([item_code, warehouse])
 
@@ -568,7 +568,7 @@ class SalesOrder(SellingController):
 
 		for item in self.items:
 			if item.supplier:
-				supplier = frappe.db.get_value(
+				supplier = nts.db.get_value(
 					"Sales Order Item", {"parent": self.name, "item_code": item.item_code}, "supplier"
 				)
 				if item.ordered_qty > 0.0 and item.supplier != supplier:
@@ -579,7 +579,7 @@ class SalesOrder(SellingController):
 					)
 
 		if exc_list:
-			frappe.throw("\n".join(exc_list))
+			nts.throw("\n".join(exc_list))
 
 	def update_delivery_status(self):
 		"""Update delivery status from Purchase Order for drop shipping"""
@@ -587,7 +587,7 @@ class SalesOrder(SellingController):
 
 		for item in self.items:
 			if item.delivered_by_supplier:
-				item_delivered_qty = frappe.db.sql(
+				item_delivered_qty = nts.db.sql(
 					"""select sum(qty)
 					from `tabPurchase Order Item` poi, `tabPurchase Order` po
 					where poi.sales_order_item = %s
@@ -614,7 +614,7 @@ class SalesOrder(SellingController):
 
 		for so_item in self.items:
 			if cint(
-				frappe.get_cached_value("Item", so_item.item_code, "is_stock_item")
+				nts.get_cached_value("Item", so_item.item_code, "is_stock_item")
 			) or self.has_product_bundle(so_item.item_code):
 				total_picked_qty += flt(so_item.picked_qty)
 				total_qty += flt(so_item.stock_qty)
@@ -622,12 +622,12 @@ class SalesOrder(SellingController):
 		if total_picked_qty and total_qty:
 			per_picked = total_picked_qty / total_qty * 100
 
-			pick_percentage = frappe.db.get_single_value("Stock Settings", "over_picking_allowance")
+			pick_percentage = nts.db.get_single_value("Stock Settings", "over_picking_allowance")
 			if pick_percentage:
 				total_qty += flt(total_qty) * (pick_percentage / 100)
 
 			if total_picked_qty > total_qty:
-				frappe.throw(
+				nts.throw(
 					_(
 						"Total Picked Quantity {0} is more than ordered qty {1}. You can set the Over Picking Allowance in Stock Settings."
 					).format(total_picked_qty, total_qty)
@@ -654,8 +654,8 @@ class SalesOrder(SellingController):
 			delivery_date = auto_repeat_doc.get_next_schedule_date(schedule_date=ref_doc_delivery_date)
 
 			if delivery_date <= transaction_date:
-				delivery_date_diff = frappe.utils.date_diff(ref_doc_delivery_date, red_doc_transaction_date)
-				delivery_date = frappe.utils.add_days(transaction_date, delivery_date_diff)
+				delivery_date_diff = nts.utils.date_diff(ref_doc_delivery_date, red_doc_transaction_date)
+				delivery_date = nts.utils.add_days(transaction_date, delivery_date_diff)
 
 			return delivery_date
 
@@ -667,7 +667,7 @@ class SalesOrder(SellingController):
 		)
 
 		for d in self.get("items"):
-			reference_delivery_date = frappe.db.get_value(
+			reference_delivery_date = nts.db.get_value(
 				"Sales Order Item",
 				{"parent": reference_doc.name, "item_code": d.item_code, "idx": d.idx},
 				"delivery_date",
@@ -686,20 +686,20 @@ class SalesOrder(SellingController):
 		for item in self.items:
 			if item.ensure_delivery_based_on_produced_serial_no:
 				if item.item_code in normal_items:
-					frappe.throw(
+					nts.throw(
 						_(
 							"Cannot ensure delivery by Serial No as Item {0} is added with and without Ensure Delivery by Serial No."
 						).format(item.item_code)
 					)
 				if item.item_code not in reserved_items:
-					if not frappe.get_cached_value("Item", item.item_code, "has_serial_no"):
-						frappe.throw(
+					if not nts.get_cached_value("Item", item.item_code, "has_serial_no"):
+						nts.throw(
 							_(
 								"Item {0} has no Serial No. Only serilialized items can have delivery based on Serial No"
 							).format(item.item_code)
 						)
-					if not frappe.db.exists("BOM", {"item": item.item_code, "is_active": 1}):
-						frappe.throw(
+					if not nts.db.exists("BOM", {"item": item.item_code, "is_active": 1}):
+						nts.throw(
 							_(
 								"No active BOM found for item {0}. Delivery by Serial No cannot be ensured"
 							).format(item.item_code)
@@ -709,7 +709,7 @@ class SalesOrder(SellingController):
 				normal_items.append(item.item_code)
 
 			if not item.ensure_delivery_based_on_produced_serial_no and item.item_code in reserved_items:
-				frappe.throw(
+				nts.throw(
 					_(
 						"Cannot ensure delivery by Serial No as Item {0} is added with and without Ensure Delivery by Serial No."
 					).format(item.item_code)
@@ -718,7 +718,7 @@ class SalesOrder(SellingController):
 	def validate_reserved_stock(self):
 		"""Clean reserved stock flag for non-stock Item"""
 
-		enable_stock_reservation = frappe.db.get_single_value("Stock Settings", "enable_stock_reservation")
+		enable_stock_reservation = nts.db.get_single_value("Stock Settings", "enable_stock_reservation")
 
 		for item in self.items:
 			if item.reserve_stock and (not enable_stock_reservation or not cint(item.is_stock_item)):
@@ -739,7 +739,7 @@ class SalesOrder(SellingController):
 
 		return False
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def create_stock_reservation_entries(
 		self,
 		items_details: list[dict] | None = None,
@@ -759,7 +759,7 @@ class SalesOrder(SellingController):
 			notify=notify,
 		)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def cancel_stock_reservation_entries(self, sre_list=None, notify=True) -> None:
 		"""Cancel Stock Reservation Entries for Sales Order Items."""
 
@@ -795,14 +795,14 @@ def get_list_context(context=None):
 	return list_context
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def close_or_unclose_sales_orders(names, status):
-	if not frappe.has_permission("Sales Order", "write"):
-		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	if not nts.has_permission("Sales Order", "write"):
+		nts.throw(_("Not permitted"), nts.PermissionError)
 
 	names = json.loads(names)
 	for name in names:
-		so = frappe.get_doc("Sales Order", name)
+		so = nts.get_doc("Sales Order", name)
 		if so.docstatus == 1:
 			if status == "Closed":
 				if so.status not in ("Cancelled", "Closed") and (
@@ -814,28 +814,28 @@ def close_or_unclose_sales_orders(names, status):
 					so.update_status("Draft")
 			so.update_blanket_order()
 
-	frappe.local.message_log = []
+	nts.local.message_log = []
 
 
 def get_requested_item_qty(sales_order):
 	result = {}
-	for d in frappe.db.get_all(
+	for d in nts.db.get_all(
 		"Material Request Item",
 		filters={"docstatus": 1, "sales_order": sales_order},
 		fields=["sales_order_item", "sum(qty) as qty", "sum(received_qty) as received_qty"],
 		group_by="sales_order_item",
 	):
-		result[d.sales_order_item] = frappe._dict({"qty": d.qty, "received_qty": d.received_qty})
+		result[d.sales_order_item] = nts._dict({"qty": d.qty, "received_qty": d.received_qty})
 
 	return result
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_material_request(source_name, target_doc=None):
 	requested_item_qty = get_requested_item_qty(source_name)
 
 	def postprocess(source, target):
-		if source.tc_name and frappe.db.get_value("Terms and Conditions", source.tc_name, "buying") != 1:
+		if source.tc_name and nts.db.get_value("Terms and Conditions", source.tc_name, "buying") != 1:
 			target.tc_name = None
 			target.terms = None
 
@@ -863,14 +863,14 @@ def make_material_request(source_name, target_doc=None):
 		args.update(
 			{
 				"company": source_parent.get("company"),
-				"price_list": frappe.db.get_single_value("Buying Settings", "buying_price_list"),
+				"price_list": nts.db.get_single_value("Buying Settings", "buying_price_list"),
 				"currency": source_parent.get("currency"),
 				"conversion_rate": source_parent.get("conversion_rate"),
 			}
 		)
 
 		target.rate = flt(
-			get_price_list_rate(args=args, item_doc=frappe.get_cached_doc("Item", target.item_code)).get(
+			get_price_list_rate(args=args, item_doc=nts.get_cached_doc("Item", target.item_code)).get(
 				"price_list_rate"
 			)
 		)
@@ -894,7 +894,7 @@ def make_material_request(source_name, target_doc=None):
 					"delivery_date": "schedule_date",
 					"bom_no": "bom_no",
 				},
-				"condition": lambda item: not frappe.db.exists(
+				"condition": lambda item: not nts.db.exists(
 					"Product Bundle", {"name": item.item_code, "disabled": 0}
 				)
 				and get_remaining_qty(item) > 0,
@@ -908,7 +908,7 @@ def make_material_request(source_name, target_doc=None):
 	return doc
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_project(source_name, target_doc=None):
 	def postprocess(source, doc):
 		doc.project_type = "External"
@@ -935,7 +935,7 @@ def make_project(source_name, target_doc=None):
 	return doc
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_delivery_note(source_name, target_doc=None, kwargs=None):
 	from prodman.stock.doctype.packed_item.packed_item import make_packing_list
 	from prodman.stock.doctype.stock_reservation_entry.stock_reservation_entry import (
@@ -946,11 +946,11 @@ def make_delivery_note(source_name, target_doc=None, kwargs=None):
 
 	if not kwargs:
 		kwargs = {
-			"for_reserved_stock": frappe.flags.args and frappe.flags.args.for_reserved_stock,
-			"skip_item_mapping": frappe.flags.args and frappe.flags.args.skip_item_mapping,
+			"for_reserved_stock": nts.flags.args and nts.flags.args.for_reserved_stock,
+			"skip_item_mapping": nts.flags.args and nts.flags.args.skip_item_mapping,
 		}
 
-	kwargs = frappe._dict(kwargs)
+	kwargs = nts._dict(kwargs)
 
 	sre_details = {}
 	if kwargs.for_reserved_stock:
@@ -963,7 +963,7 @@ def make_delivery_note(source_name, target_doc=None, kwargs=None):
 	}
 
 	# 0 qty is accepted, as the qty is uncertain for some items
-	has_unit_price_items = frappe.db.get_value("Sales Order", source_name, "has_unit_price_items")
+	has_unit_price_items = nts.db.get_value("Sales Order", source_name, "has_unit_price_items")
 
 	def is_unit_price_row(source):
 		return has_unit_price_items and source.qty == 0
@@ -988,7 +988,7 @@ def make_delivery_note(source_name, target_doc=None, kwargs=None):
 			target.update(get_fetch_values("Delivery Note", "company_address", target.company_address))
 
 		# if invoked in bulk creation, validations are ignored and thus this method is nerver invoked
-		if frappe.flags.bulk_transaction:
+		if nts.flags.bulk_transaction:
 			# set target items names to ensure proper linking with packed_items
 			target.set_new_name()
 
@@ -999,9 +999,9 @@ def make_delivery_note(source_name, target_doc=None, kwargs=None):
 			del sre_details[doc.name]
 			return False
 
-		# make_mapped_doc sets js `args` into `frappe.flags.args`
-		if frappe.flags.args and frappe.flags.args.delivery_dates:
-			if cstr(doc.delivery_date) not in frappe.flags.args.delivery_dates:
+		# make_mapped_doc sets js `args` into `nts.flags.args`
+		if nts.flags.args and nts.flags.args.delivery_dates:
+			if cstr(doc.delivery_date) not in nts.flags.args.delivery_dates:
 				return False
 
 		return (
@@ -1020,7 +1020,7 @@ def make_delivery_note(source_name, target_doc=None, kwargs=None):
 
 		if item:
 			target.cost_center = (
-				frappe.db.get_value("Project", source_parent.project, "cost_center")
+				nts.db.get_value("Project", source_parent.project, "cost_center")
 				or item.get("buying_cost_center")
 				or item_group.get("buying_cost_center")
 			)
@@ -1037,7 +1037,7 @@ def make_delivery_note(source_name, target_doc=None, kwargs=None):
 			"postprocess": update_item,
 		}
 
-	so = frappe.get_doc("Sales Order", source_name)
+	so = nts.get_doc("Sales Order", source_name)
 	target_doc = get_mapped_doc("Sales Order", so.name, mapper, target_doc)
 
 	if not kwargs.skip_item_mapping and kwargs.for_reserved_stock:
@@ -1088,10 +1088,10 @@ def make_delivery_note(source_name, target_doc=None, kwargs=None):
 	return target_doc
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_sales_invoice(source_name, target_doc=None, ignore_permissions=False):
 	# 0 qty is accepted, as the qty is uncertain for some items
-	has_unit_price_items = frappe.db.get_value("Sales Order", source_name, "has_unit_price_items")
+	has_unit_price_items = nts.db.get_value("Sales Order", source_name, "has_unit_price_items")
 
 	def is_unit_price_row(source):
 		return has_unit_price_items and source.qty == 0
@@ -1140,7 +1140,7 @@ def make_sales_invoice(source_name, target_doc=None, ignore_permissions=False):
 		)
 
 		if source_parent.project:
-			target.cost_center = frappe.db.get_value("Project", source_parent.project, "cost_center")
+			target.cost_center = nts.db.get_value("Project", source_parent.project, "cost_center")
 		if target.item_code:
 			item = get_item_defaults(target.item_code, source_parent.company)
 			item_group = get_item_group_defaults(target.item_code, source_parent.company)
@@ -1187,7 +1187,7 @@ def make_sales_invoice(source_name, target_doc=None, ignore_permissions=False):
 	)
 
 	automatically_fetch_payment_terms = cint(
-		frappe.db.get_single_value("Accounts Settings", "automatically_fetch_payment_terms")
+		nts.db.get_single_value("Accounts Settings", "automatically_fetch_payment_terms")
 	)
 	if automatically_fetch_payment_terms:
 		doclist.set_payment_schedule()
@@ -1195,9 +1195,9 @@ def make_sales_invoice(source_name, target_doc=None, ignore_permissions=False):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_maintenance_schedule(source_name, target_doc=None):
-	maint_schedule = frappe.db.sql(
+	maint_schedule = nts.db.sql(
 		"""select t1.name
 		from `tabMaintenance Schedule` t1, `tabMaintenance Schedule Item` t2
 		where t2.parent=t1.name and t2.sales_order=%s and t1.docstatus=1""",
@@ -1221,9 +1221,9 @@ def make_maintenance_schedule(source_name, target_doc=None):
 		return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_maintenance_visit(source_name, target_doc=None):
-	visit = frappe.db.sql(
+	visit = nts.db.sql(
 		"""select t1.name
 		from `tabMaintenance Visit` t1, `tabMaintenance Visit Purpose` t2
 		where t2.parent=t1.name and t2.prevdoc_docname=%s
@@ -1248,7 +1248,7 @@ def make_maintenance_visit(source_name, target_doc=None):
 		return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_events(start, end, filters=None):
 	"""Returns events for Gantt / Calendar view rendering.
 
@@ -1256,11 +1256,11 @@ def get_events(start, end, filters=None):
 	:param end: End date-time.
 	:param filters: Filters (JSON).
 	"""
-	from frappe.desk.calendar import get_event_conditions
+	from nts.desk.calendar import get_event_conditions
 
 	conditions = get_event_conditions("Sales Order", filters)
 
-	data = frappe.db.sql(
+	data = nts.db.sql(
 		f"""
 		select
 			distinct `tabSales Order`.name, `tabSales Order`.customer_name, `tabSales Order`.status,
@@ -1285,7 +1285,7 @@ def get_events(start, end, filters=None):
 	return data
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_purchase_order_for_default_supplier(source_name, selected_items=None, target_doc=None):
 	"""Creates Purchase Order for each Supplier. Returns a list of doc objects."""
 
@@ -1299,10 +1299,10 @@ def make_purchase_order_for_default_supplier(source_name, selected_items=None, t
 
 	def set_missing_values(source, target):
 		target.supplier = supplier
-		target.currency = frappe.db.get_value(
+		target.currency = nts.db.get_value(
 			"Supplier", filters={"name": supplier}, fieldname=["default_currency"]
 		)
-		company_currency = frappe.db.get_value(
+		company_currency = nts.db.get_value(
 			"Company", filters={"name": target.company}, fieldname=["default_currency"]
 		)
 
@@ -1318,11 +1318,11 @@ def make_purchase_order_for_default_supplier(source_name, selected_items=None, t
 		target.payment_terms_template = ""
 		target.payment_schedule = []
 
-		default_price_list = frappe.get_value("Supplier", supplier, "default_price_list")
+		default_price_list = nts.get_value("Supplier", supplier, "default_price_list")
 		if default_price_list:
 			target.buying_price_list = default_price_list
 
-		default_payment_terms = frappe.get_value("Supplier", supplier, "payment_terms")
+		default_payment_terms = nts.get_value("Supplier", supplier, "payment_terms")
 		if default_payment_terms:
 			target.payment_terms_template = default_payment_terms
 
@@ -1359,7 +1359,7 @@ def make_purchase_order_for_default_supplier(source_name, selected_items=None, t
 	items_to_map = list(set(items_to_map))
 
 	if not suppliers:
-		frappe.throw(_("Please set a Supplier against the Items to be considered in the Purchase Order."))
+		nts.throw(_("Please set a Supplier against the Items to be considered in the Purchase Order."))
 
 	purchase_orders = []
 	for supplier in suppliers:
@@ -1413,13 +1413,13 @@ def make_purchase_order_for_default_supplier(source_name, selected_items=None, t
 		)
 
 		doc.insert()
-		frappe.db.commit()
+		nts.db.commit()
 		purchase_orders.append(doc)
 
 	return purchase_orders
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_purchase_order(source_name, selected_items=None, target_doc=None):
 	if not selected_items:
 		return
@@ -1482,7 +1482,7 @@ def make_purchase_order(source_name, selected_items=None, target_doc=None):
 	def update_item_for_packed_item(source, target, source_parent):
 		target.qty = flt(source.qty) - flt(source.ordered_qty)
 
-	# po = frappe.get_list("Purchase Order", filters={"sales_order":source_name, "supplier":supplier, "docstatus": ("<", "2")})
+	# po = nts.get_list("Purchase Order", filters={"sales_order":source_name, "supplier":supplier, "docstatus": ("<", "2")})
 	doc = get_mapped_doc(
 		"Sales Order",
 		source_name,
@@ -1558,11 +1558,11 @@ def make_purchase_order(source_name, selected_items=None, target_doc=None):
 
 
 def set_delivery_date(items, sales_order):
-	delivery_dates = frappe.get_all(
+	delivery_dates = nts.get_all(
 		"Sales Order Item", filters={"parent": sales_order}, fields=["delivery_date", "item_code"]
 	)
 
-	delivery_by_item = frappe._dict()
+	delivery_by_item = nts._dict()
 	for date in delivery_dates:
 		delivery_by_item[date.item_code] = date.delivery_date
 
@@ -1572,10 +1572,10 @@ def set_delivery_date(items, sales_order):
 
 
 def is_product_bundle(item_code):
-	return frappe.db.exists("Product Bundle", {"name": item_code, "disabled": 0})
+	return nts.db.exists("Product Bundle", {"name": item_code, "disabled": 0})
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_work_orders(items, sales_order, company, project=None):
 	"""Make Work Orders against the given Sales Order for the given `items`"""
 	items = json.loads(items).get("items")
@@ -1583,11 +1583,11 @@ def make_work_orders(items, sales_order, company, project=None):
 
 	for i in items:
 		if not i.get("bom"):
-			frappe.throw(_("Please select BOM against item {0}").format(i.get("item_code")))
+			nts.throw(_("Please select BOM against item {0}").format(i.get("item_code")))
 		if not i.get("pending_qty"):
-			frappe.throw(_("Please select Qty against item {0}").format(i.get("item_code")))
+			nts.throw(_("Please select Qty against item {0}").format(i.get("item_code")))
 
-		work_order = frappe.get_doc(
+		work_order = nts.get_doc(
 			dict(
 				doctype="Work Order",
 				production_item=i["item_code"],
@@ -1609,19 +1609,19 @@ def make_work_orders(items, sales_order, company, project=None):
 	return [p.name for p in out]
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def update_status(status, name):
-	so = frappe.get_doc("Sales Order", name)
+	so = nts.get_doc("Sales Order", name)
 	so.update_status(status)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_raw_material_request(items, company, sales_order, project=None):
-	if not frappe.has_permission("Sales Order", "write"):
-		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	if not nts.has_permission("Sales Order", "write"):
+		nts.throw(_("Not permitted"), nts.PermissionError)
 
 	if isinstance(items, str):
-		items = frappe._dict(json.loads(items))
+		items = nts._dict(json.loads(items))
 
 	for item in items.get("items"):
 		item["include_exploded_items"] = items.get("include_exploded_items")
@@ -1632,10 +1632,10 @@ def make_raw_material_request(items, company, sales_order, project=None):
 
 	raw_materials = get_items_for_material_requests(items)
 	if not raw_materials:
-		frappe.msgprint(_("Material Request not created, as quantity for Raw Materials already available."))
+		nts.msgprint(_("Material Request not created, as quantity for Raw Materials already available."))
 		return
 
-	material_request = frappe.new_doc("Material Request")
+	material_request = nts.new_doc("Material Request")
 	material_request.update(
 		dict(
 			doctype="Material Request",
@@ -1645,7 +1645,7 @@ def make_raw_material_request(items, company, sales_order, project=None):
 		)
 	)
 	for item in raw_materials:
-		item_doc = frappe.get_cached_doc("Item", item.get("item_code"))
+		item_doc = nts.get_cached_doc("Item", item.get("item_code"))
 
 		schedule_date = add_days(nowdate(), cint(item_doc.lead_time_days))
 		row = material_request.append(
@@ -1670,25 +1670,25 @@ def make_raw_material_request(items, company, sales_order, project=None):
 	return material_request
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_inter_company_purchase_order(source_name, target_doc=None):
 	from prodman.accounts.doctype.sales_invoice.sales_invoice import make_inter_company_transaction
 
 	return make_inter_company_transaction("Sales Order", source_name, target_doc)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def create_pick_list(source_name, target_doc=None):
 	from prodman.stock.doctype.packed_item.packed_item import is_product_bundle
 
 	def validate_sales_order():
-		so = frappe.get_doc("Sales Order", source_name)
+		so = nts.get_doc("Sales Order", source_name)
 		for item in so.items:
 			if item.stock_reserved_qty > 0:
-				frappe.throw(
+				nts.throw(
 					_(
 						"Cannot create a pick list for Sales Order {0} because it has reserved stock. Please unreserve the stock in order to create a pick list."
-					).format(frappe.bold(source_name))
+					).format(nts.bold(source_name))
 				)
 
 	def update_item_quantity(source, target, source_parent) -> None:
@@ -1755,7 +1755,7 @@ def create_pick_list(source_name, target_doc=None):
 
 def update_produced_qty_in_so_item(sales_order, sales_order_item):
 	# for multiple work orders against same sales order item
-	linked_wo_with_so_item = frappe.db.get_all(
+	linked_wo_with_so_item = nts.db.get_all(
 		"Work Order",
 		["produced_qty"],
 		{"sales_order_item": sales_order_item, "sales_order": sales_order, "docstatus": 1},
@@ -1765,17 +1765,17 @@ def update_produced_qty_in_so_item(sales_order, sales_order_item):
 	for wo in linked_wo_with_so_item:
 		total_produced_qty += flt(wo.get("produced_qty"))
 
-	if not total_produced_qty and frappe.flags.in_patch:
+	if not total_produced_qty and nts.flags.in_patch:
 		return
 
-	frappe.db.set_value("Sales Order Item", sales_order_item, "produced_qty", total_produced_qty)
+	nts.db.set_value("Sales Order Item", sales_order_item, "produced_qty", total_produced_qty)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_work_order_items(sales_order, for_raw_material_request=0):
 	"""Returns items with BOM that already do not have a linked work order"""
 	if sales_order:
-		so = frappe.get_doc("Sales Order", sales_order)
+		so = nts.get_doc("Sales Order", sales_order)
 
 		wo = qb.DocType("Work Order")
 
@@ -1783,7 +1783,7 @@ def get_work_order_items(sales_order, for_raw_material_request=0):
 		item_codes = [i.item_code for i in so.items]
 		product_bundle_parents = [
 			pb.new_item_code
-			for pb in frappe.get_all(
+			for pb in nts.get_all(
 				"Product Bundle", {"new_item_code": ["in", item_codes], "disabled": 0}, ["new_item_code"]
 			)
 		]
@@ -1826,6 +1826,6 @@ def get_work_order_items(sales_order, for_raw_material_request=0):
 		return items
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_stock_reservation_status():
-	return frappe.db.get_single_value("Stock Settings", "enable_stock_reservation")
+	return nts.db.get_single_value("Stock Settings", "enable_stock_reservation")

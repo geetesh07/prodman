@@ -1,12 +1,12 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import json
 
-import frappe
-from frappe import utils
-from frappe.model.docstatus import DocStatus
-from frappe.tests.utils import FrappeTestCase
+import nts 
+from nts  import utils
+from nts .model.docstatus import DocStatus
+from nts .tests.utils import nts TestCase
 
 from prodman.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool import (
 	get_linked_payments,
@@ -24,7 +24,7 @@ from prodman.tests.utils import if_lending_app_installed
 test_dependencies = ["Item", "Cost Center"]
 
 
-class TestBankTransaction(FrappeTestCase):
+class TestBankTransaction(nts TestCase):
 	def setUp(self):
 		for dt in [
 			"Bank Transaction",
@@ -32,12 +32,12 @@ class TestBankTransaction(FrappeTestCase):
 			"Payment Entry Reference",
 			"POS Profile",
 		]:
-			frappe.db.delete(dt)
+			nts .db.delete(dt)
 		clear_loan_transactions()
 		make_pos_profile()
 
 		# generate and use a uniq hash identifier for 'Bank Account' and it's linked GL 'Account' to avoid validation error
-		uniq_identifier = frappe.generate_hash(length=10)
+		uniq_identifier = nts .generate_hash(length=10)
 		gl_account = create_gl_account("_Test Bank " + uniq_identifier)
 		bank_account = create_bank_account(
 			gl_account=gl_account, bank_account_name="Checking Account " + uniq_identifier
@@ -48,7 +48,7 @@ class TestBankTransaction(FrappeTestCase):
 
 	# This test checks if prodman is able to provide a linked payment for a bank transaction based on the amount of the bank transaction.
 	def test_linked_payments(self):
-		bank_transaction = frappe.get_doc(
+		bank_transaction = nts .get_doc(
 			"Bank Transaction",
 			dict(description="Re 95282925234 FE/000002917 AT171513000281183046 Conrad Electronic"),
 		)
@@ -62,11 +62,11 @@ class TestBankTransaction(FrappeTestCase):
 
 	# This test validates a simple reconciliation leading to the clearance of the bank transaction and the payment
 	def test_reconcile(self):
-		bank_transaction = frappe.get_doc(
+		bank_transaction = nts .get_doc(
 			"Bank Transaction",
 			dict(description="1512567 BG/000003025 OPSKATTUZWXXX AT776000000098709849 Herr G"),
 		)
-		payment = frappe.get_doc("Payment Entry", dict(party="Mr G", paid_amount=1700))
+		payment = nts .get_doc("Payment Entry", dict(party="Mr G", paid_amount=1700))
 		vouchers = json.dumps(
 			[
 				{
@@ -78,26 +78,26 @@ class TestBankTransaction(FrappeTestCase):
 		)
 		reconcile_vouchers(bank_transaction.name, vouchers)
 
-		unallocated_amount = frappe.db.get_value(
+		unallocated_amount = nts .db.get_value(
 			"Bank Transaction", bank_transaction.name, "unallocated_amount"
 		)
 		self.assertTrue(unallocated_amount == 0)
 
-		clearance_date = frappe.db.get_value("Payment Entry", payment.name, "clearance_date")
+		clearance_date = nts .db.get_value("Payment Entry", payment.name, "clearance_date")
 		self.assertTrue(clearance_date is not None)
 
 		bank_transaction.reload()
 		bank_transaction.cancel()
 
-		clearance_date = frappe.db.get_value("Payment Entry", payment.name, "clearance_date")
+		clearance_date = nts .db.get_value("Payment Entry", payment.name, "clearance_date")
 		self.assertFalse(clearance_date)
 
 	def test_cancel_voucher(self):
-		bank_transaction = frappe.get_doc(
+		bank_transaction = nts .get_doc(
 			"Bank Transaction",
 			dict(description="1512567 BG/000003025 OPSKATTUZWXXX AT776000000098709849 Herr G"),
 		)
-		payment = frappe.get_doc("Payment Entry", dict(party="Mr G", paid_amount=1700))
+		payment = nts .get_doc("Payment Entry", dict(party="Mr G", paid_amount=1700))
 		vouchers = json.dumps(
 			[
 				{
@@ -117,7 +117,7 @@ class TestBankTransaction(FrappeTestCase):
 
 	# Check if prodman can correctly filter a linked payments based on the debit/credit amount
 	def test_debit_credit_output(self):
-		bank_transaction = frappe.get_doc(
+		bank_transaction = nts .get_doc(
 			"Bank Transaction",
 			dict(description="Auszahlung Karte MC/000002916 AUTOMAT 698769 K002 27.10. 14:07"),
 		)
@@ -131,11 +131,11 @@ class TestBankTransaction(FrappeTestCase):
 
 	# Check error if already reconciled
 	def test_already_reconciled(self):
-		bank_transaction = frappe.get_doc(
+		bank_transaction = nts .get_doc(
 			"Bank Transaction",
 			dict(description="1512567 BG/000002918 OPSKATTUZWXXX AT776000000098709837 Herr G"),
 		)
-		payment = frappe.get_doc("Payment Entry", dict(party="Mr G", paid_amount=1200))
+		payment = nts .get_doc("Payment Entry", dict(party="Mr G", paid_amount=1200))
 		vouchers = json.dumps(
 			[
 				{
@@ -147,11 +147,11 @@ class TestBankTransaction(FrappeTestCase):
 		)
 		reconcile_vouchers(bank_transaction.name, vouchers)
 
-		bank_transaction = frappe.get_doc(
+		bank_transaction = nts .get_doc(
 			"Bank Transaction",
 			dict(description="1512567 BG/000002918 OPSKATTUZWXXX AT776000000098709837 Herr G"),
 		)
-		payment = frappe.get_doc("Payment Entry", dict(party="Mr G", paid_amount=1200))
+		payment = nts .get_doc("Payment Entry", dict(party="Mr G", paid_amount=1200))
 		vouchers = json.dumps(
 			[
 				{
@@ -162,7 +162,7 @@ class TestBankTransaction(FrappeTestCase):
 			]
 		)
 		self.assertRaises(
-			frappe.ValidationError,
+			nts .ValidationError,
 			reconcile_vouchers,
 			bank_transaction_name=bank_transaction.name,
 			vouchers=vouchers,
@@ -170,11 +170,11 @@ class TestBankTransaction(FrappeTestCase):
 
 	# Raise an error if debitor transaction vs debitor payment
 	def test_clear_sales_invoice(self):
-		bank_transaction = frappe.get_doc(
+		bank_transaction = nts .get_doc(
 			"Bank Transaction",
 			dict(description="I2015000011 VD/000002514 ATWWXXX AT4701345000003510057 Bio"),
 		)
-		payment = frappe.get_doc("Sales Invoice", dict(customer="Fayva", status=["=", "Paid"]))
+		payment = nts .get_doc("Sales Invoice", dict(customer="Fayva", status=["=", "Paid"]))
 		vouchers = json.dumps(
 			[
 				{
@@ -187,10 +187,10 @@ class TestBankTransaction(FrappeTestCase):
 		reconcile_vouchers(bank_transaction.name, vouchers=vouchers)
 
 		self.assertEqual(
-			frappe.db.get_value("Bank Transaction", bank_transaction.name, "unallocated_amount"), 0
+			nts .db.get_value("Bank Transaction", bank_transaction.name, "unallocated_amount"), 0
 		)
 		self.assertTrue(
-			frappe.db.get_value("Sales Invoice Payment", dict(parent=payment.name), "clearance_date")
+			nts .db.get_value("Sales Invoice Payment", dict(parent=payment.name), "clearance_date")
 			is not None
 		)
 
@@ -199,7 +199,7 @@ class TestBankTransaction(FrappeTestCase):
 		from lending.loan_management.doctype.loan.test_loan import create_loan_accounts
 
 		create_loan_accounts()
-		bank_account = frappe.get_doc(
+		bank_account = nts .get_doc(
 			{
 				"doctype": "Bank Account",
 				"account_name": "Payment Account",
@@ -208,7 +208,7 @@ class TestBankTransaction(FrappeTestCase):
 			}
 		).insert(ignore_if_duplicate=True)
 
-		bank_transaction = frappe.get_doc(
+		bank_transaction = nts .get_doc(
 			{
 				"doctype": "Bank Transaction",
 				"description": "Loan Repayment - OPSKATTUZWXXX AT776000000098709837 Herr G",
@@ -227,24 +227,24 @@ class TestBankTransaction(FrappeTestCase):
 
 @if_lending_app_installed
 def clear_loan_transactions():
-	frappe.db.delete("Loan Repayment")
+	nts .db.delete("Loan Repayment")
 
 
 def create_bank_account(
 	bank_name="Citi Bank", gl_account="_Test Bank - _TC", bank_account_name="Checking Account"
 ):
 	try:
-		frappe.get_doc(
+		nts .get_doc(
 			{
 				"doctype": "Bank",
 				"bank_name": bank_name,
 			}
 		).insert(ignore_if_duplicate=True)
-	except frappe.DuplicateEntryError:
+	except nts .DuplicateEntryError:
 		pass
 
 	try:
-		bank_account = frappe.get_doc(
+		bank_account = nts .get_doc(
 			{
 				"doctype": "Bank Account",
 				"account_name": bank_account_name,
@@ -252,14 +252,14 @@ def create_bank_account(
 				"account": gl_account,
 			}
 		).insert(ignore_if_duplicate=True)
-	except frappe.DuplicateEntryError:
+	except nts .DuplicateEntryError:
 		pass
 
 	return bank_account.name
 
 
 def create_gl_account(gl_account_name="_Test Bank - _TC"):
-	gl_account = frappe.get_doc(
+	gl_account = nts .get_doc(
 		{
 			"doctype": "Account",
 			"company": "_Test Company",
@@ -273,7 +273,7 @@ def create_gl_account(gl_account_name="_Test Bank - _TC"):
 
 
 def add_transactions(bank_account="_Test Bank - _TC"):
-	doc = frappe.get_doc(
+	doc = nts .get_doc(
 		{
 			"doctype": "Bank Transaction",
 			"description": "1512567 BG/000002918 OPSKATTUZWXXX AT776000000098709837 Herr G",
@@ -285,7 +285,7 @@ def add_transactions(bank_account="_Test Bank - _TC"):
 	).insert()
 	doc.submit()
 
-	doc = frappe.get_doc(
+	doc = nts .get_doc(
 		{
 			"doctype": "Bank Transaction",
 			"description": "1512567 BG/000003025 OPSKATTUZWXXX AT776000000098709849 Herr G",
@@ -297,7 +297,7 @@ def add_transactions(bank_account="_Test Bank - _TC"):
 	).insert()
 	doc.submit()
 
-	doc = frappe.get_doc(
+	doc = nts .get_doc(
 		{
 			"doctype": "Bank Transaction",
 			"description": "Re 95282925234 FE/000002917 AT171513000281183046 Conrad Electronic",
@@ -309,7 +309,7 @@ def add_transactions(bank_account="_Test Bank - _TC"):
 	).insert()
 	doc.submit()
 
-	doc = frappe.get_doc(
+	doc = nts .get_doc(
 		{
 			"doctype": "Bank Transaction",
 			"description": "Auszahlung Karte MC/000002916 AUTOMAT 698769 K002 27.10. 14:07",
@@ -321,7 +321,7 @@ def add_transactions(bank_account="_Test Bank - _TC"):
 	).insert()
 	doc.submit()
 
-	doc = frappe.get_doc(
+	doc = nts .get_doc(
 		{
 			"doctype": "Bank Transaction",
 			"description": "I2015000011 VD/000002514 ATWWXXX AT4701345000003510057 Bio",
@@ -336,7 +336,7 @@ def add_transactions(bank_account="_Test Bank - _TC"):
 
 def add_vouchers(gl_account="_Test Bank - _TC"):
 	try:
-		frappe.get_doc(
+		nts .get_doc(
 			{
 				"doctype": "Supplier",
 				"supplier_group": "All Supplier Groups",
@@ -345,7 +345,7 @@ def add_vouchers(gl_account="_Test Bank - _TC"):
 			}
 		).insert(ignore_if_duplicate=True)
 
-	except frappe.DuplicateEntryError:
+	except nts .DuplicateEntryError:
 		pass
 
 	pi = make_purchase_invoice(supplier="Conrad Electronic", qty=1, rate=690)
@@ -357,7 +357,7 @@ def add_vouchers(gl_account="_Test Bank - _TC"):
 	pe.submit()
 
 	try:
-		frappe.get_doc(
+		nts .get_doc(
 			{
 				"doctype": "Supplier",
 				"supplier_group": "All Supplier Groups",
@@ -365,7 +365,7 @@ def add_vouchers(gl_account="_Test Bank - _TC"):
 				"supplier_name": "Mr G",
 			}
 		).insert(ignore_if_duplicate=True)
-	except frappe.DuplicateEntryError:
+	except nts .DuplicateEntryError:
 		pass
 
 	pi = make_purchase_invoice(supplier="Mr G", qty=1, rate=1200)
@@ -383,7 +383,7 @@ def add_vouchers(gl_account="_Test Bank - _TC"):
 	pe.submit()
 
 	try:
-		frappe.get_doc(
+		nts .get_doc(
 			{
 				"doctype": "Supplier",
 				"supplier_group": "All Supplier Groups",
@@ -391,11 +391,11 @@ def add_vouchers(gl_account="_Test Bank - _TC"):
 				"supplier_name": "Poore Simon's",
 			}
 		).insert(ignore_if_duplicate=True)
-	except frappe.DuplicateEntryError:
+	except nts .DuplicateEntryError:
 		pass
 
 	try:
-		frappe.get_doc(
+		nts .get_doc(
 			{
 				"doctype": "Customer",
 				"customer_group": "All Customer Groups",
@@ -403,7 +403,7 @@ def add_vouchers(gl_account="_Test Bank - _TC"):
 				"customer_name": "Poore Simon's",
 			}
 		).insert(ignore_if_duplicate=True)
-	except frappe.DuplicateEntryError:
+	except nts .DuplicateEntryError:
 		pass
 
 	pi = make_purchase_invoice(supplier="Poore Simon's", qty=1, rate=3900, is_paid=1, do_not_save=1)
@@ -426,7 +426,7 @@ def add_vouchers(gl_account="_Test Bank - _TC"):
 	pe.submit()
 
 	try:
-		frappe.get_doc(
+		nts .get_doc(
 			{
 				"doctype": "Customer",
 				"customer_group": "All Customer Groups",
@@ -434,10 +434,10 @@ def add_vouchers(gl_account="_Test Bank - _TC"):
 				"customer_name": "Fayva",
 			}
 		).insert(ignore_if_duplicate=True)
-	except frappe.DuplicateEntryError:
+	except nts .DuplicateEntryError:
 		pass
 
-	mode_of_payment = frappe.get_doc({"doctype": "Mode of Payment", "name": "Wire Transfer"})
+	mode_of_payment = nts .get_doc({"doctype": "Mode of Payment", "name": "Wire Transfer"})
 
 	set_default_account_for_mode_of_payment(mode_of_payment, "_Test Company", gl_account)
 
@@ -478,7 +478,7 @@ def create_loan_and_repayment():
 
 	applicant = make_employee("test_bank_reco@loan.com", company="_Test Company")
 	loan = create_loan(applicant, "Personal Loan", 5000, "Repay Over Number of Periods", 20)
-	loan = frappe.get_doc(
+	loan = nts .get_doc(
 		{
 			"doctype": "Loan",
 			"applicant_type": "Employee",

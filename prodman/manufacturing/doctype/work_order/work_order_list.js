@@ -1,4 +1,4 @@
-frappe.listview_settings["Work Order"] = {
+nts.listview_settings["Work Order"] = {
 	add_fields: [
 		"bom_no",
 		"status",

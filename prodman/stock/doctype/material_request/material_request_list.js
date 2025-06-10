@@ -1,7 +1,7 @@
-frappe.listview_settings["Material Request"] = {
+nts.listview_settings["Material Request"] = {
 	add_fields: ["material_request_type", "status", "per_ordered", "per_received", "transfer_status"],
 	get_indicator: function (doc) {
-		var precision = frappe.defaults.get_default("float_precision");
+		var precision = nts.defaults.get_default("float_precision");
 		if (doc.status == "Stopped") {
 			return [__("Stopped"), "red", "status,=,Stopped"];
 		} else if (doc.transfer_status && doc.docstatus != 2) {

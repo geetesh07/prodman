@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, cint, cstr, flt, get_datetime, getdate, nowtime, today
+import nts
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import add_days, cint, cstr, flt, get_datetime, getdate, nowtime, today
 from pypika import functions as fn
 
 import prodman
@@ -29,9 +29,9 @@ from prodman.stock.doctype.serial_no.serial_no import get_serial_nos
 from prodman.stock.doctype.warehouse.test_warehouse import create_warehouse
 
 
-class TestPurchaseReceipt(FrappeTestCase):
+class TestPurchaseReceipt(ntsTestCase):
 	def setUp(self):
-		frappe.db.set_single_value("Buying Settings", "allow_multiple_items", 1)
+		nts.db.set_single_value("Buying Settings", "allow_multiple_items", 1)
 
 	def test_purchase_receipt_qty(self):
 		pr = make_purchase_receipt(qty=0, rejected_qty=0, do_not_save=True)
@@ -70,7 +70,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 	def test_reverse_purchase_receipt_sle(self):
 		pr = make_purchase_receipt(qty=0.5, item_code="_Test Item Home Desktop 200")
 
-		sl_entry = frappe.db.get_all(
+		sl_entry = nts.db.get_all(
 			"Stock Ledger Entry",
 			{"voucher_type": "Purchase Receipt", "voucher_no": pr.name},
 			["actual_qty"],
@@ -81,7 +81,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		pr.cancel()
 
-		sl_entry_cancelled = frappe.db.get_all(
+		sl_entry_cancelled = nts.db.get_all(
 			"Stock Ledger Entry",
 			{"voucher_type": "Purchase Receipt", "voucher_no": pr.name},
 			["actual_qty"],
@@ -97,10 +97,10 @@ class TestPurchaseReceipt(FrappeTestCase):
 		create_payment_term("_Test Payment Term 1 for Purchase Invoice")
 		create_payment_term("_Test Payment Term 2 for Purchase Invoice")
 
-		if not frappe.db.exists(
+		if not nts.db.exists(
 			"Payment Terms Template", "_Test Payment Terms Template For Purchase Invoice"
 		):
-			frappe.get_doc(
+			nts.get_doc(
 				{
 					"doctype": "Payment Terms Template",
 					"template_name": "_Test Payment Terms Template For Purchase Invoice",
@@ -124,14 +124,14 @@ class TestPurchaseReceipt(FrappeTestCase):
 				}
 			).insert()
 
-		template = frappe.db.get_value(
+		template = nts.db.get_value(
 			"Payment Terms Template", "_Test Payment Terms Template For Purchase Invoice"
 		)
-		old_template_in_supplier = frappe.db.get_value("Supplier", "_Test Supplier", "payment_terms")
-		frappe.db.set_value("Supplier", "_Test Supplier", "payment_terms", template)
+		old_template_in_supplier = nts.db.get_value("Supplier", "_Test Supplier", "payment_terms")
+		nts.db.set_value("Supplier", "_Test Supplier", "payment_terms", template)
 
 		pr = make_purchase_receipt(do_not_save=True)
-		self.assertRaises(frappe.ValidationError, make_purchase_invoice, pr.name)
+		self.assertRaises(nts.ValidationError, make_purchase_invoice, pr.name)
 		pr.submit()
 
 		pi = make_purchase_invoice(pr.name)
@@ -141,7 +141,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		# test maintaining same rate throughout purchade cycle
 		pi.get("items")[0].rate = 200
-		self.assertRaises(frappe.ValidationError, frappe.get_doc(pi).submit)
+		self.assertRaises(nts.ValidationError, nts.get_doc(pi).submit)
 
 		# test if payment terms are fetched and set in PI
 		self.assertEqual(pi.payment_terms_template, template)
@@ -153,13 +153,13 @@ class TestPurchaseReceipt(FrappeTestCase):
 		# teardown
 		pi.delete()  # draft PI
 		pr.cancel()
-		frappe.db.set_value("Supplier", "_Test Supplier", "payment_terms", old_template_in_supplier)
-		frappe.get_doc("Payment Terms Template", "_Test Payment Terms Template For Purchase Invoice").delete()
+		nts.db.set_value("Supplier", "_Test Supplier", "payment_terms", old_template_in_supplier)
+		nts.get_doc("Payment Terms Template", "_Test Payment Terms Template For Purchase Invoice").delete()
 
 	def test_purchase_receipt_no_gl_entry(self):
 		from prodman.stock.doctype.stock_entry.test_stock_entry import make_stock_entry
 
-		existing_bin_qty, existing_bin_stock_value = frappe.db.get_value(
+		existing_bin_qty, existing_bin_stock_value = nts.db.get_value(
 			"Bin",
 			{"item_code": "_Test Item", "warehouse": "_Test Warehouse - _TC"},
 			["actual_qty", "stock_value"],
@@ -170,7 +170,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 				item_code="_Test Item", target="_Test Warehouse - _TC", qty=abs(existing_bin_qty)
 			)
 
-		existing_bin_qty, existing_bin_stock_value = frappe.db.get_value(
+		existing_bin_qty, existing_bin_stock_value = nts.db.get_value(
 			"Bin",
 			{"item_code": "_Test Item", "warehouse": "_Test Warehouse - _TC"},
 			["actual_qty", "stock_value"],
@@ -178,7 +178,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		pr = make_purchase_receipt()
 
-		stock_value_difference = frappe.db.get_value(
+		stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry",
 			{
 				"voucher_type": "Purchase Receipt",
@@ -191,7 +191,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		self.assertEqual(stock_value_difference, 250)
 
-		current_bin_stock_value = frappe.db.get_value(
+		current_bin_stock_value = nts.db.get_value(
 			"Bin", {"item_code": "_Test Item", "warehouse": "_Test Warehouse - _TC"}, "stock_value"
 		)
 		self.assertEqual(current_bin_stock_value, existing_bin_stock_value + 250)
@@ -201,7 +201,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pr.cancel()
 
 	def test_batched_serial_no_purchase(self):
-		item = frappe.db.exists("Item", {"item_name": "Batched Serialized Item"})
+		item = nts.db.exists("Item", {"item_name": "Batched Serialized Item"})
 		if not item:
 			item = create_item("Batched Serialized Item")
 			item.has_batch_no = 1
@@ -211,11 +211,11 @@ class TestPurchaseReceipt(FrappeTestCase):
 			item.serial_no_series = "BS-.####"
 			item.save()
 		else:
-			item = frappe.get_doc("Item", {"item_name": "Batched Serialized Item"})
+			item = nts.get_doc("Item", {"item_name": "Batched Serialized Item"})
 
 		pr = make_purchase_receipt(item_code=item.name, qty=5, rate=500)
 
-		self.assertTrue(frappe.db.get_value("Batch", {"item": item.name, "reference_name": pr.name}))
+		self.assertTrue(nts.db.get_value("Batch", {"item": item.name, "reference_name": pr.name}))
 
 		pr.load_from_db()
 		pr.cancel()
@@ -223,20 +223,20 @@ class TestPurchaseReceipt(FrappeTestCase):
 	def test_duplicate_serial_nos(self):
 		from prodman.stock.doctype.delivery_note.test_delivery_note import create_delivery_note
 
-		item = frappe.db.exists("Item", {"item_name": "Test Serialized Item 123"})
+		item = nts.db.exists("Item", {"item_name": "Test Serialized Item 123"})
 		if not item:
 			item = create_item("Test Serialized Item 123")
 			item.has_serial_no = 1
 			item.serial_no_series = "TSI123-.####"
 			item.save()
 		else:
-			item = frappe.get_doc("Item", {"item_name": "Test Serialized Item 123"})
+			item = nts.get_doc("Item", {"item_name": "Test Serialized Item 123"})
 
 		# First make purchase receipt
 		pr = make_purchase_receipt(item_code=item.name, qty=2, rate=500)
 		pr.load_from_db()
 
-		bundle_id = frappe.db.get_value(
+		bundle_id = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": "Purchase Receipt", "voucher_no": pr.name, "item_code": item.name},
 			"serial_and_batch_bundle",
@@ -247,7 +247,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		self.assertEqual(get_serial_nos_from_bundle(pr.items[0].serial_and_batch_bundle), serial_nos)
 
 		bundle_id = make_serial_batch_bundle(
-			frappe._dict(
+			nts._dict(
 				{
 					"item_code": item.item_code,
 					"warehouse": "_Test Warehouse 2 - _TC1",
@@ -273,7 +273,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		# Try to receive same serial nos again in the same company with backdated.
 		bundle_id = make_serial_batch_bundle(
-			frappe._dict(
+			nts._dict(
 				{
 					"item_code": item.item_code,
 					"warehouse": "_Test Warehouse - _TC",
@@ -293,7 +293,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		# Try to receive same serial nos with different company with backdated.
 		bundle_id = make_serial_batch_bundle(
-			frappe._dict(
+			nts._dict(
 				{
 					"item_code": item.item_code,
 					"warehouse": "_Test Warehouse 2 - _TC1",
@@ -361,23 +361,23 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pr_row_1_serial_no = get_serial_nos_from_bundle(pr.get("items")[0].serial_and_batch_bundle)[0]
 
 		self.assertEqual(
-			frappe.db.get_value("Serial No", pr_row_1_serial_no, "warehouse"), pr.get("items")[0].warehouse
+			nts.db.get_value("Serial No", pr_row_1_serial_no, "warehouse"), pr.get("items")[0].warehouse
 		)
 
 		pr.cancel()
-		self.assertFalse(frappe.db.get_value("Serial No", pr_row_1_serial_no, "warehouse"))
+		self.assertFalse(nts.db.get_value("Serial No", pr_row_1_serial_no, "warehouse"))
 
 	def test_rejected_warehouse_filter(self):
-		pr = frappe.copy_doc(test_records[0])
+		pr = nts.copy_doc(test_records[0])
 		pr.get("items")[0].item_code = "_Test Serialized Item With Series"
 		pr.get("items")[0].qty = 3
 		pr.get("items")[0].rejected_qty = 2
 		pr.get("items")[0].received_qty = 5
 		pr.get("items")[0].rejected_warehouse = pr.get("items")[0].warehouse
-		self.assertRaises(frappe.ValidationError, pr.save)
+		self.assertRaises(nts.ValidationError, pr.save)
 
 	def test_rejected_serial_no(self):
-		pr = frappe.copy_doc(test_records[0])
+		pr = nts.copy_doc(test_records[0])
 		pr.get("items")[0].item_code = "_Test Serialized Item With Series"
 		pr.get("items")[0].qty = 3
 		pr.get("items")[0].rejected_qty = 2
@@ -391,14 +391,14 @@ class TestPurchaseReceipt(FrappeTestCase):
 		self.assertEqual(len(accepted_serial_nos), 3)
 		for serial_no in accepted_serial_nos:
 			self.assertEqual(
-				frappe.db.get_value("Serial No", serial_no, "warehouse"), pr.get("items")[0].warehouse
+				nts.db.get_value("Serial No", serial_no, "warehouse"), pr.get("items")[0].warehouse
 			)
 
 		rejected_serial_nos = get_serial_nos_from_bundle(pr.get("items")[0].rejected_serial_and_batch_bundle)
 		self.assertEqual(len(rejected_serial_nos), 2)
 		for serial_no in rejected_serial_nos:
 			self.assertEqual(
-				frappe.db.get_value("Serial No", serial_no, "warehouse"),
+				nts.db.get_value("Serial No", serial_no, "warehouse"),
 				pr.get("items")[0].rejected_warehouse,
 			)
 
@@ -424,7 +424,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		return_pr.submit()
 
 		# check sle
-		outgoing_rate = frappe.db.get_value(
+		outgoing_rate = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": "Purchase Receipt", "voucher_no": return_pr.name},
 			"outgoing_rate",
@@ -448,7 +448,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 			self.assertEqual(expected_values[gle.account][1], gle.credit)
 
 		# hack because new_doc isn't considering is_return portion of status_updater
-		returned = frappe.get_doc("Purchase Receipt", return_pr.name)
+		returned = nts.get_doc("Purchase Receipt", return_pr.name)
 		returned.update_prevdoc_status()
 		pr.load_from_db()
 
@@ -464,7 +464,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		self.assertEqual(return_pr_2.items[0].qty, -3)
 
 		# Make PI against unreturned amount
-		buying_settings = frappe.get_single("Buying Settings")
+		buying_settings = nts.get_single("Buying Settings")
 		buying_settings.bill_for_rejected_quantity_in_purchase_invoice = 0
 		buying_settings.save()
 
@@ -511,7 +511,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		return_pr.submit()
 
 		# hack because new_doc isn't considering is_return portion of status_updater
-		returned = frappe.get_doc("Purchase Receipt", return_pr.name)
+		returned = nts.get_doc("Purchase Receipt", return_pr.name)
 		returned.update_prevdoc_status()
 		pr.load_from_db()
 
@@ -527,7 +527,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		from prodman.stock.doctype.warehouse.test_warehouse import get_warehouse
 
 		rejected_warehouse = "_Test Rejected Warehouse - TCP1"
-		if not frappe.db.exists("Warehouse", rejected_warehouse):
+		if not nts.db.exists("Warehouse", rejected_warehouse):
 			get_warehouse(
 				company="_Test Company with perpetual inventory",
 				abbr=" - TCP1",
@@ -554,7 +554,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 			rejected_warehouse=rejected_warehouse,
 		)
 
-		actual_qty = frappe.db.get_value(
+		actual_qty = nts.db.get_value(
 			"Stock Ledger Entry",
 			{
 				"voucher_type": "Purchase Receipt",
@@ -573,7 +573,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		from prodman.stock.doctype.warehouse.test_warehouse import get_warehouse
 
 		rejected_warehouse = "_Test Rejected Warehouse - TCP1"
-		if not frappe.db.exists("Warehouse", rejected_warehouse):
+		if not nts.db.exists("Warehouse", rejected_warehouse):
 			get_warehouse(
 				company="_Test Company with perpetual inventory",
 				abbr=" - TCP1",
@@ -593,7 +593,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pr.items[0].warehouse = ""
 		pr.submit()
 
-		actual_qty = frappe.db.get_value(
+		actual_qty = nts.db.get_value(
 			"Stock Ledger Entry",
 			{
 				"voucher_type": "Purchase Receipt",
@@ -610,7 +610,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 	def test_purchase_return_for_serialized_items(self):
 		def _check_serial_no_values(serial_no, field_values):
-			serial_no = frappe.get_doc("Serial No", serial_no)
+			serial_no = nts.get_doc("Serial No", serial_no)
 			for field, value in field_values.items():
 				self.assertEqual(cstr(serial_no.get(field)), value)
 
@@ -639,7 +639,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 	def test_purchase_return_for_multi_uom(self):
 		item_code = "_Test Purchase Return For Multi-UOM"
-		if not frappe.db.exists("Item", item_code):
+		if not nts.db.exists("Item", item_code):
 			item = make_item(item_code, {"stock_uom": "Box"})
 			row = item.append("uoms", {"uom": "Unit", "conversion_factor": 0.1})
 			row.db_update()
@@ -670,7 +670,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pr = make_purchase_receipt(item_code=item.name)
 
 		update_purchase_receipt_status(pr.name, "Closed")
-		self.assertEqual(frappe.db.get_value("Purchase Receipt", pr.name, "status"), "Closed")
+		self.assertEqual(nts.db.get_value("Purchase Receipt", pr.name, "status"), "Closed")
 
 	def test_pr_billing_status(self):
 		"""Flow:
@@ -732,12 +732,12 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 	def test_serial_no_against_purchase_receipt(self):
 		item_code = "Test Manual Created Serial No"
-		if not frappe.db.exists("Item", item_code):
+		if not nts.db.exists("Item", item_code):
 			make_item(item_code, dict(has_serial_no=1))
 
 		serial_no = ["12903812901"]
-		if not frappe.db.exists("Serial No", serial_no[0]):
-			frappe.get_doc(
+		if not nts.db.exists("Serial No", serial_no[0]):
+			nts.get_doc(
 				{"doctype": "Serial No", "item_code": item_code, "serial_no": serial_no[0]}
 			).insert()
 
@@ -747,14 +747,14 @@ class TestPurchaseReceipt(FrappeTestCase):
 		bundle_id = pr_doc.items[0].serial_and_batch_bundle
 		self.assertEqual(serial_no[0], get_serial_nos_from_bundle(bundle_id)[0])
 
-		voucher_no = frappe.db.get_value("Serial and Batch Bundle", bundle_id, "voucher_no")
+		voucher_no = nts.db.get_value("Serial and Batch Bundle", bundle_id, "voucher_no")
 
 		self.assertEqual(voucher_no, pr_doc.name)
 		pr_doc.cancel()
 
 		# check for the auto created serial nos
 		item_code = "Test Auto Created Serial No"
-		if not frappe.db.exists("Item", item_code):
+		if not nts.db.exists("Item", item_code):
 			make_item(item_code, dict(has_serial_no=1, serial_no_series="KLJL.###"))
 
 		new_pr_doc = make_purchase_receipt(item_code=item_code, qty=1)
@@ -764,7 +764,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		serial_no = get_serial_nos_from_bundle(bundle_id)[0]
 		self.assertTrue(serial_no)
 
-		voucher_no = frappe.db.get_value("Serial and Batch Bundle", bundle_id, "voucher_no")
+		voucher_no = nts.db.get_value("Serial and Batch Bundle", bundle_id, "voucher_no")
 
 		self.assertEqual(voucher_no, new_pr_doc.name)
 
@@ -773,14 +773,14 @@ class TestPurchaseReceipt(FrappeTestCase):
 	def test_auto_asset_creation(self):
 		asset_item = "Test Asset Item"
 
-		if not frappe.db.exists("Item", asset_item):
-			asset_category = frappe.get_all("Asset Category")
+		if not nts.db.exists("Item", asset_item):
+			asset_category = nts.get_all("Asset Category")
 
 			if asset_category:
 				asset_category = asset_category[0].name
 
 			if not asset_category:
-				doc = frappe.get_doc(
+				doc = nts.get_doc(
 					{
 						"doctype": "Asset Category",
 						"asset_category_name": "Test Asset Category",
@@ -814,11 +814,11 @@ class TestPurchaseReceipt(FrappeTestCase):
 			asset_item = item_data.item_code
 
 		pr = make_purchase_receipt(item_code=asset_item, qty=3)
-		assets = frappe.db.get_all("Asset", filters={"purchase_receipt": pr.name})
+		assets = nts.db.get_all("Asset", filters={"purchase_receipt": pr.name})
 
 		self.assertEqual(len(assets), 3)
 
-		location = frappe.db.get_value("Asset", assets[0].name, "location")
+		location = nts.db.get_value("Asset", assets[0].name, "location")
 		self.assertEqual(location, "Test Location")
 
 		pr.cancel()
@@ -828,8 +828,8 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		pr = make_purchase_receipt(item_code="Test Asset Item", qty=1)
 
-		asset = frappe.get_doc("Asset", {"purchase_receipt": pr.name})
-		asset.available_for_use_date = frappe.utils.nowdate()
+		asset = nts.get_doc("Asset", {"purchase_receipt": pr.name})
+		asset.available_for_use_date = nts.utils.nowdate()
 		asset.gross_purchase_amount = 50.0
 		asset.append(
 			"finance_books",
@@ -843,7 +843,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		asset.submit()
 
 		pr_return = make_purchase_return(pr.name)
-		self.assertRaises(frappe.exceptions.ValidationError, pr_return.submit)
+		self.assertRaises(nts.exceptions.ValidationError, pr_return.submit)
 
 		asset.load_from_db()
 		asset.cancel()
@@ -862,8 +862,8 @@ class TestPurchaseReceipt(FrappeTestCase):
 			company="_Test Company with perpetual inventory",
 		)
 
-		if not frappe.db.exists("Location", "Test Location"):
-			frappe.get_doc({"doctype": "Location", "location_name": "Test Location"}).insert()
+		if not nts.db.exists("Location", "Test Location"):
+			nts.get_doc({"doctype": "Location", "location_name": "Test Location"}).insert()
 
 		pr = make_purchase_receipt(
 			cost_center=cost_center,
@@ -887,8 +887,8 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pr.cancel()
 
 	def test_purchase_receipt_cost_center_with_balance_sheet_account(self):
-		if not frappe.db.exists("Location", "Test Location"):
-			frappe.get_doc({"doctype": "Location", "location_name": "Test Location"}).insert()
+		if not nts.db.exists("Location", "Test Location"):
+			nts.get_doc({"doctype": "Location", "location_name": "Test Location"}).insert()
 
 		pr = make_purchase_receipt(
 			company="_Test Company with perpetual inventory",
@@ -917,7 +917,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 			create_purchase_order,
 		)
 
-		frappe.db.set_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice", 0)
+		nts.db.set_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice", 0)
 
 		po = create_purchase_order()
 		pr = create_pr_against_po(po.name)
@@ -938,7 +938,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		po.cancel()
 
 	def test_make_purchase_invoice_from_pr_with_returned_qty_duplicate_items(self):
-		frappe.db.set_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice", 0)
+		nts.db.set_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice", 0)
 		pr1 = make_purchase_receipt(qty=8, do_not_submit=True)
 		pr1.append(
 			"items",
@@ -1168,10 +1168,10 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pr.submit()
 
 		# Get exchnage gain and loss account
-		exchange_gain_loss_account = frappe.db.get_value("Company", pr.company, "exchange_gain_loss_account")
+		exchange_gain_loss_account = nts.db.get_value("Company", pr.company, "exchange_gain_loss_account")
 
 		# fetching the latest GL Entry with exchange gain and loss account account
-		amount = frappe.db.get_value(
+		amount = nts.db.get_value(
 			"GL Entry", {"account": exchange_gain_loss_account, "voucher_no": pr.name}, "credit"
 		)
 		discrepancy_caused_by_exchange_rate_diff = abs(
@@ -1298,7 +1298,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 			rate=200,
 		)
 
-		dn_value = frappe.db.get_value(
+		dn_value = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": "Delivery Note", "voucher_no": dn1.name, "warehouse": target_warehouse},
 			"stock_value_difference",
@@ -1306,7 +1306,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		self.assertEqual(abs(dn_value), 200.00)
 
-		pr_value = frappe.db.get_value(
+		pr_value = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": "Purchase Receipt", "voucher_no": pr1.name, "warehouse": to_warehouse},
 			"stock_value_difference",
@@ -1318,10 +1318,10 @@ class TestPurchaseReceipt(FrappeTestCase):
 		self.assertEqual(pr1.items[0].valuation_rate, 200)
 		self.assertEqual(pr1.items[0].rate, 100)
 
-		Gl = frappe.qb.DocType("GL Entry")
+		Gl = nts.qb.DocType("GL Entry")
 
 		query = (
-			frappe.qb.from_(Gl)
+			nts.qb.from_(Gl)
 			.select(
 				(fn.Sum(Gl.debit) - fn.Sum(Gl.credit)).as_("value"),
 			)
@@ -1385,7 +1385,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		self.assertEqual(pr1.items[0].rate, 100)
 		pr1.submit()
 
-		stk_ledger = frappe.db.get_value(
+		stk_ledger = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": "Purchase Receipt", "voucher_no": pr1.name, "warehouse": target_warehouse},
 			["stock_value_difference", "outgoing_rate"],
@@ -1405,7 +1405,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 			rate=200,
 		)
 
-		dn_value = frappe.db.get_value(
+		dn_value = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": "Delivery Note", "voucher_no": dn1.name, "warehouse": target_warehouse},
 			"stock_value_difference",
@@ -1413,7 +1413,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		self.assertEqual(abs(dn_value), 200.00)
 
-		pr_value = frappe.db.get_value(
+		pr_value = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": "Purchase Receipt", "voucher_no": pr1.name, "warehouse": to_warehouse},
 			"stock_value_difference",
@@ -1425,10 +1425,10 @@ class TestPurchaseReceipt(FrappeTestCase):
 		self.assertEqual(pr1.items[0].valuation_rate, 200)
 		self.assertEqual(pr1.items[0].rate, 100)
 
-		Gl = frappe.qb.DocType("GL Entry")
+		Gl = nts.qb.DocType("GL Entry")
 
 		query = (
-			frappe.qb.from_(Gl)
+			nts.qb.from_(Gl)
 			.select(
 				(fn.Sum(Gl.debit) - fn.Sum(Gl.credit)).as_("value"),
 			)
@@ -1506,7 +1506,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pi1.save()
 		pi1.submit()
 
-		stk_ledger = frappe.db.get_value(
+		stk_ledger = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": pi1.doctype, "voucher_no": pi1.name, "warehouse": target_warehouse},
 			["stock_value_difference", "outgoing_rate"],
@@ -1526,7 +1526,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 			rate=200,
 		)
 
-		si_value = frappe.db.get_value(
+		si_value = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": si1.doctype, "voucher_no": si1.name, "warehouse": target_warehouse},
 			"stock_value_difference",
@@ -1534,7 +1534,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		self.assertEqual(abs(si_value), 200.00)
 
-		pi_value = frappe.db.get_value(
+		pi_value = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": pi1.doctype, "voucher_no": pi1.name, "warehouse": to_warehouse},
 			"stock_value_difference",
@@ -1546,10 +1546,10 @@ class TestPurchaseReceipt(FrappeTestCase):
 		self.assertEqual(pi1.items[0].valuation_rate, 200)
 		self.assertEqual(pi1.items[0].rate, 100)
 
-		Gl = frappe.qb.DocType("GL Entry")
+		Gl = nts.qb.DocType("GL Entry")
 
 		query = (
-			frappe.qb.from_(Gl)
+			nts.qb.from_(Gl)
 			.select(
 				(fn.Sum(Gl.debit) - fn.Sum(Gl.credit)).as_("value"),
 			)
@@ -1582,7 +1582,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		batch_no = get_batch_from_bundle(pi.items[0].serial_and_batch_bundle)
 		self.assertTrue(batch_no)
 
-		frappe.db.set_value("Batch", batch_no, "expiry_date", add_days(today(), -1))
+		nts.db.set_value("Batch", batch_no, "expiry_date", add_days(today(), -1))
 
 		return_pi = make_return_doc(pi.doctype, pi.name)
 		return_pi.save().submit()
@@ -1597,7 +1597,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 			{"is_purchase_item": 1, "is_stock_item": 1},
 		)
 
-		frappe.db.set_single_value("Buying Settings", "disable_last_purchase_rate", 1)
+		nts.db.set_single_value("Buying Settings", "disable_last_purchase_rate", 1)
 
 		pr = make_purchase_receipt(
 			qty=1,
@@ -1621,7 +1621,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		res = get_item_details(args)
 		self.assertEqual(res.get("last_purchase_rate"), 0)
 
-		frappe.db.set_single_value("Buying Settings", "disable_last_purchase_rate", 0)
+		nts.db.set_single_value("Buying Settings", "disable_last_purchase_rate", 0)
 
 		pr = make_purchase_receipt(
 			qty=1,
@@ -1682,10 +1682,10 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pr.items[0].rejected_warehouse = from_warehouse
 		pr.save()
 
-		self.assertRaises(frappe.ValidationError, pr.submit)
+		self.assertRaises(nts.ValidationError, pr.submit)
 
 		# Step 5: Test Over Receipt Allowance
-		frappe.db.set_single_value("Stock Settings", "over_delivery_receipt_allowance", 50)
+		nts.db.set_single_value("Stock Settings", "over_delivery_receipt_allowance", 50)
 
 		make_stock_entry(
 			purpose="Material Transfer",
@@ -1700,7 +1700,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pr.reload()
 		pr.submit()
 
-		frappe.db.set_single_value("Stock Settings", "over_delivery_receipt_allowance", 0)
+		nts.db.set_single_value("Stock Settings", "over_delivery_receipt_allowance", 0)
 
 	def test_internal_pr_gl_entries(self):
 		from prodman.stock.doctype.delivery_note.delivery_note import make_inter_company_purchase_receipt
@@ -1761,7 +1761,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		)
 
 		warehouse_account = get_warehouse_account_map(company)
-		stock_account_value = frappe.db.get_value(
+		stock_account_value = nts.db.get_value(
 			"GL Entry",
 			{
 				"account": warehouse_account[target_warehouse]["account"],
@@ -1771,7 +1771,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 			},
 			fieldname=["credit"],
 		)
-		stock_diff = frappe.db.get_value(
+		stock_diff = nts.db.get_value(
 			"Stock Ledger Entry",
 			{
 				"voucher_type": "Purchase Receipt",
@@ -1823,7 +1823,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		pr = make_inter_company_purchase_receipt(dn.name)
 		pr.inter_company_reference = ""
-		self.assertRaises(frappe.ValidationError, pr.save)
+		self.assertRaises(nts.ValidationError, pr.save)
 
 		pr.inter_company_reference = dn.name
 		pr.items[0].qty = 10
@@ -1835,7 +1835,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		delivery_note_item = pr.items[0].delivery_note_item
 		pr.items[0].delivery_note_item = ""
 
-		self.assertRaises(frappe.ValidationError, pr.save)
+		self.assertRaises(nts.ValidationError, pr.save)
 
 		pr.load_from_db()
 		pr.items[0].delivery_note_item = delivery_note_item
@@ -1879,7 +1879,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pr_return.save()
 		pr_return.submit()
 
-		data = frappe.get_all(
+		data = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"voucher_no": pr_return.name, "docstatus": 1},
 			fields=["SUM(stock_value_difference) as stock_value_difference"],
@@ -2085,7 +2085,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 			parent_account="Current Liabilities - _TC",
 			company="_Test Company",
 		)
-		company = frappe.get_doc("Company", "_Test Company")
+		company = nts.get_doc("Company", "_Test Company")
 		company.enable_provisional_accounting_for_non_stock_items = 1
 		company.default_provisional_account = provisional_account
 		company.save()
@@ -2107,7 +2107,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		self.assertEqual(flt(pr.total * pr.conversion_rate, 2), flt(pr.base_total, 2))
 
 		# Test - 2: Sum of Debit or Credit should be equal to Purchase Receipt Base Total
-		amount = frappe.db.get_value("GL Entry", {"docstatus": 1, "voucher_no": pr.name}, ["sum(debit)"])
+		amount = nts.db.get_value("GL Entry", {"docstatus": 1, "voucher_no": pr.name}, ["sum(debit)"])
 		expected_amount = pr.base_total
 		self.assertEqual(amount, expected_amount)
 
@@ -2217,7 +2217,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 			create_stock_reconciliation,
 		)
 
-		frappe.db.set_single_value(
+		nts.db.set_single_value(
 			"Stock Settings", "do_not_update_serial_batch_on_creation_of_auto_bundle", 0
 		)
 
@@ -2246,7 +2246,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		self.assertTrue(pr.items[0].serial_no)
 		self.assertTrue(pr.items[0].serial_and_batch_bundle)
 
-		sbb_doc = frappe.get_doc("Serial and Batch Bundle", pr.items[0].serial_and_batch_bundle)
+		sbb_doc = nts.get_doc("Serial and Batch Bundle", pr.items[0].serial_and_batch_bundle)
 
 		for row in sbb_doc.entries:
 			self.assertTrue(row.serial_no in serial_nos)
@@ -2280,7 +2280,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		self.assertTrue(sr.items[0].current_serial_and_batch_bundle)
 		self.assertTrue(sr.items[0].serial_and_batch_bundle)
 
-		serial_no_status = frappe.db.get_value("Serial No", "SNU-TSFISI-000015", "status")
+		serial_no_status = nts.db.get_value("Serial No", "SNU-TSFISI-000015", "status")
 
 		self.assertTrue(serial_no_status != "Active")
 
@@ -2293,15 +2293,15 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		self.assertTrue(dn.items[0].serial_and_batch_bundle)
 		self.assertEqual(dn.items[0].qty, 4)
-		doc = frappe.get_doc("Serial and Batch Bundle", dn.items[0].serial_and_batch_bundle)
+		doc = nts.get_doc("Serial and Batch Bundle", dn.items[0].serial_and_batch_bundle)
 		for row in doc.entries:
 			self.assertTrue(row.serial_no in new_serial_nos)
 
 		for sn in new_serial_nos:
-			serial_no_status = frappe.db.get_value("Serial No", sn, "status")
+			serial_no_status = nts.db.get_value("Serial No", sn, "status")
 			self.assertTrue(serial_no_status != "Active")
 
-		frappe.db.set_single_value(
+		nts.db.set_single_value(
 			"Stock Settings", "do_not_update_serial_batch_on_creation_of_auto_bundle", 1
 		)
 
@@ -2344,7 +2344,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pr.save()
 		pr.submit()
 
-		data = frappe.get_all(
+		data = nts.get_all(
 			"Stock Ledger Entry",
 			fields=["qty_after_transaction", "creation", "posting_datetime"],
 			filters={"voucher_no": pr.name, "is_cancelled": 0},
@@ -2384,7 +2384,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pr.save()
 		pr.submit()
 
-		data = frappe.get_all(
+		data = nts.get_all(
 			"Stock Ledger Entry",
 			fields=["qty_after_transaction", "creation", "posting_datetime"],
 			filters={"voucher_no": pr.name, "is_cancelled": 0},
@@ -2404,7 +2404,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 			},
 		).name
 
-		frappe.db.set_single_value(
+		nts.db.set_single_value(
 			"Stock Settings", "do_not_update_serial_batch_on_creation_of_auto_bundle", 0
 		)
 
@@ -2418,7 +2418,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		batch_no = get_batch_from_bundle(pr.items[0].serial_and_batch_bundle)
 		self.assertEqual(pr.items[0].batch_no, batch_no)
 
-		frappe.db.set_single_value(
+		nts.db.set_single_value(
 			"Stock Settings", "do_not_update_serial_batch_on_creation_of_auto_bundle", 1
 		)
 
@@ -2473,8 +2473,8 @@ class TestPurchaseReceipt(FrappeTestCase):
 		batch_no = "BATCH-BNU-TPRBI-0001"
 		serial_nos = ["SNU-TPRSI-0001", "SNU-TPRSI-0002", "SNU-TPRSI-0003"]
 
-		if not frappe.db.exists("Batch", batch_no):
-			frappe.get_doc(
+		if not nts.db.exists("Batch", batch_no):
+			nts.get_doc(
 				{
 					"doctype": "Batch",
 					"batch_id": batch_no,
@@ -2483,8 +2483,8 @@ class TestPurchaseReceipt(FrappeTestCase):
 			).insert()
 
 		for serial_no in serial_nos:
-			if not frappe.db.exists("Serial No", serial_no):
-				frappe.get_doc(
+			if not nts.db.exists("Serial No", serial_no):
+				nts.get_doc(
 					{
 						"doctype": "Serial No",
 						"item_code": serial_item,
@@ -2658,7 +2658,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 				self.assertEqual(row.rate, 250.0)
 				serial_nos = get_serial_nos_from_bundle(row.serial_and_batch_bundle)
 				for sn in serial_nos:
-					serial_no_details = frappe.db.get_value(
+					serial_no_details = nts.db.get_value(
 						"Serial No", sn, ["status", "warehouse"], as_dict=1
 					)
 					self.assertTrue(serial_no_details.status == "Active")
@@ -2681,7 +2681,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		from prodman.stock.doctype.delivery_note.delivery_note import make_inter_company_purchase_receipt
 		from prodman.stock.doctype.delivery_note.test_delivery_note import create_delivery_note
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
 
 		prepare_data_for_internal_transfer()
 
@@ -2797,7 +2797,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 				self.assertEqual(row.rate, 250.0)
 				serial_nos = get_serial_nos_from_bundle(row.serial_and_batch_bundle)
 				for sn in serial_nos:
-					serial_no_details = frappe.db.get_value(
+					serial_no_details = nts.db.get_value(
 						"Serial No", sn, ["status", "warehouse"], as_dict=1
 					)
 					self.assertTrue(serial_no_details.status == "Active")
@@ -2815,7 +2815,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		for row in inter_transfer_dn_return.items:
 			self.assertTrue(row.serial_and_batch_bundle)
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
 
 	def test_purchase_receipt_bill_for_rejected_quantity_in_purchase_invoice(self):
 		item_code = make_item(
@@ -2834,20 +2834,20 @@ class TestPurchaseReceipt(FrappeTestCase):
 		)
 		return_pr.items[0].purchase_receipt_item = pr.items[0].name
 		return_pr.submit()
-		old_value = frappe.db.get_single_value(
+		old_value = nts.db.get_single_value(
 			"Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice"
 		)
 
-		frappe.db.set_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice", 0)
+		nts.db.set_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice", 0)
 		pi = make_purchase_invoice(pr.name)
 		self.assertEqual(pi.items[0].qty, 3)
 
-		frappe.db.set_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice", 1)
+		nts.db.set_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice", 1)
 		pi = make_purchase_invoice(pr.name)
 		pi.submit()
 		self.assertEqual(pi.items[0].qty, 5)
 
-		frappe.db.set_single_value(
+		nts.db.set_single_value(
 			"Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice", old_value
 		)
 
@@ -2891,7 +2891,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		self.assertEqual(se.items[0].valuation_rate, 0)
 		self.assertEqual(se.items[0].basic_rate, 0)
 
-		sabb_doc = frappe.get_doc("Serial and Batch Bundle", se.items[0].serial_and_batch_bundle)
+		sabb_doc = nts.get_doc("Serial and Batch Bundle", se.items[0].serial_and_batch_bundle)
 		for row in sabb_doc.entries:
 			self.assertEqual(row.incoming_rate, 0)
 
@@ -2932,14 +2932,14 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		self.assertEqual(
 			return_pr.items[0].qty,
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Serial and Batch Bundle", return_pr.items[0].serial_and_batch_bundle, "total_qty"
 			),
 		)
 
 		self.assertEqual(
 			return_pr.items[0].rejected_qty,
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Serial and Batch Bundle", return_pr.items[0].rejected_serial_and_batch_bundle, "total_qty"
 			),
 		)
@@ -2950,8 +2950,8 @@ class TestPurchaseReceipt(FrappeTestCase):
 		)
 
 		old_perpetual_inventory = prodman.is_perpetual_inventory_enabled("_Test Company")
-		frappe.local.enable_perpetual_inventory["_Test Company"] = 1
-		frappe.db.set_value(
+		nts.local.enable_perpetual_inventory["_Test Company"] = 1
+		nts.db.set_value(
 			"Company",
 			"_Test Company",
 			"stock_received_but_not_billed",
@@ -2990,7 +2990,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 			(warehouse_account[pr.items[0].warehouse]["account"], 14000, 0, "Main - _TC"),
 		)
 		self.assertSequenceEqual(expected_gle, gl_entries)
-		frappe.local.enable_perpetual_inventory["_Test Company"] = old_perpetual_inventory
+		nts.local.enable_perpetual_inventory["_Test Company"] = old_perpetual_inventory
 
 	def test_manufacturing_and_expiry_date_for_batch(self):
 		item = make_item(
@@ -3017,7 +3017,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		self.assertTrue(pr.items[0].serial_and_batch_bundle)
 
 		batch_no = get_batch_from_bundle(pr.items[0].serial_and_batch_bundle)
-		batch = frappe.get_doc("Batch", batch_no)
+		batch = nts.get_doc("Batch", batch_no)
 		self.assertEqual(batch.manufacturing_date, getdate(today()))
 		self.assertEqual(batch.expiry_date, getdate(add_days(today(), 5)))
 
@@ -3071,7 +3071,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		creditors = "Creditors - _TC"
 		lcv_expense_account = "Expenses Included In Valuation - _TC"
 
-		company_doc = frappe.get_doc("Company", test_company)
+		company_doc = nts.get_doc("Company", test_company)
 		company_doc.enable_perpetual_inventory = True
 		company_doc.stock_received_but_not_billed = stock_rbnb
 		company_doc.default_inventory_account = stock_in_hand
@@ -3130,7 +3130,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		self.assertEqual(expected_pr_gles_after_lcv, pr_gles_after_lcv)
 
 		# Trigger Repost Item Valudation on a older date
-		repost_doc = frappe.get_doc(
+		repost_doc = nts.get_doc(
 			{
 				"doctype": "Repost Item Valuation",
 				"based_on": "Item and Warehouse",
@@ -3170,9 +3170,9 @@ class TestPurchaseReceipt(FrappeTestCase):
 		company_doc.save()
 
 	def create_lcv(self, receipt_document_type, receipt_document, company, expense_account, charges=50):
-		ref_doc = frappe.get_doc(receipt_document_type, receipt_document)
+		ref_doc = nts.get_doc(receipt_document_type, receipt_document)
 
-		lcv = frappe.new_doc("Landed Cost Voucher")
+		lcv = nts.new_doc("Landed Cost Voucher")
 		lcv.company = company
 		lcv.distribute_charges_based_on = "Qty"
 		lcv.set(
@@ -3220,7 +3220,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		test_company = "_Test Company"
 		creditors = "Creditors - _TC"
 
-		company_doc = frappe.get_doc("Company", test_company)
+		company_doc = nts.get_doc("Company", test_company)
 		company_doc.enable_perpetual_inventory = True
 		company_doc.stock_received_but_not_billed = stock_rbnb
 		company_doc.default_inventory_account = stock_in_hand
@@ -3269,7 +3269,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		self.assertEqual(expected_pi_gles, pi_gl_entries)
 
 		# Trigger Repost Item Valudation on a older date
-		repost_doc = frappe.get_doc(
+		repost_doc = nts.get_doc(
 			{
 				"doctype": "Repost Item Valuation",
 				"based_on": "Item and Warehouse",
@@ -3346,20 +3346,20 @@ class TestPurchaseReceipt(FrappeTestCase):
 		dn.reload()
 		bundle = dn.items[0].serial_and_batch_bundle
 
-		valuation_rate = frappe.db.get_value("Serial and Batch Bundle", bundle, "avg_rate")
+		valuation_rate = nts.db.get_value("Serial and Batch Bundle", bundle, "avg_rate")
 		self.assertEqual(valuation_rate, 100.0)
 
-		doc = frappe.get_doc("Stock Settings")
+		doc = nts.get_doc("Stock Settings")
 		doc.do_not_use_batchwise_valuation = 1
 		doc.flags.ignore_validate = True
 		doc.save()
 
 		pr.repost_future_sle_and_gle(force=True)
 
-		valuation_rate = frappe.db.get_value("Serial and Batch Bundle", bundle, "avg_rate")
+		valuation_rate = nts.db.get_value("Serial and Batch Bundle", bundle, "avg_rate")
 		self.assertEqual(valuation_rate, 150)
 
-		doc = frappe.get_doc("Stock Settings")
+		doc = nts.get_doc("Stock Settings")
 		doc.do_not_use_batchwise_valuation = 0
 		doc.flags.ignore_validate = True
 		doc.save()
@@ -3384,7 +3384,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		from prodman.stock.doctype.delivery_note.delivery_note import make_inter_company_purchase_receipt
 		from prodman.stock.doctype.delivery_note.test_delivery_note import create_delivery_note
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
 
 		prepare_data_for_internal_transfer()
 
@@ -3493,14 +3493,14 @@ class TestPurchaseReceipt(FrappeTestCase):
 		inter_transfer_pr.cancel()
 		inter_transfer_dn.cancel()
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
 
 	def test_internal_transfer_for_batch_items_with_cancel_use_serial_batch_fields(self):
 		from prodman.stock.doctype.delivery_note.delivery_note import make_inter_company_purchase_receipt
 		from prodman.stock.doctype.delivery_note.test_delivery_note import create_delivery_note
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
-		frappe.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 0)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
+		nts.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 0)
 
 		prepare_data_for_internal_transfer()
 
@@ -3608,7 +3608,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		inter_transfer_pr.cancel()
 		inter_transfer_dn.cancel()
-		frappe.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 1)
+		nts.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 1)
 
 	def test_sles_with_same_posting_datetime_and_creation(self):
 		from prodman.stock.doctype.stock_entry.test_stock_entry import make_stock_entry
@@ -3633,13 +3633,13 @@ class TestPurchaseReceipt(FrappeTestCase):
 			posting_time="14:28:0.330404",
 		)
 
-		sle = frappe.db.get_value(
+		sle = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": sr.doctype, "voucher_no": sr.name, "item_code": sr.items[0].item_code},
 			"name",
 		)
 
-		sle_doc = frappe.get_doc("Stock Ledger Entry", sle)
+		sle_doc = nts.get_doc("Stock Ledger Entry", sle)
 		sle_doc.db_set("creation", "2023-11-07 14:28:01.208930")
 
 		sle_doc.reload()
@@ -3653,13 +3653,13 @@ class TestPurchaseReceipt(FrappeTestCase):
 			posting_time="14:28:0.920825",
 		)
 
-		sle = frappe.db.get_value(
+		sle = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": sr.doctype, "voucher_no": sr.name, "item_code": sr.items[0].item_code},
 			"name",
 		)
 
-		sle_doc = frappe.get_doc("Stock Ledger Entry", sle)
+		sle_doc = nts.get_doc("Stock Ledger Entry", sle)
 		sle_doc.db_set("creation", "2023-11-07 14:28:01.044561")
 
 		sle_doc.reload()
@@ -3668,7 +3668,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pr.repost_future_sle_and_gle(force=True)
 
 		columns, data = execute(
-			filters=frappe._dict(
+			filters=nts._dict(
 				{"item_code": item_code, "warehouse": pr.items[0].warehouse, "company": pr.company}
 			)
 		)
@@ -3756,7 +3756,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		for row in return_entry.items:
 			if row.item_code == batch_item:
-				bundle_data = frappe.get_all(
+				bundle_data = nts.get_all(
 					"Serial and Batch Entry",
 					filters={"parent": row.serial_and_batch_bundle},
 					pluck="incoming_rate",
@@ -3765,7 +3765,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 				for incoming_rate in bundle_data:
 					self.assertEqual(incoming_rate, 300.00)
 			else:
-				bundle_data = frappe.get_all(
+				bundle_data = nts.get_all(
 					"Serial and Batch Entry",
 					filters={"parent": row.serial_and_batch_bundle},
 					pluck="incoming_rate",
@@ -3776,7 +3776,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		for row in return_entry.items:
 			if row.item_code == batch_item:
-				bundle_data = frappe.get_all(
+				bundle_data = nts.get_all(
 					"Serial and Batch Entry",
 					filters={"parent": row.rejected_serial_and_batch_bundle},
 					pluck="incoming_rate",
@@ -3785,7 +3785,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 				for incoming_rate in bundle_data:
 					self.assertEqual(incoming_rate, 0)
 			else:
-				bundle_data = frappe.get_all(
+				bundle_data = nts.get_all(
 					"Serial and Batch Entry",
 					filters={"parent": row.rejected_serial_and_batch_bundle},
 					pluck="incoming_rate",
@@ -3812,8 +3812,8 @@ class TestPurchaseReceipt(FrappeTestCase):
 		batch_no = "BATCH-RTN-BNU-TPRBI-0001"
 		serial_nos = ["SNU-RTN-TPRSI-0001", "SNU-RTN-TPRSI-0002", "SNU-RTN-TPRSI-0003"]
 
-		if not frappe.db.exists("Batch", batch_no):
-			frappe.get_doc(
+		if not nts.db.exists("Batch", batch_no):
+			nts.get_doc(
 				{
 					"doctype": "Batch",
 					"batch_id": batch_no,
@@ -3822,8 +3822,8 @@ class TestPurchaseReceipt(FrappeTestCase):
 			).insert()
 
 		for serial_no in serial_nos:
-			if not frappe.db.exists("Serial No", serial_no):
-				frappe.get_doc(
+			if not nts.db.exists("Serial No", serial_no):
+				nts.get_doc(
 					{
 						"doctype": "Serial No",
 						"item_code": serial_item,
@@ -3880,7 +3880,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		for row in return_entry.items:
 			if row.item_code == batch_item:
-				bundle_data = frappe.get_all(
+				bundle_data = nts.get_all(
 					"Serial and Batch Entry",
 					filters={"parent": row.serial_and_batch_bundle},
 					pluck="incoming_rate",
@@ -3889,7 +3889,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 				for incoming_rate in bundle_data:
 					self.assertEqual(incoming_rate, 300.00)
 			else:
-				bundle_data = frappe.get_all(
+				bundle_data = nts.get_all(
 					"Serial and Batch Entry",
 					filters={"parent": row.serial_and_batch_bundle},
 					pluck="incoming_rate",
@@ -3900,7 +3900,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		for row in return_entry.items:
 			if row.item_code == batch_item:
-				bundle_data = frappe.get_all(
+				bundle_data = nts.get_all(
 					"Serial and Batch Entry",
 					filters={"parent": row.rejected_serial_and_batch_bundle},
 					pluck="incoming_rate",
@@ -3909,7 +3909,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 				for incoming_rate in bundle_data:
 					self.assertEqual(incoming_rate, 0)
 			else:
-				bundle_data = frappe.get_all(
+				bundle_data = nts.get_all(
 					"Serial and Batch Entry",
 					filters={"parent": row.rejected_serial_and_batch_bundle},
 					pluck="incoming_rate",
@@ -3938,7 +3938,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		return_pr.submit()
 
 		# because new_doc isn't considering is_return portion of status_updater
-		returned = frappe.get_doc("Purchase Receipt", return_pr.name)
+		returned = nts.get_doc("Purchase Receipt", return_pr.name)
 		returned.update_prevdoc_status()
 		pr.load_from_db()
 
@@ -3969,7 +3969,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 	def test_do_not_allow_to_inward_same_serial_no_multiple_times(self):
 		from prodman.stock.doctype.stock_entry.test_stock_entry import make_stock_entry
 
-		frappe.db.set_single_value("Stock Settings", "allow_existing_serial_no", 0)
+		nts.db.set_single_value("Stock Settings", "allow_existing_serial_no", 0)
 
 		item_code = make_item(
 			"Test Do Not Allow INWD Item 123", {"has_serial_no": 1, "serial_no_series": "SN-TDAISN-.#####"}
@@ -3978,7 +3978,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pr = make_purchase_receipt(item_code=item_code, qty=1, rate=100, use_serial_batch_fields=1)
 		serial_no = get_serial_nos_from_bundle(pr.items[0].serial_and_batch_bundle)[0]
 
-		status = frappe.db.get_value("Serial No", serial_no, "status")
+		status = nts.db.get_value("Serial No", serial_no, "status")
 		self.assertTrue(status == "Active")
 
 		make_stock_entry(
@@ -3989,7 +3989,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 			use_serial_batch_fields=1,
 		)
 
-		status = frappe.db.get_value("Serial No", serial_no, "status")
+		status = nts.db.get_value("Serial No", serial_no, "status")
 		self.assertFalse(status == "Active")
 
 		pr = make_purchase_receipt(
@@ -3998,16 +3998,16 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pr.items[0].serial_no = serial_no
 		pr.save()
 
-		self.assertRaises(frappe.exceptions.ValidationError, pr.submit)
+		self.assertRaises(nts.exceptions.ValidationError, pr.submit)
 
-		frappe.db.set_single_value("Stock Settings", "allow_existing_serial_no", 1)
+		nts.db.set_single_value("Stock Settings", "allow_existing_serial_no", 1)
 
 	def test_seral_no_return_validation(self):
 		from prodman.stock.doctype.purchase_receipt.purchase_receipt import (
 			make_purchase_return,
 		)
 
-		frappe.flags.through_repost_item_valuation = False
+		nts.flags.through_repost_item_valuation = False
 
 		sn_item_code = make_item(
 			"Test Serial No for Validation", {"has_serial_no": 1, "serial_no_series": "SN-TSNFVAL-.#####"}
@@ -4026,7 +4026,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		sn_return.items[0].received_qty = -1
 		sn_return.items[0].serial_no = pr1_serial_nos[0]
 		sn_return.save()
-		self.assertRaises(frappe.ValidationError, sn_return.submit)
+		self.assertRaises(nts.ValidationError, sn_return.submit)
 
 		sn_return = make_purchase_return(serial_no_pr.name)
 		sn_return.items[0].qty = -1
@@ -4040,7 +4040,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 			make_purchase_return,
 		)
 
-		frappe.flags.through_repost_item_valuation = False
+		nts.flags.through_repost_item_valuation = False
 
 		batch_item_code = make_item(
 			"Test Batch No for Validation",
@@ -4060,7 +4060,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		batch_return.items[0].received_qty = -1
 		batch_return.items[0].batch_no = batch_no
 		batch_return.save()
-		self.assertRaises(frappe.ValidationError, batch_return.submit)
+		self.assertRaises(nts.ValidationError, batch_return.submit)
 
 		batch_return = make_purchase_return(batch_no_pr.name)
 		batch_return.items[0].qty = -1
@@ -4105,7 +4105,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		pr = make_purchase_receipt(item_code=item_code, qty=10, rate=100)
 		pr.submit()
 
-		sles = frappe.get_all(
+		sles = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"voucher_type": pr.doctype, "voucher_no": pr.name},
 			pluck="name",
@@ -4114,10 +4114,10 @@ class TestPurchaseReceipt(FrappeTestCase):
 		self.assertTrue(sles)
 
 		for row in sles:
-			doc = frappe.get_doc("Stock Ledger Entry", row)
+			doc = nts.get_doc("Stock Ledger Entry", row)
 			doc.delete()
 
-		sles = frappe.get_all(
+		sles = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"voucher_type": pr.doctype, "voucher_no": pr.name},
 			pluck="name",
@@ -4125,7 +4125,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		self.assertFalse(sles)
 
-		frappe.get_doc(
+		nts.get_doc(
 			{
 				"doctype": "Repost Item Valuation",
 				"based_on": "Transaction",
@@ -4138,7 +4138,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 			}
 		).submit()
 
-		sles = frappe.get_all(
+		sles = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"voucher_type": pr.doctype, "voucher_no": pr.name},
 			pluck="name",
@@ -4153,7 +4153,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 		prepare_data_for_internal_transfer()
 
 		def get_sabb_qty(sabb):
-			return frappe.get_value("Serial and Batch Bundle", sabb, "total_qty")
+			return nts.get_value("Serial and Batch Bundle", sabb, "total_qty")
 
 		item = make_item("Item with only Batch", {"has_batch_no": 1})
 		item.create_new_batch = 1
@@ -4213,9 +4213,9 @@ class TestPurchaseReceipt(FrappeTestCase):
 			company="_Test Company with perpetual inventory",
 		)
 
-		frappe.db.set_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice", 1)
+		nts.db.set_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice", 1)
 
-		frappe.db.set_single_value("Buying Settings", "set_valuation_rate_for_rejected_materials", 1)
+		nts.db.set_single_value("Buying Settings", "set_valuation_rate_for_rejected_materials", 1)
 
 		pr = make_purchase_receipt(
 			item_code=item.name,
@@ -4227,13 +4227,13 @@ class TestPurchaseReceipt(FrappeTestCase):
 			rejected_warehouse=rej_warehouse,
 		)
 
-		stock_received_but_not_billed_account = frappe.get_value(
+		stock_received_but_not_billed_account = nts.get_value(
 			"Company",
 			company,
 			"stock_received_but_not_billed",
 		)
 
-		rejected_item_cost = frappe.db.get_value(
+		rejected_item_cost = nts.db.get_value(
 			"Stock Ledger Entry",
 			{
 				"voucher_type": "Purchase Receipt",
@@ -4245,7 +4245,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		self.assertEqual(rejected_item_cost, 500)
 
-		srbnb_cost = frappe.db.get_value(
+		srbnb_cost = nts.db.get_value(
 			"GL Entry",
 			{
 				"voucher_type": "Purchase Receipt",
@@ -4257,9 +4257,9 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		self.assertEqual(srbnb_cost, 1500)
 
-		frappe.db.set_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice", 0)
+		nts.db.set_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice", 0)
 
-		frappe.db.set_single_value("Buying Settings", "set_valuation_rate_for_rejected_materials", 0)
+		nts.db.set_single_value("Buying Settings", "set_valuation_rate_for_rejected_materials", 0)
 
 	def test_no_valuation_rate_for_rejected_materials(self):
 		item = make_item("Test Item with Rej Material No Valuation", {"is_stock_item": 1})
@@ -4275,9 +4275,9 @@ class TestPurchaseReceipt(FrappeTestCase):
 			company="_Test Company with perpetual inventory",
 		)
 
-		frappe.db.set_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice", 0)
+		nts.db.set_single_value("Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice", 0)
 
-		frappe.db.set_single_value("Buying Settings", "set_valuation_rate_for_rejected_materials", 0)
+		nts.db.set_single_value("Buying Settings", "set_valuation_rate_for_rejected_materials", 0)
 
 		pr = make_purchase_receipt(
 			item_code=item.name,
@@ -4289,13 +4289,13 @@ class TestPurchaseReceipt(FrappeTestCase):
 			rejected_warehouse=rej_warehouse,
 		)
 
-		stock_received_but_not_billed_account = frappe.get_value(
+		stock_received_but_not_billed_account = nts.get_value(
 			"Company",
 			company,
 			"stock_received_but_not_billed",
 		)
 
-		rejected_item_cost = frappe.db.get_value(
+		rejected_item_cost = nts.db.get_value(
 			"Stock Ledger Entry",
 			{
 				"voucher_type": "Purchase Receipt",
@@ -4307,7 +4307,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		self.assertEqual(rejected_item_cost, 0.0)
 
-		srbnb_cost = frappe.db.get_value(
+		srbnb_cost = nts.db.get_value(
 			"GL Entry",
 			{
 				"voucher_type": "Purchase Receipt",
@@ -4338,10 +4338,10 @@ def prepare_data_for_internal_transfer():
 		company,
 	)
 
-	if not frappe.db.get_value("Company", company, "unrealized_profit_loss_account"):
+	if not nts.db.get_value("Company", company, "unrealized_profit_loss_account"):
 		account = "Unrealized Profit and Loss - TCP1"
-		if not frappe.db.exists("Account", account):
-			frappe.get_doc(
+		if not nts.db.exists("Account", account):
+			nts.get_doc(
 				{
 					"doctype": "Account",
 					"account_name": "Unrealized Profit and Loss",
@@ -4352,11 +4352,11 @@ def prepare_data_for_internal_transfer():
 				}
 			).insert()
 
-		frappe.db.set_value("Company", company, "unrealized_profit_loss_account", account)
+		nts.db.set_value("Company", company, "unrealized_profit_loss_account", account)
 
 
 def get_sl_entries(voucher_type, voucher_no):
-	return frappe.db.sql(
+	return nts.db.sql(
 		""" select actual_qty, warehouse, stock_value_difference
 		from `tabStock Ledger Entry` where voucher_type=%s and voucher_no=%s
 		order by posting_time desc""",
@@ -4366,9 +4366,9 @@ def get_sl_entries(voucher_type, voucher_no):
 
 
 def get_gl_entries(voucher_type, voucher_no, skip_cancelled=False, as_dict=True):
-	gl = frappe.qb.DocType("GL Entry")
+	gl = nts.qb.DocType("GL Entry")
 	gl_query = (
-		frappe.qb.from_(gl)
+		nts.qb.from_(gl)
 		.select(
 			gl.account,
 			gl.debit,
@@ -4376,7 +4376,7 @@ def get_gl_entries(voucher_type, voucher_no, skip_cancelled=False, as_dict=True)
 			gl.cost_center,
 		)
 		.where((gl.voucher_type == voucher_type) & (gl.voucher_no == voucher_no))
-		.orderby(gl.account, order=frappe.qb.desc)
+		.orderby(gl.account, order=nts.qb.desc)
 	)
 	if skip_cancelled:
 		gl_query = gl_query.where(gl.is_cancelled == 0)
@@ -4386,7 +4386,7 @@ def get_gl_entries(voucher_type, voucher_no, skip_cancelled=False, as_dict=True)
 
 
 def get_taxes(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
 	return [
 		{
@@ -4429,7 +4429,7 @@ def get_taxes(**args):
 
 
 def get_items(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 	return [
 		{
 			"base_amount": 250.0,
@@ -4469,12 +4469,12 @@ def get_items(**args):
 
 
 def make_purchase_receipt(**args):
-	if not frappe.db.exists("Location", "Test Location"):
-		frappe.get_doc({"doctype": "Location", "location_name": "Test Location"}).insert()
+	if not nts.db.exists("Location", "Test Location"):
+		nts.get_doc({"doctype": "Location", "location_name": "Test Location"}).insert()
 
-	frappe.db.set_single_value("Buying Settings", "allow_multiple_items", 1)
-	pr = frappe.new_doc("Purchase Receipt")
-	args = frappe._dict(args)
+	nts.db.set_single_value("Buying Settings", "allow_multiple_items", 1)
+	pr = nts.new_doc("Purchase Receipt")
+	args = nts._dict(args)
 	pr.posting_date = args.posting_date or today()
 	if args.posting_time:
 		pr.posting_time = args.posting_time
@@ -4494,18 +4494,18 @@ def make_purchase_receipt(**args):
 	received_qty = args.received_qty or flt(rejected_qty) + flt(qty)
 
 	item_code = args.item or args.item_code or "_Test Item"
-	uom = args.uom or frappe.db.get_value("Item", item_code, "stock_uom") or "_Test UOM"
+	uom = args.uom or nts.db.get_value("Item", item_code, "stock_uom") or "_Test UOM"
 
 	bundle_id = None
 	if not args.use_serial_batch_fields and (args.get("batch_no") or args.get("serial_no")):
 		batches = {}
 		if args.get("batch_no"):
-			batches = frappe._dict({args.batch_no: qty})
+			batches = nts._dict({args.batch_no: qty})
 
 		serial_nos = args.get("serial_no") or []
 
 		bundle_id = make_serial_batch_bundle(
-			frappe._dict(
+			nts._dict(
 				{
 					"item_code": item_code,
 					"warehouse": args.warehouse or "_Test Warehouse - _TC",
@@ -4537,7 +4537,7 @@ def make_purchase_receipt(**args):
 			"serial_and_batch_bundle": bundle_id,
 			"stock_uom": args.stock_uom or "_Test UOM",
 			"uom": uom,
-			"cost_center": args.cost_center or frappe.get_cached_value("Company", pr.company, "cost_center"),
+			"cost_center": args.cost_center or nts.get_cached_value("Company", pr.company, "cost_center"),
 			"asset_location": args.location or "Test Location",
 			"use_serial_batch_fields": args.use_serial_batch_fields or 0,
 			"serial_no": args.serial_no if args.use_serial_batch_fields else "",
@@ -4548,7 +4548,7 @@ def make_purchase_receipt(**args):
 	if args.get_multiple_items:
 		pr.items = []
 
-		company_cost_center = frappe.get_cached_value("Company", pr.company, "cost_center")
+		company_cost_center = nts.get_cached_value("Company", pr.company, "cost_center")
 		cost_center = args.cost_center or company_cost_center
 
 		for item in get_items(warehouse=args.warehouse, cost_center=cost_center):
@@ -4568,4 +4568,4 @@ def make_purchase_receipt(**args):
 
 
 test_dependencies = ["BOM", "Item Price", "Location"]
-test_records = frappe.get_test_records("Purchase Receipt")
+test_records = nts.get_test_records("Purchase Receipt")

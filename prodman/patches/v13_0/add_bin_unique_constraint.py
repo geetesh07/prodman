@@ -1,4 +1,4 @@
-import frappe
+import nts
 
 from prodman.stock.stock_balance import (
 	get_balance_qty_from_sle,
@@ -17,11 +17,11 @@ def execute():
 
 def delete_broken_bins():
 	# delete useless bins
-	frappe.db.sql("delete from `tabBin` where item_code is null or warehouse is null")
+	nts.db.sql("delete from `tabBin` where item_code is null or warehouse is null")
 
 
 def delete_and_patch_duplicate_bins():
-	duplicate_bins = frappe.db.sql(
+	duplicate_bins = nts.db.sql(
 		"""
 		SELECT
 			item_code, warehouse, count(*) as bin_count
@@ -38,7 +38,7 @@ def delete_and_patch_duplicate_bins():
 	for duplicate_bin in duplicate_bins:
 		item_code = duplicate_bin.item_code
 		warehouse = duplicate_bin.warehouse
-		existing_bins = frappe.get_list(
+		existing_bins = nts.get_list(
 			"Bin",
 			filters={"item_code": item_code, "warehouse": warehouse},
 			fields=["name"],
@@ -49,7 +49,7 @@ def delete_and_patch_duplicate_bins():
 		existing_bins.pop()
 
 		for broken_bin in existing_bins:
-			frappe.delete_doc("Bin", broken_bin.name)
+			nts.delete_doc("Bin", broken_bin.name)
 
 		qty_dict = {
 			"reserved_qty": get_reserved_qty(item_code, warehouse),
@@ -63,7 +63,7 @@ def delete_and_patch_duplicate_bins():
 		bin.update(qty_dict)
 		bin.update_reserved_qty_for_production()
 		bin.update_reserved_qty_for_sub_contracting()
-		if frappe.db.count(
+		if nts.db.count(
 			"Purchase Order", {"status": ["!=", "Completed"], "is_old_subcontracting_flow": 1}
 		):
 			bin.update_reserved_qty_for_sub_contracting(subcontract_doctype="Purchase Order")

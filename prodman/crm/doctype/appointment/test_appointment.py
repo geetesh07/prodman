@@ -1,16 +1,16 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2019, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import datetime
 import unittest
 
-import frappe
+import nts
 
 LEAD_EMAIL = "test_appointment_lead@example.com"
 
 
 def create_test_appointment():
-	test_appointment = frappe.get_doc(
+	test_appointment = nts.get_doc(
 		{
 			"doctype": "Appointment",
 			"status": "Open",
@@ -28,14 +28,14 @@ def create_test_appointment():
 
 class TestAppointment(unittest.TestCase):
 	def setUpClass():
-		frappe.db.delete("Lead", {"email_id": LEAD_EMAIL})
+		nts.db.delete("Lead", {"email_id": LEAD_EMAIL})
 
 	def setUp(self):
 		self.test_appointment = create_test_appointment()
 		self.test_appointment.set_verified(self.test_appointment.customer_email)
 
 	def test_calendar_event_created(self):
-		cal_event = frappe.get_doc("Event", self.test_appointment.calendar_event)
+		cal_event = nts.get_doc("Event", self.test_appointment.calendar_event)
 		self.assertEqual(cal_event.starts_on, self.test_appointment.scheduled_time)
 
 	def test_lead_linked(self):

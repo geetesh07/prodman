@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
 function get_filters() {
@@ -8,7 +8,7 @@ function get_filters() {
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -16,14 +16,14 @@ function get_filters() {
 			label: __("Start Date"),
 			fieldtype: "Date",
 			reqd: 1,
-			default: frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+			default: nts.datetime.add_months(nts.datetime.get_today(), -1),
 		},
 		{
 			fieldname: "period_end_date",
 			label: __("End Date"),
 			fieldtype: "Date",
 			reqd: 1,
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 		},
 		{
 			fieldname: "customer_group",
@@ -39,7 +39,7 @@ function get_filters() {
 			width: 100,
 			options: "Customer",
 			get_query: () => {
-				var customer_group = frappe.query_report.get_filter_value("customer_group");
+				var customer_group = nts.query_report.get_filter_value("customer_group");
 				return {
 					query: "prodman.selling.report.payment_terms_status_for_sales_order.payment_terms_status_for_sales_order.get_customers_or_items",
 					filters: [
@@ -63,7 +63,7 @@ function get_filters() {
 			width: 100,
 			options: "Item",
 			get_query: () => {
-				var item_group = frappe.query_report.get_filter_value("item_group");
+				var item_group = nts.query_report.get_filter_value("item_group");
 				return {
 					query: "prodman.selling.report.payment_terms_status_for_sales_order.payment_terms_status_for_sales_order.get_customers_or_items",
 					filters: [
@@ -111,7 +111,7 @@ function get_filters() {
 	return filters;
 }
 
-frappe.query_reports["Payment Terms Status for Sales Order"] = {
+nts.query_reports["Payment Terms Status for Sales Order"] = {
 	filters: get_filters(),
 	formatter: function (value, row, column, data, default_formatter) {
 		if (column.fieldname == "invoices" && value) {

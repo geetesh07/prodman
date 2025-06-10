@@ -1,23 +1,23 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 from typing import Any, NewType
 
-import frappe
-from frappe.core.doctype.report.report import get_report_module_dotted_path
+import nts
+from nts.core.doctype.report.report import get_report_module_dotted_path
 
 ReportFilters = dict[str, Any]
 ReportName = NewType("ReportName", str)
 
 
 def create_test_contact_and_address():
-	frappe.db.sql("delete from tabContact")
-	frappe.db.sql("delete from `tabContact Email`")
-	frappe.db.sql("delete from `tabContact Phone`")
-	frappe.db.sql("delete from tabAddress")
-	frappe.db.sql("delete from `tabDynamic Link`")
+	nts.db.sql("delete from tabContact")
+	nts.db.sql("delete from `tabContact Email`")
+	nts.db.sql("delete from `tabContact Phone`")
+	nts.db.sql("delete from tabAddress")
+	nts.db.sql("delete from `tabDynamic Link`")
 
-	frappe.get_doc(
+	nts.get_doc(
 		{
 			"doctype": "Address",
 			"address_title": "_Test Address for Customer",
@@ -30,7 +30,7 @@ def create_test_contact_and_address():
 		}
 	).insert()
 
-	contact = frappe.get_doc(
+	contact = nts.get_doc(
 		{
 			"doctype": "Contact",
 			"first_name": "_Test Contact for _Test Customer",
@@ -41,7 +41,7 @@ def create_test_contact_and_address():
 	contact.add_phone("+91 0000000000", is_primary_phone=True)
 	contact.insert()
 
-	contact_two = frappe.get_doc(
+	contact_two = nts.get_doc(
 		{
 			"doctype": "Contact",
 			"first_name": "_Test Contact 2 for _Test Customer",
@@ -77,8 +77,8 @@ def execute_script_report(
 		default_filters = {}
 
 	test_filters = []
-	report_execute_fn = frappe.get_attr(get_report_module_dotted_path(module, report_name) + ".execute")
-	report_filters = frappe._dict(default_filters).copy().update(filters)
+	report_execute_fn = nts.get_attr(get_report_module_dotted_path(module, report_name) + ".execute")
+	report_filters = nts._dict(default_filters).copy().update(filters)
 
 	test_filters.append(report_filters)
 
@@ -98,7 +98,7 @@ def if_lending_app_installed(function):
 	"""Decorator to check if lending app is installed"""
 
 	def wrapper(*args, **kwargs):
-		if "lending" in frappe.get_installed_apps():
+		if "lending" in nts.get_installed_apps():
 			return function(*args, **kwargs)
 		return
 
@@ -109,7 +109,7 @@ def if_lending_app_not_installed(function):
 	"""Decorator to check if lending app is not installed"""
 
 	def wrapper(*args, **kwargs):
-		if "lending" not in frappe.get_installed_apps():
+		if "lending" not in nts.get_installed_apps():
 			return function(*args, **kwargs)
 		return
 

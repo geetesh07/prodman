@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import Sum
-from frappe.utils import add_days, cstr, flt, formatdate, getdate
+import nts 
+from nts  import _
+from nts .query_builder.functions import Sum
+from nts .utils import add_days, cstr, flt, formatdate, getdate
 
 import prodman
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
@@ -38,13 +38,13 @@ def execute(filters=None):
 
 def validate_filters(filters):
 	if not filters.fiscal_year:
-		frappe.throw(_("Fiscal Year {0} is required").format(filters.fiscal_year))
+		nts .throw(_("Fiscal Year {0} is required").format(filters.fiscal_year))
 
-	fiscal_year = frappe.get_cached_value(
+	fiscal_year = nts .get_cached_value(
 		"Fiscal Year", filters.fiscal_year, ["year_start_date", "year_end_date"], as_dict=True
 	)
 	if not fiscal_year:
-		frappe.throw(_("Fiscal Year {0} does not exist").format(filters.fiscal_year))
+		nts .throw(_("Fiscal Year {0} does not exist").format(filters.fiscal_year))
 	else:
 		filters.year_start_date = getdate(fiscal_year.year_start_date)
 		filters.year_end_date = getdate(fiscal_year.year_end_date)
@@ -59,10 +59,10 @@ def validate_filters(filters):
 	filters.to_date = getdate(filters.to_date)
 
 	if filters.from_date > filters.to_date:
-		frappe.throw(_("From Date cannot be greater than To Date"))
+		nts .throw(_("From Date cannot be greater than To Date"))
 
 	if (filters.from_date < filters.year_start_date) or (filters.from_date > filters.year_end_date):
-		frappe.msgprint(
+		nts .msgprint(
 			_("From Date should be within the Fiscal Year. Assuming From Date = {0}").format(
 				formatdate(filters.year_start_date)
 			)
@@ -71,7 +71,7 @@ def validate_filters(filters):
 		filters.from_date = filters.year_start_date
 
 	if (filters.to_date < filters.year_start_date) or (filters.to_date > filters.year_end_date):
-		frappe.msgprint(
+		nts .msgprint(
 			_("To Date should be within the Fiscal Year. Assuming To Date = {0}").format(
 				formatdate(filters.year_end_date)
 			)
@@ -80,7 +80,7 @@ def validate_filters(filters):
 
 
 def get_data(filters):
-	accounts = frappe.db.sql(
+	accounts = nts .db.sql(
 		"""select name, account_number, parent_account, account_name, root_type, report_type, lft, rgt
 
 		from `tabAccount` where company=%s order by lft""",
@@ -89,7 +89,7 @@ def get_data(filters):
 	)
 	company_currency = filters.presentation_currency or prodman.get_company_currency(filters.company)
 
-	ignore_is_opening = frappe.db.get_single_value(
+	ignore_is_opening = nts .db.get_single_value(
 		"Accounts Settings", "ignore_is_opening_check_for_reporting"
 	)
 
@@ -148,12 +148,12 @@ def get_rootwise_opening_balances(filters, report_type, ignore_is_opening):
 	gle = []
 
 	last_period_closing_voucher = ""
-	ignore_closing_balances = frappe.db.get_single_value(
+	ignore_closing_balances = nts .db.get_single_value(
 		"Accounts Settings", "ignore_account_closing_balance"
 	)
 
 	if not ignore_closing_balances:
-		last_period_closing_voucher = frappe.db.get_all(
+		last_period_closing_voucher = nts .db.get_all(
 			"Period Closing Voucher",
 			filters={"docstatus": 1, "company": filters.company, "period_end_date": ("<", filters.from_date)},
 			fields=["period_end_date", "name"],
@@ -189,7 +189,7 @@ def get_rootwise_opening_balances(filters, report_type, ignore_is_opening):
 			"GL Entry", filters, report_type, accounting_dimensions, ignore_is_opening=ignore_is_opening
 		)
 
-	opening = frappe._dict()
+	opening = nts ._dict()
 	for d in gle:
 		opening.setdefault(
 			d.account,
@@ -214,11 +214,11 @@ def get_opening_balance(
 	start_date=None,
 	ignore_is_opening=0,
 ):
-	closing_balance = frappe.qb.DocType(doctype)
-	account = frappe.qb.DocType("Account")
+	closing_balance = nts .qb.DocType(doctype)
+	account = nts .qb.DocType("Account")
 
 	opening_balance = (
-		frappe.qb.from_(closing_balance)
+		nts .qb.from_(closing_balance)
 		.select(
 			closing_balance.account,
 			closing_balance.account_currency,
@@ -231,7 +231,7 @@ def get_opening_balance(
 			(closing_balance.company == filters.company)
 			& (
 				closing_balance.account.isin(
-					frappe.qb.from_(account).select("name").where(account.report_type == report_type)
+					nts .qb.from_(account).select("name").where(account.report_type == report_type)
 				)
 			)
 		)
@@ -276,11 +276,11 @@ def get_opening_balance(
 			opening_balance = opening_balance.where(closing_balance.voucher_type != "Period Closing Voucher")
 
 	if filters.cost_center:
-		lft, rgt = frappe.db.get_value("Cost Center", filters.cost_center, ["lft", "rgt"])
-		cost_center = frappe.qb.DocType("Cost Center")
+		lft, rgt = nts .db.get_value("Cost Center", filters.cost_center, ["lft", "rgt"])
+		cost_center = nts .qb.DocType("Cost Center")
 		opening_balance = opening_balance.where(
 			closing_balance.cost_center.isin(
-				frappe.qb.from_(cost_center)
+				nts .qb.from_(cost_center)
 				.select("name")
 				.where((cost_center.lft >= lft) & (cost_center.rgt <= rgt))
 			)
@@ -290,10 +290,10 @@ def get_opening_balance(
 		opening_balance = opening_balance.where(closing_balance.project == filters.project)
 
 	if filters.get("include_default_book_entries"):
-		company_fb = frappe.get_cached_value("Company", filters.company, "default_finance_book")
+		company_fb = nts .get_cached_value("Company", filters.company, "default_finance_book")
 
 		if filters.finance_book and company_fb and cstr(filters.finance_book) != cstr(company_fb):
-			frappe.throw(_("To use a different finance book, please uncheck 'Include Default FB Entries'"))
+			nts .throw(_("To use a different finance book, please uncheck 'Include Default FB Entries'"))
 
 		opening_balance = opening_balance.where(
 			(closing_balance.finance_book.isin([cstr(filters.finance_book), cstr(company_fb), ""]))
@@ -308,7 +308,7 @@ def get_opening_balance(
 	if accounting_dimensions:
 		for dimension in accounting_dimensions:
 			if filters.get(dimension.fieldname):
-				if frappe.get_cached_value("DocType", dimension.document_type, "is_tree"):
+				if nts .get_cached_value("DocType", dimension.document_type, "is_tree"):
 					filters[dimension.fieldname] = get_dimension_with_children(
 						dimension.document_type, filters.get(dimension.fieldname)
 					)

@@ -1,12 +1,12 @@
-# Copyright (c) 2017, Frappe and Contributors
+# Copyright (c) 2017, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("setup", "doctype", "party_type")
+	nts.reload_doc("setup", "doctype", "party_type")
 	party_types = {
 		"Customer": "Receivable",
 		"Supplier": "Payable",
@@ -16,4 +16,4 @@ def execute():
 	}
 
 	for party_type, account_type in party_types.items():
-		frappe.db.set_value("Party Type", party_type, "account_type", account_type)
+		nts.db.set_value("Party Type", party_type, "account_type", account_type)

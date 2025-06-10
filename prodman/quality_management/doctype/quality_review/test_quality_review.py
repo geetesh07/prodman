@@ -1,9 +1,9 @@
-# Copyright (c) 2018, Frappe and Contributors
+# Copyright (c) 2018, nts and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts
 
 from ..quality_goal.test_quality_goal import get_quality_goal
 from .quality_review import review
@@ -15,7 +15,7 @@ class TestQualityReview(unittest.TestCase):
 		review()
 
 		# check if review exists
-		quality_review = frappe.get_doc("Quality Review", dict(goal=quality_goal.name))
+		quality_review = nts.get_doc("Quality Review", dict(goal=quality_goal.name))
 		self.assertEqual(quality_goal.objectives[0].target, quality_review.reviews[0].target)
 		quality_review.delete()
 

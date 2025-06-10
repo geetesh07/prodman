@@ -1,11 +1,11 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import cint, flt
+import nts
+from nts import _
+from nts.model.document import Document
+from nts.utils import cint, flt
 
 
 class Routing(Document):
@@ -15,7 +15,7 @@ class Routing(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.manufacturing.doctype.bom_operation.bom_operation import BOMOperation
 
@@ -34,7 +34,7 @@ class Routing(Document):
 	def calculate_operating_cost(self):
 		for operation in self.operations:
 			if not operation.hour_rate:
-				operation.hour_rate = frappe.db.get_value("Workstation", operation.workstation, "hour_rate")
+				operation.hour_rate = nts.db.get_value("Workstation", operation.workstation, "hour_rate")
 			operation.operating_cost = flt(
 				flt(operation.hour_rate) * flt(operation.time_in_mins) / 60,
 				operation.precision("operating_cost"),
@@ -46,7 +46,7 @@ class Routing(Document):
 			if not row.sequence_id:
 				row.sequence_id = sequence_id + 1
 			elif sequence_id and row.sequence_id and cint(sequence_id) > cint(row.sequence_id):
-				frappe.throw(
+				nts.throw(
 					_(
 						"At row #{0}: the sequence id {1} cannot be less than previous row sequence id {2}"
 					).format(row.idx, row.sequence_id, sequence_id)

@@ -1,5 +1,5 @@
-import frappe
-from frappe.model.workflow import get_workflow_name
+import nts
+from nts.model.workflow import get_workflow_name
 
 
 def execute():
@@ -8,7 +8,7 @@ def execute():
 		if not active_workflow:
 			continue
 
-		workflow_states = frappe.get_all(
+		workflow_states = nts.get_all(
 			"Workflow Document State", filters=[["parent", "=", active_workflow]], fields=["*"]
 		)
 
@@ -16,5 +16,5 @@ def execute():
 			if state.update_field:
 				continue
 			status_field = "approval_status" if doctype == "Expense Claim" else "status"
-			frappe.set_value("Workflow Document State", state.name, "update_field", status_field)
-			frappe.set_value("Workflow Document State", state.name, "update_value", state.state)
+			nts.set_value("Workflow Document State", state.name, "update_field", status_field)
+			nts.set_value("Workflow Document State", state.name, "update_value", state.state)

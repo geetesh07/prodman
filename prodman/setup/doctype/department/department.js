@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Department", {
+nts.ui.form.on("Department", {
 	onload: function (frm) {
 		frm.set_query("parent_department", function () {
 			return { filters: [["Department", "is_group", "=", 1]] };
@@ -16,7 +16,7 @@ frappe.ui.form.on("Department", {
 	},
 	validate: function (frm) {
 		if (frm.doc.name == "All Departments") {
-			frappe.throw(__("You cannot edit root node."));
+			nts.throw(__("You cannot edit root node."));
 		}
 	},
 });

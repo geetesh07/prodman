@@ -1,12 +1,12 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Exchange Rate Revaluation", {
+nts .ui.form.on("Exchange Rate Revaluation", {
 	setup: function (frm) {
 		frm.set_query("party_type", "accounts", function () {
 			return {
 				filters: {
-					name: ["in", Object.keys(frappe.boot.party_account_types)],
+					name: ["in", Object.keys(nts .boot.party_account_types)],
 				},
 			};
 		});
@@ -21,7 +21,7 @@ frappe.ui.form.on("Exchange Rate Revaluation", {
 
 	refresh: function (frm) {
 		if (frm.doc.docstatus == 1) {
-			frappe.call({
+			nts .call({
 				method: "check_journal_entry_condition",
 				doc: frm.doc,
 				callback: function (r) {
@@ -42,7 +42,7 @@ frappe.ui.form.on("Exchange Rate Revaluation", {
 	validate_rounding_loss: function (frm) {
 		let allowance = frm.doc.rounding_loss_allowance;
 		if (!(allowance >= 0 && allowance < 1)) {
-			frappe.throw(__("Rounding Loss Allowance should be between 0 and 1"));
+			nts .throw(__("Rounding Loss Allowance should be between 0 and 1"));
 		}
 	},
 
@@ -55,12 +55,12 @@ frappe.ui.form.on("Exchange Rate Revaluation", {
 	},
 
 	get_entries: function (frm, account) {
-		frappe.call({
+		nts .call({
 			method: "get_accounts_data",
 			doc: cur_frm.doc,
 			account: account,
 			callback: function (r) {
-				frappe.model.clear_table(frm.doc, "accounts");
+				nts .model.clear_table(frm.doc, "accounts");
 				if (r.message) {
 					r.message.forEach((d) => {
 						cur_frm.add_child("accounts", d);
@@ -85,7 +85,7 @@ frappe.ui.form.on("Exchange Rate Revaluation", {
 	},
 
 	make_jv: function (frm) {
-		frappe.call({
+		nts .call({
 			method: "make_jv_entries",
 			doc: frm.doc,
 			freeze: true,
@@ -94,7 +94,7 @@ frappe.ui.form.on("Exchange Rate Revaluation", {
 				if (r.message) {
 					let response = r.message;
 					if (response["revaluation_jv"] || response["zero_balance_jv"]) {
-						frappe.msgprint(__("Journal entries have been created"));
+						nts .msgprint(__("Journal entries have been created"));
 					}
 				}
 			},
@@ -102,9 +102,9 @@ frappe.ui.form.on("Exchange Rate Revaluation", {
 	},
 });
 
-frappe.ui.form.on("Exchange Rate Revaluation Account", {
+nts .ui.form.on("Exchange Rate Revaluation Account", {
 	new_exchange_rate: function (frm, cdt, cdn) {
-		var row = frappe.get_doc(cdt, cdn);
+		var row = nts .get_doc(cdt, cdn);
 		row.new_balance_in_base_currency = flt(
 			row.new_exchange_rate * flt(row.balance_in_account_currency),
 			precision("new_balance_in_base_currency", row)
@@ -134,11 +134,11 @@ frappe.ui.form.on("Exchange Rate Revaluation Account", {
 });
 
 var get_account_details = function (frm, cdt, cdn) {
-	var row = frappe.get_doc(cdt, cdn);
+	var row = nts .get_doc(cdt, cdn);
 	if (!frm.doc.company || !frm.doc.posting_date) {
-		frappe.throw(__("Please select Company and Posting Date to getting entries"));
+		nts .throw(__("Please select Company and Posting Date to getting entries"));
 	}
-	frappe.call({
+	nts .call({
 		method: "prodman.accounts.doctype.exchange_rate_revaluation.exchange_rate_revaluation.get_account_details",
 		args: {
 			account: row.account,

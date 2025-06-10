@@ -1,4 +1,4 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 prodman.SMSManager = function SMSManager(doc) {
@@ -41,8 +41,8 @@ prodman.SMSManager = function SMSManager(doc) {
 	};
 
 	this.get_contact_number = function (contact, ref_doctype, ref_name) {
-		frappe.call({
-			method: "frappe.core.doctype.sms_settings.sms_settings.get_contact_number",
+		nts.call({
+			method: "nts.core.doctype.sms_settings.sms_settings.get_contact_number",
 			args: {
 				contact_name: contact,
 				ref_doctype: ref_doctype,
@@ -50,7 +50,7 @@ prodman.SMSManager = function SMSManager(doc) {
 			},
 			callback: function (r) {
 				if (r.exc) {
-					frappe.msgprint(r.exc);
+					nts.msgprint(r.exc);
 					return;
 				}
 				me.number = r.message;
@@ -79,7 +79,7 @@ prodman.SMSManager = function SMSManager(doc) {
 		me.dialog.show();
 	};
 	this.make_dialog = function () {
-		var d = new frappe.ui.Dialog({
+		var d = new nts.ui.Dialog({
 			title: "Send SMS",
 			width: 400,
 			fields: [
@@ -93,8 +93,8 @@ prodman.SMSManager = function SMSManager(doc) {
 			var v = me.dialog.get_values();
 			if (v) {
 				$(btn).set_working();
-				frappe.call({
-					method: "frappe.core.doctype.sms_settings.sms_settings.send_sms",
+				nts.call({
+					method: "nts.core.doctype.sms_settings.sms_settings.send_sms",
 					args: {
 						receiver_list: [v.number],
 						msg: v.message,
@@ -102,7 +102,7 @@ prodman.SMSManager = function SMSManager(doc) {
 					callback: function (r) {
 						$(btn).done_working();
 						if (r.exc) {
-							frappe.msgprint(r.exc);
+							nts.msgprint(r.exc);
 							return;
 						}
 						me.dialog.hide();

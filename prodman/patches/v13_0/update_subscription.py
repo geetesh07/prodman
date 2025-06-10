@@ -1,17 +1,17 @@
-# Copyright (c) 2019, Frappe and Contributors
+# Copyright (c) 2019, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("accounts", "doctype", "subscription")
-	frappe.reload_doc("accounts", "doctype", "subscription_invoice")
-	frappe.reload_doc("accounts", "doctype", "subscription_plan")
+	nts.reload_doc("accounts", "doctype", "subscription")
+	nts.reload_doc("accounts", "doctype", "subscription_invoice")
+	nts.reload_doc("accounts", "doctype", "subscription_plan")
 
-	if frappe.db.has_column("Subscription", "customer"):
-		frappe.db.sql(
+	if nts.db.has_column("Subscription", "customer"):
+		nts.db.sql(
 			"""
 			UPDATE `tabSubscription`
 			SET
@@ -23,7 +23,7 @@ def execute():
 		"""
 		)
 
-	frappe.db.sql(
+	nts.db.sql(
 		"""
 		UPDATE `tabSubscription Invoice`
 		SET document_type = 'Sales Invoice'
@@ -37,7 +37,7 @@ def execute():
 	}
 
 	for key, value in price_determination_map.items():
-		frappe.db.sql(
+		nts.db.sql(
 			"""
 			UPDATE `tabSubscription Plan`
 			SET price_determination = %s

@@ -1,8 +1,8 @@
 # Copyright (c) 2019
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.delete_doc("Page", "medical_record")
+	nts.delete_doc("Page", "medical_record")

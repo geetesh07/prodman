@@ -1,18 +1,18 @@
-import frappe
+import nts
 
 
 def set_default_role(doc, method):
 	"""Set customer, supplier, student, guardian based on email"""
-	if frappe.flags.setting_role or frappe.flags.in_migrate:
+	if nts.flags.setting_role or nts.flags.in_migrate:
 		return
 
-	roles = frappe.get_roles(doc.name)
+	roles = nts.get_roles(doc.name)
 
-	contact_name = frappe.get_value("Contact", dict(email_id=doc.email))
+	contact_name = nts.get_value("Contact", dict(email_id=doc.email))
 	if contact_name:
-		contact = frappe.get_doc("Contact", contact_name)
+		contact = nts.get_doc("Contact", contact_name)
 		for link in contact.links:
-			frappe.flags.setting_role = True
+			nts.flags.setting_role = True
 			if link.link_doctype == "Customer" and "Customer" not in roles:
 				doc.add_roles("Customer")
 			elif link.link_doctype == "Supplier" and "Supplier" not in roles:
@@ -23,13 +23,13 @@ def create_customer_or_supplier():
 	"""Based on the default Role (Customer, Supplier), create a Customer / Supplier.
 	Called on_session_creation hook.
 	"""
-	user = frappe.session.user
+	user = nts.session.user
 
-	if frappe.db.get_value("User", user, "user_type") != "Website User":
+	if nts.db.get_value("User", user, "user_type") != "Website User":
 		return
 
-	user_roles = frappe.get_roles()
-	portal_settings = frappe.get_single("Portal Settings")
+	user_roles = nts.get_roles()
+	portal_settings = nts.get_single("Portal Settings")
 	default_role = portal_settings.default_role
 
 	if default_role not in ["Customer", "Supplier"]:
@@ -47,8 +47,8 @@ def create_customer_or_supplier():
 	if party_exists(doctype, user):
 		return
 
-	party = frappe.new_doc(doctype)
-	fullname = frappe.utils.get_fullname(user)
+	party = nts.new_doc(doctype)
+	fullname = nts.utils.get_fullname(user)
 
 	if not doctype == "Customer":
 		party.update(
@@ -74,7 +74,7 @@ def create_customer_or_supplier():
 
 
 def create_party_contact(doctype, fullname, user, party_name):
-	contact = frappe.new_doc("Contact")
+	contact = nts.new_doc("Contact")
 	contact.update({"first_name": fullname, "email_id": user})
 	contact.append("links", dict(link_doctype=doctype, link_name=party_name))
 	contact.append("email_ids", dict(email_id=user, is_primary=True))
@@ -84,9 +84,9 @@ def create_party_contact(doctype, fullname, user, party_name):
 
 def party_exists(doctype, user):
 	# check if contact exists against party and if it is linked to the doctype
-	contact_name = frappe.db.get_value("Contact", {"email_id": user})
+	contact_name = nts.db.get_value("Contact", {"email_id": user})
 	if contact_name:
-		contact = frappe.get_doc("Contact", contact_name)
+		contact = nts.get_doc("Contact", contact_name)
 		doctypes = [d.link_doctype for d in contact.links]
 		return doctype in doctypes
 

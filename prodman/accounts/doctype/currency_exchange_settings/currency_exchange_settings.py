@@ -1,11 +1,11 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
+import nts 
 import requests
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import nowdate
+from nts  import _
+from nts .model.document import Document
+from nts .utils import nowdate
 
 
 class CurrencyExchangeSettings(Document):
@@ -15,7 +15,7 @@ class CurrencyExchangeSettings(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.currency_exchange_settings_details.currency_exchange_settings_details import (
 			CurrencyExchangeSettingsDetails,
@@ -36,7 +36,7 @@ class CurrencyExchangeSettings(Document):
 
 	def validate(self):
 		self.set_parameters_and_result()
-		if frappe.flags.in_test or frappe.flags.in_install or frappe.flags.in_setup_wizard:
+		if nts .flags.in_test or nts .flags.in_install or nts .flags.in_setup_wizard:
 			return
 		response, value = self.validate_parameters()
 		self.validate_result(response, value)
@@ -44,9 +44,9 @@ class CurrencyExchangeSettings(Document):
 	def set_parameters_and_result(self):
 		if self.service_provider == "exchangerate.host":
 			if not self.access_key:
-				frappe.throw(
+				nts .throw(
 					_("Access Key is required for Service Provider: {0}").format(
-						frappe.bold(self.service_provider)
+						nts .bold(self.service_provider)
 					)
 				)
 
@@ -82,7 +82,7 @@ class CurrencyExchangeSettings(Document):
 		try:
 			response = requests.get(api_url, params=params)
 		except requests.exceptions.RequestException as e:
-			frappe.throw("Error: " + str(e))
+			nts .throw("Error: " + str(e))
 
 		response.raise_for_status()
 		value = response.json()
@@ -96,14 +96,14 @@ class CurrencyExchangeSettings(Document):
 					str(key.key).format(transaction_date=nowdate(), to_currency="INR", from_currency="USD")
 				]
 		except Exception:
-			frappe.throw(_("Invalid result key. Response:") + " " + response.text)
+			nts .throw(_("Invalid result key. Response:") + " " + response.text)
 		if not isinstance(value, int | float):
-			frappe.throw(_("Returned exchange rate is neither integer not float."))
+			nts .throw(_("Returned exchange rate is neither integer not float."))
 
 		self.url = response.url
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_api_endpoint(service_provider: str | None = None, use_http: bool = False):
 	if service_provider and service_provider in ["exchangerate.host", "frankfurter.app"]:
 		if service_provider == "exchangerate.host":

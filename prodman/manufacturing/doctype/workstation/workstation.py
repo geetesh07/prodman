@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import (
+import nts
+from nts import _
+from nts.model.document import Document
+from nts.utils import (
 	add_days,
 	cint,
 	comma_and,
@@ -23,15 +23,15 @@ from frappe.utils import (
 from prodman.support.doctype.issue.issue import get_holidays
 
 
-class WorkstationHolidayError(frappe.ValidationError):
+class WorkstationHolidayError(nts.ValidationError):
 	pass
 
 
-class NotInWorkingHoursError(frappe.ValidationError):
+class NotInWorkingHoursError(nts.ValidationError):
 	pass
 
 
-class OverlapError(frappe.ValidationError):
+class OverlapError(nts.ValidationError):
 	pass
 
 
@@ -42,7 +42,7 @@ class Workstation(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.manufacturing.doctype.workstation_working_hour.workstation_working_hour import (
 			WorkstationWorkingHour,
@@ -80,10 +80,10 @@ class Workstation(Document):
 
 	def validate_working_hours(self, row):
 		if not (row.start_time and row.end_time):
-			frappe.throw(_("Row #{0}: Start Time and End Time are required").format(row.idx))
+			nts.throw(_("Row #{0}: Start Time and End Time are required").format(row.idx))
 
 		if get_time(row.start_time) >= get_time(row.end_time):
-			frappe.throw(_("Row #{0}: Start Time must be before End Time").format(row.idx))
+			nts.throw(_("Row #{0}: Start Time must be before End Time").format(row.idx))
 
 	def set_hour_rate(self):
 		self.hour_rate = (
@@ -93,7 +93,7 @@ class Workstation(Document):
 			+ flt(self.hour_rate_rent)
 		)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def set_data_based_on_workstation_type(self):
 		if self.workstation_type:
 			fields = [
@@ -105,7 +105,7 @@ class Workstation(Document):
 				"description",
 			]
 
-			data = frappe.get_cached_value("Workstation Type", self.workstation_type, fields, as_dict=True)
+			data = nts.get_cached_value("Workstation Type", self.workstation_type, fields, as_dict=True)
 
 			if not data:
 				return
@@ -124,7 +124,7 @@ class Workstation(Document):
 	def validate_overlap_for_operation_timings(self):
 		"""Check if there is no overlap in setting Workstation Operating Hours"""
 		for d in self.get("working_hours"):
-			existing = frappe.db.sql_list(
+			existing = nts.db.sql_list(
 				"""select idx from `tabWorkstation Working Hour`
 				where parent = %s and name != %s
 					and (
@@ -136,20 +136,20 @@ class Workstation(Document):
 			)
 
 			if existing:
-				frappe.throw(
+				nts.throw(
 					_("Row #{0}: Timings conflicts with row {1}").format(d.idx, comma_and(existing)),
 					OverlapError,
 				)
 
 	def update_bom_operation(self):
-		bom_list = frappe.db.sql(
+		bom_list = nts.db.sql(
 			"""select DISTINCT parent from `tabBOM Operation`
 			where workstation = %s and parenttype = 'routing' """,
 			self.name,
 		)
 
 		for bom_no in bom_list:
-			frappe.db.sql(
+			nts.db.sql(
 				"""update `tabBOM Operation` set hour_rate = %s
 				where parent = %s and workstation = %s""",
 				(self.hour_rate, bom_no[0], self.name),
@@ -158,7 +158,7 @@ class Workstation(Document):
 	def validate_workstation_holiday(self, schedule_date, skip_holiday_list_check=False):
 		if not skip_holiday_list_check and (
 			not self.holiday_list
-			or cint(frappe.db.get_single_value("Manufacturing Settings", "allow_production_on_holidays"))
+			or cint(nts.db.get_single_value("Manufacturing Settings", "allow_production_on_holidays"))
 		):
 			return schedule_date
 
@@ -168,17 +168,17 @@ class Workstation(Document):
 
 		return schedule_date
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def start_job(self, job_card, from_time, employee):
-		doc = frappe.get_doc("Job Card", job_card)
+		doc = nts.get_doc("Job Card", job_card)
 		doc.append("time_logs", {"from_time": from_time, "employee": employee})
 		doc.save(ignore_permissions=True)
 
 		return doc
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def complete_job(self, job_card, qty, to_time):
-		doc = frappe.get_doc("Job Card", job_card)
+		doc = nts.get_doc("Job Card", job_card)
 		for row in doc.time_logs:
 			if not row.to_time:
 				row.to_time = to_time
@@ -191,10 +191,10 @@ class Workstation(Document):
 		return doc
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_job_cards(workstation):
-	if frappe.has_permission("Job Card", "read"):
-		jc_data = frappe.get_all(
+	if nts.has_permission("Job Card", "read"):
+		jc_data = nts.get_all(
 			"Job Card",
 			fields=[
 				"name",
@@ -222,7 +222,7 @@ def get_job_cards(workstation):
 		raw_materials = get_raw_materials(job_cards)
 		time_logs = get_time_logs(job_cards)
 
-		allow_excess_transfer = frappe.db.get_single_value(
+		allow_excess_transfer = nts.db.get_single_value(
 			"Manufacturing Settings", "job_card_excess_transfer"
 		)
 
@@ -260,7 +260,7 @@ def get_status_color(status):
 def get_raw_materials(job_cards):
 	raw_materials = {}
 
-	data = frappe.get_all(
+	data = nts.get_all(
 		"Job Card Item",
 		fields=[
 			"parent",
@@ -284,7 +284,7 @@ def get_raw_materials(job_cards):
 def get_time_logs(job_cards):
 	time_logs = {}
 
-	data = frappe.get_all(
+	data = nts.get_all(
 		"Job Card Time Log",
 		fields=[
 			"parent",
@@ -304,25 +304,25 @@ def get_time_logs(job_cards):
 	return time_logs
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_default_holiday_list():
-	return frappe.get_cached_value(
-		"Company", frappe.defaults.get_user_default("Company"), "default_holiday_list"
+	return nts.get_cached_value(
+		"Company", nts.defaults.get_user_default("Company"), "default_holiday_list"
 	)
 
 
 def check_if_within_operating_hours(workstation, operation, from_datetime, to_datetime):
 	if from_datetime and to_datetime:
-		if not frappe.db.get_single_value("Manufacturing Settings", "allow_production_on_holidays"):
+		if not nts.db.get_single_value("Manufacturing Settings", "allow_production_on_holidays"):
 			check_workstation_for_holiday(workstation, from_datetime, to_datetime)
 
-		if not cint(frappe.db.get_value("Manufacturing Settings", None, "allow_overtime")):
+		if not cint(nts.db.get_value("Manufacturing Settings", None, "allow_overtime")):
 			is_within_operating_hours(workstation, operation, from_datetime, to_datetime)
 
 
 def is_within_operating_hours(workstation, operation, from_datetime, to_datetime):
 	operation_length = time_diff_in_seconds(to_datetime, from_datetime)
-	workstation = frappe.get_doc("Workstation", workstation)
+	workstation = nts.get_doc("Workstation", workstation)
 
 	if not workstation.working_hours:
 		return
@@ -335,7 +335,7 @@ def is_within_operating_hours(workstation, operation, from_datetime, to_datetime
 			if slot_length >= operation_length:
 				return
 
-	frappe.throw(
+	nts.throw(
 		_(
 			"Operation {0} longer than any available working hours in workstation {1}, break down the operation into multiple operations"
 		).format(operation, workstation.name),
@@ -344,10 +344,10 @@ def is_within_operating_hours(workstation, operation, from_datetime, to_datetime
 
 
 def check_workstation_for_holiday(workstation, from_datetime, to_datetime):
-	holiday_list = frappe.db.get_value("Workstation", workstation, "holiday_list")
+	holiday_list = nts.db.get_value("Workstation", workstation, "holiday_list")
 	if holiday_list and from_datetime and to_datetime:
 		applicable_holidays = []
-		for d in frappe.db.sql(
+		for d in nts.db.sql(
 			"""select holiday_date from `tabHoliday` where parent = %s
 			and holiday_date between %s and %s """,
 			(holiday_list, getdate(from_datetime), getdate(to_datetime)),
@@ -355,7 +355,7 @@ def check_workstation_for_holiday(workstation, from_datetime, to_datetime):
 			applicable_holidays.append(formatdate(d[0]))
 
 		if applicable_holidays:
-			frappe.throw(
+			nts.throw(
 				_("Workstation is closed on the following dates as per Holiday List: {0}").format(
 					holiday_list
 				)
@@ -365,13 +365,13 @@ def check_workstation_for_holiday(workstation, from_datetime, to_datetime):
 			)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_workstations(**kwargs):
-	kwargs = frappe._dict(kwargs)
-	_workstation = frappe.qb.DocType("Workstation")
+	kwargs = nts._dict(kwargs)
+	_workstation = nts.qb.DocType("Workstation")
 
 	query = (
-		frappe.qb.from_(_workstation)
+		nts.qb.from_(_workstation)
 		.select(
 			_workstation.name,
 			_workstation.description,

@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import Sum
+import nts
+from nts import _
+from nts.query_builder.functions import Sum
 
 
 def execute(filters=None):
@@ -32,12 +32,12 @@ def get_columns(filters):
 
 
 def get_total_stock(filters):
-	bin = frappe.qb.DocType("Bin")
-	item = frappe.qb.DocType("Item")
-	wh = frappe.qb.DocType("Warehouse")
+	bin = nts.qb.DocType("Bin")
+	item = nts.qb.DocType("Item")
+	wh = nts.qb.DocType("Warehouse")
 
 	query = (
-		frappe.qb.from_(bin)
+		nts.qb.from_(bin)
 		.inner_join(item)
 		.on(bin.item_code == item.item_code)
 		.inner_join(wh)

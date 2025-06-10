@@ -1,11 +1,11 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _, throw
-from frappe.model.document import Document
-from frappe.model.mapper import get_mapped_doc
+import nts
+from nts import _, throw
+from nts.model.document import Document
+from nts.model.mapper import get_mapped_doc
 
 import prodman.buying.doctype.supplier_scorecard_variable.supplier_scorecard_variable as variable_functions
 from prodman.buying.doctype.supplier_scorecard_criteria.supplier_scorecard_criteria import (
@@ -20,7 +20,7 @@ class SupplierScorecardPeriod(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.buying.doctype.supplier_scorecard_scoring_criteria.supplier_scorecard_scoring_criteria import (
 			SupplierScorecardScoringCriteria,
@@ -70,17 +70,17 @@ class SupplierScorecardPeriod(Document):
 					crit.max_score,
 					max(
 						0,
-						frappe.safe_eval(
+						nts.safe_eval(
 							self.get_eval_statement(crit.formula), None, {"max": max, "min": min}
 						),
 					),
 				)
 			except Exception:
-				frappe.throw(
+				nts.throw(
 					_(
 						"Could not solve criteria score function for {0}. Make sure the formula is valid."
 					).format(crit.criteria_name),
-					frappe.ValidationError,
+					nts.ValidationError,
 				)
 				crit.score = 0
 
@@ -92,13 +92,13 @@ class SupplierScorecardPeriod(Document):
 
 	def calculate_weighted_score(self, weighing_function):
 		try:
-			weighed_score = frappe.safe_eval(
+			weighed_score = nts.safe_eval(
 				self.get_eval_statement(weighing_function), None, {"max": max, "min": min}
 			)
 		except Exception:
-			frappe.throw(
+			nts.throw(
 				_("Could not solve weighted score function. Make sure the formula is valid."),
-				frappe.ValidationError,
+				nts.ValidationError,
 			)
 			weighed_score = 0
 		return weighed_score
@@ -129,7 +129,7 @@ def import_string_path(path):
 
 def make_supplier_scorecard(source_name, target_doc=None):
 	def update_criteria_fields(obj, target, source_parent):
-		target.max_score, target.formula = frappe.db.get_value(
+		target.max_score, target.formula = nts.db.get_value(
 			"Supplier Scorecard Criteria", obj.criteria_name, ["max_score", "formula"]
 		)
 

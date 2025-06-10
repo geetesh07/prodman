@@ -62,7 +62,7 @@
 
 		<!-- rate -->
 		<div class="col-sm-2 hidden-xs text-right">
-			{% if (!frappe.perm.is_visible("rate", doc, frm.perm)) { %}
+			{% if (!nts.perm.is_visible("rate", doc, frm.perm)) { %}
 				<span class="text-muted">{%= __("hidden") %}</span>
 			{% } else { %}
 				{%= doc.get_formatted("rate") %}
@@ -76,13 +76,13 @@
 
 		<!-- amount -->
 		<div class="col-sm-2 col-xs-4 text-right">
-			{% if (!frappe.perm.is_visible("amount", doc, frm.perm)) { %}
+			{% if (!nts.perm.is_visible("amount", doc, frm.perm)) { %}
 				<span class="text-muted">{%= __("hidden") %}</span>
 			{% } else { %}
 				{%= doc.get_formatted("amount") %}
 			{% } %}
 
-			{% if (frappe.perm.is_visible("rate", doc, frm.perm)) { %}
+			{% if (nts.perm.is_visible("rate", doc, frm.perm)) { %}
 			<div class="visible-xs text-muted">
 				{%= doc.get_formatted("qty") %} <small>{%= doc.uom || doc.stock_uom %}</small>
 				x {%= doc.get_formatted("rate") %}

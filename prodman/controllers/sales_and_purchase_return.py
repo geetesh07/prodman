@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 from collections import defaultdict
 
-import frappe
-from frappe import _
-from frappe.model.meta import get_field_precision
-from frappe.utils import cint, flt, format_datetime, get_datetime
+import nts
+from nts import _
+from nts.model.meta import get_field_precision
+from nts.utils import cint, flt, format_datetime, get_datetime
 
 import prodman
 from prodman.stock.serial_batch_bundle import get_batches_from_bundle
@@ -14,7 +14,7 @@ from prodman.stock.serial_batch_bundle import get_serial_nos as get_serial_nos_f
 from prodman.stock.utils import get_incoming_rate, get_valuation_method
 
 
-class StockOverReturnError(frappe.ValidationError):
+class StockOverReturnError(nts.ValidationError):
 	pass
 
 
@@ -29,10 +29,10 @@ def validate_return(doc):
 
 
 def validate_return_against(doc):
-	if not frappe.db.exists(doc.doctype, doc.return_against):
-		frappe.throw(_("Invalid {0}: {1}").format(doc.meta.get_label("return_against"), doc.return_against))
+	if not nts.db.exists(doc.doctype, doc.return_against):
+		nts.throw(_("Invalid {0}: {1}").format(doc.meta.get_label("return_against"), doc.return_against))
 	else:
-		ref_doc = frappe.get_doc(doc.doctype, doc.return_against)
+		ref_doc = nts.get_doc(doc.doctype, doc.return_against)
 
 		party_type = "customer" if doc.doctype in ("Sales Invoice", "Delivery Note") else "supplier"
 
@@ -49,13 +49,13 @@ def validate_return_against(doc):
 			)
 
 			if get_datetime(return_posting_datetime) < get_datetime(ref_posting_datetime):
-				frappe.throw(
+				nts.throw(
 					_("Posting timestamp must be after {0}").format(format_datetime(ref_posting_datetime))
 				)
 
 			# validate same exchange rate
 			if doc.conversion_rate != ref_doc.conversion_rate:
-				frappe.throw(
+				nts.throw(
 					_("Exchange Rate must be same as {0} {1} ({2})").format(
 						doc.doctype, doc.return_against, ref_doc.conversion_rate
 					)
@@ -63,7 +63,7 @@ def validate_return_against(doc):
 
 			# validate update stock
 			if doc.doctype == "Sales Invoice" and doc.update_stock and not ref_doc.update_stock:
-				frappe.throw(
+				nts.throw(
 					_("'Update Stock' can not be checked because items are not delivered via {0}").format(
 						doc.return_against
 					)
@@ -71,7 +71,7 @@ def validate_return_against(doc):
 
 
 def validate_returned_items(doc):
-	valid_items = frappe._dict()
+	valid_items = nts._dict()
 
 	select_fields = "item_code, qty, stock_qty, rate, parenttype, conversion_factor, name"
 	if doc.doctype != "Purchase Invoice":
@@ -80,7 +80,7 @@ def validate_returned_items(doc):
 	if doc.doctype in ["Purchase Invoice", "Purchase Receipt", "Subcontracting Receipt"]:
 		select_fields += ",rejected_qty, received_qty"
 
-	for d in frappe.db.sql(
+	for d in nts.db.sql(
 		f"""select {select_fields} from `tab{doc.doctype} Item` where parent = %s""",
 		doc.return_against,
 		as_dict=1,
@@ -88,7 +88,7 @@ def validate_returned_items(doc):
 		valid_items = get_ref_item_dict(valid_items, d)
 
 	if doc.doctype in ("Delivery Note", "Sales Invoice"):
-		for d in frappe.db.sql(
+		for d in nts.db.sql(
 			"""select item_code, qty, serial_no, batch_no from `tabPacked Item`
 			where parent = %s""",
 			doc.return_against,
@@ -108,7 +108,7 @@ def validate_returned_items(doc):
 		key = d.item_code
 		raise_exception = False
 		if doc.doctype in ["Purchase Receipt", "Purchase Invoice", "Sales Invoice", "POS Invoice"]:
-			field = frappe.scrub(doc.doctype) + "_item"
+			field = nts.scrub(doc.doctype) + "_item"
 			if d.get(field):
 				key = (d.item_code, d.get(field))
 				raise_exception = True
@@ -117,14 +117,14 @@ def validate_returned_items(doc):
 
 		if d.item_code and (flt(d.qty) <= 0 or flt(d.get("received_qty")) <= 0):
 			if key not in valid_items:
-				frappe.msgprint(
+				nts.msgprint(
 					_("Row # {0}: Returned Item {1} does not exist in {2} {3}").format(
 						d.idx, d.item_code, doc.doctype, doc.return_against
 					),
 					raise_exception=raise_exception,
 				)
 			else:
-				ref = valid_items.get(key, frappe._dict())
+				ref = valid_items.get(key, nts._dict())
 				validate_quantity(doc, key, d, ref, valid_items, already_returned_items)
 
 				if (
@@ -133,7 +133,7 @@ def validate_returned_items(doc):
 					and doc.doctype in ("Delivery Note", "Sales Invoice")
 					and get_valuation_method(ref.item_code) != "Moving Average"
 				):
-					frappe.throw(
+					nts.throw(
 						_("Row # {0}: Rate cannot be greater than the rate used in {1} {2}").format(
 							d.idx, doc.doctype, doc.return_against
 						)
@@ -142,9 +142,9 @@ def validate_returned_items(doc):
 				if (
 					warehouse_mandatory
 					and not d.get("warehouse")
-					and frappe.db.get_value("Item", d.item_code, "is_stock_item")
+					and nts.db.get_value("Item", d.item_code, "is_stock_item")
 				):
-					frappe.throw(_("Warehouse is mandatory"))
+					nts.throw(_("Warehouse is mandatory"))
 
 			items_returned = True
 
@@ -152,7 +152,7 @@ def validate_returned_items(doc):
 			items_returned = True
 
 	if not items_returned:
-		frappe.throw(_("Atleast one item should be entered with negative quantity in return document"))
+		nts.throw(_("Atleast one item should be entered with negative quantity in return document"))
 
 
 def validate_quantity(doc, key, args, ref, valid_items, already_returned_items):
@@ -170,7 +170,7 @@ def validate_quantity(doc, key, args, ref, valid_items, already_returned_items):
 
 	company_currency = prodman.get_company_currency(doc.company)
 	field_precision = get_field_precision(
-		frappe.get_meta(doc.doctype + " Item").get_field(
+		nts.get_meta(doc.doctype + " Item").get_field(
 			"stock_qty" if doc.get("update_stock", "") else "qty"
 		),
 		company_currency,
@@ -198,13 +198,13 @@ def validate_quantity(doc, key, args, ref, valid_items, already_returned_items):
 
 		if reference_qty:
 			if flt(args.get(column)) > 0:
-				frappe.throw(_("{0} must be negative in return document").format(label))
+				nts.throw(_("{0} must be negative in return document").format(label))
 			elif returned_qty >= reference_qty and args.get(column) >= 0:
-				frappe.throw(
+				nts.throw(
 					_("Item {0} has already been returned").format(args.item_code), StockOverReturnError
 				)
 			elif abs(flt(current_stock_qty, field_precision)) > max_returnable_qty:
-				frappe.throw(
+				nts.throw(
 					_("Row # {0}: Cannot return more than {1} for Item {2}").format(
 						args.idx, max_returnable_qty, args.item_code
 					),
@@ -221,7 +221,7 @@ def get_ref_item_dict(valid_items, ref_item_row):
 
 	valid_items.setdefault(
 		key,
-		frappe._dict(
+		nts._dict(
 			{
 				"qty": 0,
 				"rate": 0,
@@ -260,11 +260,11 @@ def get_already_returned_items(doc):
 			sum(abs(child.received_qty) * child.conversion_factor) as received_qty"""
 
 	field = (
-		frappe.scrub(doc.doctype) + "_item"
+		nts.scrub(doc.doctype) + "_item"
 		if doc.doctype in ["Purchase Invoice", "Purchase Receipt", "Sales Invoice", "POS Invoice"]
 		else "dn_detail"
 	)
-	data = frappe.db.sql(
+	data = nts.db.sql(
 		f"""
 		select {column}, child.{field}
 		from
@@ -283,7 +283,7 @@ def get_already_returned_items(doc):
 	for d in data:
 		items.setdefault(
 			(d.item_code, d.get(field)),
-			frappe._dict(
+			nts._dict(
 				{
 					"qty": d.get("qty"),
 					"stock_qty": d.get("stock_qty"),
@@ -298,7 +298,7 @@ def get_already_returned_items(doc):
 
 def get_returned_qty_map_for_row(return_against, party, row_name, doctype):
 	child_doctype = doctype + " Item"
-	reference_field = "dn_detail" if doctype == "Delivery Note" else frappe.scrub(child_doctype)
+	reference_field = "dn_detail" if doctype == "Delivery Note" else nts.scrub(child_doctype)
 
 	if doctype in ("Purchase Receipt", "Purchase Invoice", "Subcontracting Receipt"):
 		party_type = "supplier"
@@ -324,7 +324,7 @@ def get_returned_qty_map_for_row(return_against, party, row_name, doctype):
 			fields += [f"sum(abs(`tab{child_doctype}`.received_stock_qty)) as received_stock_qty"]
 
 	# Used retrun against and supplier and is_retrun because there is an index added for it
-	data = frappe.get_all(
+	data = nts.get_all(
 		doctype,
 		fields=fields,
 		filters=[
@@ -340,25 +340,25 @@ def get_returned_qty_map_for_row(return_against, party, row_name, doctype):
 
 
 def make_return_doc(doctype: str, source_name: str, target_doc=None, return_against_rejected_qty=False):
-	from frappe.model.mapper import get_mapped_doc
+	from nts.model.mapper import get_mapped_doc
 
-	company = frappe.db.get_value(doctype, source_name, "company")
-	default_warehouse_for_sales_return = frappe.get_cached_value(
+	company = nts.db.get_value(doctype, source_name, "company")
+	default_warehouse_for_sales_return = nts.get_cached_value(
 		"Company", company, "default_warehouse_for_sales_return"
 	)
 
 	if doctype == "Sales Invoice":
-		inv_is_consolidated, inv_is_pos = frappe.db.get_value(
+		inv_is_consolidated, inv_is_pos = nts.db.get_value(
 			"Sales Invoice", source_name, ["is_consolidated", "is_pos"]
 		)
 		if inv_is_consolidated and inv_is_pos:
-			frappe.throw(
+			nts.throw(
 				_("Cannot create return for consolidated invoice {0}.").format(source_name),
 				title=_("Cannot Create Return"),
 			)
 
 	def set_missing_values(source, target):
-		doc = frappe.get_doc(target)
+		doc = nts.get_doc(target)
 		doc.is_return = 1
 		doc.ignore_pricing_rule = 1
 		doc.pricing_rules = []
@@ -369,11 +369,11 @@ def make_return_doc(doctype: str, source_name: str, target_doc=None, return_agai
 
 			# look for Print Heading "Credit Note"
 			if not doc.select_print_heading:
-				doc.select_print_heading = frappe.get_cached_value("Print Heading", _("Credit Note"))
+				doc.select_print_heading = nts.get_cached_value("Print Heading", _("Credit Note"))
 
 		elif doctype == "Purchase Invoice":
 			# look for Print Heading "Debit Note"
-			doc.select_print_heading = frappe.get_cached_value("Print Heading", _("Debit Note"))
+			doc.select_print_heading = nts.get_cached_value("Print Heading", _("Debit Note"))
 			if source.tax_withholding_category:
 				doc.set_onload("supplier_tds", source.tax_withholding_category)
 		elif doctype == "Delivery Note":
@@ -546,7 +546,7 @@ def make_return_doc(doctype: str, source_name: str, target_doc=None, return_agai
 			target_doc.set("use_serial_batch_fields", 1)
 
 		if source_doc.item_code and target_doc.get("use_serial_batch_fields"):
-			item_details = frappe.get_cached_value(
+			item_details = nts.get_cached_value(
 				"Item", source_doc.item_code, ["has_batch_no", "has_serial_no"], as_dict=1
 			)
 
@@ -577,7 +577,7 @@ def make_return_doc(doctype: str, source_name: str, target_doc=None, return_agai
 	def get_returned_non_bundled_serial_nos(child_doc, parent_doc, serial_no_field="serial_no"):
 		from prodman.stock.doctype.serial_no.serial_no import get_serial_nos
 
-		return_ref_field = frappe.scrub(child_doc.doctype)
+		return_ref_field = nts.scrub(child_doc.doctype)
 		if child_doc.doctype == "Delivery Note Item":
 			return_ref_field = "dn_detail"
 
@@ -592,7 +592,7 @@ def make_return_doc(doctype: str, source_name: str, target_doc=None, return_agai
 			[parent_doc.doctype, "docstatus", "=", 1],
 		]
 
-		for row in frappe.get_all(parent_doc.doctype, fields=fields, filters=filters):
+		for row in nts.get_all(parent_doc.doctype, fields=fields, filters=filters):
 			serial_nos.extend(get_serial_nos(row.get(serial_no_field)))
 
 		return serial_nos
@@ -641,7 +641,7 @@ def get_rate_for_return(
 	sle=None,
 ):
 	if not return_against:
-		return_against = frappe.get_cached_value(voucher_type, voucher_no, "return_against")
+		return_against = nts.get_cached_value(voucher_type, voucher_no, "return_against")
 
 	return_against_item_field = get_return_against_item_fields(voucher_type)
 
@@ -660,9 +660,9 @@ def get_rate_for_return(
 	else:
 		select_field = "abs(stock_value_difference / actual_qty)"
 
-	rate = flt(frappe.db.get_value("Stock Ledger Entry", filters, select_field))
+	rate = flt(nts.db.get_value("Stock Ledger Entry", filters, select_field))
 	if not (rate and return_against) and voucher_type in ["Sales Invoice", "Delivery Note"]:
-		rate = frappe.db.get_value(f"{voucher_type} Item", voucher_detail_no, "incoming_rate")
+		rate = nts.db.get_value(f"{voucher_type} Item", voucher_detail_no, "incoming_rate")
 
 		if not rate and sle:
 			rate = get_incoming_rate(
@@ -709,7 +709,7 @@ def get_filters(
 	if item_row:
 		reference_voucher_detail_no = item_row.get(return_against_item_field)
 	else:
-		reference_voucher_detail_no = frappe.db.get_value(
+		reference_voucher_detail_no = nts.db.get_value(
 			voucher_type + " Item", voucher_detail_no, return_against_item_field
 		)
 
@@ -735,7 +735,7 @@ def get_returned_serial_nos(child_doc, parent_doc, serial_no_field=None, ignore_
 	if serial_no_field == "rejected_serial_and_batch_bundle":
 		old_field = "rejected_serial_no"
 
-	return_ref_field = frappe.scrub(child_doc.doctype)
+	return_ref_field = nts.scrub(child_doc.doctype)
 	if child_doc.doctype == "Delivery Note Item":
 		return_ref_field = "dn_detail"
 
@@ -761,7 +761,7 @@ def get_returned_serial_nos(child_doc, parent_doc, serial_no_field=None, ignore_
 		filters.append([child_doc.doctype, "name", "!=", ignore_voucher_detail_no])
 
 	ids = []
-	for row in frappe.get_all(parent_doc.doctype, fields=fields, filters=filters):
+	for row in nts.get_all(parent_doc.doctype, fields=fields, filters=filters):
 		ids.append(row.get("serial_and_batch_bundle"))
 		if row.get(old_field) and not row.get(serial_no_field):
 			serial_nos.extend(get_serial_nos_from_serial_no(row.get(old_field)))
@@ -773,13 +773,13 @@ def get_returned_serial_nos(child_doc, parent_doc, serial_no_field=None, ignore_
 
 
 def get_returned_batches(child_doc, parent_doc, batch_no_field=None, ignore_voucher_detail_no=None):
-	batches = frappe._dict()
+	batches = nts._dict()
 
 	old_field = "batch_no"
 	if not batch_no_field:
 		batch_no_field = "serial_and_batch_bundle"
 
-	return_ref_field = frappe.scrub(child_doc.doctype)
+	return_ref_field = nts.scrub(child_doc.doctype)
 	if child_doc.doctype == "Delivery Note Item":
 		return_ref_field = "dn_detail"
 
@@ -804,7 +804,7 @@ def get_returned_batches(child_doc, parent_doc, batch_no_field=None, ignore_vouc
 		filters.append([child_doc.doctype, "name", "!=", ignore_voucher_detail_no])
 
 	ids = []
-	for row in frappe.get_all(parent_doc.doctype, fields=fields, filters=filters):
+	for row in nts.get_all(parent_doc.doctype, fields=fields, filters=filters):
 		ids.append(row.get("serial_and_batch_bundle"))
 		if row.get(old_field) and not row.get(batch_no_field):
 			batches.setdefault(row.get(old_field), row.get("stock_qty"))
@@ -818,7 +818,7 @@ def get_returned_batches(child_doc, parent_doc, batch_no_field=None, ignore_vouc
 def available_serial_batch_for_return(field, doctype, reference_ids, is_rejected=False):
 	available_dict = get_available_serial_batches(field, doctype, reference_ids, is_rejected=is_rejected)
 	if not available_dict:
-		frappe.throw(_("No Serial / Batches are available for return"))
+		nts.throw(_("No Serial / Batches are available for return"))
 
 	return available_dict
 
@@ -826,14 +826,14 @@ def available_serial_batch_for_return(field, doctype, reference_ids, is_rejected
 def get_available_serial_batches(field, doctype, reference_ids, is_rejected=False):
 	_bundle_ids = get_serial_and_batch_bundle(field, doctype, reference_ids, is_rejected=is_rejected)
 	if not _bundle_ids:
-		return frappe._dict({})
+		return nts._dict({})
 
 	return get_serial_batches_based_on_bundle(field, _bundle_ids)
 
 
 def get_serial_batches_based_on_bundle(field, _bundle_ids):
-	available_dict = frappe._dict({})
-	batch_serial_nos = frappe.get_all(
+	available_dict = nts._dict({})
+	batch_serial_nos = nts.get_all(
 		"Serial and Batch Bundle",
 		fields=[
 			"`tabSerial and Batch Entry`.`serial_no`",
@@ -853,14 +853,14 @@ def get_serial_batches_based_on_bundle(field, _bundle_ids):
 
 	for row in batch_serial_nos:
 		key = row.voucher_detail_no
-		if frappe.get_cached_value(row.voucher_type, row.voucher_no, "is_return"):
-			key = frappe.get_cached_value(row.voucher_type + " Item", row.voucher_detail_no, field)
+		if nts.get_cached_value(row.voucher_type, row.voucher_no, "is_return"):
+			key = nts.get_cached_value(row.voucher_type + " Item", row.voucher_detail_no, field)
 
 		if row.voucher_type in ["Sales Invoice", "Delivery Note"]:
 			row.qty = -1 * row.qty
 
 		if key not in available_dict:
-			available_dict[key] = frappe._dict(
+			available_dict[key] = nts._dict(
 				{
 					"qty": 0.0,
 					"serial_nos": defaultdict(float),
@@ -891,7 +891,7 @@ def get_serial_and_batch_bundle(field, doctype, reference_ids, is_rejected=False
 		filters["rejected_serial_and_batch_bundle"] = ("is", "set")
 		pluck_field = "rejected_serial_and_batch_bundle"
 
-	_bundle_ids = frappe.get_all(
+	_bundle_ids = nts.get_all(
 		doctype,
 		filters=filters,
 		pluck=pluck_field,
@@ -906,7 +906,7 @@ def get_serial_and_batch_bundle(field, doctype, reference_ids, is_rejected=False
 
 	if not is_rejected:
 		_bundle_ids.extend(
-			frappe.get_all(
+			nts.get_all(
 				doctype,
 				filters=filters,
 				pluck="serial_and_batch_bundle",
@@ -922,7 +922,7 @@ def get_serial_and_batch_bundle(field, doctype, reference_ids, is_rejected=False
 				fields.append("return_qty_from_rejected_warehouse")
 
 		del filters["rejected_serial_and_batch_bundle"]
-		data = frappe.get_all(
+		data = nts.get_all(
 			doctype,
 			fields=fields,
 			filters=filters,
@@ -953,7 +953,7 @@ def filter_serial_batches(parent_doc, data, row, warehouse_field=None, qty_field
 	warehouse = row.get(warehouse_field)
 	qty = abs(row.get(qty_field))
 
-	filterd_serial_batch = frappe._dict(
+	filterd_serial_batch = nts._dict(
 		{
 			"serial_nos": [],
 			"batches": defaultdict(float),
@@ -993,7 +993,7 @@ def filter_serial_batches(parent_doc, data, row, warehouse_field=None, qty_field
 				)
 
 				if batch_qty <= 0:
-					frappe.throw(
+					nts.throw(
 						_("Batch {0} is not available in warehouse {1}").format(batch_no, warehouse),
 						title=_("Batch Not Available for Return"),
 					)
@@ -1042,9 +1042,9 @@ def make_serial_batch_bundle_for_return(data, child_doc, parent_doc, warehouse_f
 		type_of_transaction = "Outward"
 
 	if not child_doc.get(qty_field):
-		frappe.throw(
+		nts.throw(
 			_("For the {0}, the quantity is required to make the return entry").format(
-				frappe.bold(child_doc.item_code)
+				nts.bold(child_doc.item_code)
 			)
 		)
 
@@ -1072,12 +1072,12 @@ def make_serial_batch_bundle_for_return(data, child_doc, parent_doc, warehouse_f
 
 
 def get_available_serial_nos(serial_nos, warehouse):
-	return frappe.get_all(
+	return nts.get_all(
 		"Serial No", filters={"warehouse": warehouse, "name": ("in", serial_nos)}, pluck="name"
 	)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_payment_data(invoice):
-	payment = frappe.db.get_all("Sales Invoice Payment", {"parent": invoice}, ["mode_of_payment", "amount"])
+	payment = nts.db.get_all("Sales Invoice Payment", {"parent": invoice}, ["mode_of_payment", "amount"])
 	return payment

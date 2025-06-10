@@ -1,14 +1,14 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd.
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd.
 # License: GNU General Public License v3. See license.txt
 
 
 from collections import OrderedDict
 
-import frappe
-from frappe import _, qb, query_builder, scrub
-from frappe.query_builder import Criterion
-from frappe.query_builder.functions import Date, Substring, Sum
-from frappe.utils import cint, cstr, flt, getdate, nowdate
+import nts 
+from nts  import _, qb, query_builder, scrub
+from nts .query_builder import Criterion
+from nts .query_builder.functions import Date, Substring, Sum
+from nts .utils import cint, cstr, flt, getdate, nowdate
 
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_accounting_dimensions,
@@ -42,7 +42,7 @@ def execute(filters=None):
 
 class ReceivablePayableReport:
 	def __init__(self, filters=None):
-		self.filters = frappe._dict(filters or {})
+		self.filters = nts ._dict(filters or {})
 		self.qb_selection_filter = []
 		self.ple = qb.DocType("Payment Ledger Entry")
 		self.filters.report_date = getdate(self.filters.report_date or nowdate())
@@ -57,14 +57,14 @@ class ReceivablePayableReport:
 		self.ranges = [num.strip() for num in self.filters.range.split(",") if num.strip().isdigit()]
 		self.range_numbers = [num for num in range(1, len(self.ranges) + 2)]
 		self.ple_fetch_method = (
-			frappe.db.get_single_value("Accounts Settings", "receivable_payable_fetch_method")
+			nts .db.get_single_value("Accounts Settings", "receivable_payable_fetch_method")
 			or "Buffered Cursor"
 		)  # Fail Safe
 
 	def run(self, args):
 		self.filters.update(args)
 		self.set_defaults()
-		self.party_naming_by = frappe.db.get_value(args.get("naming_by")[0], None, args.get("naming_by")[1])
+		self.party_naming_by = nts .db.get_value(args.get("naming_by")[0], None, args.get("naming_by")[1])
 		self.get_columns()
 		self.get_data()
 		self.get_chart_data()
@@ -72,8 +72,8 @@ class ReceivablePayableReport:
 
 	def set_defaults(self):
 		if not self.filters.get("company"):
-			self.filters.company = frappe.db.get_single_value("Global Defaults", "default_company")
-		self.company_currency = frappe.get_cached_value(
+			self.filters.company = nts .db.get_single_value("Global Defaults", "default_company")
+		self.company_currency = nts .get_cached_value(
 			"Company", self.filters.get("company"), "default_currency"
 		)
 		self.currency_precision = get_currency_precision() or 2
@@ -127,7 +127,7 @@ class ReceivablePayableReport:
 
 	def fetch_ple_in_buffered_cursor(self):
 		query, param = self.ple_query.walk()
-		self.ple_entries = frappe.db.sql(query, param, as_dict=True)
+		self.ple_entries = nts .db.sql(query, param, as_dict=True)
 
 		for ple in self.ple_entries:
 			self.init_voucher_balance(ple)  # invoiced, paid, credit_note, outstanding
@@ -141,8 +141,8 @@ class ReceivablePayableReport:
 	def fetch_ple_in_unbuffered_cursor(self):
 		self.ple_entries = []
 		query, param = self.ple_query.walk()
-		with frappe.db.unbuffered_cursor():
-			for ple in frappe.db.sql(query, param, as_dict=True, as_iterator=True):
+		with nts .db.unbuffered_cursor():
+			for ple in nts .db.sql(query, param, as_dict=True, as_iterator=True):
 				self.init_voucher_balance(ple)  # invoiced, paid, credit_note, outstanding
 				self.ple_entries.append(ple)
 
@@ -152,7 +152,7 @@ class ReceivablePayableReport:
 		delattr(self, "ple_entries")
 
 	def build_voucher_dict(self, ple):
-		return frappe._dict(
+		return nts ._dict(
 			voucher_type=ple.voucher_type,
 			voucher_no=ple.voucher_no,
 			party=ple.party,
@@ -411,11 +411,11 @@ class ReceivablePayableReport:
 
 	def build_delivery_note_map(self):
 		if self.invoices and self.filters.show_delivery_notes:
-			self.delivery_notes = frappe._dict()
+			self.delivery_notes = nts ._dict()
 
 			# delivery note link inside sales invoice
 			# nosemgrep
-			si_against_dn = frappe.db.sql(
+			si_against_dn = nts .db.sql(
 				"""
 				select parent, delivery_note
 				from `tabSales Invoice Item`
@@ -431,7 +431,7 @@ class ReceivablePayableReport:
 					self.delivery_notes.setdefault(d.parent, set()).add(d.delivery_note)
 
 			# nosemgrep
-			dn_against_si = frappe.db.sql(
+			dn_against_si = nts .db.sql(
 				"""
 				select distinct parent, against_sales_invoice
 				from `tabDelivery Note Item`
@@ -446,10 +446,10 @@ class ReceivablePayableReport:
 				self.delivery_notes.setdefault(d.against_sales_invoice, set()).add(d.parent)
 
 	def get_invoice_details(self):
-		self.invoice_details = frappe._dict()
+		self.invoice_details = nts ._dict()
 		if self.account_type == "Receivable":
 			# nosemgrep
-			si_list = frappe.db.sql(
+			si_list = nts .db.sql(
 				"""
 				select name, due_date, po_no
 				from `tabSales Invoice`
@@ -466,7 +466,7 @@ class ReceivablePayableReport:
 			# Get Sales Team
 			if self.filters.show_sales_person:
 				# nosemgrep
-				sales_team = frappe.db.sql(
+				sales_team = nts .db.sql(
 					"""
 					select parent, sales_person
 					from `tabSales Team`
@@ -481,7 +481,7 @@ class ReceivablePayableReport:
 
 		if self.account_type == "Payable":
 			# nosemgrep
-			for pi in frappe.db.sql(
+			for pi in nts .db.sql(
 				"""
 				select name, due_date, bill_no, bill_date
 				from `tabPurchase Invoice`
@@ -497,7 +497,7 @@ class ReceivablePayableReport:
 
 		# Invoices booked via Journal Entries
 		# nosemgrep
-		journal_entries = frappe.db.sql(
+		journal_entries = nts .db.sql(
 			"""
 			select name, due_date, bill_no, bill_date
 			from `tabJournal Entry`
@@ -542,7 +542,7 @@ class ReceivablePayableReport:
 	def get_payment_terms(self, row):
 		# build payment_terms for row
 		# nosemgrep
-		payment_terms_details = frappe.db.sql(
+		payment_terms_details = nts .db.sql(
 			f"""
 			select
 				si.name, si.party_account_currency, si.currency, si.conversion_rate,
@@ -559,7 +559,7 @@ class ReceivablePayableReport:
 			as_dict=1,
 		)
 
-		original_row = frappe._dict(row)
+		original_row = nts ._dict(row)
 		row.payment_terms = []
 
 		# Cr Note's don't have Payment Terms
@@ -570,7 +570,7 @@ class ReceivablePayableReport:
 		# Deduct that from paid amount pre allocation
 		row.paid -= flt(payment_terms_details[0].total_advance)
 
-		company_currency = frappe.get_value("Company", self.filters.get("company"), "default_currency")
+		company_currency = nts .get_value("Company", self.filters.get("company"), "default_currency")
 
 		# If single payment terms, no need to split the row
 		if len(payment_terms_details) == 1 and payment_terms_details[0].payment_term:
@@ -578,7 +578,7 @@ class ReceivablePayableReport:
 			return
 
 		for d in payment_terms_details:
-			term = frappe._dict(original_row)
+			term = nts ._dict(original_row)
 			self.append_payment_term(row, d, term, company_currency)
 
 	def append_payment_term(self, row, d, term, company_currency):
@@ -622,7 +622,7 @@ class ReceivablePayableReport:
 		for key in ("paid", "credit_note"):
 			if row[key] > 0:
 				if not additional_row:
-					additional_row = frappe._dict(row)
+					additional_row = nts ._dict(row)
 				additional_row.invoiced = 0.0
 				additional_row[key] = row[key]
 
@@ -634,7 +634,7 @@ class ReceivablePayableReport:
 
 	def get_future_payments(self):
 		if self.filters.show_future_payments:
-			self.future_payments = frappe._dict()
+			self.future_payments = nts ._dict()
 			future_payments = list(self.get_future_payments_from_payment_entry())
 			future_payments += list(self.get_future_payments_from_journal_entry())
 			if future_payments:
@@ -643,12 +643,12 @@ class ReceivablePayableReport:
 						self.future_payments.setdefault((d.invoice_no, d.party), []).append(d)
 
 	def get_future_payments_from_payment_entry(self):
-		pe = frappe.qb.DocType("Payment Entry")
-		pe_ref = frappe.qb.DocType("Payment Entry Reference")
+		pe = nts .qb.DocType("Payment Entry")
+		pe_ref = nts .qb.DocType("Payment Entry Reference")
 		ifelse = query_builder.CustomFunction("IF", ["condition", "then", "else"])
 
 		return (
-			frappe.qb.from_(pe)
+			nts .qb.from_(pe)
 			.inner_join(pe_ref)
 			.on(pe_ref.parent == pe.name)
 			.select(
@@ -672,10 +672,10 @@ class ReceivablePayableReport:
 		).run(as_dict=True)
 
 	def get_future_payments_from_journal_entry(self):
-		je = frappe.qb.DocType("Journal Entry")
-		jea = frappe.qb.DocType("Journal Entry Account")
+		je = nts .qb.DocType("Journal Entry")
+		jea = nts .qb.DocType("Journal Entry Account")
 		query = (
-			frappe.qb.from_(je)
+			nts .qb.from_(je)
 			.inner_join(jea)
 			.on(jea.parent == je.name)
 			.select(
@@ -770,8 +770,8 @@ class ReceivablePayableReport:
 			if parties := self.filters.get("party"):
 				or_filters.update({party_field: ["in", parties]})
 
-		self.return_entries = frappe._dict(
-			frappe.get_all(
+		self.return_entries = nts ._dict(
+			nts .get_all(
 				doctype, filters=filters, or_filters=or_filters, fields=["name", "return_against"], as_list=1
 			)
 		)
@@ -849,7 +849,7 @@ class ReceivablePayableReport:
 		)
 
 		if self.filters.get("show_remarks"):
-			if remarks_length := frappe.db.get_single_value(
+			if remarks_length := nts .db.get_single_value(
 				"Accounts Settings", "receivable_payable_remarks_length"
 			):
 				query = query.select(Substring(ple.remarks, 1, remarks_length).as_("remarks"))
@@ -865,10 +865,10 @@ class ReceivablePayableReport:
 
 	def get_sales_invoices_or_customers_based_on_sales_person(self):
 		if self.filters.get("sales_person"):
-			lft, rgt = frappe.db.get_value("Sales Person", self.filters.get("sales_person"), ["lft", "rgt"])
+			lft, rgt = nts .db.get_value("Sales Person", self.filters.get("sales_person"), ["lft", "rgt"])
 
 			# nosemgrep
-			records = frappe.db.sql(
+			records = nts .db.sql(
 				"""
 				select distinct parent, parenttype
 				from `tabSales Team` steam
@@ -879,7 +879,7 @@ class ReceivablePayableReport:
 				as_dict=1,
 			)
 
-			self.sales_person_records = frappe._dict()
+			self.sales_person_records = nts ._dict()
 			for d in records:
 				self.sales_person_records.setdefault(d.parenttype, set()).add(d.parent)
 
@@ -902,10 +902,10 @@ class ReceivablePayableReport:
 		self.add_accounting_dimensions_filters()
 
 	def get_cost_center_conditions(self):
-		lft, rgt = frappe.db.get_value("Cost Center", self.filters.cost_center, ["lft", "rgt"])
+		lft, rgt = nts .db.get_value("Cost Center", self.filters.cost_center, ["lft", "rgt"])
 		cost_center_list = [
 			center.name
-			for center in frappe.get_list("Cost Center", filters={"lft": (">=", lft), "rgt": ("<=", rgt)})
+			for center in nts .get_list("Cost Center", filters={"lft": (">=", lft), "rgt": ("<=", rgt)})
 		]
 		self.qb_selection_filter.append(self.ple.cost_center.isin(cost_center_list))
 
@@ -928,7 +928,7 @@ class ReceivablePayableReport:
 			# get GL with "receivable" or "payable" account_type
 			accounts = [
 				d.name
-				for d in frappe.get_all(
+				for d in nts .get_all(
 					"Account", filters={"account_type": self.account_type, "company": self.filters.company}
 				)
 			]
@@ -992,7 +992,7 @@ class ReceivablePayableReport:
 			)
 
 	def get_hierarchical_filters(self, doctype, key):
-		lft, rgt = frappe.db.get_value(doctype, self.filters.get(key), ["lft", "rgt"])
+		lft, rgt = nts .db.get_value(doctype, self.filters.get(key), ["lft", "rgt"])
 
 		doc = qb.DocType(doctype)
 		ple = self.ple
@@ -1007,7 +1007,7 @@ class ReceivablePayableReport:
 		if accounting_dimensions:
 			for dimension in accounting_dimensions:
 				if self.filters.get(dimension.fieldname):
-					if frappe.get_cached_value("DocType", dimension.document_type, "is_tree"):
+					if nts .get_cached_value("DocType", dimension.document_type, "is_tree"):
 						self.filters[dimension.fieldname] = get_dimension_with_children(
 							dimension.document_type, self.filters.get(dimension.fieldname)
 						)
@@ -1031,14 +1031,14 @@ class ReceivablePayableReport:
 				if self.filters.get("sales_partner"):
 					fields.append("default_sales_partner")
 
-				self.party_details[party] = frappe.db.get_value(
+				self.party_details[party] = nts .db.get_value(
 					"Customer",
 					party,
 					fields,
 					as_dict=True,
 				)
 			else:
-				self.party_details[party] = frappe.db.get_value(
+				self.party_details[party] = nts .db.get_value(
 					"Supplier", party, ["supplier_name", "supplier_group"], as_dict=True
 				)
 
@@ -1197,10 +1197,10 @@ class ReceivablePayableReport:
 				prev_range_value = cint(curr_range_value) + 1
 
 	def get_chart_data(self):
-		precision = cint(frappe.db.get_default("float_precision")) or 2
+		precision = cint(nts .db.get_default("float_precision")) or 2
 		rows = []
 		for row in self.data:
-			row = frappe._dict(row)
+			row = nts ._dict(row)
 			if not cint(row.bold):
 				values = [flt(row.get(f"range{i}", None), precision) for i in self.range_numbers]
 				rows.append({"values": values})
@@ -1234,11 +1234,11 @@ def get_customer_group_with_children(customer_groups):
 
 	all_customer_groups = []
 	for d in customer_groups:
-		if frappe.db.exists("Customer Group", d):
-			lft, rgt = frappe.db.get_value("Customer Group", d, ["lft", "rgt"])
-			children = frappe.get_all("Customer Group", filters={"lft": [">=", lft], "rgt": ["<=", rgt]})
+		if nts .db.exists("Customer Group", d):
+			lft, rgt = nts .db.get_value("Customer Group", d, ["lft", "rgt"])
+			children = nts .get_all("Customer Group", filters={"lft": [">=", lft], "rgt": ["<=", rgt]})
 			all_customer_groups += [c.name for c in children]
 		else:
-			frappe.throw(_("Customer Group: {0} does not exist").format(d))
+			nts .throw(_("Customer Group: {0} does not exist").format(d))
 
 	return list(set(all_customer_groups))

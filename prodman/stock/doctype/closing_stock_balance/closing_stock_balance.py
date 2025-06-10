@@ -1,15 +1,15 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 import gzip
 import json
 
-import frappe
-from frappe import _
-from frappe.core.doctype.prepared_report.prepared_report import create_json_gz_file
-from frappe.desk.form.load import get_attachments
-from frappe.model.document import Document
-from frappe.utils import get_link_to_form, parse_json
-from frappe.utils.background_jobs import enqueue
+import nts
+from nts import _
+from nts.core.doctype.prepared_report.prepared_report import create_json_gz_file
+from nts.desk.form.load import get_attachments
+from nts.model.document import Document
+from nts.utils import get_link_to_form, parse_json
+from nts.utils.background_jobs import enqueue
 
 from prodman.stock.report.stock_balance.stock_balance import execute
 
@@ -21,7 +21,7 @@ class ClosingStockBalance(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		amended_from: DF.Link | None
 		company: DF.Link | None
@@ -54,10 +54,10 @@ class ClosingStockBalance(Document):
 		self.validate_duplicate()
 
 	def validate_duplicate(self):
-		table = frappe.qb.DocType("Closing Stock Balance")
+		table = nts.qb.DocType("Closing Stock Balance")
 
 		query = (
-			frappe.qb.from_(table)
+			nts.qb.from_(table)
 			.select(table.name)
 			.where(
 				(table.docstatus == 1)
@@ -79,7 +79,7 @@ class ClosingStockBalance(Document):
 		if query and query[0].name:
 			name = get_link_to_form("Closing Stock Balance", query[0].name)
 			msg = f"Closing Stock Balance {name} already exists for the selected date range"
-			frappe.throw(_(msg), title=_("Duplicate Closing Stock Balance"))
+			nts.throw(_(msg), title=_("Duplicate Closing Stock Balance"))
 
 	def on_submit(self):
 		self.set_status(save=True)
@@ -89,24 +89,24 @@ class ClosingStockBalance(Document):
 		self.set_status(save=True)
 		self.clear_attachment()
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def enqueue_job(self):
 		self.db_set("status", "In Progress")
 		self.clear_attachment()
 		enqueue(prepare_closing_stock_balance, name=self.name, queue="long", timeout=1500)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def regenerate_closing_balance(self):
 		self.enqueue_job()
 
 	def clear_attachment(self):
 		if attachments := get_attachments(self.doctype, self.name):
 			attachment = attachments[0]
-			frappe.delete_doc("File", attachment.name)
+			nts.delete_doc("File", attachment.name)
 
 	def create_closing_stock_balance_entries(self):
 		columns, data = execute(
-			filters=frappe._dict(
+			filters=nts._dict(
 				{
 					"company": self.company,
 					"from_date": self.from_date,
@@ -129,7 +129,7 @@ class ClosingStockBalance(Document):
 	def get_prepared_data(self):
 		if attachments := get_attachments(self.doctype, self.name):
 			attachment = attachments[0]
-			attached_file = frappe.get_doc("File", attachment.name)
+			attached_file = nts.get_doc("File", attachment.name)
 
 			data = gzip.decompress(attached_file.get_content())
 			if data := json.loads(data.decode("utf-8")):
@@ -137,11 +137,11 @@ class ClosingStockBalance(Document):
 
 			return parse_json(data)
 
-		return frappe._dict({})
+		return nts._dict({})
 
 
 def prepare_closing_stock_balance(name):
-	doc = frappe.get_doc("Closing Stock Balance", name)
+	doc = nts.get_doc("Closing Stock Balance", name)
 
 	doc.db_set("status", "In Progress")
 

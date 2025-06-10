@@ -1,7 +1,7 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Work Order", {
+nts.ui.form.on("Work Order", {
 	setup: function (frm) {
 		frm.custom_make_buttons = {
 			"Stock Entry": "Start",
@@ -70,7 +70,7 @@ frappe.ui.form.on("Work Order", {
 					filters: { item: cstr(frm.doc.production_item) },
 				};
 			} else {
-				frappe.msgprint(__("Please enter Production Item first"));
+				nts.msgprint(__("Please enter Production Item first"));
 			}
 		});
 
@@ -234,15 +234,15 @@ frappe.ui.form.on("Work Order", {
 	},
 
 	create_stock_return_entry: function (frm) {
-		frappe.call({
+		nts.call({
 			method: "prodman.manufacturing.doctype.work_order.work_order.make_stock_return_entry",
 			args: {
 				work_order: frm.doc.name,
 			},
 			callback: function (r) {
 				if (!r.exc) {
-					let doc = frappe.model.sync(r.message);
-					frappe.set_route("Form", doc[0].doctype, doc[0].name);
+					let doc = nts.model.sync(r.message);
+					nts.set_route("Form", doc[0].doctype, doc[0].name);
 				}
 			},
 		});
@@ -252,7 +252,7 @@ frappe.ui.form.on("Work Order", {
 		let qty = 0;
 		let operations_data = [];
 
-		const dialog = frappe.prompt(
+		const dialog = nts.prompt(
 			{
 				fieldname: "operations",
 				fieldtype: "Table",
@@ -315,7 +315,7 @@ frappe.ui.form.on("Work Order", {
 				},
 			},
 			function (data) {
-				frappe.call({
+				nts.call({
 					method: "prodman.manufacturing.doctype.work_order.work_order.make_job_card",
 					freeze: true,
 					args: {
@@ -356,13 +356,13 @@ frappe.ui.form.on("Work Order", {
 	},
 
 	make_bom: function (frm) {
-		frappe.call({
+		nts.call({
 			method: "make_bom",
 			doc: frm.doc,
 			callback: function (r) {
 				if (r.message) {
-					var doc = frappe.model.sync(r.message)[0];
-					frappe.set_route("Form", doc.doctype, doc.name);
+					var doc = nts.model.sync(r.message)[0];
+					nts.set_route("Form", doc.doctype, doc.name);
 				}
 			},
 		});
@@ -372,7 +372,7 @@ frappe.ui.form.on("Work Order", {
 		prodman.work_order
 			.show_prompt_for_qty_input(frm, "Disassemble")
 			.then((data) => {
-				return frappe.xcall("prodman.manufacturing.doctype.work_order.work_order.make_stock_entry", {
+				return nts.xcall("prodman.manufacturing.doctype.work_order.work_order.make_stock_entry", {
 					work_order_id: frm.doc.name,
 					purpose: "Disassemble",
 					qty: data.qty,
@@ -380,8 +380,8 @@ frappe.ui.form.on("Work Order", {
 				});
 			})
 			.then((stock_entry) => {
-				frappe.model.sync(stock_entry);
-				frappe.set_route("Form", stock_entry.doctype, stock_entry.name);
+				nts.model.sync(stock_entry);
+				nts.set_route("Form", stock_entry.doctype, stock_entry.name);
 			});
 	},
 
@@ -471,7 +471,7 @@ frappe.ui.form.on("Work Order", {
 
 	production_item: function (frm) {
 		if (frm.doc.production_item) {
-			frappe.call({
+			nts.call({
 				method: "prodman.manufacturing.doctype.work_order.work_order.get_item_details",
 				args: {
 					item: frm.doc.production_item,
@@ -545,7 +545,7 @@ frappe.ui.form.on("Work Order", {
 
 	set_sales_order: function (frm) {
 		if (frm.doc.production_item) {
-			frappe.call({
+			nts.call({
 				method: "prodman.manufacturing.doctype.work_order.work_order.query_sales_order",
 				args: { production_item: frm.doc.production_item },
 				callback: function (r) {
@@ -566,23 +566,23 @@ frappe.ui.form.on("Work Order", {
 	},
 });
 
-frappe.ui.form.on("Work Order Item", {
+nts.ui.form.on("Work Order Item", {
 	allow_alternative_item(frm) {
 		frm.trigger("allow_alternative_item");
 	},
 	source_warehouse: function (frm, cdt, cdn) {
 		var row = locals[cdt][cdn];
 		if (!row.item_code) {
-			frappe.throw(__("Please set the Item Code first"));
+			nts.throw(__("Please set the Item Code first"));
 		} else if (row.source_warehouse) {
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.utils.get_latest_stock_qty",
 				args: {
 					item_code: row.item_code,
 					warehouse: row.source_warehouse,
 				},
 				callback: function (r) {
-					frappe.model.set_value(
+					nts.model.set_value(
 						row.doctype,
 						row.name,
 						"available_qty_at_source_warehouse",
@@ -597,7 +597,7 @@ frappe.ui.form.on("Work Order Item", {
 		let row = locals[cdt][cdn];
 
 		if (row.item_code) {
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.doctype.item.item.get_item_details",
 				args: {
 					item_code: row.item_code,
@@ -605,7 +605,7 @@ frappe.ui.form.on("Work Order Item", {
 				},
 				callback: function (r) {
 					if (r.message) {
-						frappe.model.set_value(cdt, cdn, {
+						nts.model.set_value(cdt, cdn, {
 							required_qty: row.required_qty || 1,
 							item_name: r.message.item_name,
 							description: r.message.description,
@@ -620,18 +620,18 @@ frappe.ui.form.on("Work Order Item", {
 	},
 });
 
-frappe.ui.form.on("Work Order Operation", {
+nts.ui.form.on("Work Order Operation", {
 	workstation: function (frm, cdt, cdn) {
 		var d = locals[cdt][cdn];
 		if (d.workstation) {
-			frappe.call({
-				method: "frappe.client.get",
+			nts.call({
+				method: "nts.client.get",
 				args: {
 					doctype: "Workstation",
 					name: d.workstation,
 				},
 				callback: function (data) {
-					frappe.model.set_value(d.doctype, d.name, "hour_rate", data.message.hour_rate);
+					nts.model.set_value(d.doctype, d.name, "hour_rate", data.message.hour_rate);
 					prodman.work_order.calculate_cost(frm.doc);
 					prodman.work_order.calculate_total_cost(frm);
 				},
@@ -652,7 +652,7 @@ prodman.work_order = {
 			frm.add_custom_button(
 				__("Close"),
 				function () {
-					frappe.confirm(__("Once the Work Order is Closed. It can't be resumed."), () => {
+					nts.confirm(__("Once the Work Order is Closed. It can't be resumed."), () => {
 						prodman.work_order.change_work_order_status(frm, "Closed");
 					});
 				},
@@ -775,7 +775,7 @@ prodman.work_order = {
 			doc.planned_operating_cost = 0.0;
 			for (var i = 0; i < op.length; i++) {
 				var planned_operating_cost = flt((flt(op[i].hour_rate) * flt(op[i].time_in_mins)) / 60, 2);
-				frappe.model.set_value(
+				nts.model.set_value(
 					"Work Order Operation",
 					op[i].name,
 					"planned_operating_cost",
@@ -794,7 +794,7 @@ prodman.work_order = {
 
 	set_default_warehouse: function (frm) {
 		if (!(frm.doc.wip_warehouse || frm.doc.fg_warehouse)) {
-			frappe.call({
+			nts.call({
 				method: "prodman.manufacturing.doctype.work_order.work_order.get_default_warehouse",
 				callback: function (r) {
 					if (!r.exe) {
@@ -857,13 +857,13 @@ prodman.work_order = {
 		}
 
 		return new Promise((resolve, reject) => {
-			frappe.prompt(
+			nts.prompt(
 				fields,
 				(data) => {
 					max += (frm.doc.qty * (frm.doc.__onload.overproduction_percentage || 0.0)) / 100;
 
 					if (data.qty > max) {
-						frappe.msgprint(__("Quantity must not be more than {0}", [max]));
+						nts.msgprint(__("Quantity must not be more than {0}", [max]));
 						reject();
 					}
 					data.purpose = purpose;
@@ -878,29 +878,29 @@ prodman.work_order = {
 	make_se: function (frm, purpose) {
 		this.show_prompt_for_qty_input(frm, purpose)
 			.then((data) => {
-				return frappe.xcall("prodman.manufacturing.doctype.work_order.work_order.make_stock_entry", {
+				return nts.xcall("prodman.manufacturing.doctype.work_order.work_order.make_stock_entry", {
 					work_order_id: frm.doc.name,
 					purpose: purpose,
 					qty: data.qty,
 				});
 			})
 			.then((stock_entry) => {
-				frappe.model.sync(stock_entry);
-				frappe.set_route("Form", stock_entry.doctype, stock_entry.name);
+				nts.model.sync(stock_entry);
+				nts.set_route("Form", stock_entry.doctype, stock_entry.name);
 			});
 	},
 
 	create_pick_list: function (frm, purpose = "Material Transfer for Manufacture") {
 		this.show_prompt_for_qty_input(frm, purpose)
 			.then((data) => {
-				return frappe.xcall("prodman.manufacturing.doctype.work_order.work_order.create_pick_list", {
+				return nts.xcall("prodman.manufacturing.doctype.work_order.work_order.create_pick_list", {
 					source_name: frm.doc.name,
 					for_qty: data.qty,
 				});
 			})
 			.then((pick_list) => {
-				frappe.model.sync(pick_list);
-				frappe.set_route("Form", pick_list.doctype, pick_list.name);
+				nts.model.sync(pick_list);
+				nts.set_route("Form", pick_list.doctype, pick_list.name);
 			});
 	},
 
@@ -916,7 +916,7 @@ prodman.work_order = {
 			max = flt(frm.doc.qty) - flt(frm.doc.produced_qty);
 		}
 
-		frappe.call({
+		nts.call({
 			method: "prodman.manufacturing.doctype.work_order.work_order.make_stock_entry",
 			args: {
 				work_order_id: frm.doc.name,
@@ -924,15 +924,15 @@ prodman.work_order = {
 				qty: max,
 			},
 			callback: function (r) {
-				var doclist = frappe.model.sync(r.message);
-				frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				var doclist = nts.model.sync(r.message);
+				nts.set_route("Form", doclist[0].doctype, doclist[0].name);
 			},
 		});
 	},
 
 	change_work_order_status: function (frm, status) {
 		let method_name = status == "Closed" ? "close_work_order" : "stop_unstop";
-		frappe.call({
+		nts.call({
 			method: `prodman.manufacturing.doctype.work_order.work_order.${method_name}`,
 			freeze: true,
 			freeze_message: __("Updating Work Order status"),
@@ -950,7 +950,7 @@ prodman.work_order = {
 	},
 };
 
-frappe.tour["Work Order"] = [
+nts.tour["Work Order"] = [
 	{
 		fieldname: "production_item",
 		title: "Item to Manufacture",

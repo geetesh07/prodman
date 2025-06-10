@@ -1,7 +1,7 @@
-// Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2021, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.provide("prodman.assets");
+nts .provide("prodman.assets");
 
 prodman.assets.AssetCapitalization = class AssetCapitalization extends prodman.stock.StockController {
 	setup() {
@@ -83,11 +83,11 @@ prodman.assets.AssetCapitalization = class AssetCapitalization extends prodman.s
 		me.frm.set_query("batch_no", "stock_items", function (doc, cdt, cdn) {
 			var item = locals[cdt][cdn];
 			if (!item.item_code) {
-				frappe.throw(__("Please enter Item Code to get Batch Number"));
+				nts .throw(__("Please enter Item Code to get Batch Number"));
 			} else {
 				var filters = {
 					item_code: item.item_code,
-					posting_date: me.frm.doc.posting_date || frappe.datetime.nowdate(),
+					posting_date: me.frm.doc.posting_date || nts .datetime.nowdate(),
 					warehouse: item.warehouse,
 				};
 
@@ -182,7 +182,7 @@ prodman.assets.AssetCapitalization = class AssetCapitalization extends prodman.s
 	}
 
 	item_code(doc, cdt, cdn) {
-		var row = frappe.get_doc(cdt, cdn);
+		var row = nts .get_doc(cdt, cdn);
 		if (cdt === "Asset Capitalization Stock Item") {
 			this.get_consumed_stock_item_details(row);
 		} else if (cdt == "Asset Capitalization Service Item") {
@@ -191,14 +191,14 @@ prodman.assets.AssetCapitalization = class AssetCapitalization extends prodman.s
 	}
 
 	warehouse(doc, cdt, cdn) {
-		var row = frappe.get_doc(cdt, cdn);
+		var row = nts .get_doc(cdt, cdn);
 		if (cdt === "Asset Capitalization Stock Item") {
 			this.get_warehouse_details(row);
 		}
 	}
 
 	asset(doc, cdt, cdn) {
-		var row = frappe.get_doc(cdt, cdn);
+		var row = nts .get_doc(cdt, cdn);
 		if (cdt === "Asset Capitalization Asset Item") {
 			this.get_consumed_asset_details(row);
 		}
@@ -206,7 +206,7 @@ prodman.assets.AssetCapitalization = class AssetCapitalization extends prodman.s
 
 	posting_date() {
 		if (this.frm.doc.posting_date) {
-			frappe.run_serially([
+			nts .run_serially([
 				() => this.get_all_item_warehouse_details(),
 				() => this.get_all_asset_values(),
 			]);
@@ -221,7 +221,7 @@ prodman.assets.AssetCapitalization = class AssetCapitalization extends prodman.s
 
 	finance_book(doc, cdt, cdn) {
 		if (cdt === "Asset Capitalization Asset Item") {
-			var row = frappe.get_doc(cdt, cdn);
+			var row = nts .get_doc(cdt, cdn);
 			this.get_consumed_asset_details(row);
 		} else {
 			this.get_all_asset_values();
@@ -248,15 +248,15 @@ prodman.assets.AssetCapitalization = class AssetCapitalization extends prodman.s
 		var me = this;
 
 		if (me.frm.doc.company) {
-			frappe.model.set_value(me.frm.doc.doctype, me.frm.doc.name, "cost_center", null);
+			nts .model.set_value(me.frm.doc.doctype, me.frm.doc.name, "cost_center", null);
 			$.each(me.frm.doc.stock_items || [], function (i, d) {
-				frappe.model.set_value(d.doctype, d.name, "cost_center", null);
+				nts .model.set_value(d.doctype, d.name, "cost_center", null);
 			});
 			$.each(me.frm.doc.asset_items || [], function (i, d) {
-				frappe.model.set_value(d.doctype, d.name, "cost_center", null);
+				nts .model.set_value(d.doctype, d.name, "cost_center", null);
 			});
 			$.each(me.frm.doc.service_items || [], function (i, d) {
-				frappe.model.set_value(d.doctype, d.name, "cost_center", null);
+				nts .model.set_value(d.doctype, d.name, "cost_center", null);
 			});
 		}
 

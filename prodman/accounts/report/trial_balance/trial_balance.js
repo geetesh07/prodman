@@ -1,14 +1,14 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.query_reports["Trial Balance"] = {
+nts .query_reports["Trial Balance"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts .defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -16,16 +16,16 @@ frappe.query_reports["Trial Balance"] = {
 			label: __("Fiscal Year"),
 			fieldtype: "Link",
 			options: "Fiscal Year",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today()),
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today()),
 			reqd: 1,
 			on_change: function (query_report) {
 				var fiscal_year = query_report.get_values().fiscal_year;
 				if (!fiscal_year) {
 					return;
 				}
-				frappe.model.with_doc("Fiscal Year", fiscal_year, function (r) {
-					var fy = frappe.model.get_doc("Fiscal Year", fiscal_year);
-					frappe.query_report.set_filter_value({
+				nts .model.with_doc("Fiscal Year", fiscal_year, function (r) {
+					var fy = nts .model.get_doc("Fiscal Year", fiscal_year);
+					nts .query_report.set_filter_value({
 						from_date: fy.year_start_date,
 						to_date: fy.year_end_date,
 					});
@@ -36,13 +36,13 @@ frappe.query_reports["Trial Balance"] = {
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[1],
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today(), true)[1],
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[2],
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today(), true)[2],
 		},
 		{
 			fieldname: "cost_center",
@@ -50,7 +50,7 @@ frappe.query_reports["Trial Balance"] = {
 			fieldtype: "Link",
 			options: "Cost Center",
 			get_query: function () {
-				var company = frappe.query_report.get_filter_value("company");
+				var company = nts .query_report.get_filter_value("company");
 				return {
 					doctype: "Cost Center",
 					filters: {

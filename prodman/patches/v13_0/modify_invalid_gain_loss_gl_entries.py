@@ -1,13 +1,13 @@
 import json
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("accounts", "doctype", "purchase_invoice_advance")
-	frappe.reload_doc("accounts", "doctype", "sales_invoice_advance")
+	nts.reload_doc("accounts", "doctype", "purchase_invoice_advance")
+	nts.reload_doc("accounts", "doctype", "sales_invoice_advance")
 
-	purchase_invoices = frappe.db.sql(
+	purchase_invoices = nts.db.sql(
 		"""
 		select
 			parenttype as type, parent as name
@@ -23,7 +23,7 @@ def execute():
 		as_dict=1,
 	)
 
-	sales_invoices = frappe.db.sql(
+	sales_invoices = nts.db.sql(
 		"""
 		select
 			parenttype as type, parent as name
@@ -40,18 +40,18 @@ def execute():
 	)
 
 	if purchase_invoices + sales_invoices:
-		frappe.log_error(
+		nts.log_error(
 			"Fix invalid gain / loss patch log",
 			message=json.dumps(purchase_invoices + sales_invoices, indent=2),
 		)
 
-	acc_frozen_upto = frappe.db.get_value("Accounts Settings", None, "acc_frozen_upto")
+	acc_frozen_upto = nts.db.get_value("Accounts Settings", None, "acc_frozen_upto")
 	if acc_frozen_upto:
-		frappe.db.set_single_value("Accounts Settings", "acc_frozen_upto", None)
+		nts.db.set_single_value("Accounts Settings", "acc_frozen_upto", None)
 
 	for invoice in purchase_invoices + sales_invoices:
 		try:
-			doc = frappe.get_doc(invoice.type, invoice.name)
+			doc = nts.get_doc(invoice.type, invoice.name)
 			doc.docstatus = 2
 			doc.make_gl_entries()
 			for advance in doc.advances:
@@ -59,10 +59,10 @@ def execute():
 					advance.db_set("exchange_gain_loss", 0, False)
 			doc.docstatus = 1
 			doc.make_gl_entries()
-			frappe.db.commit()
+			nts.db.commit()
 		except Exception:
-			frappe.db.rollback()
+			nts.db.rollback()
 			print(f"Failed to correct gl entries of {invoice.name}")
 
 	if acc_frozen_upto:
-		frappe.db.set_single_value("Accounts Settings", "acc_frozen_upto", acc_frozen_upto)
+		nts.db.set_single_value("Accounts Settings", "acc_frozen_upto", acc_frozen_upto)

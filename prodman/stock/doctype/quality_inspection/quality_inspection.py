@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.model.mapper import get_mapped_doc
-from frappe.utils import cint, cstr, flt, get_link_to_form, get_number_format_info
+import nts
+from nts import _
+from nts.model.document import Document
+from nts.model.mapper import get_mapped_doc
+from nts.utils import cint, cstr, flt, get_link_to_form, get_number_format_info
 
 from prodman.stock.doctype.quality_inspection_template.quality_inspection_template import (
 	get_template_details,
@@ -20,7 +20,7 @@ class QualityInspection(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.stock.doctype.quality_inspection_reading.quality_inspection_reading import (
 			QualityInspectionReading,
@@ -65,7 +65,7 @@ class QualityInspection(Document):
 			self.get_item_specification_details()
 
 		if self.inspection_type == "In Process" and self.reference_type == "Job Card":
-			item_qi_template = frappe.db.get_value("Item", self.item_code, "quality_inspection_template")
+			item_qi_template = nts.db.get_value("Item", self.item_code, "quality_inspection_template")
 			parameters = get_template_details(item_qi_template)
 			for reading in self.readings:
 				for d in parameters:
@@ -82,7 +82,7 @@ class QualityInspection(Document):
 
 	def set_company(self):
 		if self.reference_type and self.reference_name:
-			company = frappe.get_cached_value(self.reference_type, self.reference_name, "company")
+			company = nts.get_cached_value(self.reference_type, self.reference_name, "company")
 			if company != self.company:
 				self.company = company
 
@@ -97,7 +97,7 @@ class QualityInspection(Document):
 		if self.reference_type == "Stock Entry":
 			doctype = "Stock Entry Detail"
 
-		child_row_references = frappe.get_all(
+		child_row_references = nts.get_all(
 			doctype,
 			filters={"parent": self.reference_name, "item_code": self.item_code},
 			pluck="name",
@@ -112,7 +112,7 @@ class QualityInspection(Document):
 			self.distribute_child_row_reference(child_row_references)
 
 	def distribute_child_row_reference(self, child_row_references):
-		quality_inspections = frappe.get_all(
+		quality_inspections = nts.get_all(
 			"Quality Inspection",
 			filters={
 				"reference_name": self.reference_name,
@@ -137,31 +137,31 @@ class QualityInspection(Document):
 			if row.name == self.name:
 				self.child_row_reference = child_row_references[0]
 			else:
-				frappe.db.set_value(
+				nts.db.set_value(
 					"Quality Inspection", row.name, "child_row_reference", child_row_references[0]
 				)
 
 			child_row_references.remove(child_row_references[0])
 
 	def validate_inspection_required(self):
-		if frappe.db.get_single_value(
+		if nts.db.get_single_value(
 			"Stock Settings", "allow_to_make_quality_inspection_after_purchase_or_delivery"
 		):
 			return
 
-		if self.reference_type in ["Purchase Receipt", "Purchase Invoice"] and not frappe.get_cached_value(
+		if self.reference_type in ["Purchase Receipt", "Purchase Invoice"] and not nts.get_cached_value(
 			"Item", self.item_code, "inspection_required_before_purchase"
 		):
-			frappe.throw(
+			nts.throw(
 				_(
 					"'Inspection Required before Purchase' has disabled for the item {0}, no need to create the QI"
 				).format(get_link_to_form("Item", self.item_code))
 			)
 
-		if self.reference_type in ["Delivery Note", "Sales Invoice"] and not frappe.get_cached_value(
+		if self.reference_type in ["Delivery Note", "Sales Invoice"] and not nts.get_cached_value(
 			"Item", self.item_code, "inspection_required_before_delivery"
 		):
-			frappe.throw(
+			nts.throw(
 				_(
 					"'Inspection Required before Delivery' has disabled for the item {0}, no need to create the QI"
 				).format(get_link_to_form("Item", self.item_code))
@@ -170,10 +170,10 @@ class QualityInspection(Document):
 	def before_submit(self):
 		self.validate_readings_status_mandatory()
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_item_specification_details(self):
 		if not self.quality_inspection_template:
-			self.quality_inspection_template = frappe.db.get_value(
+			self.quality_inspection_template = nts.db.get_value(
 				"Item", self.item_code, "quality_inspection_template"
 			)
 
@@ -186,24 +186,24 @@ class QualityInspection(Document):
 			child = self.append("readings", {})
 			child.update(d)
 			child.status = "Accepted"
-			child.parameter_group = frappe.get_value(
+			child.parameter_group = nts.get_value(
 				"Quality Inspection Parameter", d.specification, "parameter_group"
 			)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_quality_inspection_template(self):
 		template = ""
 		if self.bom_no:
-			template = frappe.db.get_value("BOM", self.bom_no, "quality_inspection_template")
+			template = nts.db.get_value("BOM", self.bom_no, "quality_inspection_template")
 
 		if not template:
-			template = frappe.db.get_value("BOM", self.item_code, "quality_inspection_template")
+			template = nts.db.get_value("BOM", self.item_code, "quality_inspection_template")
 
 		self.quality_inspection_template = template
 		self.get_item_specification_details()
 
 	def on_update(self):
-		action_if_qi_in_draft = frappe.db.get_single_value(
+		action_if_qi_in_draft = nts.db.get_single_value(
 			"Stock Settings", "action_if_quality_inspection_is_not_submitted"
 		)
 
@@ -212,7 +212,7 @@ class QualityInspection(Document):
 
 	def on_submit(self):
 		if (
-			frappe.db.get_single_value("Stock Settings", "action_if_quality_inspection_is_not_submitted")
+			nts.db.get_single_value("Stock Settings", "action_if_quality_inspection_is_not_submitted")
 			== "Stop"
 		):
 			self.update_qc_reference()
@@ -228,14 +228,14 @@ class QualityInspection(Document):
 	def validate_readings_status_mandatory(self):
 		for reading in self.readings:
 			if not reading.status:
-				frappe.throw(_("Row #{0}: Status is mandatory").format(reading.idx))
+				nts.throw(_("Row #{0}: Status is mandatory").format(reading.idx))
 
 	def update_qc_reference(self, remove_reference=False):
 		quality_inspection = self.name if self.docstatus < 2 and not remove_reference else ""
 
 		if self.reference_type == "Job Card":
 			if self.reference_name:
-				frappe.db.sql(
+				nts.db.sql(
 					f"""
 					UPDATE `tab{self.reference_type}`
 					SET quality_inspection = %s, modified = %s
@@ -251,10 +251,10 @@ class QualityInspection(Document):
 				doctype = "Stock Entry Detail"
 
 			if doctype and self.reference_name:
-				child_doc = frappe.qb.DocType(doctype)
+				child_doc = nts.qb.DocType(doctype)
 
 				query = (
-					frappe.qb.update(child_doc)
+					nts.qb.update(child_doc)
 					.set(child_doc.quality_inspection, quality_inspection)
 					.where(
 						(child_doc.parent == self.reference_name) & (child_doc.item_code == self.item_code)
@@ -272,7 +272,7 @@ class QualityInspection(Document):
 
 				query.run()
 
-				frappe.db.set_value(
+				nts.db.set_value(
 					self.reference_type,
 					self.reference_name,
 					"modified",
@@ -293,7 +293,7 @@ class QualityInspection(Document):
 			for reading in self.readings:
 				if reading.status == "Rejected":
 					self.status = "Rejected"
-					frappe.msgprint(
+					nts.msgprint(
 						_("Status set to rejected as there are one or more rejected readings."), alert=True
 					)
 					break
@@ -323,7 +323,7 @@ class QualityInspection(Document):
 
 	def set_status_based_on_acceptance_formula(self, reading):
 		if not reading.acceptance_formula:
-			frappe.throw(
+			nts.throw(
 				_("Row #{0}: Acceptance Criteria Formula is required.").format(reading.idx),
 				title=_("Missing Formula"),
 			)
@@ -332,18 +332,18 @@ class QualityInspection(Document):
 		data = self.get_formula_evaluation_data(reading)
 
 		try:
-			result = frappe.safe_eval(condition, None, data)
+			result = nts.safe_eval(condition, None, data)
 			reading.status = "Accepted" if result else "Rejected"
 		except NameError as e:
-			field = frappe.bold(e.args[0].split()[1])
-			frappe.throw(
+			field = nts.bold(e.args[0].split()[1])
+			nts.throw(
 				_(
 					"Row #{0}: {1} is not a valid reading field. Please refer to the field description."
 				).format(reading.idx, field),
 				title=_("Invalid Formula"),
 			)
 		except Exception:
-			frappe.throw(
+			nts.throw(
 				_("Row #{0}: Acceptance Criteria Formula is incorrect.").format(reading.idx),
 				title=_("Invalid Formula"),
 			)
@@ -380,13 +380,13 @@ class QualityInspection(Document):
 		return actual_mean
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def item_query(doctype, txt, searchfield, start, page_len, filters):
-	from frappe.desk.reportview import get_match_cond
+	from nts.desk.reportview import get_match_cond
 
 	from_doctype = cstr(filters.get("from"))
-	if not from_doctype or not frappe.db.exists("DocType", from_doctype):
+	if not from_doctype or not nts.db.exists("DocType", from_doctype):
 		return []
 
 	mcond = get_match_cond(from_doctype)
@@ -411,7 +411,7 @@ def item_query(doctype, txt, searchfield, start, page_len, filters):
 		if from_doctype in ["Supplier Quotation Item"]:
 			qi_condition = ""
 
-		return frappe.db.sql(
+		return nts.db.sql(
 			f"""
 				SELECT item_code
 				FROM `tab{from_doctype}`
@@ -423,7 +423,7 @@ def item_query(doctype, txt, searchfield, start, page_len, filters):
 		)
 
 	elif filters.get("reference_name"):
-		return frappe.db.sql(
+		return nts.db.sql(
 			f"""
 				SELECT production_item
 				FROM `tab{from_doctype}`
@@ -436,10 +436,10 @@ def item_query(doctype, txt, searchfield, start, page_len, filters):
 		)
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def quality_inspection_query(doctype, txt, searchfield, start, page_len, filters):
-	return frappe.get_all(
+	return nts.get_all(
 		"Quality Inspection",
 		limit_start=start,
 		limit_page_length=page_len,
@@ -453,10 +453,10 @@ def quality_inspection_query(doctype, txt, searchfield, start, page_len, filters
 	)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_quality_inspection(source_name, target_doc=None):
 	def postprocess(source, doc):
-		doc.inspected_by = frappe.session.user
+		doc.inspected_by = nts.session.user
 		doc.get_quality_inspection_template()
 
 	doc = get_mapped_doc(
@@ -481,7 +481,7 @@ def parse_float(num: str) -> float:
 	is representation in user's prefered number format instead of machine
 	readable format. This function converts them to machine readable format."""
 
-	number_format = frappe.db.get_default("number_format") or "#,###.##"
+	number_format = nts.db.get_default("number_format") or "#,###.##"
 	decimal_str, comma_str, _number_format_precision = get_number_format_info(number_format)
 
 	if decimal_str == "," and comma_str == ".":

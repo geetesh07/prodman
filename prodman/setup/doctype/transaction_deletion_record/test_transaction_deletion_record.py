@@ -1,23 +1,23 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 
-class TestTransactionDeletionRecord(FrappeTestCase):
+class TestTransactionDeletionRecord(ntsTestCase):
 	def setUp(self):
 		create_company("Dunder Mifflin Paper Co")
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def test_doctypes_contain_company_field(self):
 		tdr = create_transaction_deletion_doc("Dunder Mifflin Paper Co")
 		for doctype in tdr.doctypes:
 			contains_company = False
-			doctype_fields = frappe.get_meta(doctype.doctype_name).as_dict()["fields"]
+			doctype_fields = nts.get_meta(doctype.doctype_name).as_dict()["fields"]
 			for doctype_field in doctype_fields:
 				if doctype_field["fieldtype"] == "Link" and doctype_field["options"] == "Company":
 					contains_company = True
@@ -36,7 +36,7 @@ class TestTransactionDeletionRecord(FrappeTestCase):
 	def test_deletion_is_successful(self):
 		create_task("Dunder Mifflin Paper Co")
 		create_transaction_deletion_doc("Dunder Mifflin Paper Co")
-		tasks_containing_company = frappe.get_all("Task", filters={"company": "Dunder Mifflin Paper Co"})
+		tasks_containing_company = nts.get_all("Task", filters={"company": "Dunder Mifflin Paper Co"})
 		self.assertEqual(tasks_containing_company, [])
 
 	def test_company_transaction_deletion_request(self):
@@ -51,12 +51,12 @@ class TestTransactionDeletionRecord(FrappeTestCase):
 
 
 def create_company(company_name):
-	company = frappe.get_doc({"doctype": "Company", "company_name": company_name, "default_currency": "INR"})
+	company = nts.get_doc({"doctype": "Company", "company_name": company_name, "default_currency": "INR"})
 	company.insert(ignore_if_duplicate=True)
 
 
 def create_transaction_deletion_doc(company):
-	tdr = frappe.get_doc({"doctype": "Transaction Deletion Record", "company": company})
+	tdr = nts.get_doc({"doctype": "Transaction Deletion Record", "company": company})
 	tdr.insert()
 	tdr.process_in_single_transaction = True
 	tdr.submit()
@@ -65,5 +65,5 @@ def create_transaction_deletion_doc(company):
 
 
 def create_task(company):
-	task = frappe.get_doc({"doctype": "Task", "company": company, "subject": "Delete"})
+	task = nts.get_doc({"doctype": "Task", "company": company, "subject": "Delete"})
 	task.insert()

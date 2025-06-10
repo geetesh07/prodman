@@ -1,15 +1,15 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
 	from prodman.stock.stock_balance import get_indented_qty, get_ordered_qty, update_bin_qty
 
 	count = 0
-	for item_code, warehouse in frappe.db.sql(
+	for item_code, warehouse in nts.db.sql(
 		"""select distinct item_code, warehouse from
 		(select item_code, warehouse from tabBin
 		union
@@ -28,6 +28,6 @@ def execute():
 				},
 			)
 			if count % 200 == 0:
-				frappe.db.commit()
+				nts.db.commit()
 		except Exception:
-			frappe.db.rollback()
+			nts.db.rollback()

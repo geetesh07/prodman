@@ -1,10 +1,10 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import (
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .utils import (
 	add_months,
 	cint,
 	flt,
@@ -28,7 +28,7 @@ class AssetShiftAllocation(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.assets.doctype.depreciation_schedule.depreciation_schedule import (
 			DepreciationSchedule,
@@ -71,13 +71,13 @@ class AssetShiftAllocation(Document):
 				self.flags.ignore_validate = True
 				self.save()
 			else:
-				frappe.throw(
+				nts .throw(
 					_(
 						"Asset Depreciation Schedule for Asset {0} and Finance Book {1} is not using shift based depreciation"
 					).format(self.asset, self.finance_book)
 				)
 		else:
-			frappe.throw(
+			nts .throw(
 				_("Asset Depreciation Schedule not found for Asset {0} and Finance Book {1}").format(
 					self.asset, self.finance_book
 				)
@@ -89,7 +89,7 @@ class AssetShiftAllocation(Document):
 
 		for i, sch in enumerate(self.depreciation_schedule):
 			if sch.journal_entry and self.asset_depr_schedule_doc.depreciation_schedule[i].shift != sch.shift:
-				frappe.throw(
+				nts .throw(
 					_(
 						"Row {0}: Shift cannot be changed since the depreciation has already been processed"
 					).format(i)
@@ -101,7 +101,7 @@ class AssetShiftAllocation(Document):
 
 		self.allocate_shift_diff_in_depr_schedule()
 
-		asset_doc = frappe.get_doc("Asset", self.asset)
+		asset_doc = nts .get_doc("Asset", self.asset)
 		fb_row = asset_doc.finance_books[self.asset_depr_schedule_doc.finance_book_id - 1]
 
 		asset_doc.flags.shift_allocation = True
@@ -156,7 +156,7 @@ class AssetShiftAllocation(Document):
 						)
 						diff = 0
 					except Exception:
-						frappe.throw(
+						nts .throw(
 							_("Could not auto update shifts. Shift with shift factor {0} needed.")
 						).format(shift_factor - diff)
 		elif diff < 0:
@@ -216,12 +216,12 @@ class AssetShiftAllocation(Document):
 							)
 							diff = 0
 						except Exception:
-							frappe.throw(
+							nts .throw(
 								_("Could not auto update shifts. Shift with shift factor {0} needed.")
 							).format(shift_factor + diff)
 
 	def create_new_asset_depr_schedule(self):
-		new_asset_depr_schedule_doc = frappe.copy_doc(self.asset_depr_schedule_doc)
+		new_asset_depr_schedule_doc = nts .copy_doc(self.asset_depr_schedule_doc)
 
 		new_asset_depr_schedule_doc.depreciation_schedule = []
 

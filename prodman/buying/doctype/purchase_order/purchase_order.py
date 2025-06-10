@@ -1,14 +1,14 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 
-import frappe
-from frappe import _, msgprint
-from frappe.desk.notifications import clear_doctype_notifications
-from frappe.model.mapper import get_mapped_doc
-from frappe.utils import cint, cstr, flt, get_link_to_form
+import nts
+from nts import _, msgprint
+from nts.desk.notifications import clear_doctype_notifications
+from nts.model.mapper import get_mapped_doc
+from nts.utils import cint, cstr, flt, get_link_to_form
 
 from prodman.accounts.doctype.sales_invoice.sales_invoice import (
 	unlink_inter_company_doc,
@@ -42,7 +42,7 @@ class PurchaseOrder(BuyingController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.accounts.doctype.payment_schedule.payment_schedule import PaymentSchedule
 		from prodman.accounts.doctype.pricing_rule_detail.pricing_rule_detail import PricingRuleDetail
@@ -188,7 +188,7 @@ class PurchaseOrder(BuyingController):
 		]
 
 	def onload(self):
-		supplier_tds = frappe.db.get_value("Supplier", self.supplier, "tax_withholding_category")
+		supplier_tds = nts.db.get_value("Supplier", self.supplier, "tax_withholding_category")
 		self.set_onload("supplier_tds", supplier_tds)
 		self.set_onload("can_update_items", self.can_update_items())
 
@@ -232,7 +232,7 @@ class PurchaseOrder(BuyingController):
 		"""
 		If permitted in settings and any item has 0 qty, the PO has unit price items.
 		"""
-		if not frappe.db.get_single_value("Buying Settings", "allow_zero_qty_in_purchase_order"):
+		if not nts.db.get_single_value("Buying Settings", "allow_zero_qty_in_purchase_order"):
 			return
 
 		self.has_unit_price_items = any(
@@ -272,7 +272,7 @@ class PurchaseOrder(BuyingController):
 			}
 		)
 
-		if cint(frappe.db.get_single_value("Buying Settings", "maintain_same_rate")):
+		if cint(nts.db.get_single_value("Buying Settings", "maintain_same_rate")):
 			self.validate_rate_with_reference_doc(
 				[["Supplier Quotation", "supplier_quotation", "supplier_quotation_item"]]
 			)
@@ -308,20 +308,20 @@ class PurchaseOrder(BuyingController):
 		self.calculate_taxes_and_totals()
 
 	def validate_supplier(self):
-		prevent_po = frappe.db.get_value("Supplier", self.supplier, "prevent_pos")
+		prevent_po = nts.db.get_value("Supplier", self.supplier, "prevent_pos")
 		if prevent_po:
-			standing = frappe.db.get_value("Supplier Scorecard", self.supplier, "status")
+			standing = nts.db.get_value("Supplier Scorecard", self.supplier, "status")
 			if standing:
-				frappe.throw(
+				nts.throw(
 					_("Purchase Orders are not allowed for {0} due to a scorecard standing of {1}.").format(
 						self.supplier, standing
 					)
 				)
 
-		warn_po = frappe.db.get_value("Supplier", self.supplier, "warn_pos")
+		warn_po = nts.db.get_value("Supplier", self.supplier, "warn_pos")
 		if warn_po:
-			standing = frappe.db.get_value("Supplier Scorecard", self.supplier, "status")
-			frappe.msgprint(
+			standing = nts.db.get_value("Supplier Scorecard", self.supplier, "status")
+			nts.msgprint(
 				_(
 					"{0} currently has a {1} Supplier Scorecard standing, and Purchase Orders to this supplier should be issued with caution."
 				).format(self.supplier, standing),
@@ -336,22 +336,22 @@ class PurchaseOrder(BuyingController):
 			return
 		items = list(set(d.item_code for d in self.get("items")))
 
-		itemwise_min_order_qty = frappe._dict(
-			frappe.db.sql(
+		itemwise_min_order_qty = nts._dict(
+			nts.db.sql(
 				"""select name, min_order_qty
 			from tabItem where name in ({})""".format(", ".join(["%s"] * len(items))),
 				items,
 			)
 		)
 
-		itemwise_qty = frappe._dict()
+		itemwise_qty = nts._dict()
 		for d in self.get("items"):
 			itemwise_qty.setdefault(d.item_code, 0)
 			itemwise_qty[d.item_code] += flt(d.stock_qty)
 
 		for item_code, qty in itemwise_qty.items():
 			if flt(qty) < flt(itemwise_min_order_qty.get(item_code)):
-				frappe.throw(
+				nts.throw(
 					_(
 						"Item {0}: Ordered qty {1} cannot be less than minimum order qty {2} (defined in Item)."
 					).format(item_code, qty, itemwise_min_order_qty.get(item_code))
@@ -360,7 +360,7 @@ class PurchaseOrder(BuyingController):
 	def validate_bom_for_subcontracting_items(self):
 		for item in self.items:
 			if not item.bom:
-				frappe.throw(
+				nts.throw(
 					_("Row #{0}: BOM is not specified for subcontracting item {0}").format(
 						item.idx, item.item_code
 					)
@@ -371,26 +371,26 @@ class PurchaseOrder(BuyingController):
 			if not self.is_old_subcontracting_flow:
 				for item in self.items:
 					if not item.fg_item:
-						frappe.throw(
+						nts.throw(
 							_("Row #{0}: Finished Good Item is not specified for service item {1}").format(
 								item.idx, item.item_code
 							)
 						)
 					else:
-						if not frappe.get_value("Item", item.fg_item, "is_sub_contracted_item"):
-							frappe.throw(
+						if not nts.get_value("Item", item.fg_item, "is_sub_contracted_item"):
+							nts.throw(
 								_("Row #{0}: Finished Good Item {1} must be a sub-contracted item").format(
 									item.idx, item.fg_item
 								)
 							)
-						elif not frappe.get_value("Item", item.fg_item, "default_bom"):
-							frappe.throw(
+						elif not nts.get_value("Item", item.fg_item, "default_bom"):
+							nts.throw(
 								_("Row #{0}: Default BOM not found for FG Item {1}").format(
 									item.idx, item.fg_item
 								)
 							)
 					if not item.fg_item_qty:
-						frappe.throw(_("Row #{0}: Finished Good Item Qty can not be zero").format(item.idx))
+						nts.throw(_("Row #{0}: Finished Good Item Qty can not be zero").format(item.idx))
 		else:
 			for item in self.items:
 				item.set("fg_item", None)
@@ -399,11 +399,11 @@ class PurchaseOrder(BuyingController):
 	def get_schedule_dates(self):
 		for d in self.get("items"):
 			if d.material_request_item and not d.schedule_date:
-				d.schedule_date = frappe.db.get_value(
+				d.schedule_date = nts.db.get_value(
 					"Material Request Item", d.material_request_item, "schedule_date"
 				)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_last_purchase_rate(self):
 		"""get last purchase rates for all items"""
 
@@ -421,7 +421,7 @@ class PurchaseOrder(BuyingController):
 					d.rate = d.base_rate / conversion_rate
 					d.last_purchase_rate = d.rate
 				else:
-					item_last_purchase_rate = frappe.get_cached_value(
+					item_last_purchase_rate = nts.get_cached_value(
 						"Item", d.item_code, "last_purchase_rate"
 					)
 					if item_last_purchase_rate:
@@ -448,7 +448,7 @@ class PurchaseOrder(BuyingController):
 			if (
 				(not po_item_rows or d.name in po_item_rows)
 				and [d.item_code, d.warehouse] not in item_wh_list
-				and frappe.get_cached_value("Item", d.item_code, "is_stock_item")
+				and nts.get_cached_value("Item", d.item_code, "is_stock_item")
 				and d.warehouse
 				and not d.delivered_by_supplier
 			):
@@ -457,8 +457,8 @@ class PurchaseOrder(BuyingController):
 			update_bin_qty(item_code, warehouse, {"ordered_qty": get_ordered_qty(item_code, warehouse)})
 
 	def check_modified_date(self):
-		mod_db = frappe.db.sql("select modified from `tabPurchase Order` where name = %s", self.name)
-		date_diff = frappe.db.sql(f"select '{mod_db[0][0]}' - '{cstr(self.modified)}' ")
+		mod_db = nts.db.sql("select modified from `tabPurchase Order` where name = %s", self.name)
+		date_diff = nts.db.sql(f"select '{mod_db[0][0]}' - '{cstr(self.modified)}' ")
 
 		if date_diff and date_diff[0][0]:
 			msgprint(
@@ -491,7 +491,7 @@ class PurchaseOrder(BuyingController):
 		self.validate_budget()
 		self.update_reserved_qty_for_subcontract()
 
-		frappe.get_doc("Authorization Control").validate_approving_authority(
+		nts.get_doc("Authorization Control").validate_approving_authority(
 			self.doctype, self.company, self.base_grand_total
 		)
 
@@ -573,7 +573,7 @@ class PurchaseOrder(BuyingController):
 					sales_orders_to_update.append(item.sales_order)
 
 		for so_name in sales_orders_to_update:
-			so = frappe.get_doc("Sales Order", so_name)
+			so = nts.get_doc("Sales Order", so_name)
 			so.update_delivery_status()
 			so.set_status(update=True)
 			so.notify_update()
@@ -629,7 +629,7 @@ class PurchaseOrder(BuyingController):
 		result = True
 
 		if self.is_subcontracted and not self.is_old_subcontracting_flow:
-			if frappe.db.exists(
+			if nts.db.exists(
 				"Subcontracting Order", {"purchase_order": self.name, "docstatus": ["!=", 2]}
 			):
 				result = False
@@ -644,17 +644,17 @@ class PurchaseOrder(BuyingController):
 			return
 		for item in removed_items:
 			prev_ordered_qty = (
-				frappe.get_cached_value("Sales Order Item", item.get("sales_order_item"), "ordered_qty")
+				nts.get_cached_value("Sales Order Item", item.get("sales_order_item"), "ordered_qty")
 				or 0.0
 			)
 
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Sales Order Item", item.get("sales_order_item"), "ordered_qty", prev_ordered_qty - item.qty
 			)
 
 	def auto_create_subcontracting_order(self):
 		if self.is_subcontracted and not self.is_old_subcontracting_flow:
-			if frappe.db.get_single_value("Buying Settings", "auto_create_subcontracting_order"):
+			if nts.db.get_single_value("Buying Settings", "auto_create_subcontracting_order"):
 				make_subcontracting_order(self.name, save=True, notify=True)
 
 	def update_subcontracting_order_status(self):
@@ -663,20 +663,20 @@ class PurchaseOrder(BuyingController):
 		)
 
 		if self.is_subcontracted and not self.is_old_subcontracting_flow:
-			sco = frappe.db.get_value("Subcontracting Order", {"purchase_order": self.name, "docstatus": 1})
+			sco = nts.db.get_value("Subcontracting Order", {"purchase_order": self.name, "docstatus": 1})
 
 			if sco:
 				update_sco_status(sco, "Closed" if self.status == "Closed" else None)
 
 	def set_missing_values(self, for_validate=False):
-		tds_category = frappe.db.get_value("Supplier", self.supplier, "tax_withholding_category")
+		tds_category = nts.db.get_value("Supplier", self.supplier, "tax_withholding_category")
 		if tds_category and not for_validate:
 			self.set_onload("supplier_tds", tds_category)
 
 		super().set_missing_values(for_validate)
 
 
-@frappe.request_cache
+@nts.request_cache
 def item_last_purchase_rate(name, conversion_rate, item_code, conversion_factor=1.0):
 	"""get last purchase rate for an item"""
 
@@ -689,19 +689,19 @@ def item_last_purchase_rate(name, conversion_rate, item_code, conversion_factor=
 		) / conversion_rate
 		return last_purchase_rate
 	else:
-		item_last_purchase_rate = frappe.get_cached_value("Item", item_code, "last_purchase_rate")
+		item_last_purchase_rate = nts.get_cached_value("Item", item_code, "last_purchase_rate")
 		if item_last_purchase_rate:
 			return item_last_purchase_rate
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def close_or_unclose_purchase_orders(names, status):
-	if not frappe.has_permission("Purchase Order", "write"):
-		frappe.throw(_("Not permitted"), frappe.PermissionError)
+	if not nts.has_permission("Purchase Order", "write"):
+		nts.throw(_("Not permitted"), nts.PermissionError)
 
 	names = json.loads(names)
 	for name in names:
-		po = frappe.get_doc("Purchase Order", name)
+		po = nts.get_doc("Purchase Order", name)
 		if po.docstatus == 1:
 			if status == "Closed":
 				if po.status not in ("Cancelled", "Closed") and (
@@ -713,7 +713,7 @@ def close_or_unclose_purchase_orders(names, status):
 					po.update_status("Draft")
 			po.update_blanket_order()
 
-	frappe.local.message_log = []
+	nts.local.message_log = []
 
 
 def set_missing_values(source, target):
@@ -721,9 +721,9 @@ def set_missing_values(source, target):
 	target.run_method("calculate_taxes_and_totals")
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_purchase_receipt(source_name, target_doc=None):
-	has_unit_price_items = frappe.db.get_value("Purchase Order", source_name, "has_unit_price_items")
+	has_unit_price_items = nts.db.get_value("Purchase Order", source_name, "has_unit_price_items")
 
 	def is_unit_price_row(source):
 		return has_unit_price_items and source.qty == 0
@@ -774,20 +774,20 @@ def make_purchase_receipt(source_name, target_doc=None):
 	return doc
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_purchase_invoice(source_name, target_doc=None):
 	return get_mapped_purchase_invoice(source_name, target_doc)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_purchase_invoice_from_portal(purchase_order_name):
 	doc = get_mapped_purchase_invoice(purchase_order_name, ignore_permissions=True)
-	if doc.contact_email != frappe.session.user:
-		frappe.throw(_("Not Permitted"), frappe.PermissionError)
+	if doc.contact_email != nts.session.user:
+		nts.throw(_("Not Permitted"), nts.PermissionError)
 	doc.save()
-	frappe.db.commit()
-	frappe.response["type"] = "redirect"
-	frappe.response.location = "/purchase-invoices/" + doc.name
+	nts.db.commit()
+	nts.response["type"] = "redirect"
+	nts.response.location = "/purchase-invoices/" + doc.name
 
 
 def get_mapped_purchase_invoice(source_name, target_doc=None, ignore_permissions=False):
@@ -817,7 +817,7 @@ def get_mapped_purchase_invoice(source_name, target_doc=None, ignore_permissions
 		item_group = get_item_group_defaults(target.item_code, source_parent.company)
 		target.cost_center = (
 			obj.cost_center
-			or frappe.db.get_value("Project", obj.project, "cost_center")
+			or nts.db.get_value("Project", obj.project, "cost_center")
 			or item.get("buying_cost_center")
 			or item_group.get("buying_cost_center")
 		)
@@ -876,36 +876,36 @@ def get_list_context(context=None):
 	return list_context
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def update_status(status, name):
-	po = frappe.get_doc("Purchase Order", name)
+	po = nts.get_doc("Purchase Order", name)
 	po.update_status(status)
 	po.update_delivered_qty_in_sales_order()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_inter_company_sales_order(source_name, target_doc=None):
 	from prodman.accounts.doctype.sales_invoice.sales_invoice import make_inter_company_transaction
 
 	return make_inter_company_transaction("Purchase Order", source_name, target_doc)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_subcontracting_order(source_name, target_doc=None, save=False, submit=False, notify=False):
 	if not is_po_fully_subcontracted(source_name):
 		target_doc = get_mapped_subcontracting_order(source_name, target_doc)
 
-		if (save or submit) and frappe.has_permission(target_doc.doctype, "create"):
+		if (save or submit) and nts.has_permission(target_doc.doctype, "create"):
 			target_doc.save()
 
-			if submit and frappe.has_permission(target_doc.doctype, "submit", target_doc):
+			if submit and nts.has_permission(target_doc.doctype, "submit", target_doc):
 				try:
 					target_doc.submit()
 				except Exception as e:
 					target_doc.add_comment("Comment", _("Submit Action Failed") + "<br><br>" + str(e))
 
 			if notify:
-				frappe.msgprint(
+				nts.msgprint(
 					_("Subcontracting Order {0} created.").format(
 						get_link_to_form(target_doc.doctype, target_doc.name)
 					),
@@ -915,13 +915,13 @@ def make_subcontracting_order(source_name, target_doc=None, save=False, submit=F
 
 		return target_doc
 	else:
-		frappe.throw(_("This PO has been fully subcontracted."))
+		nts.throw(_("This PO has been fully subcontracted."))
 
 
 def is_po_fully_subcontracted(po_name):
-	table = frappe.qb.DocType("Purchase Order Item")
+	table = nts.qb.DocType("Purchase Order Item")
 	query = (
-		frappe.qb.from_(table)
+		nts.qb.from_(table)
 		.select(table.name)
 		.where((table.parent == po_name) & (table.qty != table.subcontracted_quantity))
 	)

@@ -1,10 +1,10 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2021, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe.utils import cint, flt, getdate, now_datetime
+import nts 
+from nts .utils import cint, flt, getdate, now_datetime
 
 from prodman.assets.doctype.asset.depreciation import post_depreciation_entries
 from prodman.assets.doctype.asset.test_asset import (
@@ -26,17 +26,17 @@ class TestAssetCapitalization(unittest.TestCase):
 		set_depreciation_settings_in_company()
 		create_asset_data()
 		create_asset_capitalization_data()
-		frappe.db.sql("delete from `tabTax Rule`")
+		nts .db.sql("delete from `tabTax Rule`")
 
 	def test_capitalization_with_perpetual_inventory(self):
 		company = "_Test Company with perpetual inventory"
 		set_depreciation_settings_in_company(company=company)
-		name = frappe.db.get_value(
+		name = nts .db.get_value(
 			"Asset Category Account",
 			filters={"parent": "Computers", "company_name": company},
 			fieldname=["name"],
 		)
-		frappe.db.set_value("Asset Category Account", name, "capital_work_in_progress_account", "")
+		nts .db.set_value("Asset Category Account", name, "capital_work_in_progress_account", "")
 
 		# Variables
 		consumed_asset_value = 100000
@@ -91,7 +91,7 @@ class TestAssetCapitalization(unittest.TestCase):
 		self.assertEqual(asset_capitalization.target_incoming_rate, total_amount)
 
 		# Test Target Asset values
-		target_asset = frappe.get_doc("Asset", asset_capitalization.target_asset)
+		target_asset = nts .get_doc("Asset", asset_capitalization.target_asset)
 		self.assertEqual(target_asset.gross_purchase_amount, total_amount)
 		self.assertEqual(target_asset.purchase_amount, total_amount)
 		self.assertEqual(target_asset.status, "Work In Progress")
@@ -180,7 +180,7 @@ class TestAssetCapitalization(unittest.TestCase):
 		self.assertEqual(asset_capitalization.target_incoming_rate, total_amount)
 
 		# Test Target Asset values
-		target_asset = frappe.get_doc("Asset", asset_capitalization.target_asset)
+		target_asset = nts .get_doc("Asset", asset_capitalization.target_asset)
 		self.assertEqual(target_asset.gross_purchase_amount, total_amount)
 		self.assertEqual(target_asset.purchase_amount, total_amount)
 
@@ -188,7 +188,7 @@ class TestAssetCapitalization(unittest.TestCase):
 		self.assertEqual(consumed_asset.db_get("status"), "Capitalized")
 
 		# Test General Ledger Entries
-		default_expense_account = frappe.db.get_value("Company", company, "default_expense_account")
+		default_expense_account = nts .db.get_value("Company", company, "default_expense_account")
 		expected_gle = {
 			"_Test Fixed Asset - _TC": -100000.0,
 			default_expense_account: -2000.0,
@@ -218,12 +218,12 @@ class TestAssetCapitalization(unittest.TestCase):
 	def test_capitalization_with_wip_composite_asset(self):
 		company = "_Test Company with perpetual inventory"
 		set_depreciation_settings_in_company(company=company)
-		name = frappe.db.get_value(
+		name = nts .db.get_value(
 			"Asset Category Account",
 			filters={"parent": "Computers", "company_name": company},
 			fieldname=["name"],
 		)
-		frappe.db.set_value("Asset Category Account", name, "capital_work_in_progress_account", "")
+		nts .db.set_value("Asset Category Account", name, "capital_work_in_progress_account", "")
 
 		stock_rate = 1000
 		stock_qty = 2
@@ -262,7 +262,7 @@ class TestAssetCapitalization(unittest.TestCase):
 		self.assertEqual(asset_capitalization.target_incoming_rate, total_amount)
 
 		# Test Target Asset values
-		target_asset = frappe.get_doc("Asset", asset_capitalization.target_asset)
+		target_asset = nts .get_doc("Asset", asset_capitalization.target_asset)
 		self.assertEqual(target_asset.gross_purchase_amount, total_amount)
 		self.assertEqual(target_asset.purchase_amount, total_amount)
 		self.assertEqual(target_asset.status, "Work In Progress")
@@ -323,7 +323,7 @@ class TestAssetCapitalization(unittest.TestCase):
 		self.assertEqual(asset_capitalization.service_items[0].amount, service_amount)
 		self.assertEqual(asset_capitalization.service_items_total, service_amount)
 
-		target_asset = frappe.get_doc("Asset", asset_capitalization.target_asset)
+		target_asset = nts .get_doc("Asset", asset_capitalization.target_asset)
 		self.assertEqual(target_asset.gross_purchase_amount, total_amount)
 		self.assertEqual(target_asset.purchase_amount, total_amount)
 
@@ -350,16 +350,16 @@ def create_asset_capitalization_data():
 def create_asset_capitalization(**args):
 	from prodman.stock.doctype.warehouse.test_warehouse import create_warehouse
 
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 
 	now = now_datetime()
-	target_asset = frappe.get_doc("Asset", args.target_asset) if args.target_asset else frappe._dict()
+	target_asset = nts .get_doc("Asset", args.target_asset) if args.target_asset else nts ._dict()
 	target_item_code = target_asset.item_code or args.target_item_code
 	company = target_asset.company or args.company or "_Test Company"
 	warehouse = args.warehouse or create_warehouse("_Test Warehouse", company=company)
 	source_warehouse = args.source_warehouse or warehouse
 
-	asset_capitalization = frappe.new_doc("Asset Capitalization")
+	asset_capitalization = nts .new_doc("Asset Capitalization")
 	asset_capitalization.update(
 		{
 			"capitalization_method": args.capitalization_method or None,
@@ -383,11 +383,11 @@ def create_asset_capitalization(**args):
 		bundle = None
 		if args.stock_batch_no or args.stock_serial_no:
 			bundle = make_serial_batch_bundle(
-				frappe._dict(
+				nts ._dict(
 					{
 						"item_code": args.stock_item,
 						"warehouse": source_warehouse,
-						"company": frappe.get_cached_value("Warehouse", source_warehouse, "company"),
+						"company": nts .get_cached_value("Warehouse", source_warehouse, "company"),
 						"qty": (flt(args.stock_qty) or 1) * -1,
 						"voucher_type": "Asset Capitalization",
 						"type_of_transaction": "Outward",
@@ -461,9 +461,9 @@ def create_stock_reconciliation(asset_capitalization, stock_rate=0):
 
 
 def create_depreciation_asset(**args):
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 
-	asset = frappe.new_doc("Asset")
+	asset = nts .new_doc("Asset")
 	asset.is_existing_asset = 1
 	asset.calculate_depreciation = 1
 	asset.asset_owner = "Company"
@@ -489,7 +489,7 @@ def create_depreciation_asset(**args):
 	if args.submit:
 		asset.submit()
 
-		frappe.db.set_value("Company", "_Test Company", "series_for_depreciation_entry", "DEPR-")
+		nts .db.set_value("Company", "_Test Company", "series_for_depreciation_entry", "DEPR-")
 		post_depreciation_entries(date=finance_book.depreciation_start_date)
 		asset.load_from_db()
 
@@ -498,7 +498,7 @@ def create_depreciation_asset(**args):
 
 def get_actual_gle_dict(name):
 	return dict(
-		frappe.db.sql(
+		nts .db.sql(
 			"""
 		select account, sum(debit-credit) as diff
 		from `tabGL Entry`
@@ -512,7 +512,7 @@ def get_actual_gle_dict(name):
 
 
 def get_actual_sle_dict(name):
-	sles = frappe.db.sql(
+	sles = nts .db.sql(
 		"""
 		select
 			item_code, warehouse,

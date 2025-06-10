@@ -1,13 +1,13 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.model.mapper import get_mapped_doc
-from frappe.query_builder.functions import Sum
-from frappe.utils import flt, getdate
+import nts
+from nts import _
+from nts.model.document import Document
+from nts.model.mapper import get_mapped_doc
+from nts.query_builder.functions import Sum
+from nts.utils import flt, getdate
 
 from prodman.stock.doctype.item.item import get_item_defaults
 
@@ -19,7 +19,7 @@ class BlanketOrder(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.manufacturing.doctype.blanket_order_item.blanket_order_item import BlanketOrderItem
 
@@ -48,7 +48,7 @@ class BlanketOrder(Document):
 
 	def validate_dates(self):
 		if getdate(self.from_date) > getdate(self.to_date):
-			frappe.throw(_("From date cannot be greater than To date"))
+			nts.throw(_("From date cannot be greater than To date"))
 
 	def set_party_item_code(self):
 		item_ref = {}
@@ -66,8 +66,8 @@ class BlanketOrder(Document):
 	def get_customer_items_ref(self):
 		items = [d.item_code for d in self.items]
 
-		return frappe._dict(
-			frappe.get_all(
+		return nts._dict(
+			nts.get_all(
 				"Item Customer Detail",
 				filters={"parent": ("in", items), "customer_name": self.customer},
 				fields=["parent", "ref_code"],
@@ -78,8 +78,8 @@ class BlanketOrder(Document):
 	def get_supplier_items_ref(self):
 		items = [d.item_code for d in self.items]
 
-		return frappe._dict(
-			frappe.get_all(
+		return nts._dict(
+			nts.get_all(
 				"Item Supplier",
 				filters={"parent": ("in", items), "supplier": self.supplier},
 				fields=["parent", "supplier_part_no"],
@@ -91,18 +91,18 @@ class BlanketOrder(Document):
 		item_list = []
 		for item in self.items:
 			if item.item_code in item_list:
-				frappe.throw(_("Note: Item {0} added multiple times").format(frappe.bold(item.item_code)))
+				nts.throw(_("Note: Item {0} added multiple times").format(nts.bold(item.item_code)))
 			item_list.append(item.item_code)
 
 	def update_ordered_qty(self):
 		ref_doctype = "Sales Order" if self.blanket_order_type == "Selling" else "Purchase Order"
 
-		trans = frappe.qb.DocType(ref_doctype)
-		trans_item = frappe.qb.DocType(f"{ref_doctype} Item")
+		trans = nts.qb.DocType(ref_doctype)
+		trans_item = nts.qb.DocType(f"{ref_doctype} Item")
 
-		item_ordered_qty = frappe._dict(
+		item_ordered_qty = nts._dict(
 			(
-				frappe.qb.from_(trans_item)
+				nts.qb.from_(trans_item)
 				.from_(trans)
 				.select(trans_item.item_code, Sum(trans_item.stock_qty).as_("qty"))
 				.where(
@@ -121,12 +121,12 @@ class BlanketOrder(Document):
 	def validate_item_qty(self):
 		for d in self.items:
 			if d.qty < 0:
-				frappe.throw(_("Row {0}: Quantity cannot be negative.").format(d.idx))
+				nts.throw(_("Row {0}: Quantity cannot be negative.").format(d.idx))
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_order(source_name):
-	doctype = frappe.flags.args.doctype
+	doctype = nts.flags.args.doctype
 
 	def update_doc(source_doc, target_doc, source_parent):
 		if doctype == "Quotation":
@@ -181,19 +181,19 @@ def validate_against_blanket_order(order_doc):
 
 		if order_data:
 			allowance = flt(
-				frappe.db.get_single_value(
+				nts.db.get_single_value(
 					"Selling Settings" if order_doc.doctype == "Sales Order" else "Buying Settings",
 					"blanket_order_allowance",
 				)
 			)
 			for bo_name, item_data in order_data.items():
-				bo_doc = frappe.get_doc("Blanket Order", bo_name)
+				bo_doc = nts.get_doc("Blanket Order", bo_name)
 				for item in bo_doc.get("items"):
 					if item.item_code in item_data:
 						remaining_qty = item.qty - item.ordered_qty
 						allowed_qty = remaining_qty + (remaining_qty * (allowance / 100))
 						if item.qty and allowed_qty < item_data[item.item_code]:
-							frappe.throw(
+							nts.throw(
 								_(
 									"Item {0} cannot be ordered more than {1} against Blanket Order {2}."
 								).format(item.item_code, allowed_qty, bo_name)

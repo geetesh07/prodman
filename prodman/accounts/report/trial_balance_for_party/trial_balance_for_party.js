@@ -1,14 +1,14 @@
-// Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Trial Balance for Party"] = {
+nts .query_reports["Trial Balance for Party"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts .defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -16,16 +16,16 @@ frappe.query_reports["Trial Balance for Party"] = {
 			label: __("Fiscal Year"),
 			fieldtype: "Link",
 			options: "Fiscal Year",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today()),
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today()),
 			reqd: 1,
 			on_change: function (query_report) {
 				var fiscal_year = query_report.get_values().fiscal_year;
 				if (!fiscal_year) {
 					return;
 				}
-				frappe.model.with_doc("Fiscal Year", fiscal_year, function (r) {
-					var fy = frappe.model.get_doc("Fiscal Year", fiscal_year);
-					frappe.query_report.set_filter_value({
+				nts .model.with_doc("Fiscal Year", fiscal_year, function (r) {
+					var fy = nts .model.get_doc("Fiscal Year", fiscal_year);
+					nts .query_report.set_filter_value({
 						from_date: fy.year_start_date,
 						to_date: fy.year_end_date,
 					});
@@ -36,13 +36,13 @@ frappe.query_reports["Trial Balance for Party"] = {
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[1],
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today(), true)[1],
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[2],
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today(), true)[2],
 		},
 		{
 			fieldname: "party_type",
@@ -57,10 +57,10 @@ frappe.query_reports["Trial Balance for Party"] = {
 			label: __("Party"),
 			fieldtype: "Dynamic Link",
 			get_options: function () {
-				var party_type = frappe.query_report.get_filter_value("party_type");
-				var party = frappe.query_report.get_filter_value("party");
+				var party_type = nts .query_report.get_filter_value("party_type");
+				var party = nts .query_report.get_filter_value("party");
 				if (party && !party_type) {
-					frappe.throw(__("Please select Party Type first"));
+					nts .throw(__("Please select Party Type first"));
 				}
 				return party_type;
 			},
@@ -71,8 +71,8 @@ frappe.query_reports["Trial Balance for Party"] = {
 			fieldtype: "MultiSelectList",
 			options: "Account",
 			get_data: function (txt) {
-				return frappe.db.get_link_options("Account", txt, {
-					company: frappe.query_report.get_filter_value("company"),
+				return nts .db.get_link_options("Account", txt, {
+					company: nts .query_report.get_filter_value("company"),
 				});
 			},
 		},

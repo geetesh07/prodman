@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Operation", {
+nts.ui.form.on("Operation", {
 	setup: function (frm) {
 		frm.set_query("operation", "sub_operations", function () {
 			return {
@@ -13,7 +13,7 @@ frappe.ui.form.on("Operation", {
 	},
 });
 
-frappe.tour["Operation"] = [
+nts.tour["Operation"] = [
 	{
 		fieldname: "__newname",
 		title: "Operation Name",

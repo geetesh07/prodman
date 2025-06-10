@@ -38,7 +38,7 @@ prodman.PointOfSale.ItemSelector = class {
 
 	async load_items_data() {
 		if (!this.item_group) {
-			frappe.call({
+			nts.call({
 				method: "prodman.selling.page.point_of_sale.point_of_sale.get_parent_item_group",
 				async: false,
 				callback: (r) => {
@@ -47,7 +47,7 @@ prodman.PointOfSale.ItemSelector = class {
 			});
 		}
 		if (!this.price_list) {
-			const res = await frappe.db.get_value("POS Profile", this.pos_profile, "selling_price_list");
+			const res = await nts.db.get_value("POS Profile", this.pos_profile, "selling_price_list");
 			this.price_list = res.message.selling_price_list;
 		}
 
@@ -63,7 +63,7 @@ prodman.PointOfSale.ItemSelector = class {
 
 		!item_group && (item_group = this.parent_item_group);
 
-		return frappe.call({
+		return nts.call({
 			method: "prodman.selling.page.point_of_sale.point_of_sale.get_items",
 			freeze: true,
 			args: { start, page_length, price_list, item_group, search_term, pos_profile },
@@ -108,14 +108,14 @@ prodman.PointOfSale.ItemSelector = class {
 							<img
 								onerror="cur_pos.item_selector.handle_broken_image(this)"
 								class="h-full item-img" src="${item_image}"
-								alt="${frappe.get_abbr(item.item_name)}"
+								alt="${nts.get_abbr(item.item_name)}"
 							>
 						</div>`;
 			} else {
 				return `<div class="item-qty-pill">
 							<span class="indicator-pill whitespace-nowrap ${indicator_color}">${qty_to_display}</span>
 						</div>
-						<div class="item-display abbr">${frappe.get_abbr(item.item_name)}</div>`;
+						<div class="item-display abbr">${nts.get_abbr(item.item_name)}</div>`;
 			}
 		}
 
@@ -130,7 +130,7 @@ prodman.PointOfSale.ItemSelector = class {
 
 				<div class="item-detail">
 					<div class="item-name">
-						${frappe.ellipsis(item.item_name, 18)}
+						${nts.ellipsis(item.item_name, 18)}
 					</div>
 					<div class="item-rate">${format_currency(price_list_rate, item.currency, precision) || 0} / ${uom}</div>
 				</div>
@@ -147,7 +147,7 @@ prodman.PointOfSale.ItemSelector = class {
 		this.$component.find(".search-field").html("");
 		this.$component.find(".item-group-field").html("");
 
-		this.search_field = frappe.ui.form.make_control({
+		this.search_field = nts.ui.form.make_control({
 			df: {
 				label: __("Search"),
 				fieldtype: "Data",
@@ -156,7 +156,7 @@ prodman.PointOfSale.ItemSelector = class {
 			parent: this.$component.find(".search-field"),
 			render_input: true,
 		});
-		this.item_group_field = frappe.ui.form.make_control({
+		this.item_group_field = nts.ui.form.make_control({
 			df: {
 				label: __("Item Group"),
 				fieldtype: "Link",
@@ -190,7 +190,7 @@ prodman.PointOfSale.ItemSelector = class {
 		this.search_field.$wrapper.find(".control-input").append(
 			`<span class="link-btn" style="top: 2px;">
 				<a class="btn-open no-decoration" title="${__("Clear")}">
-					${frappe.utils.icon("close", "sm")}
+					${nts.utils.icon("close", "sm")}
 				</a>
 			</span>`
 		);
@@ -290,9 +290,9 @@ prodman.PointOfSale.ItemSelector = class {
 	}
 
 	attach_shortcuts() {
-		const ctrl_label = frappe.utils.is_mac() ? "⌘" : "Ctrl";
+		const ctrl_label = nts.utils.is_mac() ? "⌘" : "Ctrl";
 		this.search_field.parent.attr("title", `${ctrl_label}+I`);
-		frappe.ui.keys.add_shortcut({
+		nts.ui.keys.add_shortcut({
 			shortcut: "ctrl+i",
 			action: () => this.search_field.set_focus(),
 			condition: () => this.$component.is(":visible"),
@@ -301,7 +301,7 @@ prodman.PointOfSale.ItemSelector = class {
 			page: cur_page.page.page,
 		});
 		this.item_group_field.parent.attr("title", `${ctrl_label}+G`);
-		frappe.ui.keys.add_shortcut({
+		nts.ui.keys.add_shortcut({
 			shortcut: "ctrl+g",
 			action: () => this.item_group_field.set_focus(),
 			condition: () => this.$component.is(":visible"),
@@ -311,21 +311,21 @@ prodman.PointOfSale.ItemSelector = class {
 		});
 
 		// for selecting the last filtered item on search
-		frappe.ui.keys.on("enter", () => {
+		nts.ui.keys.on("enter", () => {
 			const selector_is_visible = this.$component.is(":visible");
 			if (!selector_is_visible || this.search_field.get_value() === "") return;
 
 			if (this.items.length == 1) {
 				this.$items_container.find(".item-wrapper").click();
-				frappe.utils.play_sound("submit");
+				nts.utils.play_sound("submit");
 				this.set_search_value("");
 			} else if (this.items.length == 0 && this.barcode_scanned) {
 				// only show alert of barcode is scanned and enter is pressed
-				frappe.show_alert({
+				nts.show_alert({
 					message: __("No items found. Scan barcode again."),
 					indicator: "orange",
 				});
-				frappe.utils.play_sound("error");
+				nts.utils.play_sound("error");
 				this.barcode_scanned = false;
 				this.set_search_value("");
 			}

@@ -1,4 +1,4 @@
-frappe.query_reports["BOM Stock Report"] = {
+nts.query_reports["BOM Stock Report"] = {
 	filters: [
 		{
 			fieldname: "bom",

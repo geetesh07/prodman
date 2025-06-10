@@ -1,6 +1,6 @@
-import frappe
-from frappe import _
-from frappe.utils import flt, money_in_words, round_based_on_smallest_currency_fraction
+import nts
+from nts import _
+from nts.utils import flt, money_in_words, round_based_on_smallest_currency_fraction
 
 import prodman
 from prodman.controllers.taxes_and_totals import get_itemised_tax
@@ -14,7 +14,7 @@ def update_itemised_tax_data(doc):
 	if not doc.items:
 		return
 
-	meta = frappe.get_meta(doc.items[0].doctype)
+	meta = nts.get_meta(doc.items[0].doctype)
 	if not meta.has_field("tax_rate"):
 		return
 
@@ -41,24 +41,24 @@ def get_account_currency(account):
 		return
 
 	def generator():
-		account_currency, company = frappe.get_cached_value(
+		account_currency, company = nts.get_cached_value(
 			"Account", account, ["account_currency", "company"]
 		)
 		if not account_currency:
-			account_currency = frappe.get_cached_value("Company", company, "default_currency")
+			account_currency = nts.get_cached_value("Company", company, "default_currency")
 
 		return account_currency
 
-	return frappe.local_cache("account_currency", account, generator)
+	return nts.local_cache("account_currency", account, generator)
 
 
 def get_tax_accounts(company):
 	"""Get the list of tax accounts for a specific company."""
-	tax_accounts_dict = frappe._dict()
-	tax_accounts_list = frappe.get_all("UAE VAT Account", filters={"parent": company}, fields=["Account"])
+	tax_accounts_dict = nts._dict()
+	tax_accounts_list = nts.get_all("UAE VAT Account", filters={"parent": company}, fields=["Account"])
 
-	if not tax_accounts_list and not frappe.flags.in_test:
-		frappe.throw(_('Please set Vat Accounts for Company: "{0}" in UAE VAT Settings').format(company))
+	if not tax_accounts_list and not nts.flags.in_test:
+		nts.throw(_('Please set Vat Accounts for Company: "{0}" in UAE VAT Settings').format(company))
 	for tax_account in tax_accounts_list:
 		for _account, name in tax_account.items():
 			tax_accounts_dict[name] = name
@@ -68,7 +68,7 @@ def get_tax_accounts(company):
 
 def update_grand_total_for_rcm(doc, method):
 	"""If the Reverse Charge is Applicable subtract the tax amount from the grand total and update in the form."""
-	country = frappe.get_cached_value("Company", doc.company, "country")
+	country = nts.get_cached_value("Company", doc.company, "country")
 
 	if country != "United Arab Emirates":
 		return
@@ -123,7 +123,7 @@ def update_totals(vat_tax, base_vat_tax, doc):
 
 def make_regional_gl_entries(gl_entries, doc):
 	"""Hooked to make_regional_gl_entries in Purchase Invoice.It appends the region specific general ledger entries to the list of GL Entries."""
-	country = frappe.get_cached_value("Company", doc.company, "country")
+	country = nts.get_cached_value("Company", doc.company, "country")
 
 	if country != "United Arab Emirates":
 		return gl_entries
@@ -163,10 +163,10 @@ def make_gl_entry(tax, gl_entries, doc, tax_accounts):
 
 def validate_returns(doc, method):
 	"""Standard Rated expenses should not be set when Reverse Charge Applicable is set."""
-	country = frappe.get_cached_value("Company", doc.company, "country")
+	country = nts.get_cached_value("Company", doc.company, "country")
 	if country != "United Arab Emirates":
 		return
 	if doc.reverse_charge == "Y" and flt(doc.recoverable_standard_rated_expenses) != 0:
-		frappe.throw(
+		nts.throw(
 			_("Recoverable Standard Rated expenses should not be set when Reverse Charge Applicable is Y")
 		)

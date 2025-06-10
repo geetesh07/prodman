@@ -1,14 +1,14 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 from collections import OrderedDict
 
-import frappe
-from frappe import _, qb
-from frappe.desk.notifications import clear_notifications
-from frappe.model.document import Document
-from frappe.utils import cint, comma_and, create_batch, get_link_to_form
-from frappe.utils.background_jobs import get_job, is_job_enqueued
+import nts
+from nts import _, qb
+from nts.desk.notifications import clear_notifications
+from nts.model.document import Document
+from nts.utils import cint, comma_and, create_batch, get_link_to_form
+from nts.utils.background_jobs import get_job, is_job_enqueued
 
 LEDGER_ENTRY_DOCTYPES = frozenset(
 	(
@@ -26,7 +26,7 @@ class TransactionDeletionRecord(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.accounts.doctype.transaction_deletion_record_details.transaction_deletion_record_details import (
 			TransactionDeletionRecordDetails,
@@ -66,14 +66,14 @@ class TransactionDeletionRecord(Document):
 		)
 
 	def validate(self):
-		frappe.only_for("System Manager")
+		nts.only_for("System Manager")
 		self.validate_doctypes_to_be_ignored()
 
 	def validate_doctypes_to_be_ignored(self):
 		doctypes_to_be_ignored_list = get_doctypes_to_be_ignored()
 		for doctype in self.doctypes_to_be_ignored:
 			if doctype.doctype_name not in doctypes_to_be_ignored_list:
-				frappe.throw(
+				nts.throw(
 					_(
 						"DocTypes should not be added manually to the 'Excluded DocTypes' table. You are only allowed to remove entries from it."
 					),
@@ -100,17 +100,17 @@ class TransactionDeletionRecord(Document):
 		return job_names
 
 	def before_submit(self):
-		if queued_docs := frappe.db.get_all(
+		if queued_docs := nts.db.get_all(
 			"Transaction Deletion Record",
 			filters={"company": self.company, "status": ("in", ["Running", "Queued"]), "docstatus": 1},
 			pluck="name",
 		):
-			frappe.throw(
+			nts.throw(
 				_(
 					"Cannot enqueue multi docs for one company. {0} is already queued/running for company: {1}"
 				).format(
 					comma_and([get_link_to_form("Transaction Deletion Record", x) for x in queued_docs]),
-					frappe.bold(self.company),
+					nts.bold(self.company),
 				)
 			)
 
@@ -148,8 +148,8 @@ class TransactionDeletionRecord(Document):
 			if self.process_in_single_transaction:
 				self.execute_task(task_to_execute=task)
 			else:
-				frappe.enqueue(
-					"frappe.utils.background_jobs.run_doc_method",
+				nts.enqueue(
+					"nts.utils.background_jobs.run_doc_method",
 					doctype=self.doctype,
 					name=self.name,
 					doc_method="execute_task",
@@ -166,12 +166,12 @@ class TransactionDeletionRecord(Document):
 				try:
 					task()
 				except Exception:
-					frappe.db.rollback()
-					traceback = frappe.get_traceback(with_context=True)
+					nts.db.rollback()
+					traceback = nts.get_traceback(with_context=True)
 					if traceback:
 						message = "Traceback: <br>" + traceback
-						frappe.db.set_value(self.doctype, self.name, "error_log", message)
-					frappe.db.set_value(self.doctype, self.name, "status", "Failed")
+						nts.db.set_value(self.doctype, self.name, "error_log", message)
+					nts.db.set_value(self.doctype, self.name, "status", "Failed")
 
 	def delete_notifications(self):
 		self.validate_doc_status()
@@ -193,7 +193,7 @@ class TransactionDeletionRecord(Document):
 				running_tasks.append(get_job(x).get_id())
 
 		if running_tasks:
-			frappe.throw(
+			nts.throw(
 				_("{0} is already running for {1}").format(
 					comma_and([get_link_to_form("RQ Job", x) for x in running_tasks]), self.name
 				)
@@ -201,13 +201,13 @@ class TransactionDeletionRecord(Document):
 
 	def validate_doc_status(self):
 		if self.status != "Running":
-			frappe.throw(
+			nts.throw(
 				_("{0} is not running. Cannot trigger events for this Document").format(
 					get_link_to_form("Transaction Deletion Record", self.name)
 				)
 			)
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def start_deletion_tasks(self):
 		# This method is the entry point for the chain of events that follow
 		self.db_set("status", "Running")
@@ -216,7 +216,7 @@ class TransactionDeletionRecord(Document):
 	def delete_bins(self):
 		self.validate_doc_status()
 		if not self.delete_bin_data:
-			frappe.db.sql(
+			nts.db.sql(
 				"""delete from `tabBin` where warehouse in
 					(select name from tabWarehouse where company=%s)""",
 				self.company,
@@ -228,14 +228,14 @@ class TransactionDeletionRecord(Document):
 		"""Delete addresses to which leads are linked"""
 		self.validate_doc_status()
 		if not self.delete_leads_and_addresses:
-			leads = frappe.db.get_all("Lead", filters={"company": self.company}, pluck="name")
+			leads = nts.db.get_all("Lead", filters={"company": self.company}, pluck="name")
 			addresses = []
 			if leads:
-				addresses = frappe.db.get_all(
+				addresses = nts.db.get_all(
 					"Dynamic Link", filters={"link_name": ("in", leads)}, pluck="parent"
 				)
 				if addresses:
-					addresses = ["%s" % frappe.db.escape(addr) for addr in addresses]
+					addresses = ["%s" % nts.db.escape(addr) for addr in addresses]
 
 					address = qb.DocType("Address")
 					dl1 = qb.DocType("Dynamic Link")
@@ -270,7 +270,7 @@ class TransactionDeletionRecord(Document):
 	def reset_company_values(self):
 		self.validate_doc_status()
 		if not self.reset_company_default_values:
-			company_obj = frappe.get_doc("Company", self.company)
+			company_obj = nts.get_doc("Company", self.company)
 			company_obj.total_monthly_sales = 0
 			company_obj.sales_monthly_history = None
 			company_obj.save()
@@ -307,7 +307,7 @@ class TransactionDeletionRecord(Document):
 						docfield.doctype_name, docfield.docfield_name
 					)
 					if no_of_docs > 0:
-						reference_docs = frappe.get_all(
+						reference_docs = nts.get_all(
 							docfield.doctype_name,
 							filters={docfield.docfield_name: self.company},
 							limit=self.batch_size,
@@ -323,16 +323,16 @@ class TransactionDeletionRecord(Document):
 							docfield.doctype_name, reference_doc_names
 						)
 						processed = int(docfield.no_of_docs) + len(reference_doc_names)
-						frappe.db.set_value(docfield.doctype, docfield.name, "no_of_docs", processed)
+						nts.db.set_value(docfield.doctype, docfield.name, "no_of_docs", processed)
 					else:
 						# reset naming series
-						naming_series = frappe.db.get_value("DocType", docfield.doctype_name, "autoname")
+						naming_series = nts.db.get_value("DocType", docfield.doctype_name, "autoname")
 						if naming_series:
 							if "#" in naming_series:
 								self.update_naming_series(naming_series, docfield.doctype_name)
-						frappe.db.set_value(docfield.doctype, docfield.name, "done", 1)
+						nts.db.set_value(docfield.doctype, docfield.name, "done", 1)
 
-			pending_doctypes = frappe.db.get_all(
+			pending_doctypes = nts.db.get_all(
 				"Transaction Deletion Record Details",
 				filters={"parent": self.name, "done": 0},
 				pluck="doctype_name",
@@ -347,7 +347,7 @@ class TransactionDeletionRecord(Document):
 				self.db_set("error_log", None)
 
 	def get_doctypes_to_be_ignored_list(self):
-		singles = frappe.get_all("DocType", filters={"issingle": 1}, pluck="name")
+		singles = nts.get_all("DocType", filters={"issingle": 1}, pluck="name")
 		doctypes_to_be_ignored_list = singles
 		for doctype in self.doctypes_to_be_ignored:
 			doctypes_to_be_ignored_list.append(doctype.doctype_name)
@@ -355,7 +355,7 @@ class TransactionDeletionRecord(Document):
 		return doctypes_to_be_ignored_list
 
 	def get_doctypes_with_company_field(self, doctypes_to_be_ignored_list):
-		docfields = frappe.get_all(
+		docfields = nts.get_all(
 			"DocField",
 			filters={
 				"fieldtype": "Link",
@@ -368,10 +368,10 @@ class TransactionDeletionRecord(Document):
 		return docfields
 
 	def get_all_child_doctypes(self):
-		return frappe.get_all("DocType", filters={"istable": 1}, pluck="name")
+		return nts.get_all("DocType", filters={"istable": 1}, pluck="name")
 
 	def get_number_of_docs_linked_with_specified_company(self, doctype, company_fieldname):
-		return frappe.db.count(doctype, {company_fieldname: self.company})
+		return nts.db.count(doctype, {company_fieldname: self.company})
 
 	def populate_doctypes_table(self, tables, doctype, fieldname, no_of_docs):
 		self.flags.ignore_validate_update_after_submit = True
@@ -382,22 +382,22 @@ class TransactionDeletionRecord(Document):
 		self.save(ignore_permissions=True)
 
 	def delete_child_tables(self, doctype, reference_doc_names):
-		child_tables = frappe.get_all(
+		child_tables = nts.get_all(
 			"DocField", filters={"fieldtype": "Table", "parent": doctype}, pluck="options"
 		)
 
 		for table in child_tables:
-			frappe.db.delete(table, {"parent": ["in", reference_doc_names]})
+			nts.db.delete(table, {"parent": ["in", reference_doc_names]})
 
 	def delete_docs_linked_with_specified_company(self, doctype, reference_doc_names):
-		frappe.db.delete(doctype, {"name": ("in", reference_doc_names)})
+		nts.db.delete(doctype, {"name": ("in", reference_doc_names)})
 
 	def update_naming_series(self, naming_series, doctype_name):
 		if "." in naming_series:
 			prefix, hashes = naming_series.rsplit(".", 1)
 		else:
 			prefix, hashes = naming_series.rsplit("{", 1)
-		last = frappe.db.sql(
+		last = nts.db.sql(
 			f"""select max(name) from `tab{doctype_name}`
 						where name like %s""",
 			prefix + "%",
@@ -407,7 +407,7 @@ class TransactionDeletionRecord(Document):
 		else:
 			last = 0
 
-		frappe.db.sql("""update `tabSeries` set current = %s where name=%s""", (last, prefix))
+		nts.db.sql("""update `tabSeries` set current = %s where name=%s""", (last, prefix))
 
 	def delete_version_log(self, doctype, docnames):
 		versions = qb.DocType("Version")
@@ -416,7 +416,7 @@ class TransactionDeletionRecord(Document):
 		).run()
 
 	def delete_communications(self, doctype, reference_doc_names):
-		communications = frappe.get_all(
+		communications = nts.get_all(
 			"Communication",
 			filters={"reference_doctype": doctype, "reference_name": ["in", reference_doc_names]},
 		)
@@ -426,7 +426,7 @@ class TransactionDeletionRecord(Document):
 			return
 
 		for batch in create_batch(communication_names, self.batch_size):
-			frappe.delete_doc("Communication", batch, ignore_permissions=True)
+			nts.delete_doc("Communication", batch, ignore_permissions=True)
 
 	def delete_comments(self, doctype, reference_doc_names):
 		if reference_doc_names:
@@ -436,7 +436,7 @@ class TransactionDeletionRecord(Document):
 			).run()
 
 	def unlink_attachments(self, doctype, reference_doc_names):
-		files = frappe.get_all(
+		files = nts.get_all(
 			"File",
 			filters={"attached_to_doctype": doctype, "attached_to_name": ["in", reference_doc_names]},
 		)
@@ -453,7 +453,7 @@ class TransactionDeletionRecord(Document):
 			).run()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_doctypes_to_be_ignored():
 	doctypes_to_be_ignored = [
 		"Account",
@@ -476,17 +476,17 @@ def get_doctypes_to_be_ignored():
 		"Supplier",
 	]
 
-	doctypes_to_be_ignored.extend(frappe.get_hooks("company_data_to_be_ignored") or [])
+	doctypes_to_be_ignored.extend(nts.get_hooks("company_data_to_be_ignored") or [])
 
 	return doctypes_to_be_ignored
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def is_deletion_doc_running(company: str | None = None, err_msg: str | None = None):
 	if not company:
 		return
 
-	running_deletion_job = frappe.db.get_value(
+	running_deletion_job = nts.db.get_value(
 		"Transaction Deletion Record",
 		{"docstatus": 1, "company": company, "status": "Running"},
 		"name",
@@ -495,7 +495,7 @@ def is_deletion_doc_running(company: str | None = None, err_msg: str | None = No
 	if not running_deletion_job:
 		return
 
-	frappe.throw(
+	nts.throw(
 		title=_("Deletion in Progress!"),
 		msg=_("Transaction Deletion Document: {0} is running for this Company. {1}").format(
 			get_link_to_form("Transaction Deletion Record", running_deletion_job), err_msg or ""

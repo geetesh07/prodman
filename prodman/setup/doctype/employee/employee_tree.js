@@ -1,4 +1,4 @@
-frappe.treeview_settings["Employee"] = {
+nts.treeview_settings["Employee"] = {
 	get_tree_nodes: "prodman.setup.doctype.employee.employee.get_children",
 	filters: [
 		{
@@ -20,7 +20,7 @@ frappe.treeview_settings["Employee"] = {
 				return !node.is_root;
 			},
 			click: function (node) {
-				frappe.set_route("Form", "Employee", node.data.value);
+				nts.set_route("Form", "Employee", node.data.value);
 			},
 		},
 	],
@@ -28,9 +28,9 @@ frappe.treeview_settings["Employee"] = {
 		{
 			label: __("New Employee"),
 			action: function () {
-				frappe.new_doc("Employee", true);
+				nts.new_doc("Employee", true);
 			},
-			condition: 'frappe.boot.user.can_create.indexOf("Employee") !== -1',
+			condition: 'nts.boot.user.can_create.indexOf("Employee") !== -1',
 		},
 	],
 };

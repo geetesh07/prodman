@@ -1,14 +1,14 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Issue Analytics"] = {
+nts.query_reports["Issue Analytics"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -23,14 +23,14 @@ frappe.query_reports["Issue Analytics"] = {
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: frappe.defaults.get_global_default("year_start_date"),
+			default: nts.defaults.get_global_default("year_start_date"),
 			reqd: 1,
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: frappe.defaults.get_global_default("year_end_date"),
+			default: nts.defaults.get_global_default("year_end_date"),
 			reqd: 1,
 		},
 		{
@@ -101,7 +101,7 @@ frappe.query_reports["Issue Analytics"] = {
 							values: row_values,
 						};
 
-						let raw_data = frappe.query_report.chart.data;
+						let raw_data = nts.query_report.chart.data;
 						let new_datasets = raw_data.datasets;
 
 						var found = false;
@@ -124,14 +124,14 @@ frappe.query_reports["Issue Analytics"] = {
 						};
 
 						setTimeout(() => {
-							frappe.query_report.chart.update(new_data);
+							nts.query_report.chart.update(new_data);
 						}, 500);
 
 						setTimeout(() => {
-							frappe.query_report.chart.draw(true);
+							nts.query_report.chart.draw(true);
 						}, 1000);
 
-						frappe.query_report.raw_chart_data = new_data;
+						nts.query_report.raw_chart_data = new_data;
 					}
 				},
 			},

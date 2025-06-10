@@ -1,14 +1,14 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import datetime
 
-import frappe
-from frappe import _
-from frappe.contacts.doctype.address.address import get_address_display
-from frappe.model.document import Document
-from frappe.utils import cint, get_datetime, get_link_to_form
+import nts
+from nts import _
+from nts.contacts.doctype.address.address import get_address_display
+from nts.model.document import Document
+from nts.utils import cint, get_datetime, get_link_to_form
 
 
 class DeliveryTrip(Document):
@@ -18,7 +18,7 @@ class DeliveryTrip(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.stock.doctype.delivery_stop.delivery_stop import DeliveryStop
 
@@ -44,15 +44,15 @@ class DeliveryTrip(Document):
 
 		# Google Maps returns distances in meters by default
 		self.default_distance_uom = (
-			frappe.db.get_single_value("Global Defaults", "default_distance_unit") or "Meter"
+			nts.db.get_single_value("Global Defaults", "default_distance_unit") or "Meter"
 		)
-		self.uom_conversion_factor = frappe.db.get_value(
+		self.uom_conversion_factor = nts.db.get_value(
 			"UOM Conversion Factor", {"from_uom": "Meter", "to_uom": self.default_distance_uom}, "value"
 		)
 
 	def validate(self):
 		if self._action == "submit" and not self.driver:
-			frappe.throw(_("A driver must be set to submit."))
+			nts.throw(_("A driver must be set to submit."))
 
 		self.validate_stop_addresses()
 
@@ -70,7 +70,7 @@ class DeliveryTrip(Document):
 	def validate_stop_addresses(self):
 		for stop in self.delivery_stops:
 			if not stop.customer_address:
-				stop.customer_address = get_address_display(frappe.get_doc("Address", stop.address).as_dict())
+				stop.customer_address = get_address_display(nts.get_doc("Address", stop.address).as_dict())
 
 	def update_status(self):
 		status = {0: "Draft", 1: "Scheduled", 2: "Cancelled"}[self.docstatus]
@@ -105,7 +105,7 @@ class DeliveryTrip(Document):
 		}
 
 		for delivery_note in delivery_notes:
-			note_doc = frappe.get_doc("Delivery Note", delivery_note)
+			note_doc = nts.get_doc("Delivery Note", delivery_note)
 
 			for field, value in update_fields.items():
 				value = None if delete else value
@@ -115,9 +115,9 @@ class DeliveryTrip(Document):
 			note_doc.save()
 
 		delivery_notes = [get_link_to_form("Delivery Note", note) for note in delivery_notes]
-		frappe.msgprint(_("Delivery Notes {0} updated").format(", ".join(delivery_notes)))
+		nts.msgprint(_("Delivery Notes {0} updated").format(", ".join(delivery_notes)))
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def process_route(self, optimize):
 		"""
 		Estimate the arrival times for each stop in the Delivery Trip.
@@ -156,7 +156,7 @@ class DeliveryTrip(Document):
 					estimated_arrival = departure_datetime + datetime.timedelta(seconds=duration)
 					delivery_stop.estimated_arrival = estimated_arrival
 
-					stop_delay = frappe.db.get_single_value("Delivery Settings", "stop_delay")
+					stop_delay = nts.db.get_single_value("Delivery Settings", "stop_delay")
 					departure_datetime = estimated_arrival + datetime.timedelta(minutes=cint(stop_delay))
 					idx += 1
 
@@ -184,9 +184,9 @@ class DeliveryTrip(Document):
 		        (list of list of str): List of address routes split at locks, if optimize is `True`
 		"""
 		if not self.driver_address:
-			frappe.throw(_("Cannot Calculate Arrival Time as Driver Address is Missing."))
+			nts.throw(_("Cannot Calculate Arrival Time as Driver Address is Missing."))
 
-		home_address = get_address_display(frappe.get_doc("Address", self.driver_address).as_dict())
+		home_address = get_address_display(nts.get_doc("Address", self.driver_address).as_dict())
 
 		route_list = []
 		# Initialize first leg with origin as the home address
@@ -247,15 +247,15 @@ class DeliveryTrip(Document):
 		Returns:
 		        (dict): Route legs and, if `optimize` is `True`, optimized waypoint order
 		"""
-		if not frappe.db.get_single_value("Google Settings", "api_key"):
-			frappe.throw(_("Enter API key in Google Settings."))
+		if not nts.db.get_single_value("Google Settings", "api_key"):
+			nts.throw(_("Enter API key in Google Settings."))
 
 		import googlemaps
 
 		try:
-			maps_client = googlemaps.Client(key=frappe.db.get_single_value("Google Settings", "api_key"))
+			maps_client = googlemaps.Client(key=nts.db.get_single_value("Google Settings", "api_key"))
 		except Exception as e:
-			frappe.throw(e)
+			nts.throw(e)
 
 		directions_data = {
 			"origin": route[0],
@@ -267,14 +267,14 @@ class DeliveryTrip(Document):
 		try:
 			directions = maps_client.directions(**directions_data)
 		except Exception as e:
-			frappe.throw(_(str(e)))
+			nts.throw(_(str(e)))
 
 		return directions[0] if directions else False
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_contact_and_address(name):
-	out = frappe._dict()
+	out = nts._dict()
 
 	get_default_contact(out, name)
 	get_default_address(out, name)
@@ -283,7 +283,7 @@ def get_contact_and_address(name):
 
 
 def get_default_contact(out, name):
-	contact_persons = frappe.db.sql(
+	contact_persons = nts.db.sql(
 		"""
 			SELECT parent,
 				(SELECT is_primary_contact FROM tabContact c WHERE c.name = dl.parent) AS is_primary_contact
@@ -309,7 +309,7 @@ def get_default_contact(out, name):
 
 
 def get_default_address(out, name):
-	shipping_addresses = frappe.db.sql(
+	shipping_addresses = nts.db.sql(
 		"""
 			SELECT parent,
 				(SELECT is_shipping_address FROM tabAddress a WHERE a.name=dl.parent) AS is_shipping_address
@@ -334,9 +334,9 @@ def get_default_address(out, name):
 		return out.shipping_address
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_contact_display(contact):
-	contact_info = frappe.db.get_value(
+	contact_info = nts.db.get_value(
 		"Contact", contact, ["first_name", "last_name", "phone", "mobile_no"], as_dict=1
 	)
 
@@ -370,25 +370,25 @@ def sanitize_address(address):
 	return ", ".join(address[:3])
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def notify_customers(delivery_trip):
-	delivery_trip = frappe.get_doc("Delivery Trip", delivery_trip)
+	delivery_trip = nts.get_doc("Delivery Trip", delivery_trip)
 
 	context = delivery_trip.as_dict()
 
 	if delivery_trip.driver:
-		context.update(frappe.db.get_value("Driver", delivery_trip.driver, "cell_number", as_dict=1))
+		context.update(nts.db.get_value("Driver", delivery_trip.driver, "cell_number", as_dict=1))
 
 	email_recipients = []
 
 	for stop in delivery_trip.delivery_stops:
-		contact_info = frappe.db.get_value(
+		contact_info = nts.db.get_value(
 			"Contact", stop.contact, ["first_name", "last_name", "email_id"], as_dict=1
 		)
 
 		context.update({"items": []})
 		if stop.delivery_note:
-			items = frappe.get_all(
+			items = nts.get_all(
 				"Delivery Note Item", filters={"parent": stop.delivery_note, "docstatus": 1}, fields=["*"]
 			)
 			context.update({"items": items})
@@ -397,13 +397,13 @@ def notify_customers(delivery_trip):
 			context.update(stop.as_dict())
 			context.update(contact_info)
 
-			dispatch_template_name = frappe.db.get_single_value("Delivery Settings", "dispatch_template")
-			dispatch_template = frappe.get_doc("Email Template", dispatch_template_name)
+			dispatch_template_name = nts.db.get_single_value("Delivery Settings", "dispatch_template")
+			dispatch_template = nts.get_doc("Email Template", dispatch_template_name)
 
-			frappe.sendmail(
+			nts.sendmail(
 				recipients=contact_info.email_id,
 				subject=dispatch_template.subject,
-				message=frappe.render_template(dispatch_template.response, context),
+				message=nts.render_template(dispatch_template.response, context),
 				attachments=get_attachments(stop),
 			)
 
@@ -411,21 +411,21 @@ def notify_customers(delivery_trip):
 			email_recipients.append(contact_info.email_id)
 
 	if email_recipients:
-		frappe.msgprint(_("Email sent to {0}").format(", ".join(email_recipients)))
+		nts.msgprint(_("Email sent to {0}").format(", ".join(email_recipients)))
 		delivery_trip.db_set("email_notification_sent", 1)
 	else:
-		frappe.msgprint(_("No contacts with email IDs found."))
+		nts.msgprint(_("No contacts with email IDs found."))
 
 
 def get_attachments(delivery_stop):
 	if not (
-		frappe.db.get_single_value("Delivery Settings", "send_with_attachment")
+		nts.db.get_single_value("Delivery Settings", "send_with_attachment")
 		and delivery_stop.delivery_note
 	):
 		return []
 
-	dispatch_attachment = frappe.db.get_single_value("Delivery Settings", "dispatch_attachment")
-	attachments = frappe.attach_print(
+	dispatch_attachment = nts.db.get_single_value("Delivery Settings", "dispatch_attachment")
+	attachments = nts.attach_print(
 		"Delivery Note",
 		delivery_stop.delivery_note,
 		file_name="Delivery Note",
@@ -435,8 +435,8 @@ def get_attachments(delivery_stop):
 	return [attachments]
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_driver_email(driver):
-	employee = frappe.db.get_value("Driver", driver, "employee")
-	email = frappe.db.get_value("Employee", employee, "prefered_email")
+	employee = nts.db.get_value("Driver", driver, "employee")
+	email = nts.db.get_value("Employee", employee, "prefered_email")
 	return {"email": email}

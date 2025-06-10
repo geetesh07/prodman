@@ -1,7 +1,7 @@
 import unittest
 
-import frappe
-from frappe.utils import add_days, add_months, nowdate
+import nts
+from nts.utils import add_days, add_months, nowdate
 
 from prodman.projects.doctype.task.test_task import create_task
 from prodman.projects.report.delayed_tasks_summary.delayed_tasks_summary import execute
@@ -18,7 +18,7 @@ class TestDelayedTasksSummary(unittest.TestCase):
 		task1.save()
 
 	def test_delayed_tasks_summary(self):
-		filters = frappe._dict(
+		filters = nts._dict(
 			{
 				"from_date": add_months(nowdate(), -1),
 				"to_date": nowdate(),
@@ -45,4 +45,4 @@ class TestDelayedTasksSummary(unittest.TestCase):
 
 	def tearDown(self):
 		for task in ["_Test Task 98", "_Test Task 99"]:
-			frappe.get_doc("Task", {"subject": task}).delete()
+			nts.get_doc("Task", {"subject": task}).delete()

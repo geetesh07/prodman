@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Opportunity Summary by Sales Stage"] = {
+nts.query_reports["Opportunity Summary by Sales Stage"] = {
 	filters: [
 		{
 			fieldname: "based_on",
@@ -58,7 +58,7 @@ frappe.query_reports["Opportunity Summary by Sales Stage"] = {
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 		},
 	],
 };

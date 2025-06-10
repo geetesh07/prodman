@@ -1,12 +1,12 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
 import copy
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, cint, flt, nowtime, today
+import nts
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import add_days, cint, flt, nowtime, today
 
 import prodman
 from prodman.accounts.doctype.account.test_account import get_inventory_account
@@ -40,7 +40,7 @@ from prodman.subcontracting.doctype.subcontracting_order.subcontracting_order im
 )
 
 
-class TestSubcontractingReceipt(FrappeTestCase):
+class TestSubcontractingReceipt(ntsTestCase):
 	def setUp(self):
 		make_subcontracted_items()
 		make_raw_materials()
@@ -227,7 +227,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 				"stock_uom": "Nos",
 			},
 		]
-		ste = frappe.get_doc(make_subcontract_transfer_entry(sco.name, rm_items))
+		ste = nts.get_doc(make_subcontract_transfer_entry(sco.name, rm_items))
 		ste.to_warehouse = "_Test Warehouse 1 - _TC"
 		ste.save()
 		ste.submit()
@@ -236,7 +236,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		scr2 = make_subcontracting_receipt(sco.name)
 
 		scr1.submit()
-		self.assertRaises(frappe.ValidationError, scr2.submit)
+		self.assertRaises(nts.ValidationError, scr2.submit)
 
 	def test_subcontracting_receipt_partial_return(self):
 		sco = get_subcontracting_order()
@@ -279,11 +279,11 @@ class TestSubcontractingReceipt(FrappeTestCase):
 
 		from prodman.controllers.status_updater import OverAllowanceError
 
-		args = frappe._dict(scr_name=scr1.name, qty=-15)
+		args = nts._dict(scr_name=scr1.name, qty=-15)
 		self.assertRaises(OverAllowanceError, make_return_subcontracting_receipt, **args)
 
 	def test_subcontracting_receipt_no_gl_entry(self):
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
 		sco = get_subcontracting_order()
 		rm_items = get_rm_items(sco.supplied_items)
 		itemwise_details = make_stock_in_entry(rm_items=rm_items)
@@ -305,7 +305,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		scr.save()
 		scr.submit()
 
-		stock_value_difference = frappe.db.get_value(
+		stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry",
 			{
 				"voucher_type": "Subcontracting Receipt",
@@ -319,10 +319,10 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		# Service Cost(100 * 10) + Raw Materials Cost(100 * 10) + Additional Costs(10 * 10) = 2100
 		self.assertEqual(stock_value_difference, 2100)
 		self.assertFalse(get_gl_entries("Subcontracting Receipt", scr.name))
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
 
 	def test_subcontracting_receipt_gl_entry(self):
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
 		sco = get_subcontracting_order(
 			company="_Test Company with perpetual inventory",
 			warehouse="Stores - TCP1",
@@ -370,7 +370,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		scr.reload()
 		scr.cancel()
 		self.assertTrue(get_gl_entries("Subcontracting Receipt", scr.name))
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
 
 	@change_settings("Stock Settings", {"use_serial_batch_fields": 0})
 	def test_subcontracting_receipt_gl_entry_with_different_rm_expense_accounts(self):
@@ -655,7 +655,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 				"posting_date": today(),
 				"posting_time": nowtime(),
 				"qty": -1,
-				"batches": frappe._dict({rm_batch_no: 1}),
+				"batches": nts._dict({rm_batch_no: 1}),
 				"type_of_transaction": "Outward",
 				"do_not_submit": True,
 			}
@@ -731,7 +731,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		]
 		sco = get_subcontracting_order(service_items=service_items)
 
-		frappe.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 1)
+		nts.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 1)
 		scr = make_subcontracting_receipt(sco.name)
 		scr.save()
 		scr.submit()
@@ -740,7 +740,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		for row in scr.supplied_items:
 			self.assertEqual(row.rate, 300.00)
 			self.assertTrue(row.serial_and_batch_bundle)
-			auto_created_serial_batch = frappe.db.get_value(
+			auto_created_serial_batch = nts.db.get_value(
 				"Stock Ledger Entry",
 				{"voucher_no": scr.name, "voucher_detail_no": row.name},
 				"auto_created_serial_and_batch_bundle",
@@ -750,10 +750,10 @@ class TestSubcontractingReceipt(FrappeTestCase):
 
 		self.assertEqual(scr.items[0].rm_cost_per_qty, 900)
 		self.assertEqual(scr.items[0].service_cost_per_qty, 100)
-		frappe.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 0)
+		nts.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 0)
 
 	def test_subcontracting_receipt_valuation_for_fg_with_auto_created_serial_batch_bundle(self):
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
 		set_backflush_based_on("BOM")
 
 		fg_item = make_item(
@@ -816,7 +816,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		]
 		sco = get_subcontracting_order(service_items=service_items)
 
-		frappe.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 1)
+		nts.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 1)
 		scr = make_subcontracting_receipt(sco.name)
 		scr.save()
 		scr.submit()
@@ -825,7 +825,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		for row in scr.supplied_items:
 			self.assertEqual(row.rate, 300.00)
 			self.assertTrue(row.serial_and_batch_bundle)
-			auto_created_serial_batch = frappe.db.get_value(
+			auto_created_serial_batch = nts.db.get_value(
 				"Stock Ledger Entry",
 				{"voucher_no": scr.name, "voucher_detail_no": row.name},
 				"auto_created_serial_and_batch_bundle",
@@ -836,7 +836,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		self.assertEqual(scr.items[0].rm_cost_per_qty, 900)
 		self.assertEqual(scr.items[0].service_cost_per_qty, 100)
 		self.assertEqual(scr.items[0].rate, 1000)
-		valuation_rate = frappe.db.get_value(
+		valuation_rate = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_no": scr.name, "voucher_detail_no": scr.items[0].name},
 			"valuation_rate",
@@ -844,12 +844,12 @@ class TestSubcontractingReceipt(FrappeTestCase):
 
 		self.assertEqual(flt(valuation_rate), flt(1000))
 
-		frappe.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 0)
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
+		nts.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 0)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
 
 	def test_subcontracting_receipt_raw_material_rate(self):
 		# Step - 1: Set Backflush Based On as "BOM"
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
 		set_backflush_based_on("BOM")
 
 		# Step - 2: Create FG and RM Items
@@ -907,7 +907,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 			self.assertEqual(rm_item.rate, 100)
 			self.assertEqual(rm_item.amount, rm_item.consumed_qty * rm_item.rate)
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
 
 	def test_quality_inspection_for_subcontracting_receipt(self):
 		from prodman.stock.doctype.quality_inspection.test_quality_inspection import (
@@ -938,10 +938,10 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		scr1.save()
 
 		# Enable `Inspection Required before Purchase` in Item Master
-		frappe.db.set_value("Item", fg_item, "inspection_required_before_purchase", 1)
+		nts.db.set_value("Item", fg_item, "inspection_required_before_purchase", 1)
 
 		# ValidationError should be raised as Quality Inspection is not created/linked
-		self.assertRaises(frappe.ValidationError, scr1.submit)
+		self.assertRaises(nts.ValidationError, scr1.submit)
 
 		qa = create_quality_inspection(
 			reference_type="Subcontracting Receipt",
@@ -962,7 +962,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		scr2.save()
 
 		# Disable `Inspection Required before Purchase` in Item Master
-		frappe.db.set_value("Item", fg_item, "inspection_required_before_purchase", 0)
+		nts.db.set_value("Item", fg_item, "inspection_required_before_purchase", 0)
 
 		# ValidationError should not be raised as `Inspection Required before Purchase` is disabled
 		scr2.submit()
@@ -1092,15 +1092,15 @@ class TestSubcontractingReceipt(FrappeTestCase):
 			self.assertEqual(item.basic_rate, 100)
 			self.assertEqual(item.amount, item.qty * item.basic_rate)
 
-		batch_doc = frappe.get_doc(
+		batch_doc = nts.get_doc(
 			{
 				"doctype": "Batch",
 				"item": fg_item,
-				"batch_id": frappe.generate_hash(length=10),
+				"batch_id": nts.generate_hash(length=10),
 			}
 		).insert(ignore_permissions=True)
 
-		serial_batch_bundle = frappe.get_doc(
+		serial_batch_bundle = nts.get_doc(
 			{
 				"doctype": "Serial and Batch Bundle",
 				"item_code": fg_item,
@@ -1174,7 +1174,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		scr.save()
 		scr.submit()
 
-		pr_details = frappe.get_all(
+		pr_details = nts.get_all(
 			"Purchase Receipt",
 			filters={"subcontracting_receipt": scr.name},
 			fields=["name", "total_taxes_and_charges"],
@@ -1182,7 +1182,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 
 		self.assertTrue(pr_details)
 
-		pr_qty = frappe.db.get_value("Purchase Receipt Item", {"parent": pr_details[0]["name"]}, "qty")
+		pr_qty = nts.db.get_value("Purchase Receipt Item", {"parent": pr_details[0]["name"]}, "qty")
 		self.assertEqual(pr_qty, 6)
 
 		self.assertEqual(pr_details[0]["total_taxes_and_charges"], 60)
@@ -1248,7 +1248,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		scr.save()
 		scr.submit()
 
-		pr_details = frappe.get_all(
+		pr_details = nts.get_all(
 			"Purchase Receipt",
 			filters={"subcontracting_receipt": scr.name},
 			fields=["name", "total_taxes_and_charges"],
@@ -1256,7 +1256,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 
 		self.assertTrue(pr_details)
 
-		pr_qty = frappe.db.get_value("Purchase Receipt Item", {"parent": pr_details[0]["name"]}, "qty")
+		pr_qty = nts.db.get_value("Purchase Receipt Item", {"parent": pr_details[0]["name"]}, "qty")
 		self.assertEqual(pr_qty, 6)
 
 		self.assertEqual(pr_details[0]["total_taxes_and_charges"], 60)
@@ -1313,8 +1313,8 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		)
 
 		batch_no = "BATCH-BNGS-0001"
-		if not frappe.db.exists("Batch", batch_no):
-			frappe.get_doc(
+		if not nts.db.exists("Batch", batch_no):
+			nts.get_doc(
 				{
 					"doctype": "Batch",
 					"batch_id": batch_no,
@@ -1386,8 +1386,8 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		)
 
 		batch_no = "BATCH-REJ-BNGS-0001"
-		if not frappe.db.exists("Batch", batch_no):
-			frappe.get_doc(
+		if not nts.db.exists("Batch", batch_no):
+			nts.get_doc(
 				{
 					"doctype": "Batch",
 					"batch_id": batch_no,
@@ -1474,11 +1474,11 @@ class TestSubcontractingReceipt(FrappeTestCase):
 				"qty": 10,
 				"warehouse": "_Test Warehouse - _TC",
 				"rate": 100,
-				"stock_uom": frappe.get_cached_value("Item", rm_item1, "stock_uom"),
+				"stock_uom": nts.get_cached_value("Item", rm_item1, "stock_uom"),
 				"use_serial_batch_fields": 1,
 			},
 		]
-		se = frappe.get_doc(make_rm_stock_entry(sco.name, rm_items))
+		se = nts.get_doc(make_rm_stock_entry(sco.name, rm_items))
 		se.items[0].subcontracted_item = fg_item
 		se.items[0].s_warehouse = "_Test Warehouse - _TC"
 		se.items[0].t_warehouse = "_Test Warehouse 1 - _TC"
@@ -1489,7 +1489,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		self.assertEqual(se.items[0].batch_no, rm_batch_no)
 		self.assertEqual(se.items[0].use_serial_batch_fields, 1)
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 0)
 		scr = make_subcontracting_receipt(sco.name)
 		scr.items[0].qty = 2
 		scr.save()
@@ -1520,7 +1520,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 		sco.reload()
 		self.assertEqual(sco.status, "Completed")
 
-		frappe.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
+		nts.db.set_single_value("Stock Settings", "use_serial_batch_fields", 1)
 
 	def test_change_batch_for_raw_materials(self):
 		set_backflush_based_on("BOM")
@@ -1584,7 +1584,7 @@ class TestSubcontractingReceipt(FrappeTestCase):
 
 
 def make_return_subcontracting_receipt(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 	return_doc = make_return_doc("Subcontracting Receipt", args.scr_name)
 	return_doc.supplier_warehouse = args.supplier_warehouse or args.warehouse or "_Test Warehouse 1 - _TC"
 
@@ -1602,7 +1602,7 @@ def make_return_subcontracting_receipt(**args):
 
 
 def get_items(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 	return [
 		{
 			"conversion_factor": 1.0,

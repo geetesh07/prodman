@@ -1,4 +1,4 @@
-frappe.listview_settings["Maintenance Visit"] = {
+nts.listview_settings["Maintenance Visit"] = {
 	add_fields: ["customer", "customer_name", "completion_status", "maintenance_type"],
 	get_indicator: function (doc) {
 		var s = doc.completion_status || "Pending";

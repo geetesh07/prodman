@@ -1,13 +1,13 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("accounts", "doctype", "gl_entry")
+	nts.reload_doc("accounts", "doctype", "gl_entry")
 
 	for doctype in ["Sales Invoice", "Purchase Invoice", "Journal Entry"]:
-		frappe.reload_doc("accounts", "doctype", frappe.scrub(doctype))
+		nts.reload_doc("accounts", "doctype", nts.scrub(doctype))
 
-		frappe.db.sql(
+		nts.db.sql(
 			f""" UPDATE `tabGL Entry`, `tab{doctype}`
             SET
                 `tabGL Entry`.due_date = `tab{doctype}`.due_date

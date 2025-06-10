@@ -1,10 +1,10 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman");
+nts.provide("prodman");
 
 // preferred modules for breadcrumbs
-$.extend(frappe.breadcrumbs.preferred, {
+$.extend(nts.breadcrumbs.preferred, {
 	"Item Group": "Stock",
 	"Customer Group": "Selling",
 	"Supplier Group": "Buying",
@@ -16,7 +16,7 @@ $.extend(frappe.breadcrumbs.preferred, {
 	"Maintenance Visit": "Support",
 });
 
-$.extend(frappe.breadcrumbs.module_map, {
+$.extend(nts.breadcrumbs.module_map, {
 	"prodman Integrations": "Integrations",
 	Geo: "Settings",
 	Portal: "Website",

@@ -1,11 +1,11 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import IfNull, Sum
-from frappe.utils.data import comma_and
+import nts
+from nts import _
+from nts.query_builder.functions import IfNull, Sum
+from nts.utils.data import comma_and
 from pypika.terms import ExistsCriterion
 
 
@@ -19,7 +19,7 @@ def execute(filters=None):
 
 	for row in bom_data:
 		required_qty = qty_to_make * row.qty_per_unit
-		last_purchase_rate = frappe.db.get_value("Item", row.item_code, "last_purchase_rate")
+		last_purchase_rate = nts.db.get_value("Item", row.item_code, "last_purchase_rate")
 
 		data.append(get_report_data(last_purchase_rate, required_qty, row, manufacture_details))
 
@@ -108,11 +108,11 @@ def get_bom_data(filters):
 	else:
 		bom_item_table = "BOM Item"
 
-	bom_item = frappe.qb.DocType(bom_item_table)
-	bin = frappe.qb.DocType("Bin")
+	bom_item = nts.qb.DocType(bom_item_table)
+	bin = nts.qb.DocType("Bin")
 
 	query = (
-		frappe.qb.from_(bom_item)
+		nts.qb.from_(bom_item)
 		.left_join(bin)
 		.on(bom_item.item_code == bin.item_code)
 		.select(
@@ -126,15 +126,15 @@ def get_bom_data(filters):
 	)
 
 	if filters.get("warehouse"):
-		warehouse_details = frappe.db.get_value(
+		warehouse_details = nts.db.get_value(
 			"Warehouse", filters.get("warehouse"), ["lft", "rgt"], as_dict=1
 		)
 
 		if warehouse_details:
-			wh = frappe.qb.DocType("Warehouse")
+			wh = nts.qb.DocType("Warehouse")
 			query = query.where(
 				ExistsCriterion(
-					frappe.qb.from_(wh)
+					nts.qb.from_(wh)
 					.select(wh.name)
 					.where(
 						(wh.lft >= warehouse_details.lft)
@@ -150,11 +150,11 @@ def get_bom_data(filters):
 
 
 def get_manufacturer_records():
-	details = frappe.get_all(
+	details = nts.get_all(
 		"Item Manufacturer", fields=["manufacturer", "manufacturer_part_no", "item_code"]
 	)
 
-	manufacture_details = frappe._dict()
+	manufacture_details = nts._dict()
 	for detail in details:
 		dic = manufacture_details.setdefault(detail.get("item_code"), {})
 		dic.setdefault("manufacturer", []).append(detail.get("manufacturer"))

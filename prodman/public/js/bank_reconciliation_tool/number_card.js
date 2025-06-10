@@ -1,4 +1,4 @@
-frappe.provide("prodman.accounts.bank_reconciliation");
+nts.provide("prodman.accounts.bank_reconciliation");
 
 prodman.accounts.bank_reconciliation.NumberCardManager = class NumberCardManager {
 	constructor(opts) {
@@ -49,7 +49,7 @@ prodman.accounts.bank_reconciliation.NumberCardManager = class NumberCardManager
 
 prodman.accounts.NumberCard = class NumberCard {
 	constructor(options) {
-		this.$card = frappe.utils.build_summary_item(options);
+		this.$card = nts.utils.build_summary_item(options);
 	}
 
 	set_value(value) {

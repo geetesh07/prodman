@@ -1,9 +1,9 @@
 import click
-import frappe
+import nts
 
 
 def execute():
-	if "lending" in frappe.get_installed_apps():
+	if "lending" in nts.get_installed_apps():
 		return
 
 	click.secho(
@@ -11,6 +11,6 @@ def execute():
 		" and will be removed from prodman in Version 15."
 		" Please install the Lending app when upgrading to Version 15"
 		" to continue using the Loan Management module:\n"
-		"https://github.com/frappe/lending",
+		"https://github.com/nts/lending",
 		fg="yellow",
 	)

@@ -2,10 +2,10 @@
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import IfNull
-from frappe.utils import cint
+import nts
+from nts import _
+from nts.query_builder.functions import IfNull
+from nts.utils import cint
 
 
 def execute(filters=None):
@@ -19,19 +19,19 @@ def get_item_list(wo_list, filters):
 	out = []
 
 	if wo_list:
-		bin = frappe.qb.DocType("Bin")
-		bom = frappe.qb.DocType("BOM")
-		bom_item = frappe.qb.DocType("BOM Item")
+		bin = nts.qb.DocType("Bin")
+		bom = nts.qb.DocType("BOM")
+		bom_item = nts.qb.DocType("BOM Item")
 
 		# Add a row for each item/qty
 		for wo_details in wo_list:
-			desc = frappe.db.get_value("BOM", wo_details.bom_no, "description")
+			desc = nts.db.get_value("BOM", wo_details.bom_no, "description")
 
-			for wo_item_details in frappe.db.get_values(
+			for wo_item_details in nts.db.get_values(
 				"Work Order Item", {"parent": wo_details.name}, ["item_code", "source_warehouse"], as_dict=1
 			):
 				item_list = (
-					frappe.qb.from_(bom)
+					nts.qb.from_(bom)
 					.from_(bom_item)
 					.left_join(bin)
 					.on(
@@ -65,7 +65,7 @@ def get_item_list(wo_list, filters):
 				else:
 					build = "N"
 
-				row = frappe._dict(
+				row = nts._dict(
 					{
 						"work_order": wo_details.name,
 						"status": wo_details.status,
@@ -87,7 +87,7 @@ def get_item_list(wo_list, filters):
 
 
 def get_work_orders():
-	out = frappe.get_all(
+	out = nts.get_all(
 		"Work Order",
 		filters={"docstatus": 1, "status": ("!=", "Completed")},
 		fields=["name", "status", "bom_no", "qty", "produced_qty"],

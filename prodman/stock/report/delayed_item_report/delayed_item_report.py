@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import date_diff
+import nts
+from nts import _
+from nts.utils import date_diff
 
 
 def execute(filters=None, consolidated=False):
@@ -15,7 +15,7 @@ def execute(filters=None, consolidated=False):
 
 class DelayedItemReport:
 	def __init__(self, filters=None):
-		self.filters = frappe._dict(filters or {})
+		self.filters = nts._dict(filters or {})
 
 	def run(self):
 		return self.get_columns(), self.get_data() or []
@@ -24,11 +24,11 @@ class DelayedItemReport:
 		doctype = self.filters.get("based_on")
 		sales_order_field = "sales_order" if doctype == "Sales Invoice" else "against_sales_order"
 
-		parent = frappe.qb.DocType(doctype)
-		child = frappe.qb.DocType(f"{doctype} Item")
+		parent = nts.qb.DocType(doctype)
+		child = nts.qb.DocType(f"{doctype} Item")
 
 		query = (
-			frappe.qb.from_(child)
+			nts.qb.from_(child)
 			.from_(parent)
 			.select(
 				child.item_code,
@@ -87,10 +87,10 @@ class DelayedItemReport:
 
 		so_data = {}
 		fields = ["delivery_date", "name"]
-		if frappe.db.has_column(doctype, "parent"):
+		if nts.db.has_column(doctype, "parent"):
 			fields.append("parent")
 
-		for d in frappe.get_all(doctype, filters=filters, fields=fields):
+		for d in nts.get_all(doctype, filters=filters, fields=fields):
 			key = d.name if consolidated else (d.parent, d.name)
 			if key not in so_data:
 				so_data.setdefault(key, d.delivery_date)

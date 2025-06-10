@@ -1,8 +1,8 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 // render
-frappe.listview_settings["POS Invoice"] = {
+nts .listview_settings["POS Invoice"] = {
 	add_fields: [
 		"customer",
 		"customer_name",
@@ -31,7 +31,7 @@ frappe.listview_settings["POS Invoice"] = {
 	onload: function (me) {
 		me.page.add_action_item("Make Merge Log", function () {
 			const invoices = me.get_checked_items();
-			frappe.call({
+			nts .call({
 				method: "prodman.accounts.doctype.pos_invoice.pos_invoice.make_merge_log",
 				freeze: true,
 				args: {
@@ -39,8 +39,8 @@ frappe.listview_settings["POS Invoice"] = {
 				},
 				callback: function (r) {
 					if (r.message) {
-						var doc = frappe.model.sync(r.message)[0];
-						frappe.set_route("Form", doc.doctype, doc.name);
+						var doc = nts .model.sync(r.message)[0];
+						nts .set_route("Form", doc.doctype, doc.name);
 					}
 				},
 			});

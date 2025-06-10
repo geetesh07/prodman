@@ -1,13 +1,13 @@
-import frappe
-from frappe.model.db_query import DatabaseQuery
-from frappe.utils import cint, flt
+import nts
+from nts.model.db_query import DatabaseQuery
+from nts.utils import cint, flt
 
 from prodman.stock.doctype.stock_reservation_entry.stock_reservation_entry import (
 	get_sre_reserved_qty_for_items_and_warehouses as get_reserved_stock_details,
 )
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_data(
 	item_code=None, warehouse=None, item_group=None, start=0, sort_by="actual_qty", sort_order="desc"
 ):
@@ -18,8 +18,8 @@ def get_data(
 	if warehouse:
 		filters.append(["warehouse", "=", warehouse])
 	if item_group:
-		lft, rgt = frappe.db.get_value("Item Group", item_group, ["lft", "rgt"])
-		items = frappe.db.sql_list(
+		lft, rgt = nts.db.get_value("Item Group", item_group, ["lft", "rgt"])
+		items = nts.db.sql_list(
 			"""
 			select i.name from `tabItem` i
 			where exists(select name from `tabItem Group`
@@ -30,13 +30,13 @@ def get_data(
 		filters.append(["item_code", "in", items])
 	try:
 		# check if user has any restrictions based on user permissions on warehouse
-		if DatabaseQuery("Warehouse", user=frappe.session.user).build_match_conditions():
-			filters.append(["warehouse", "in", [w.name for w in frappe.get_list("Warehouse")]])
-	except frappe.PermissionError:
+		if DatabaseQuery("Warehouse", user=nts.session.user).build_match_conditions():
+			filters.append(["warehouse", "in", [w.name for w in nts.get_list("Warehouse")]])
+	except nts.PermissionError:
 		# user does not have access on warehouse
 		return []
 
-	items = frappe.db.get_all(
+	items = nts.db.get_all(
 		"Bin",
 		fields=[
 			"item_code",
@@ -65,15 +65,15 @@ def get_data(
 	warehouse_list = [warehouse] if warehouse else [i.warehouse for i in items]
 
 	sre_reserved_stock_details = get_reserved_stock_details(item_code_list, warehouse_list)
-	precision = cint(frappe.db.get_single_value("System Settings", "float_precision"))
+	precision = cint(nts.db.get_single_value("System Settings", "float_precision"))
 
 	for item in items:
 		item.update(
 			{
-				"item_name": frappe.get_cached_value("Item", item.item_code, "item_name"),
-				"stock_uom": frappe.get_cached_value("Item", item.item_code, "stock_uom"),
-				"disable_quick_entry": frappe.get_cached_value("Item", item.item_code, "has_batch_no")
-				or frappe.get_cached_value("Item", item.item_code, "has_serial_no"),
+				"item_name": nts.get_cached_value("Item", item.item_code, "item_name"),
+				"stock_uom": nts.get_cached_value("Item", item.item_code, "stock_uom"),
+				"disable_quick_entry": nts.get_cached_value("Item", item.item_code, "has_batch_no")
+				or nts.get_cached_value("Item", item.item_code, "has_serial_no"),
 				"projected_qty": flt(item.projected_qty, precision),
 				"reserved_qty": flt(item.reserved_qty, precision),
 				"reserved_qty_for_production": flt(item.reserved_qty_for_production, precision),

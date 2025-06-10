@@ -1,7 +1,7 @@
-// Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2021, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Stock Reposting Settings", {
+nts.ui.form.on("Stock Reposting Settings", {
 	refresh: function (frm) {
 		frm.trigger("convert_to_item_based_reposting");
 	},

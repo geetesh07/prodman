@@ -1,10 +1,10 @@
-// Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2020, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Journal Entry Template", {
+nts .ui.form.on("Journal Entry Template", {
 	onload: function (frm) {
 		if (frm.is_new()) {
-			frappe.call({
+			nts .call({
 				type: "GET",
 				method: "prodman.accounts.doctype.journal_entry_template.journal_entry_template.get_naming_series",
 				callback: function (r) {
@@ -18,7 +18,7 @@ frappe.ui.form.on("Journal Entry Template", {
 		}
 	},
 	refresh: function (frm) {
-		frappe.model.set_default_values(frm.doc);
+		nts .model.set_default_values(frm.doc);
 
 		frm.set_query("account", "accounts", function () {
 			var filters = {
@@ -30,7 +30,7 @@ frappe.ui.form.on("Journal Entry Template", {
 				$.extend(filters, {
 					account_currency: [
 						"in",
-						[frappe.get_doc(":Company", frm.doc.company).default_currency, null],
+						[nts .get_doc(":Company", frm.doc.company).default_currency, null],
 					],
 				});
 			}
@@ -41,7 +41,7 @@ frappe.ui.form.on("Journal Entry Template", {
 	voucher_type: function (frm) {
 		var add_accounts = function (doc, r) {
 			$.each(r, function (i, d) {
-				var row = frappe.model.add_child(doc, "Journal Entry Template Account", "accounts");
+				var row = nts .model.add_child(doc, "Journal Entry Template Account", "accounts");
 				row.account = d.account;
 			});
 			refresh_field("accounts");
@@ -53,7 +53,7 @@ frappe.ui.form.on("Journal Entry Template", {
 		switch (frm.doc.voucher_type) {
 			case "Bank Entry":
 			case "Cash Entry":
-				frappe.call({
+				nts .call({
 					type: "GET",
 					method: "prodman.accounts.doctype.journal_entry.journal_entry.get_default_bank_cash_account",
 					args: {
@@ -80,7 +80,7 @@ frappe.ui.form.on("Journal Entry Template", {
 		}
 	},
 	clear_child: function (frm) {
-		frappe.model.clear_table(frm.doc, "accounts");
+		nts .model.clear_table(frm.doc, "accounts");
 		frm.refresh_field("accounts");
 	},
 });

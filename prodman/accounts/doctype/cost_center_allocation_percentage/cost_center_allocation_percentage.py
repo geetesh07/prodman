@@ -1,8 +1,8 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-# import frappe
-from frappe.model.document import Document
+# import nts 
+from nts .model.document import Document
 
 
 class CostCenterAllocationPercentage(Document):
@@ -12,7 +12,7 @@ class CostCenterAllocationPercentage(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		cost_center: DF.Link
 		parent: DF.Data

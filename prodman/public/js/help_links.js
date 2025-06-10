@@ -1,8 +1,8 @@
-frappe.provide("frappe.help.help_links");
+nts.provide("nts.help.help_links");
 
 const docsUrl = "https://prodman.com/docs/";
 
-frappe.help.help_links["Form/Rename Tool"] = [
+nts.help.help_links["Form/Rename Tool"] = [
 	{
 		label: "Bulk Rename",
 		url: docsUrl + "user/manual/en/transactions-bulk-rename",
@@ -11,7 +11,7 @@ frappe.help.help_links["Form/Rename Tool"] = [
 
 //Setup
 
-frappe.help.help_links["List/User"] = [
+nts.help.help_links["List/User"] = [
 	{
 		label: "New User",
 		url: docsUrl + "user/manual/en/adding-users",
@@ -22,7 +22,7 @@ frappe.help.help_links["List/User"] = [
 	},
 ];
 
-frappe.help.help_links["permission-manager"] = [
+nts.help.help_links["permission-manager"] = [
 	{
 		label: "Role Based Permissions",
 		url: docsUrl + "user/manual/en/role-based-permissions",
@@ -45,140 +45,140 @@ frappe.help.help_links["permission-manager"] = [
 	},
 ];
 
-frappe.help.help_links["Form/System Settings"] = [
+nts.help.help_links["Form/System Settings"] = [
 	{
 		label: "System Settings",
 		url: docsUrl + "user/manual/en/system-settings",
 	},
 ];
 
-frappe.help.help_links["Form/Data Import"] = [
+nts.help.help_links["Form/Data Import"] = [
 	{
 		label: "Importing and Exporting Data",
 		url: docsUrl + "user/manual/en/data-import",
 	},
 ];
 
-frappe.help.help_links["List/Data Import"] = [
+nts.help.help_links["List/Data Import"] = [
 	{
 		label: "Importing and Exporting Data",
 		url: docsUrl + "user/manual/en/data-import",
 	},
 ];
 
-frappe.help.help_links["module_setup"] = [
+nts.help.help_links["module_setup"] = [
 	{
 		label: "Role Permissions Manager",
 		url: docsUrl + "user/manual/en/role-based-permissions",
 	},
 ];
 
-frappe.help.help_links["Form/Document Naming Settings"] = [
+nts.help.help_links["Form/Document Naming Settings"] = [
 	{
 		label: "Naming Series",
 		url: docsUrl + "user/manual/en/document-naming-settings",
 	},
 ];
 
-frappe.help.help_links["Form/Global Defaults"] = [
+nts.help.help_links["Form/Global Defaults"] = [
 	{
 		label: "Global Settings",
 		url: docsUrl + "user/manual/en/global-defaults",
 	},
 ];
 
-frappe.help.help_links["List/Print Heading"] = [
+nts.help.help_links["List/Print Heading"] = [
 	{
 		label: "Print Heading",
 		url: docsUrl + "user/manual/en/print-headings",
 	},
 ];
 
-frappe.help.help_links["Form/Print Heading"] = [
+nts.help.help_links["Form/Print Heading"] = [
 	{
 		label: "Print Heading",
 		url: docsUrl + "user/manual/en/print-headings",
 	},
 ];
 
-frappe.help.help_links["List/Letter Head"] = [
+nts.help.help_links["List/Letter Head"] = [
 	{
 		label: "Letter Head",
 		url: docsUrl + "user/manual/en/letter-head",
 	},
 ];
 
-frappe.help.help_links["List/Address Template"] = [
+nts.help.help_links["List/Address Template"] = [
 	{
 		label: "Address Template",
 		url: docsUrl + "user/manual/en/address-template",
 	},
 ];
 
-frappe.help.help_links["List/Terms and Conditions"] = [
+nts.help.help_links["List/Terms and Conditions"] = [
 	{
 		label: "Terms and Conditions",
 		url: docsUrl + "user/manual/en/terms-and-conditions",
 	},
 ];
 
-frappe.help.help_links["List/Cheque Print Template"] = [
+nts.help.help_links["List/Cheque Print Template"] = [
 	{
 		label: "Cheque Print Template",
 		url: docsUrl + "user/manual/en/cheque-print-template",
 	},
 ];
 
-frappe.help.help_links["List/Email Account"] = [
+nts.help.help_links["List/Email Account"] = [
 	{
 		label: "Email Account",
 		url: docsUrl + "user/manual/en/email-account",
 	},
 ];
 
-frappe.help.help_links["List/Notification"] = [
+nts.help.help_links["List/Notification"] = [
 	{
 		label: "Notification",
 		url: docsUrl + "user/manual/en/notifications",
 	},
 ];
 
-frappe.help.help_links["Form/Notification"] = [
+nts.help.help_links["Form/Notification"] = [
 	{
 		label: "Notification",
 		url: docsUrl + "user/manual/en/notifications",
 	},
 ];
 
-frappe.help.help_links["Form/Email Digest"] = [
+nts.help.help_links["Form/Email Digest"] = [
 	{
 		label: "Email Digest",
 		url: docsUrl + "user/manual/en/email-digest",
 	},
 ];
 
-frappe.help.help_links["Form/Email Digest"] = [
+nts.help.help_links["Form/Email Digest"] = [
 	{
 		label: "Email Digest",
 		url: docsUrl + "user/manual/en/email-digest",
 	},
 ];
 
-frappe.help.help_links["List/Auto Email Report"] = [
+nts.help.help_links["List/Auto Email Report"] = [
 	{
 		label: "Auto Email Reports",
 		url: docsUrl + "user/manual/en/auto-email-reports",
 	},
 ];
 
-frappe.help.help_links["Form/Print Settings"] = [
+nts.help.help_links["Form/Print Settings"] = [
 	{
 		label: "Print Settings",
 		url: docsUrl + "user/manual/en/print-settings",
 	},
 ];
 
-frappe.help.help_links["print-format-builder"] = [
+nts.help.help_links["print-format-builder"] = [
 	{
 		label: "Print Format Builder",
 		url: docsUrl + "user/manual/en/print-format-builder",
@@ -187,35 +187,35 @@ frappe.help.help_links["print-format-builder"] = [
 
 //setup-integrations
 
-frappe.help.help_links["Form/PayPal Settings"] = [
+nts.help.help_links["Form/PayPal Settings"] = [
 	{
 		label: "PayPal Settings",
 		url: docsUrl + "user/manual/en/paypal-integration",
 	},
 ];
 
-frappe.help.help_links["Form/Razorpay Settings"] = [
+nts.help.help_links["Form/Razorpay Settings"] = [
 	{
 		label: "Razorpay Settings",
 		url: docsUrl + "user/manual/en/razorpay-integration",
 	},
 ];
 
-frappe.help.help_links["Form/Dropbox Settings"] = [
+nts.help.help_links["Form/Dropbox Settings"] = [
 	{
 		label: "Dropbox Settings",
 		url: docsUrl + "user/manual/en/dropbox-backup",
 	},
 ];
 
-frappe.help.help_links["Form/LDAP Settings"] = [
+nts.help.help_links["Form/LDAP Settings"] = [
 	{
 		label: "LDAP Settings",
 		url: docsUrl + "user/manual/en/ldap-integration",
 	},
 ];
 
-frappe.help.help_links["Form/Stripe Settings"] = [
+nts.help.help_links["Form/Stripe Settings"] = [
 	{
 		label: "Stripe Settings",
 		url: docsUrl + "user/manual/en/stripe-integration",
@@ -224,7 +224,7 @@ frappe.help.help_links["Form/Stripe Settings"] = [
 
 //Sales
 
-frappe.help.help_links["Form/Quotation"] = [
+nts.help.help_links["Form/Quotation"] = [
 	{ label: "Quotation", url: docsUrl + "user/manual/en/quotation" },
 	{
 		label: "Applying Discount",
@@ -240,7 +240,7 @@ frappe.help.help_links["Form/Quotation"] = [
 	},
 ];
 
-frappe.help.help_links["List/Customer"] = [
+nts.help.help_links["List/Customer"] = [
 	{ label: "Customer", url: docsUrl + "user/manual/en/customer" },
 	{
 		label: "Credit Limit",
@@ -248,7 +248,7 @@ frappe.help.help_links["List/Customer"] = [
 	},
 ];
 
-frappe.help.help_links["Form/Customer"] = [
+nts.help.help_links["Form/Customer"] = [
 	{ label: "Customer", url: docsUrl + "user/manual/en/customer" },
 	{
 		label: "Credit Limit",
@@ -256,21 +256,21 @@ frappe.help.help_links["Form/Customer"] = [
 	},
 ];
 
-frappe.help.help_links["List/Sales Taxes and Charges Template"] = [
+nts.help.help_links["List/Sales Taxes and Charges Template"] = [
 	{
 		label: "Setting Up Taxes",
 		url: docsUrl + "user/manual/en/setting-up-taxes",
 	},
 ];
 
-frappe.help.help_links["Form/Sales Taxes and Charges Template"] = [
+nts.help.help_links["Form/Sales Taxes and Charges Template"] = [
 	{
 		label: "Setting Up Taxes",
 		url: docsUrl + "user/manual/en/setting-up-taxes",
 	},
 ];
 
-frappe.help.help_links["List/Sales Order"] = [
+nts.help.help_links["List/Sales Order"] = [
 	{
 		label: "Sales Order",
 		url: docsUrl + "user/manual/en/sales-order",
@@ -285,7 +285,7 @@ frappe.help.help_links["List/Sales Order"] = [
 	},
 ];
 
-frappe.help.help_links["Form/Sales Order"] = [
+nts.help.help_links["Form/Sales Order"] = [
 	{
 		label: "Sales Order",
 		url: docsUrl + "user/manual/en/sales-order",
@@ -316,14 +316,14 @@ frappe.help.help_links["Form/Sales Order"] = [
 	},
 ];
 
-frappe.help.help_links["Form/Product Bundle"] = [
+nts.help.help_links["Form/Product Bundle"] = [
 	{
 		label: "Product Bundle",
 		url: docsUrl + "user/manual/en/product-bundle",
 	},
 ];
 
-frappe.help.help_links["Form/Selling Settings"] = [
+nts.help.help_links["Form/Selling Settings"] = [
 	{
 		label: "Selling Settings",
 		url: docsUrl + "user/manual/en/selling-settings",
@@ -332,11 +332,11 @@ frappe.help.help_links["Form/Selling Settings"] = [
 
 //Buying
 
-frappe.help.help_links["List/Supplier"] = [{ label: "Supplier", url: docsUrl + "user/manual/en/supplier" }];
+nts.help.help_links["List/Supplier"] = [{ label: "Supplier", url: docsUrl + "user/manual/en/supplier" }];
 
-frappe.help.help_links["Form/Supplier"] = [{ label: "Supplier", url: docsUrl + "user/manual/en/supplier" }];
+nts.help.help_links["Form/Supplier"] = [{ label: "Supplier", url: docsUrl + "user/manual/en/supplier" }];
 
-frappe.help.help_links["Form/Request for Quotation"] = [
+nts.help.help_links["Form/Request for Quotation"] = [
 	{
 		label: "Request for Quotation",
 		url: docsUrl + "user/manual/en/request-for-quotation",
@@ -347,21 +347,21 @@ frappe.help.help_links["Form/Request for Quotation"] = [
 	},
 ];
 
-frappe.help.help_links["Form/Supplier Quotation"] = [
+nts.help.help_links["Form/Supplier Quotation"] = [
 	{
 		label: "Supplier Quotation",
 		url: docsUrl + "user/manual/en/supplier-quotation",
 	},
 ];
 
-frappe.help.help_links["Form/Buying Settings"] = [
+nts.help.help_links["Form/Buying Settings"] = [
 	{
 		label: "Buying Settings",
 		url: docsUrl + "user/manual/en/buying-settings",
 	},
 ];
 
-frappe.help.help_links["List/Purchase Order"] = [
+nts.help.help_links["List/Purchase Order"] = [
 	{
 		label: "Purchase Order",
 		url: docsUrl + "user/manual/en/purchase-order",
@@ -372,7 +372,7 @@ frappe.help.help_links["List/Purchase Order"] = [
 	},
 ];
 
-frappe.help.help_links["Form/Purchase Order"] = [
+nts.help.help_links["Form/Purchase Order"] = [
 	{
 		label: "Purchase Order",
 		url: docsUrl + "user/manual/en/purchase-order",
@@ -395,51 +395,51 @@ frappe.help.help_links["Form/Purchase Order"] = [
 	},
 ];
 
-frappe.help.help_links["List/Purchase Taxes and Charges Template"] = [
+nts.help.help_links["List/Purchase Taxes and Charges Template"] = [
 	{
 		label: "Setting Up Taxes",
 		url: docsUrl + "user/manual/en/setting-up-taxes",
 	},
 ];
 
-frappe.help.help_links["List/Price List"] = [
+nts.help.help_links["List/Price List"] = [
 	{
 		label: "Price List",
 		url: docsUrl + "user/manual/en/price-lists",
 	},
 ];
 
-frappe.help.help_links["List/Authorization Rule"] = [
+nts.help.help_links["List/Authorization Rule"] = [
 	{
 		label: "Authorization Rule",
 		url: docsUrl + "user/manual/en/authorization-rule",
 	},
 ];
 
-frappe.help.help_links["Form/SMS Settings"] = [
+nts.help.help_links["Form/SMS Settings"] = [
 	{
 		label: "SMS Settings",
 		url: docsUrl + "user/manual/en/sms-setting",
 	},
 ];
 
-frappe.help.help_links["List/Stock Reconciliation"] = [
+nts.help.help_links["List/Stock Reconciliation"] = [
 	{
 		label: "Stock Reconciliation",
 		url: docsUrl + "user/manual/en/stock-reconciliation",
 	},
 ];
 
-frappe.help.help_links["Tree/Territory"] = [
+nts.help.help_links["Tree/Territory"] = [
 	{
 		label: "Territory",
 		url: docsUrl + "user/manual/en/territory",
 	},
 ];
 
-frappe.help.help_links["List/Workflow"] = [{ label: "Workflow", url: docsUrl + "user/manual/en/workflows" }];
+nts.help.help_links["List/Workflow"] = [{ label: "Workflow", url: docsUrl + "user/manual/en/workflows" }];
 
-frappe.help.help_links["List/Company"] = [
+nts.help.help_links["List/Company"] = [
 	{
 		label: "Company",
 		url: docsUrl + "user/manual/en/company-setup",
@@ -452,7 +452,7 @@ frappe.help.help_links["List/Company"] = [
 
 //Accounts
 
-frappe.help.help_links["Tree/Account"] = [
+nts.help.help_links["Tree/Account"] = [
 	{
 		label: "Chart of Accounts",
 		url: docsUrl + "user/manual/en/chart-of-accounts",
@@ -463,7 +463,7 @@ frappe.help.help_links["Tree/Account"] = [
 	},
 ];
 
-frappe.help.help_links["Form/Sales Invoice"] = [
+nts.help.help_links["Form/Sales Invoice"] = [
 	{
 		label: "Sales Invoice",
 		url: docsUrl + "user/manual/en/sales-invoice",
@@ -482,7 +482,7 @@ frappe.help.help_links["Form/Sales Invoice"] = [
 	},
 ];
 
-frappe.help.help_links["List/Sales Invoice"] = [
+nts.help.help_links["List/Sales Invoice"] = [
 	{
 		label: "Sales Invoice",
 		url: docsUrl + "user/manual/en/sales-invoice",
@@ -501,28 +501,28 @@ frappe.help.help_links["List/Sales Invoice"] = [
 	},
 ];
 
-frappe.help.help_links["point-of-sale"] = [
+nts.help.help_links["point-of-sale"] = [
 	{
 		label: "Point of Sale Invoice",
 		url: docsUrl + "user/manual/en/point-of-sales",
 	},
 ];
 
-frappe.help.help_links["List/POS Profile"] = [
+nts.help.help_links["List/POS Profile"] = [
 	{
 		label: "Point of Sale Profile",
 		url: docsUrl + "user/manual/en/pos-profile",
 	},
 ];
 
-frappe.help.help_links["Form/POS Profile"] = [
+nts.help.help_links["Form/POS Profile"] = [
 	{
 		label: "POS Profile",
 		url: docsUrl + "user/manual/en/pos-profile",
 	},
 ];
 
-frappe.help.help_links["List/Purchase Invoice"] = [
+nts.help.help_links["List/Purchase Invoice"] = [
 	{
 		label: "Purchase Invoice",
 		url: docsUrl + "user/manual/en/purchase-invoice",
@@ -537,7 +537,7 @@ frappe.help.help_links["List/Purchase Invoice"] = [
 	},
 ];
 
-frappe.help.help_links["List/Journal Entry"] = [
+nts.help.help_links["List/Journal Entry"] = [
 	{
 		label: "Journal Entry",
 		url: docsUrl + "user/manual/en/journal-entry",
@@ -552,41 +552,41 @@ frappe.help.help_links["List/Journal Entry"] = [
 	},
 ];
 
-frappe.help.help_links["List/Payment Entry"] = [
+nts.help.help_links["List/Payment Entry"] = [
 	{
 		label: "Payment Entry",
 		url: docsUrl + "user/manual/en/payment-entry",
 	},
 ];
 
-frappe.help.help_links["List/Payment Request"] = [
+nts.help.help_links["List/Payment Request"] = [
 	{
 		label: "Payment Request",
 		url: docsUrl + "user/manual/en/payment-request",
 	},
 ];
 
-frappe.help.help_links["List/Asset"] = [
+nts.help.help_links["List/Asset"] = [
 	{
 		label: "Managing Fixed Assets",
 		url: docsUrl + "user/manual/en/asset",
 	},
 ];
 
-frappe.help.help_links["List/Asset Category"] = [
+nts.help.help_links["List/Asset Category"] = [
 	{
 		label: "Asset Category",
 		url: docsUrl + "user/manual/en/asset-category",
 	},
 ];
 
-frappe.help.help_links["Tree/Cost Center"] = [
+nts.help.help_links["Tree/Cost Center"] = [
 	{ label: "Budgeting", url: docsUrl + "user/manual/en/budgeting" },
 ];
 
 //Stock
 
-frappe.help.help_links["List/Item"] = [
+nts.help.help_links["List/Item"] = [
 	{ label: "Item", url: docsUrl + "user/manual/en/item" },
 	{
 		label: "Item Price",
@@ -618,7 +618,7 @@ frappe.help.help_links["List/Item"] = [
 	},
 ];
 
-frappe.help.help_links["Form/Item"] = [
+nts.help.help_links["Form/Item"] = [
 	{ label: "Item", url: docsUrl + "user/manual/en/item" },
 	{
 		label: "Item Price",
@@ -650,7 +650,7 @@ frappe.help.help_links["Form/Item"] = [
 	},
 ];
 
-frappe.help.help_links["List/Purchase Receipt"] = [
+nts.help.help_links["List/Purchase Receipt"] = [
 	{
 		label: "Purchase Receipt",
 		url: docsUrl + "user/manual/en/purchase-receipt",
@@ -661,7 +661,7 @@ frappe.help.help_links["List/Purchase Receipt"] = [
 	},
 ];
 
-frappe.help.help_links["List/Delivery Note"] = [
+nts.help.help_links["List/Delivery Note"] = [
 	{
 		label: "Delivery Note",
 		url: docsUrl + "user/manual/en/delivery-note",
@@ -676,7 +676,7 @@ frappe.help.help_links["List/Delivery Note"] = [
 	},
 ];
 
-frappe.help.help_links["Form/Delivery Note"] = [
+nts.help.help_links["Form/Delivery Note"] = [
 	{
 		label: "Delivery Note",
 		url: docsUrl + "user/manual/en/delivery-note",
@@ -691,16 +691,16 @@ frappe.help.help_links["Form/Delivery Note"] = [
 	},
 ];
 
-frappe.help.help_links["List/Installation Note"] = [
+nts.help.help_links["List/Installation Note"] = [
 	{
 		label: "Installation Note",
 		url: docsUrl + "user/manual/en/installation-note",
 	},
 ];
 
-frappe.help.help_links["List/Budget"] = [{ label: "Budgeting", url: docsUrl + "user/manual/en/budgeting" }];
+nts.help.help_links["List/Budget"] = [{ label: "Budgeting", url: docsUrl + "user/manual/en/budgeting" }];
 
-frappe.help.help_links["List/Material Request"] = [
+nts.help.help_links["List/Material Request"] = [
 	{
 		label: "Material Request",
 		url: docsUrl + "user/manual/en/material-request",
@@ -711,7 +711,7 @@ frappe.help.help_links["List/Material Request"] = [
 	},
 ];
 
-frappe.help.help_links["Form/Material Request"] = [
+nts.help.help_links["Form/Material Request"] = [
 	{
 		label: "Material Request",
 		url: docsUrl + "user/manual/en/material-request",
@@ -722,7 +722,7 @@ frappe.help.help_links["Form/Material Request"] = [
 	},
 ];
 
-frappe.help.help_links["Form/Stock Entry"] = [
+nts.help.help_links["Form/Stock Entry"] = [
 	{ label: "Stock Entry", url: docsUrl + "user/manual/en/stock-entry" },
 	{
 		label: "Stock Entry Types",
@@ -742,69 +742,69 @@ frappe.help.help_links["Form/Stock Entry"] = [
 	},
 ];
 
-frappe.help.help_links["List/Stock Entry"] = [
+nts.help.help_links["List/Stock Entry"] = [
 	{ label: "Stock Entry", url: docsUrl + "user/manual/en/stock-entry" },
 ];
 
-frappe.help.help_links["Tree/Warehouse"] = [
+nts.help.help_links["Tree/Warehouse"] = [
 	{ label: "Warehouse", url: docsUrl + "user/manual/en/warehouse" },
 ];
 
-frappe.help.help_links["List/Serial No"] = [
+nts.help.help_links["List/Serial No"] = [
 	{ label: "Serial No", url: docsUrl + "user/manual/en/serial-no" },
 ];
 
-frappe.help.help_links["Form/Serial No"] = [
+nts.help.help_links["Form/Serial No"] = [
 	{ label: "Serial No", url: docsUrl + "user/manual/en/serial-no" },
 ];
 
-frappe.help.help_links["List/Batch"] = [{ label: "Batch", url: docsUrl + "user/manual/en/batch" }];
+nts.help.help_links["List/Batch"] = [{ label: "Batch", url: docsUrl + "user/manual/en/batch" }];
 
-frappe.help.help_links["Form/Batch"] = [{ label: "Batch", url: docsUrl + "user/manual/en/batch" }];
+nts.help.help_links["Form/Batch"] = [{ label: "Batch", url: docsUrl + "user/manual/en/batch" }];
 
-frappe.help.help_links["Form/Packing Slip"] = [
+nts.help.help_links["Form/Packing Slip"] = [
 	{
 		label: "Packing Slip",
 		url: docsUrl + "user/manual/en/packing-slip",
 	},
 ];
 
-frappe.help.help_links["Form/Quality Inspection"] = [
+nts.help.help_links["Form/Quality Inspection"] = [
 	{
 		label: "Quality Inspection",
 		url: docsUrl + "user/manual/en/quality-inspection",
 	},
 ];
 
-frappe.help.help_links["Form/Landed Cost Voucher"] = [
+nts.help.help_links["Form/Landed Cost Voucher"] = [
 	{
 		label: "Landed Cost Voucher",
 		url: docsUrl + "user/manual/en/landed-cost-voucher",
 	},
 ];
 
-frappe.help.help_links["Tree/Item Group"] = [
+nts.help.help_links["Tree/Item Group"] = [
 	{
 		label: "Item Group",
 		url: docsUrl + "user/manual/en/item-group",
 	},
 ];
 
-frappe.help.help_links["Form/Item Attribute"] = [
+nts.help.help_links["Form/Item Attribute"] = [
 	{
 		label: "Item Attribute",
 		url: docsUrl + "user/manual/en/item-attribute",
 	},
 ];
 
-frappe.help.help_links["Form/UOM"] = [
+nts.help.help_links["Form/UOM"] = [
 	{
 		label: "Fractions in UOM",
 		url: docsUrl + "user/manual/en/managing-fractions-in-uom",
 	},
 ];
 
-frappe.help.help_links["Form/Stock Reconciliation"] = [
+nts.help.help_links["Form/Stock Reconciliation"] = [
 	{
 		label: "Opening Stock Entry",
 		url: docsUrl + "user/manual/en/stock-reconciliation",
@@ -813,30 +813,30 @@ frappe.help.help_links["Form/Stock Reconciliation"] = [
 
 //CRM
 
-frappe.help.help_links["Form/Lead"] = [{ label: "Lead", url: docsUrl + "user/manual/en/lead" }];
+nts.help.help_links["Form/Lead"] = [{ label: "Lead", url: docsUrl + "user/manual/en/lead" }];
 
-frappe.help.help_links["Form/Opportunity"] = [
+nts.help.help_links["Form/Opportunity"] = [
 	{ label: "Opportunity", url: docsUrl + "user/manual/en/opportunity" },
 ];
 
-frappe.help.help_links["Form/Address"] = [{ label: "Address", url: docsUrl + "user/manual/en/address" }];
+nts.help.help_links["Form/Address"] = [{ label: "Address", url: docsUrl + "user/manual/en/address" }];
 
-frappe.help.help_links["Form/Contact"] = [{ label: "Contact", url: docsUrl + "user/manual/en/contact" }];
+nts.help.help_links["Form/Contact"] = [{ label: "Contact", url: docsUrl + "user/manual/en/contact" }];
 
-frappe.help.help_links["Form/Newsletter"] = [
+nts.help.help_links["Form/Newsletter"] = [
 	{ label: "Newsletter", url: docsUrl + "user/manual/en/newsletter" },
 ];
 
-frappe.help.help_links["Form/Campaign"] = [{ label: "Campaign", url: docsUrl + "user/manual/en/campaign" }];
+nts.help.help_links["Form/Campaign"] = [{ label: "Campaign", url: docsUrl + "user/manual/en/campaign" }];
 
-frappe.help.help_links["Tree/Sales Person"] = [
+nts.help.help_links["Tree/Sales Person"] = [
 	{
 		label: "Sales Person",
 		url: docsUrl + "user/manual/en/sales-person",
 	},
 ];
 
-frappe.help.help_links["Form/Sales Person"] = [
+nts.help.help_links["Form/Sales Person"] = [
 	{
 		label: "Sales Person Target",
 		url: docsUrl + "user/manual/en/sales-person-target-allocation",
@@ -849,7 +849,7 @@ frappe.help.help_links["Form/Sales Person"] = [
 
 //Manufacturing
 
-frappe.help.help_links["Form/BOM"] = [
+nts.help.help_links["Form/BOM"] = [
 	{
 		label: "Bill of Material",
 		url: docsUrl + "user/manual/en/bill-of-materials",
@@ -860,28 +860,28 @@ frappe.help.help_links["Form/BOM"] = [
 	},
 ];
 
-frappe.help.help_links["Form/Work Order"] = [
+nts.help.help_links["Form/Work Order"] = [
 	{
 		label: "Work Order",
 		url: docsUrl + "user/manual/en/work-order",
 	},
 ];
 
-frappe.help.help_links["Form/Workstation"] = [
+nts.help.help_links["Form/Workstation"] = [
 	{
 		label: "Workstation",
 		url: docsUrl + "user/manual/en/workstation",
 	},
 ];
 
-frappe.help.help_links["Form/Operation"] = [
+nts.help.help_links["Form/Operation"] = [
 	{
 		label: "Operation",
 		url: docsUrl + "user/manual/en/operation",
 	},
 ];
 
-frappe.help.help_links["Form/BOM Update Tool"] = [
+nts.help.help_links["Form/BOM Update Tool"] = [
 	{
 		label: "BOM Update Tool",
 		url: docsUrl + "user/manual/en/bom-update-tool",
@@ -890,7 +890,7 @@ frappe.help.help_links["Form/BOM Update Tool"] = [
 
 //Customize
 
-frappe.help.help_links["Form/Customize Form"] = [
+nts.help.help_links["Form/Customize Form"] = [
 	{
 		label: "Custom Field",
 		url: docsUrl + "user/manual/en/custom-field",
@@ -901,14 +901,14 @@ frappe.help.help_links["Form/Customize Form"] = [
 	},
 ];
 
-frappe.help.help_links["List/Custom Field"] = [
+nts.help.help_links["List/Custom Field"] = [
 	{
 		label: "Custom Field",
 		url: docsUrl + "user/manual/en/custom-field",
 	},
 ];
 
-frappe.help.help_links["Form/Custom Field"] = [
+nts.help.help_links["Form/Custom Field"] = [
 	{
 		label: "Custom Field",
 		url: docsUrl + "user/manual/en/custom-field",

@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _, bold
-from frappe.query_builder.functions import IfNull, Sum
-from frappe.utils import cint, flt, get_link_to_form, getdate, nowdate
-from frappe.utils.nestedset import get_descendants_of
+import nts 
+from nts  import _, bold
+from nts .query_builder.functions import IfNull, Sum
+from nts .utils import cint, flt, get_link_to_form, getdate, nowdate
+from nts .utils.nestedset import get_descendants_of
 
 from prodman.accounts.doctype.loyalty_program.loyalty_program import validate_loyalty_points
 from prodman.accounts.doctype.payment_request.payment_request import make_payment_request
@@ -20,7 +20,7 @@ from prodman.controllers.queries import item_query as _item_query
 from prodman.stock.doctype.serial_no.serial_no import get_serial_nos
 
 
-class PartialPaymentValidationError(frappe.ValidationError):
+class PartialPaymentValidationError(nts .ValidationError):
 	pass
 
 
@@ -31,7 +31,7 @@ class POSInvoice(SalesInvoice):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.payment_schedule.payment_schedule import PaymentSchedule
 		from prodman.accounts.doctype.pos_invoice_item.pos_invoice_item import POSInvoiceItem
@@ -190,8 +190,8 @@ class POSInvoice(SalesInvoice):
 
 	def validate(self):
 		if not cint(self.is_pos):
-			frappe.throw(
-				_("POS Invoice should have the field {0} checked.").format(frappe.bold(_("Include Payment")))
+			nts .throw(
+				_("POS Invoice should have the field {0} checked.").format(nts .bold(_("Include Payment")))
 			)
 
 		# run on validate method of selling controller
@@ -226,7 +226,7 @@ class POSInvoice(SalesInvoice):
 		if not self.is_return and self.loyalty_program:
 			self.make_loyalty_point_entry()
 		elif self.is_return and self.return_against and self.loyalty_program:
-			against_psi_doc = frappe.get_doc("POS Invoice", self.return_against)
+			against_psi_doc = nts .get_doc("POS Invoice", self.return_against)
 			against_psi_doc.delete_loyalty_point_entry()
 			against_psi_doc.make_loyalty_point_entry()
 		if self.redeem_loyalty_points and self.loyalty_points:
@@ -246,16 +246,16 @@ class POSInvoice(SalesInvoice):
 	def before_cancel(self):
 		if (
 			self.consolidated_invoice
-			and frappe.db.get_value("Sales Invoice", self.consolidated_invoice, "docstatus") == 1
+			and nts .db.get_value("Sales Invoice", self.consolidated_invoice, "docstatus") == 1
 		):
-			pos_closing_entry = frappe.get_all(
+			pos_closing_entry = nts .get_all(
 				"POS Invoice Reference",
 				ignore_permissions=True,
 				filters={"pos_invoice": self.name},
 				pluck="parent",
 				limit=1,
 			)
-			frappe.throw(
+			nts .throw(
 				_("You need to cancel POS Closing Entry {} to be able to cancel this document.").format(
 					get_link_to_form("POS Closing Entry", pos_closing_entry[0])
 				),
@@ -269,7 +269,7 @@ class POSInvoice(SalesInvoice):
 		if not self.is_return and self.loyalty_program:
 			self.delete_loyalty_point_entry()
 		elif self.is_return and self.return_against and self.loyalty_program:
-			against_psi_doc = frappe.get_doc("POS Invoice", self.return_against)
+			against_psi_doc = nts .get_doc("POS Invoice", self.return_against)
 			against_psi_doc.delete_loyalty_point_entry()
 			against_psi_doc.make_loyalty_point_entry()
 
@@ -286,19 +286,19 @@ class POSInvoice(SalesInvoice):
 		for row in self.items:
 			if row.serial_and_batch_bundle:
 				if not self.consolidated_invoice:
-					frappe.db.set_value(
+					nts .db.set_value(
 						"Serial and Batch Bundle",
 						row.serial_and_batch_bundle,
 						{"is_cancelled": 1, "voucher_no": ""},
 					)
 
-				frappe.get_doc("Serial and Batch Bundle", row.serial_and_batch_bundle).cancel()
+				nts .get_doc("Serial and Batch Bundle", row.serial_and_batch_bundle).cancel()
 				row.db_set("serial_and_batch_bundle", None)
 
 	def submit_serial_batch_bundle(self, table_name):
 		for item in self.get(table_name):
 			if item.serial_and_batch_bundle:
-				doc = frappe.get_doc("Serial and Batch Bundle", item.serial_and_batch_bundle)
+				doc = nts .get_doc("Serial and Batch Bundle", item.serial_and_batch_bundle)
 
 				if doc.docstatus == 0:
 					doc.flags.ignore_voucher_validation = True
@@ -307,7 +307,7 @@ class POSInvoice(SalesInvoice):
 	def check_phone_payments(self):
 		for pay in self.payments:
 			if pay.type == "Phone" and pay.amount >= 0:
-				paid_amt = frappe.db.get_value(
+				paid_amt = nts .db.get_value(
 					"Payment Request",
 					filters=dict(
 						reference_doctype="POS Invoice",
@@ -319,19 +319,19 @@ class POSInvoice(SalesInvoice):
 				)
 
 				if paid_amt and pay.amount != paid_amt:
-					return frappe.throw(
+					return nts .throw(
 						_("Payment related to {0} is not completed").format(pay.mode_of_payment)
 					)
 
 	def validate_pos_opening_entry(self):
-		opening_entries = frappe.get_list(
+		opening_entries = nts .get_list(
 			"POS Opening Entry", filters={"pos_profile": self.pos_profile, "status": "Open", "docstatus": 1}
 		)
 		if len(opening_entries) == 0:
-			frappe.throw(
+			nts .throw(
 				title=_("POS Opening Entry Missing"),
 				msg=_("No open POS Opening Entry found for POS Profile {0}.").format(
-					frappe.bold(self.pos_profile)
+					nts .bold(self.pos_profile)
 				),
 			)
 
@@ -339,7 +339,7 @@ class POSInvoice(SalesInvoice):
 		if self.is_return:
 			return
 
-		if self.docstatus.is_draft() and not frappe.db.get_value(
+		if self.docstatus.is_draft() and not nts .db.get_value(
 			"POS Profile", self.pos_profile, "validate_stock_on_save"
 		):
 			return
@@ -354,19 +354,19 @@ class POSInvoice(SalesInvoice):
 				available_stock, is_stock_item = get_stock_availability(d.item_code, d.warehouse)
 
 				item_code, warehouse, _qty = (
-					frappe.bold(d.item_code),
-					frappe.bold(d.warehouse),
-					frappe.bold(d.qty),
+					nts .bold(d.item_code),
+					nts .bold(d.warehouse),
+					nts .bold(d.qty),
 				)
 				if is_stock_item and flt(available_stock) <= 0:
-					frappe.throw(
+					nts .throw(
 						_("Row #{}: Item Code: {} is not available under warehouse {}.").format(
 							d.idx, item_code, warehouse
 						),
 						title=_("Item Unavailable"),
 					)
 				elif is_stock_item and flt(available_stock) < flt(d.stock_qty):
-					frappe.throw(
+					nts .throw(
 						_(
 							"Row #{}: Stock quantity not enough for Item Code: {} under warehouse {}. Available quantity {}."
 						).format(d.idx, item_code, warehouse, available_stock),
@@ -390,7 +390,7 @@ class POSInvoice(SalesInvoice):
 				error_msg = f"Row #{d.idx}: Please select Batch No. for item {bold(d.item_code)}"
 
 		if error_msg:
-			frappe.throw(error_msg, title=_("Serial / Batch Bundle Missing"), as_list=True)
+			nts .throw(error_msg, title=_("Serial / Batch Bundle Missing"), as_list=True)
 
 	def validate_return_items_qty(self):
 		if not self.get("is_return"):
@@ -398,16 +398,16 @@ class POSInvoice(SalesInvoice):
 
 		for d in self.get("items"):
 			if d.get("qty") > 0:
-				frappe.throw(
+				nts .throw(
 					_(
 						"Row #{}: You cannot add postive quantities in a return invoice. Please remove item {} to complete the return."
-					).format(d.idx, frappe.bold(d.item_code)),
+					).format(d.idx, nts .bold(d.item_code)),
 					title=_("Invalid Item"),
 				)
 			if d.get("serial_no"):
 				serial_nos = get_serial_nos(d.serial_no)
 				for sr in serial_nos:
-					serial_no_exists = frappe.db.sql(
+					serial_no_exists = nts .db.sql(
 						"""
 						SELECT name
 						FROM `tabPOS Invoice Item`
@@ -423,9 +423,9 @@ class POSInvoice(SalesInvoice):
 					)
 
 					if not serial_no_exists:
-						bold_return_against = frappe.bold(self.return_against)
-						bold_serial_no = frappe.bold(sr)
-						frappe.throw(
+						bold_return_against = nts .bold(self.return_against)
+						bold_serial_no = nts .bold(sr)
+						nts .throw(
 							_(
 								"Row #{}: Serial No {} cannot be returned since it was not transacted in original invoice {}"
 							).format(d.idx, bold_serial_no, bold_return_against)
@@ -433,15 +433,15 @@ class POSInvoice(SalesInvoice):
 
 	def validate_mode_of_payment(self):
 		if len(self.payments) == 0:
-			frappe.throw(_("At least one mode of payment is required for POS invoice."))
+			nts .throw(_("At least one mode of payment is required for POS invoice."))
 
 	def validate_change_account(self):
 		if (
 			self.change_amount
 			and self.account_for_change_amount
-			and frappe.get_cached_value("Account", self.account_for_change_amount, "company") != self.company
+			and nts .get_cached_value("Account", self.account_for_change_amount, "company") != self.company
 		):
-			frappe.throw(
+			nts .throw(
 				_("The selected change account {} doesn't belongs to Company {}.").format(
 					self.account_for_change_amount, self.company
 				)
@@ -457,28 +457,28 @@ class POSInvoice(SalesInvoice):
 			)
 
 		if flt(self.change_amount) and not self.account_for_change_amount:
-			frappe.msgprint(_("Please enter Account for Change Amount"), raise_exception=1)
+			nts .msgprint(_("Please enter Account for Change Amount"), raise_exception=1)
 
 	def validate_payment_amount(self):
 		total_amount_in_payments = 0
 		for entry in self.payments:
 			total_amount_in_payments += entry.amount
 			if not self.is_return and entry.amount < 0:
-				frappe.throw(_("Row #{0} (Payment Table): Amount must be positive").format(entry.idx))
+				nts .throw(_("Row #{0} (Payment Table): Amount must be positive").format(entry.idx))
 			if self.is_return and entry.amount > 0:
-				frappe.throw(_("Row #{0} (Payment Table): Amount must be negative").format(entry.idx))
+				nts .throw(_("Row #{0} (Payment Table): Amount must be negative").format(entry.idx))
 
 		if self.is_return and self.docstatus != 0:
 			invoice_total = self.rounded_total or self.grand_total
 			total_amount_in_payments = flt(total_amount_in_payments, self.precision("grand_total"))
 			if total_amount_in_payments and total_amount_in_payments < invoice_total:
-				frappe.throw(_("Total payments amount can't be greater than {}").format(-invoice_total))
+				nts .throw(_("Total payments amount can't be greater than {}").format(-invoice_total))
 
 	def validate_company_with_pos_company(self):
-		if self.company != frappe.db.get_value("POS Profile", self.pos_profile, "company"):
-			frappe.throw(
+		if self.company != nts .db.get_value("POS Profile", self.pos_profile, "company"):
+			nts .throw(
 				_("Company {} does not match with POS Profile Company {}").format(
-					self.company, frappe.db.get_value("POS Profile", self.pos_profile, "company")
+					self.company, nts .db.get_value("POS Profile", self.pos_profile, "company")
 				)
 			)
 
@@ -486,7 +486,7 @@ class POSInvoice(SalesInvoice):
 		if self.redeem_loyalty_points and (
 			not self.loyalty_redemption_account or not self.loyalty_redemption_cost_center
 		):
-			expense_account, cost_center = frappe.db.get_value(
+			expense_account, cost_center = nts .db.get_value(
 				"Loyalty Program", self.loyalty_program, ["expense_account", "cost_center"]
 			)
 			if not self.loyalty_redemption_account:
@@ -499,18 +499,18 @@ class POSInvoice(SalesInvoice):
 
 	def validate_full_payment(self):
 		invoice_total = flt(self.rounded_total) or flt(self.grand_total)
-		is_partial_payment_allowed = frappe.db.get_value(
+		is_partial_payment_allowed = nts .db.get_value(
 			"POS Profile", self.pos_profile, "allow_partial_payment"
 		)
 
 		if self.docstatus == 1 and not is_partial_payment_allowed:
 			if self.is_return and self.paid_amount != invoice_total:
-				frappe.throw(
+				nts .throw(
 					msg=_("Partial Payment in POS Invoice is not allowed."), exc=PartialPaymentValidationError
 				)
 
 			if self.paid_amount < invoice_total:
-				frappe.throw(
+				nts .throw(
 					msg=_("Partial Payment in POS Invoice is not allowed."), exc=PartialPaymentValidationError
 				)
 
@@ -547,7 +547,7 @@ class POSInvoice(SalesInvoice):
 				elif (
 					flt(self.outstanding_amount) <= 0
 					and self.is_return == 0
-					and frappe.db.get_value(
+					and nts .db.get_value(
 						"POS Invoice", {"is_return": 1, "return_against": self.name, "docstatus": 1}
 					)
 				):
@@ -571,12 +571,12 @@ class POSInvoice(SalesInvoice):
 		if not self.pos_profile:
 			pos_profile = get_pos_profile(self.company) or {}
 			if not pos_profile:
-				frappe.throw(_("No POS Profile found. Please create a New POS Profile first"))
+				nts .throw(_("No POS Profile found. Please create a New POS Profile first"))
 			self.pos_profile = pos_profile.get("name")
 
 		profile = {}
 		if self.pos_profile:
-			profile = frappe.get_doc("POS Profile", self.pos_profile)
+			profile = nts .get_doc("POS Profile", self.pos_profile)
 			self.company = profile.get("company")
 
 		if not self.get("payments") and not for_validate:
@@ -614,10 +614,10 @@ class POSInvoice(SalesInvoice):
 					self.set(fieldname, profile.get(fieldname))
 
 			if self.customer:
-				customer_price_list, customer_group, customer_currency = frappe.db.get_value(
+				customer_price_list, customer_group, customer_currency = nts .db.get_value(
 					"Customer", self.customer, ["default_price_list", "customer_group", "default_currency"]
 				)
-				customer_group_price_list = frappe.get_cached_value(
+				customer_group_price_list = nts .get_cached_value(
 					"Customer Group", customer_group, "default_price_list"
 				)
 				selling_price_list = (
@@ -636,7 +636,7 @@ class POSInvoice(SalesInvoice):
 			for item in self.get("items"):
 				if item.get("item_code"):
 					profile_details = get_pos_profile_item_details(
-						profile.get("company"), frappe._dict(item.as_dict()), profile
+						profile.get("company"), nts ._dict(item.as_dict()), profile
 					)
 					for fname, val in profile_details.items():
 						if (not for_validate) or (for_validate and not item.get(fname)):
@@ -644,26 +644,26 @@ class POSInvoice(SalesInvoice):
 
 			# fetch terms
 			if self.tc_name and not self.terms:
-				self.terms = frappe.db.get_value("Terms and Conditions", self.tc_name, "terms")
+				self.terms = nts .db.get_value("Terms and Conditions", self.tc_name, "terms")
 
 			# fetch charges
 			if self.taxes_and_charges and not len(self.get("taxes")):
 				self.set_taxes()
 
 		if not self.account_for_change_amount:
-			self.account_for_change_amount = frappe.get_cached_value(
+			self.account_for_change_amount = nts .get_cached_value(
 				"Company", self.company, "default_cash_account"
 			)
 
 		return profile
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def set_missing_values(self, for_validate=False):
 		profile = self.set_pos_fields(for_validate)
 
 		if not self.debit_to:
 			self.debit_to = get_party_account("Customer", self.customer, self.company)
-			self.party_account_currency = frappe.get_cached_value(
+			self.party_account_currency = nts .get_cached_value(
 				"Account", self.debit_to, "account_currency"
 			)
 		if not self.due_date and self.customer:
@@ -672,7 +672,7 @@ class POSInvoice(SalesInvoice):
 		super(SalesInvoice, self).set_missing_values(for_validate)
 
 		print_format = profile.get("print_format") if profile else None
-		if not print_format and not cint(frappe.db.get_value("Print Format", "POS Invoice", "disabled")):
+		if not print_format and not cint(nts .db.get_value("Print Format", "POS Invoice", "disabled")):
 			print_format = "POS Invoice"
 
 		if profile:
@@ -682,22 +682,22 @@ class POSInvoice(SalesInvoice):
 				"allow_print_before_pay": profile.get("allow_print_before_pay"),
 			}
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def reset_mode_of_payments(self):
 		if self.pos_profile:
-			pos_profile = frappe.get_cached_doc("POS Profile", self.pos_profile)
+			pos_profile = nts .get_cached_doc("POS Profile", self.pos_profile)
 			update_multi_mode_option(self, pos_profile)
 			self.paid_amount = 0
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def create_payment_request(self):
 		for pay in self.payments:
 			if pay.type == "Phone":
 				if pay.amount <= 0:
-					frappe.throw(_("Payment amount cannot be less than or equal to 0"))
+					nts .throw(_("Payment amount cannot be less than or equal to 0"))
 
 				if not self.contact_mobile:
-					frappe.throw(_("Please enter the phone number first"))
+					nts .throw(_("Please enter the phone number first"))
 
 				pay_req = self.get_existing_payment_request(pay)
 				if not pay_req:
@@ -709,7 +709,7 @@ class POSInvoice(SalesInvoice):
 				return pay_req
 
 	def get_new_payment_request(self, mop):
-		payment_gateway_account = frappe.db.get_value(
+		payment_gateway_account = nts .db.get_value(
 			"Payment Gateway Account",
 			{
 				"payment_account": mop.account,
@@ -731,7 +731,7 @@ class POSInvoice(SalesInvoice):
 		return make_payment_request(**args)
 
 	def get_existing_payment_request(self, pay):
-		payment_gateway_account = frappe.db.get_value(
+		payment_gateway_account = nts .db.get_value(
 			"Payment Gateway Account",
 			{
 				"payment_account": pay.account,
@@ -745,14 +745,14 @@ class POSInvoice(SalesInvoice):
 			"payment_gateway_account": payment_gateway_account,
 			"email_to": self.contact_mobile,
 		}
-		pr = frappe.db.get_value("Payment Request", filters=filters)
+		pr = nts .db.get_value("Payment Request", filters=filters)
 		if pr:
-			return frappe.get_doc("Payment Request", pr)
+			return nts .get_doc("Payment Request", pr)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_stock_availability(item_code, warehouse):
-	if frappe.db.get_value("Item", item_code, "is_stock_item"):
+	if nts .db.get_value("Item", item_code, "is_stock_item"):
 		is_stock_item = True
 		bin_qty = get_bin_qty(item_code, warehouse)
 		pos_sales_qty = get_pos_reserved_qty(item_code, warehouse)
@@ -760,7 +760,7 @@ def get_stock_availability(item_code, warehouse):
 		return bin_qty - pos_sales_qty, is_stock_item
 	else:
 		is_stock_item = True
-		if frappe.db.exists("Product Bundle", {"name": item_code, "disabled": 0}):
+		if nts .db.exists("Product Bundle", {"name": item_code, "disabled": 0}):
 			return get_bundle_availability(item_code, warehouse), is_stock_item
 		else:
 			is_stock_item = False
@@ -769,7 +769,7 @@ def get_stock_availability(item_code, warehouse):
 
 
 def get_bundle_availability(bundle_item_code, warehouse):
-	product_bundle = frappe.get_doc("Product Bundle", bundle_item_code)
+	product_bundle = nts .get_doc("Product Bundle", bundle_item_code)
 
 	bundle_bin_qty = 1000000
 	for item in product_bundle.items:
@@ -778,7 +778,7 @@ def get_bundle_availability(bundle_item_code, warehouse):
 		available_qty = item_bin_qty - item_pos_reserved_qty
 
 		max_available_bundles = available_qty / item.qty
-		if bundle_bin_qty > max_available_bundles and frappe.get_value(
+		if bundle_bin_qty > max_available_bundles and nts .get_value(
 			"Item", item.item_code, "is_stock_item"
 		):
 			bundle_bin_qty = max_available_bundles
@@ -788,7 +788,7 @@ def get_bundle_availability(bundle_item_code, warehouse):
 
 
 def get_bin_qty(item_code, warehouse):
-	bin_qty = frappe.db.sql(
+	bin_qty = nts .db.sql(
 		"""select actual_qty from `tabBin`
 		where item_code = %s and warehouse = %s
 		limit 1""",
@@ -800,11 +800,11 @@ def get_bin_qty(item_code, warehouse):
 
 
 def get_pos_reserved_qty(item_code, warehouse):
-	p_inv = frappe.qb.DocType("POS Invoice")
-	p_item = frappe.qb.DocType("POS Invoice Item")
+	p_inv = nts .qb.DocType("POS Invoice")
+	p_item = nts .qb.DocType("POS Invoice Item")
 
 	reserved_qty = (
-		frappe.qb.from_(p_inv)
+		nts .qb.from_(p_inv)
 		.from_(p_item)
 		.select(Sum(p_item.stock_qty).as_("stock_qty"))
 		.where(
@@ -819,14 +819,14 @@ def get_pos_reserved_qty(item_code, warehouse):
 	return flt(reserved_qty[0].stock_qty) if reserved_qty else 0
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def make_sales_return(source_name, target_doc=None):
 	from prodman.controllers.sales_and_purchase_return import make_return_doc
 
 	return make_return_doc("POS Invoice", source_name, target_doc)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def make_merge_log(invoices):
 	import json
 
@@ -834,12 +834,12 @@ def make_merge_log(invoices):
 		invoices = json.loads(invoices)
 
 	if len(invoices) == 0:
-		frappe.throw(_("Atleast one invoice has to be selected."))
+		nts .throw(_("Atleast one invoice has to be selected."))
 
-	merge_log = frappe.new_doc("POS Invoice Merge Log")
+	merge_log = nts .new_doc("POS Invoice Merge Log")
 	merge_log.posting_date = getdate(nowdate())
 	for inv in invoices:
-		inv_data = frappe.db.get_values(
+		inv_data = nts .db.get_values(
 			"POS Invoice", inv.get("name"), ["customer", "posting_date", "grand_total"], as_dict=1
 		)[0]
 		merge_log.customer = inv_data.customer
@@ -875,11 +875,11 @@ def add_return_modes(doc, pos_profile):
 			append_payment(payment_mode[0])
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts .whitelist()
+@nts .validate_and_sanitize_search_inputs
 def item_query(doctype, txt, searchfield, start, page_len, filters, as_dict=False):
 	if pos_profile := filters.get("pos_profile")[1]:
-		pos_profile = frappe.get_cached_doc("POS Profile", pos_profile)
+		pos_profile = nts .get_cached_doc("POS Profile", pos_profile)
 		if item_groups := get_item_group(pos_profile):
 			filters["item_group"] = ["in", tuple(item_groups)]
 

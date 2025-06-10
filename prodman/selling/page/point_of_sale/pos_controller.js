@@ -7,8 +7,8 @@ prodman.PointOfSale.Controller = class {
 	}
 
 	fetch_opening_entry() {
-		return frappe.call("prodman.selling.page.point_of_sale.point_of_sale.check_opening_entry", {
-			user: frappe.session.user,
+		return nts.call("prodman.selling.page.point_of_sale.point_of_sale.check_opening_entry", {
+			user: nts.session.user,
 		});
 	}
 
@@ -54,7 +54,7 @@ prodman.PointOfSale.Controller = class {
 		const fetch_pos_payment_methods = () => {
 			const pos_profile = dialog.fields_dict.pos_profile.get_value();
 			if (!pos_profile) return;
-			frappe.db.get_doc("POS Profile", pos_profile).then(({ payments }) => {
+			nts.db.get_doc("POS Profile", pos_profile).then(({ payments }) => {
 				dialog.fields_dict.balance_details.df.data = [];
 				payments.forEach((pay) => {
 					const { mode_of_payment } = pay;
@@ -63,14 +63,14 @@ prodman.PointOfSale.Controller = class {
 				dialog.fields_dict.balance_details.grid.refresh();
 			});
 		};
-		const dialog = new frappe.ui.Dialog({
+		const dialog = new nts.ui.Dialog({
 			title: __("Create POS Opening Entry"),
 			static: true,
 			fields: [
 				{
 					fieldtype: "Link",
 					label: __("Company"),
-					default: frappe.defaults.get_default("company"),
+					default: nts.defaults.get_default("company"),
 					options: "Company",
 					fieldname: "company",
 					reqd: 1,
@@ -97,18 +97,18 @@ prodman.PointOfSale.Controller = class {
 			],
 			primary_action: async function ({ company, pos_profile, balance_details }) {
 				if (!balance_details.length) {
-					frappe.show_alert({
+					nts.show_alert({
 						message: __("Please add Mode of payments and opening balance details."),
 						indicator: "red",
 					});
-					return frappe.utils.play_sound("error");
+					return nts.utils.play_sound("error");
 				}
 
 				// filter balance details for empty rows
 				balance_details = balance_details.filter((d) => d.mode_of_payment);
 
 				const method = "prodman.selling.page.point_of_sale.point_of_sale.create_opening_voucher";
-				const res = await frappe.call({
+				const res = await nts.call({
 					method,
 					args: { pos_profile, company, balance_details },
 					freeze: true,
@@ -135,11 +135,11 @@ prodman.PointOfSale.Controller = class {
 		this.item_stock_map = {};
 		this.settings = {};
 
-		frappe.db.get_value("Stock Settings", undefined, "allow_negative_stock").then(({ message }) => {
+		nts.db.get_value("Stock Settings", undefined, "allow_negative_stock").then(({ message }) => {
 			this.allow_negative_stock = flt(message.allow_negative_stock) || false;
 		});
 
-		frappe.call({
+		nts.call({
 			method: "prodman.selling.page.point_of_sale.point_of_sale.get_pos_profile_data",
 			args: { pos_profile: this.pos_profile },
 			callback: (res) => {
@@ -150,15 +150,15 @@ prodman.PointOfSale.Controller = class {
 			},
 		});
 
-		frappe.realtime.on(`poe_${this.pos_opening}_closed`, (data) => {
-			const route = frappe.get_route_str();
+		nts.realtime.on(`poe_${this.pos_opening}_closed`, (data) => {
+			const route = nts.get_route_str();
 			if (data && route == "point-of-sale") {
-				frappe.dom.freeze();
-				frappe.msgprint({
+				nts.dom.freeze();
+				nts.msgprint({
 					title: __("POS Closed"),
 					indicator: "orange",
 					message: __("POS has been closed at {0}. Please refresh the page.", [
-						frappe.datetime.str_to_user(data.creation).bold(),
+						nts.datetime.str_to_user(data.creation).bold(),
 					]),
 					primary_action_label: __("Refresh"),
 					primary_action: {
@@ -175,7 +175,7 @@ prodman.PointOfSale.Controller = class {
 		this.page.set_title_sub(
 			`<span class="indicator orange">
 				<a class="text-muted" href="#Form/POS%20Opening%20Entry/${this.pos_opening}">
-					Opened at ${frappe.datetime.str_to_user(this.pos_opening_time)}
+					Opened at ${nts.datetime.str_to_user(this.pos_opening_time)}
 				</a>
 			</span>`
 		);
@@ -255,8 +255,8 @@ prodman.PointOfSale.Controller = class {
 	}
 
 	open_form_view() {
-		frappe.model.sync(this.frm.doc);
-		frappe.set_route("Form", this.frm.doc.doctype, this.frm.doc.name);
+		nts.model.sync(this.frm.doc);
+		nts.set_route("Form", this.frm.doc.doctype, this.frm.doc.name);
 	}
 
 	toggle_recent_order() {
@@ -268,27 +268,27 @@ prodman.PointOfSale.Controller = class {
 		if (!this.$components_wrapper.is(":visible")) return;
 
 		if (this.frm.doc.items.length == 0) {
-			frappe.show_alert({
+			nts.show_alert({
 				message: __("You must add atleast one item to save it as draft."),
 				indicator: "red",
 			});
-			frappe.utils.play_sound("error");
+			nts.utils.play_sound("error");
 			return;
 		}
 
 		this.frm
 			.save(undefined, undefined, undefined, () => {
-				frappe.show_alert({
+				nts.show_alert({
 					message: __("There was an error saving the document."),
 					indicator: "red",
 				});
-				frappe.utils.play_sound("error");
+				nts.utils.play_sound("error");
 			})
 			.then(() => {
-				frappe.run_serially([
-					() => frappe.dom.freeze(),
+				nts.run_serially([
+					() => nts.dom.freeze(),
 					() => this.make_new_invoice(),
-					() => frappe.dom.unfreeze(),
+					() => nts.dom.unfreeze(),
 				]);
 			});
 	}
@@ -296,15 +296,15 @@ prodman.PointOfSale.Controller = class {
 	close_pos() {
 		if (!this.$components_wrapper.is(":visible")) return;
 
-		let voucher = frappe.model.get_new_doc("POS Closing Entry");
+		let voucher = nts.model.get_new_doc("POS Closing Entry");
 		voucher.pos_profile = this.frm.doc.pos_profile;
-		voucher.user = frappe.session.user;
+		voucher.user = nts.session.user;
 		voucher.company = this.frm.doc.company;
 		voucher.pos_opening_entry = this.pos_opening;
-		voucher.period_end_date = frappe.datetime.now_datetime();
-		voucher.posting_date = frappe.datetime.now_date();
-		voucher.posting_time = frappe.datetime.now_time();
-		frappe.set_route("Form", "POS Closing Entry", voucher.name);
+		voucher.period_end_date = nts.datetime.now_datetime();
+		voucher.posting_date = nts.datetime.now_date();
+		voucher.posting_time = nts.datetime.now_time();
+		nts.set_route("Form", "POS Closing Entry", voucher.name);
 	}
 
 	init_item_selector() {
@@ -361,7 +361,7 @@ prodman.PointOfSale.Controller = class {
 				},
 
 				form_updated: (item, field, value) => {
-					const item_row = frappe.model.get_doc(item.doctype, item.name);
+					const item_row = nts.model.get_doc(item.doctype, item.name);
 					if (item_row && item_row[field] != value) {
 						const args = {
 							field,
@@ -442,7 +442,7 @@ prodman.PointOfSale.Controller = class {
 						this.toggle_components(false);
 						this.order_summary.toggle_component(true);
 						this.order_summary.load_summary_of(this.frm.doc, true);
-						frappe.show_alert({
+						nts.show_alert({
 							indicator: "green",
 							message: __("POS invoice {0} created succesfully", [r.doc.name]),
 						});
@@ -457,7 +457,7 @@ prodman.PointOfSale.Controller = class {
 			wrapper: this.$components_wrapper,
 			events: {
 				open_invoice_data: (name) => {
-					frappe.db.get_doc("POS Invoice", name).then((doc) => {
+					nts.db.get_doc("POS Invoice", name).then((doc) => {
 						this.order_summary.load_summary_of(doc);
 					});
 				},
@@ -475,8 +475,8 @@ prodman.PointOfSale.Controller = class {
 
 				process_return: (name) => {
 					this.recent_order_list.toggle_component(false);
-					frappe.db.get_doc("POS Invoice", name).then((doc) => {
-						frappe.run_serially([
+					nts.db.get_doc("POS Invoice", name).then((doc) => {
+						nts.run_serially([
 							() => this.make_return_invoice(doc),
 							() => this.cart.load_invoice(),
 							() => this.item_selector.toggle_component(true),
@@ -485,7 +485,7 @@ prodman.PointOfSale.Controller = class {
 				},
 				edit_order: (name) => {
 					this.recent_order_list.toggle_component(false);
-					frappe.run_serially([
+					nts.run_serially([
 						() => this.frm.refresh(name),
 						() => this.frm.call("reset_mode_of_payments"),
 						() => this.cart.load_invoice(),
@@ -493,16 +493,16 @@ prodman.PointOfSale.Controller = class {
 					]);
 				},
 				delete_order: (name) => {
-					frappe.model.delete_doc(this.frm.doc.doctype, name, () => {
+					nts.model.delete_doc(this.frm.doc.doctype, name, () => {
 						this.recent_order_list.refresh_list();
 					});
 				},
 				new_order: () => {
-					frappe.run_serially([
-						() => frappe.dom.freeze(),
+					nts.run_serially([
+						() => nts.dom.freeze(),
 						() => this.make_new_invoice(),
 						() => this.item_selector.toggle_component(true),
-						() => frappe.dom.unfreeze(),
+						() => nts.dom.unfreeze(),
 					]);
 				},
 			},
@@ -524,13 +524,13 @@ prodman.PointOfSale.Controller = class {
 	}
 
 	make_new_invoice() {
-		return frappe.run_serially([
-			() => frappe.dom.freeze(),
+		return nts.run_serially([
+			() => nts.dom.freeze(),
 			() => this.make_sales_invoice_frm(),
 			() => this.set_pos_profile_data(),
 			() => this.set_pos_profile_status(),
 			() => this.cart.load_invoice(),
-			() => frappe.dom.unfreeze(),
+			() => nts.dom.unfreeze(),
 		]);
 	}
 
@@ -543,7 +543,7 @@ prodman.PointOfSale.Controller = class {
 				this.frm.doc.is_pos = 1;
 				resolve();
 			} else {
-				frappe.model.with_doctype(doctype, () => {
+				nts.model.with_doctype(doctype, () => {
 					this.frm = this.get_new_frm();
 					this.frm.doc.items = [];
 					this.frm.doc.is_pos = 1;
@@ -556,28 +556,28 @@ prodman.PointOfSale.Controller = class {
 	get_new_frm(_frm) {
 		const doctype = "POS Invoice";
 		const page = $("<div>");
-		const frm = _frm || new frappe.ui.form.Form(doctype, page, false);
-		const name = frappe.model.make_new_doc_and_get_name(doctype, true);
+		const frm = _frm || new nts.ui.form.Form(doctype, page, false);
+		const name = nts.model.make_new_doc_and_get_name(doctype, true);
 		frm.refresh(name);
 
 		return frm;
 	}
 
 	async make_return_invoice(doc) {
-		frappe.dom.freeze();
+		nts.dom.freeze();
 		this.frm = this.get_new_frm(this.frm);
 		this.frm.doc.items = [];
-		return frappe.call({
+		return nts.call({
 			method: "prodman.accounts.doctype.pos_invoice.pos_invoice.make_sales_return",
 			args: {
 				source_name: doc.name,
 				target_doc: this.frm.doc,
 			},
 			callback: (r) => {
-				frappe.model.sync(r.message);
-				frappe.get_doc(r.message.doctype, r.message.name).__run_link_triggers = false;
+				nts.model.sync(r.message);
+				nts.get_doc(r.message.doctype, r.message.name).__run_link_triggers = false;
 				this.set_pos_profile_data().then(() => {
-					frappe.dom.unfreeze();
+					nts.dom.unfreeze();
 				});
 			},
 		});
@@ -602,7 +602,7 @@ prodman.PointOfSale.Controller = class {
 	}
 
 	async on_cart_update(args) {
-		frappe.dom.freeze();
+		nts.dom.freeze();
 		if (this.frm.doc.set_warehouse != this.settings.warehouse)
 			this.frm.doc.set_warehouse = this.settings.warehouse;
 		let item_row = undefined;
@@ -624,9 +624,9 @@ prodman.PointOfSale.Controller = class {
 				}
 
 				if (this.is_current_item_being_edited(item_row) || from_selector) {
-					await frappe.model.set_value(item_row.doctype, item_row.name, field, value);
+					await nts.model.set_value(item_row.doctype, item_row.name, field, value);
 					if (item.serial_no && from_selector) {
-						await frappe.model.set_value(
+						await nts.model.set_value(
 							item_row.doctype,
 							item_row.name,
 							"serial_no",
@@ -643,11 +643,11 @@ prodman.PointOfSale.Controller = class {
 				if (!item_code) return;
 
 				if (rate == undefined || rate == 0) {
-					frappe.show_alert({
+					nts.show_alert({
 						message: __("Price is not set for the item."),
 						indicator: "orange",
 					});
-					frappe.utils.play_sound("error");
+					nts.utils.play_sound("error");
 					return;
 				}
 				const new_item = { item_code, batch_no, rate, uom, [field]: value, stock_uom };
@@ -682,18 +682,18 @@ prodman.PointOfSale.Controller = class {
 		} catch (error) {
 			console.log(error);
 		} finally {
-			frappe.dom.unfreeze();
+			nts.dom.unfreeze();
 			return item_row; // eslint-disable-line no-unsafe-finally
 		}
 	}
 
 	raise_customer_selection_alert() {
-		frappe.dom.unfreeze();
-		frappe.show_alert({
+		nts.dom.unfreeze();
+		nts.show_alert({
 			message: __("You must select a customer before adding an item."),
 			indicator: "orange",
 		});
-		frappe.utils.play_sound("error");
+		nts.utils.play_sound("error");
 	}
 
 	get_item_from_frm({ name, item_code, batch_no, uom, rate }) {
@@ -758,15 +758,15 @@ prodman.PointOfSale.Controller = class {
 		const available_qty = resp[0];
 		const is_stock_item = resp[1];
 
-		frappe.dom.unfreeze();
+		nts.dom.unfreeze();
 		const bold_uom = item_row.stock_uom.bold();
 		const bold_item_code = item_row.item_code.bold();
 		const bold_warehouse = warehouse.bold();
 		const bold_available_qty = available_qty.toString().bold();
 		if (!(available_qty > 0)) {
 			if (is_stock_item) {
-				frappe.model.clear_doc(item_row.doctype, item_row.name);
-				frappe.throw({
+				nts.model.clear_doc(item_row.doctype, item_row.name);
+				nts.throw({
 					title: __("Not Available"),
 					message: __("Item Code: {0} is not available under warehouse {1}.", [
 						bold_item_code,
@@ -777,25 +777,25 @@ prodman.PointOfSale.Controller = class {
 				return;
 			}
 		} else if (is_stock_item && available_qty < qty_needed) {
-			frappe.throw({
+			nts.throw({
 				message: __(
 					"Stock quantity not enough for Item Code: {0} under warehouse {1}. Available quantity {2} {3}.",
 					[bold_item_code, bold_warehouse, bold_available_qty, bold_uom]
 				),
 				indicator: "orange",
 			});
-			frappe.utils.play_sound("error");
+			nts.utils.play_sound("error");
 		}
-		frappe.dom.freeze();
+		nts.dom.freeze();
 	}
 
 	async check_serial_no_availablilty(item_code, warehouse, serial_no) {
 		const method = "prodman.stock.doctype.serial_no.serial_no.get_pos_reserved_serial_nos";
 		const args = { filters: { item_code, warehouse } };
-		const res = await frappe.call({ method, args });
+		const res = await nts.call({ method, args });
 
 		if (res.message.includes(serial_no)) {
-			frappe.throw({
+			nts.throw({
 				title: __("Not Available"),
 				message: __("Serial No: {0} has already been transacted into another POS Invoice.", [
 					serial_no.bold(),
@@ -806,7 +806,7 @@ prodman.PointOfSale.Controller = class {
 
 	get_available_stock(item_code, warehouse) {
 		const me = this;
-		return frappe.call({
+		return nts.call({
 			method: "prodman.accounts.doctype.pos_invoice.pos_invoice.get_stock_availability",
 			args: {
 				item_code: item_code,
@@ -833,16 +833,16 @@ prodman.PointOfSale.Controller = class {
 	}
 
 	remove_item_from_cart() {
-		frappe.dom.freeze();
+		nts.dom.freeze();
 		const { doctype, name, current_item } = this.item_details;
 
-		return frappe.model
+		return nts.model
 			.set_value(doctype, name, "qty", 0)
 			.then(() => {
-				frappe.model.clear_doc(doctype, name);
+				nts.model.clear_doc(doctype, name);
 				this.update_cart_html(current_item, true);
 				this.item_details.toggle_item_details_section(null);
-				frappe.dom.unfreeze();
+				nts.dom.unfreeze();
 			})
 			.catch((e) => console.log(e));
 	}

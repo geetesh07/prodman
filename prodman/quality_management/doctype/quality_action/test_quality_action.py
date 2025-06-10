@@ -1,4 +1,4 @@
-# Copyright (c) 2018, Frappe and Contributors
+# Copyright (c) 2018, nts and Contributors
 # See license.txt
 
 import unittest

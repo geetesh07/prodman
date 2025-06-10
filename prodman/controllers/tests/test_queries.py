@@ -1,10 +1,10 @@
 import unittest
 from functools import partial
 
-import frappe
-from frappe.core.doctype.user_permission.test_user_permission import create_user
-from frappe.core.doctype.user_permission.user_permission import add_user_permissions
-from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+import nts
+from nts.core.doctype.user_permission.test_user_permission import create_user
+from nts.core.doctype.user_permission.user_permission import add_user_permissions
+from nts.custom.doctype.property_setter.property_setter import make_property_setter
 
 from prodman.controllers import queries
 
@@ -83,7 +83,7 @@ class TestQueries(unittest.TestCase):
 		self.assertGreaterEqual(len(wh), 1)
 
 	def test_default_uoms(self):
-		self.assertGreaterEqual(frappe.db.count("UOM", {"enabled": 1}), 10)
+		self.assertGreaterEqual(nts.db.count("UOM", {"enabled": 1}), 10)
 
 	def test_employee_query_with_user_permissions(self):
 		# party field is a dynamic link field in Payment Entry doctype with ignore_user_permissions=0
@@ -109,9 +109,9 @@ class TestQueries(unittest.TestCase):
 			}
 		)
 
-		frappe.reload_doc("accounts", "doctype", "payment entry")
+		nts.reload_doc("accounts", "doctype", "payment entry")
 
-		frappe.set_user(user.name)
+		nts.set_user(user.name)
 		params = {
 			"doctype": "Employee",
 			"txt": "",
@@ -127,11 +127,11 @@ class TestQueries(unittest.TestCase):
 		self.assertGreater(len(result), 1)
 
 		ps.delete(ignore_permissions=1, force=1, delete_permanently=1)
-		frappe.reload_doc("accounts", "doctype", "payment entry")
-		frappe.clear_cache()
+		nts.reload_doc("accounts", "doctype", "payment entry")
+		nts.clear_cache()
 
 		# only one employee should be returned even though ignore_user_permissions is passed as 1
 		result = queries.employee_query(**params)
 		self.assertEqual(len(result), 1)
 
-		frappe.set_user("Administrator")
+		nts.set_user("Administrator")

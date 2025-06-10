@@ -1,17 +1,17 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2020, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 import json
 
-import frappe
-from frappe import _
-from frappe.utils import add_months, nowdate
+import nts
+from nts import _
+from nts.utils import add_months, nowdate
 
 import prodman
 
 
 def get_data():
-	return frappe._dict(
+	return nts._dict(
 		{
 			"dashboards": get_dashboards(),
 			"charts": get_charts(),
@@ -49,7 +49,7 @@ def get_charts():
 	company = prodman.get_default_company()
 
 	if not company:
-		company = frappe.db.get_value("Company", {"is_group": 0}, "name")
+		company = nts.db.get_value("Company", {"is_group": 0}, "name")
 
 	return [
 		{

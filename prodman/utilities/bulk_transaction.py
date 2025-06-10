@@ -1,15 +1,15 @@
 import json
 from datetime import date, datetime
 
-import frappe
-from frappe import _
-from frappe.utils import get_link_to_form, today
+import nts
+from nts import _
+from nts.utils import get_link_to_form, today
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def transaction_processing(data, from_doctype, to_doctype):
-	frappe.has_permission(from_doctype, "read", throw=True)
-	frappe.has_permission(to_doctype, "create", throw=True)
+	nts.has_permission(from_doctype, "read", throw=True)
+	nts.has_permission(to_doctype, "create", throw=True)
 
 	if isinstance(data, str):
 		deserialized_data = json.loads(data)
@@ -18,8 +18,8 @@ def transaction_processing(data, from_doctype, to_doctype):
 
 	length_of_data = len(deserialized_data)
 
-	frappe.msgprint(_("Started a background job to create {1} {0}").format(to_doctype, length_of_data))
-	frappe.enqueue(
+	nts.msgprint(_("Started a background job to create {1} {0}").format(to_doctype, length_of_data))
+	nts.enqueue(
 		job,
 		deserialized_data=deserialized_data,
 		from_doctype=from_doctype,
@@ -27,25 +27,25 @@ def transaction_processing(data, from_doctype, to_doctype):
 	)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def retry(date: str | None = None):
 	if not date:
 		date = today()
 
 	if date:
-		failed_docs = frappe.db.get_all(
+		failed_docs = nts.db.get_all(
 			"Bulk Transaction Log Detail",
 			filters={"date": date, "transaction_status": "Failed", "retried": 0},
 			fields=["name", "transaction_name", "from_doctype", "to_doctype"],
 		)
 		if not failed_docs:
-			frappe.msgprint(_("There are no Failed transactions"))
+			nts.msgprint(_("There are no Failed transactions"))
 		else:
-			job = frappe.enqueue(
+			job = nts.enqueue(
 				retry_failed_transactions,
 				failed_docs=failed_docs,
 			)
-			frappe.msgprint(
+			nts.msgprint(
 				_("Job: {0} has been triggered for processing failed transactions").format(
 					get_link_to_form("RQ Job", job.id)
 				)
@@ -56,20 +56,20 @@ def retry_failed_transactions(failed_docs: list | None):
 	if failed_docs:
 		for log in failed_docs:
 			try:
-				frappe.db.savepoint("before_creation_state")
+				nts.db.savepoint("before_creation_state")
 				task(log.transaction_name, log.from_doctype, log.to_doctype)
 			except Exception:
-				frappe.db.rollback(save_point="before_creation_state")
-				update_log(log.name, "Failed", 1, str(frappe.get_traceback(with_context=True)))
+				nts.db.rollback(save_point="before_creation_state")
+				update_log(log.name, "Failed", 1, str(nts.get_traceback(with_context=True)))
 			else:
 				update_log(log.name, "Success", 1)
 
 
 def update_log(log_name, status, retried, err=None):
-	frappe.db.set_value("Bulk Transaction Log Detail", log_name, "transaction_status", status)
-	frappe.db.set_value("Bulk Transaction Log Detail", log_name, "retried", retried)
+	nts.db.set_value("Bulk Transaction Log Detail", log_name, "transaction_status", status)
+	nts.db.set_value("Bulk Transaction Log Detail", log_name, "retried", retried)
 	if err:
-		frappe.db.set_value("Bulk Transaction Log Detail", log_name, "error_description", err)
+		nts.db.set_value("Bulk Transaction Log Detail", log_name, "error_description", err)
 
 
 def job(deserialized_data, from_doctype, to_doctype):
@@ -77,14 +77,14 @@ def job(deserialized_data, from_doctype, to_doctype):
 	for d in deserialized_data:
 		try:
 			doc_name = d.get("name")
-			frappe.db.savepoint("before_creation_state")
+			nts.db.savepoint("before_creation_state")
 			task(doc_name, from_doctype, to_doctype)
 		except Exception:
-			frappe.db.rollback(save_point="before_creation_state")
+			nts.db.rollback(save_point="before_creation_state")
 			fail_count += 1
 			create_log(
 				doc_name,
-				str(frappe.get_traceback(with_context=True)),
+				str(nts.get_traceback(with_context=True)),
 				from_doctype,
 				to_doctype,
 				status="Failed",
@@ -141,11 +141,11 @@ def task(doc_name, from_doctype, to_doctype):
 		"Purchase Receipt": {"Purchase Invoice": purchase_receipt.make_purchase_invoice},
 	}
 
-	hooks = frappe.get_hooks("bulk_transaction_task_mapper")
+	hooks = nts.get_hooks("bulk_transaction_task_mapper")
 	for hook in hooks:
-		mapper.update(frappe.get_attr(hook)())
+		mapper.update(nts.get_attr(hook)())
 
-	frappe.flags.bulk_transaction = True
+	nts.flags.bulk_transaction = True
 	if to_doctype in ["Payment Entry"]:
 		obj = mapper[from_doctype][to_doctype](from_doctype, doc_name)
 	else:
@@ -154,11 +154,11 @@ def task(doc_name, from_doctype, to_doctype):
 	obj.flags.ignore_validate = True
 	obj.set_title_field()
 	obj.insert(ignore_mandatory=True)
-	del frappe.flags.bulk_transaction
+	del nts.flags.bulk_transaction
 
 
 def create_log(doc_name, e, from_doctype, to_doctype, status, log_date=None, restarted=0):
-	transaction_log = frappe.new_doc("Bulk Transaction Log Detail")
+	transaction_log = nts.new_doc("Bulk Transaction Log Detail")
 	transaction_log.transaction_name = doc_name
 	transaction_log.date = today()
 	now = datetime.now()
@@ -173,7 +173,7 @@ def create_log(doc_name, e, from_doctype, to_doctype, status, log_date=None, res
 
 def show_job_status(fail_count, deserialized_data_count, to_doctype):
 	if not fail_count:
-		frappe.msgprint(
+		nts.msgprint(
 			_("Creation of <b><a href='/app/{0}'>{1}(s)</a></b> successful").format(
 				to_doctype.lower().replace(" ", "-"), to_doctype
 			),
@@ -181,7 +181,7 @@ def show_job_status(fail_count, deserialized_data_count, to_doctype):
 			indicator="green",
 		)
 	elif fail_count != 0 and fail_count < deserialized_data_count:
-		frappe.msgprint(
+		nts.msgprint(
 			_(
 				"""Creation of {0} partially successful.
 				Check <b><a href="/app/bulk-transaction-log">Bulk Transaction Log</a></b>"""
@@ -190,7 +190,7 @@ def show_job_status(fail_count, deserialized_data_count, to_doctype):
 			indicator="orange",
 		)
 	else:
-		frappe.msgprint(
+		nts.msgprint(
 			_(
 				"""Creation of {0} failed.
 				Check <b><a href="/app/bulk-transaction-log">Bulk Transaction Log</a></b>"""

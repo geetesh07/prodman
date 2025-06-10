@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 
 def execute(filters=None):
@@ -36,7 +36,7 @@ def get_data(filters):
 
 	query_filters["report_date"] = ["between", [filters.get("from_date"), filters.get("to_date")]]
 
-	return frappe.get_all(
+	return nts.get_all(
 		"Quality Inspection", fields=fields, filters=query_filters, order_by="report_date asc"
 	)
 

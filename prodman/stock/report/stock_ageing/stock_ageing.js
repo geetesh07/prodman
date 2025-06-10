@@ -1,21 +1,21 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.query_reports["Stock Ageing"] = {
+nts.query_reports["Stock Ageing"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
 			fieldname: "to_date",
 			label: __("As On Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 			reqd: 1,
 		},
 		{
@@ -31,8 +31,8 @@ frappe.query_reports["Stock Ageing"] = {
 			fieldtype: "Link",
 			options: "Warehouse",
 			get_query: () => {
-				let warehouse_type = frappe.query_report.get_filter_value("warehouse_type");
-				let company = frappe.query_report.get_filter_value("company");
+				let warehouse_type = nts.query_report.get_filter_value("warehouse_type");
+				let company = nts.query_report.get_filter_value("company");
 				return {
 					filters: {
 						...(warehouse_type && { warehouse_type }),

@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.utils import flt
+import nts
+from nts import _
+from nts.utils import flt
 
 
 def execute(filters=None):
@@ -69,7 +69,7 @@ def get_stock_ledger_entries(report_filters):
 		if report_filters.get(field):
 			filters[field] = report_filters.get(field)
 
-	return frappe.get_all(
+	return nts.get_all(
 		"Stock Ledger Entry",
 		fields=fields,
 		filters=filters,

@@ -1,9 +1,9 @@
-import frappe
-from frappe.model.utils.rename_field import rename_field
+import nts
+from nts.model.utils.rename_field import rename_field
 
 
 def execute():
-	frappe.reload_doc("automation", "doctype", "auto_repeat")
+	nts.reload_doc("automation", "doctype", "auto_repeat")
 
 	doctypes_to_rename = {
 		"accounts": ["Journal Entry", "Payment Entry", "Purchase Invoice", "Sales Invoice"],
@@ -14,20 +14,20 @@ def execute():
 
 	for module, doctypes in doctypes_to_rename.items():
 		for doctype in doctypes:
-			frappe.reload_doc(module, "doctype", frappe.scrub(doctype))
+			nts.reload_doc(module, "doctype", nts.scrub(doctype))
 
-			if frappe.db.has_column(doctype, "subscription"):
+			if nts.db.has_column(doctype, "subscription"):
 				rename_field(doctype, "subscription", "auto_repeat")
 
-	subscriptions = frappe.db.sql("select * from `tabSubscription`", as_dict=1)
+	subscriptions = nts.db.sql("select * from `tabSubscription`", as_dict=1)
 
 	for doc in subscriptions:
 		doc["doctype"] = "Auto Repeat"
-		auto_repeat = frappe.get_doc(doc)
+		auto_repeat = nts.get_doc(doc)
 		auto_repeat.db_insert()
 
-	frappe.db.sql("delete from `tabSubscription`")
-	frappe.db.commit()
+	nts.db.sql("delete from `tabSubscription`")
+	nts.db.commit()
 	drop_columns_from_subscription()
 
 
@@ -52,7 +52,7 @@ def drop_columns_from_subscription():
 		"status",
 		"amended_from",
 	]:
-		if field in frappe.db.get_table_columns("Subscription"):
+		if field in nts.db.get_table_columns("Subscription"):
 			fields_to_drop["Subscription"].append(field)
 
-	frappe.model.delete_fields(fields_to_drop, delete=1)
+	nts.model.delete_fields(fields_to_drop, delete=1)

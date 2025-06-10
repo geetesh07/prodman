@@ -1,12 +1,12 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.query_builder import Field
-from frappe.query_builder.functions import Min
-from frappe.utils import add_days, getdate, today
+import nts
+from nts import _
+from nts.query_builder import Field
+from nts.query_builder.functions import Min
+from nts.utils import add_days, getdate, today
 
 import prodman
 from prodman.accounts.utils import get_stock_and_account_balance
@@ -15,7 +15,7 @@ from prodman.stock.utils import get_stock_value_on
 
 def execute(filters=None):
 	if not prodman.is_perpetual_inventory_enabled(filters.company):
-		frappe.throw(
+		nts.throw(
 			_("Perpetual inventory required for the company {0} to view this report.").format(filters.company)
 		)
 
@@ -28,7 +28,7 @@ def execute(filters=None):
 def get_unsync_date(filters):
 	date = filters.from_date
 	if not date:
-		date = (frappe.qb.from_("Stock Ledger Entry").select(Min(Field("posting_date")))).run()
+		date = (nts.qb.from_("Stock Ledger Entry").select(Min(Field("posting_date")))).run()
 		date = date[0][0]
 
 	if not date:
@@ -54,9 +54,9 @@ def get_data(report_filters):
 	result = []
 
 	voucher_wise_dict = {}
-	sle = frappe.qb.DocType("Stock Ledger Entry")
+	sle = nts.qb.DocType("Stock Ledger Entry")
 	data = (
-		frappe.qb.from_(sle)
+		nts.qb.from_(sle)
 		.select(
 			sle.name,
 			sle.posting_date,

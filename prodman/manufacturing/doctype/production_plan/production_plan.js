@@ -1,7 +1,7 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Production Plan", {
+nts.ui.form.on("Production Plan", {
 	before_save(frm) {
 		// preserve temporary names on production plan item to re-link sub-assembly items
 		frm.doc.po_items.forEach((item) => {
@@ -63,7 +63,7 @@ frappe.ui.form.on("Production Plan", {
 					query: "prodman.controllers.queries.bom",
 					filters: { item: d.item_code, docstatus: 1 },
 				};
-			} else frappe.msgprint(__("Please enter Item first"));
+			} else nts.msgprint(__("Please enter Item first"));
 		});
 
 		frm.set_query("warehouse", "mr_items", (doc) => {
@@ -90,7 +90,7 @@ frappe.ui.form.on("Production Plan", {
 			frm.add_custom_button(
 				__("Production Plan Summary"),
 				() => {
-					frappe.set_route("query-report", "Production Plan Summary", {
+					nts.set_route("query-report", "Production Plan Summary", {
 						production_plan: frm.doc.name,
 					});
 				},
@@ -194,7 +194,7 @@ frappe.ui.form.on("Production Plan", {
 	},
 
 	close_open_production_plan(frm, close = false) {
-		frappe.call({
+		nts.call({
 			method: "set_status",
 			freeze: true,
 			doc: frm.doc,
@@ -206,7 +206,7 @@ frappe.ui.form.on("Production Plan", {
 	},
 
 	make_work_order(frm) {
-		frappe.call({
+		nts.call({
 			method: "make_work_order",
 			freeze: true,
 			doc: frm.doc,
@@ -217,7 +217,7 @@ frappe.ui.form.on("Production Plan", {
 	},
 
 	make_material_request(frm) {
-		frappe.confirm(
+		nts.confirm(
 			__("Do you want to submit the material request"),
 			function () {
 				frm.events.create_material_request(frm, 1);
@@ -231,7 +231,7 @@ frappe.ui.form.on("Production Plan", {
 	create_material_request(frm, submit) {
 		frm.doc.submit_material_request = submit;
 
-		frappe.call({
+		nts.call({
 			method: "make_material_request",
 			freeze: true,
 			doc: frm.doc,
@@ -242,7 +242,7 @@ frappe.ui.form.on("Production Plan", {
 	},
 
 	get_sales_orders(frm) {
-		frappe.call({
+		nts.call({
 			method: "get_open_sales_orders",
 			doc: frm.doc,
 			callback: function (r) {
@@ -252,7 +252,7 @@ frappe.ui.form.on("Production Plan", {
 	},
 
 	get_material_request(frm) {
-		frappe.call({
+		nts.call({
 			method: "get_pending_material_requests",
 			doc: frm.doc,
 			callback: function () {
@@ -264,7 +264,7 @@ frappe.ui.form.on("Production Plan", {
 	get_items(frm) {
 		frm.clear_table("prod_plan_references");
 
-		frappe.call({
+		nts.call({
 			method: "get_items",
 			freeze: true,
 			doc: frm.doc,
@@ -276,7 +276,7 @@ frappe.ui.form.on("Production Plan", {
 	combine_items(frm) {
 		frm.clear_table("prod_plan_references");
 
-		frappe.call({
+		nts.call({
 			method: "combine_so_items",
 			freeze: true,
 			doc: frm.doc,
@@ -299,7 +299,7 @@ frappe.ui.form.on("Production Plan", {
 	get_sub_assembly_items(frm) {
 		frm.dirty();
 
-		frappe.call({
+		nts.call({
 			method: "get_sub_assembly_items",
 			freeze: true,
 			doc: frm.doc,
@@ -316,7 +316,7 @@ frappe.ui.form.on("Production Plan", {
 	get_items_for_mr(frm) {
 		if (!frm.doc.for_warehouse) {
 			frm.trigger("toggle_for_warehouse");
-			frappe.throw(__("Select the Warehouse"));
+			nts.throw(__("Select the Warehouse"));
 		}
 
 		frm.events.get_items_for_material_requests(frm, [
@@ -329,7 +329,7 @@ frappe.ui.form.on("Production Plan", {
 	transfer_materials(frm) {
 		if (!frm.doc.for_warehouse) {
 			frm.trigger("toggle_for_warehouse");
-			frappe.throw(__("Select the Warehouse"));
+			nts.throw(__("Select the Warehouse"));
 		}
 
 		frm.set_value("consider_minimum_order_qty", 0);
@@ -338,7 +338,7 @@ frappe.ui.form.on("Production Plan", {
 			frm.events.get_items_for_material_requests(frm);
 		} else {
 			const title = __("Transfer Materials For Warehouse {0}", [frm.doc.for_warehouse]);
-			var dialog = new frappe.ui.Dialog({
+			var dialog = new nts.ui.Dialog({
 				title: title,
 				fields: [
 					{
@@ -375,7 +375,7 @@ frappe.ui.form.on("Production Plan", {
 	},
 
 	get_items_for_material_requests(frm, warehouses) {
-		frappe.call({
+		nts.call({
 			method: "prodman.manufacturing.doctype.production_plan.production_plan.get_items_for_material_requests",
 			freeze: true,
 			args: {
@@ -424,12 +424,12 @@ frappe.ui.form.on("Production Plan", {
 			},
 		];
 
-		frappe.prompt(
+		nts.prompt(
 			fields,
 			(row) => {
 				let get_template_url =
 					"prodman.manufacturing.doctype.production_plan.production_plan.download_raw_materials";
-				open_url_post(frappe.request.url, {
+				open_url_post(nts.request.url, {
 					cmd: get_template_url,
 					doc: frm.doc,
 					warehouses: row.warehouses,
@@ -474,18 +474,18 @@ frappe.ui.form.on("Production Plan", {
 	},
 });
 
-frappe.ui.form.on("Production Plan Item", {
+nts.ui.form.on("Production Plan Item", {
 	item_code(frm, cdt, cdn) {
 		const row = locals[cdt][cdn];
 		if (row.item_code) {
-			frappe.call({
+			nts.call({
 				method: "prodman.manufacturing.doctype.production_plan.production_plan.get_item_data",
 				args: {
 					item_code: row.item_code,
 				},
 				callback: function (r) {
 					for (let key in r.message) {
-						frappe.model.set_value(cdt, cdn, key, r.message[key]);
+						nts.model.set_value(cdt, cdn, key, r.message[key]);
 					}
 				},
 			});
@@ -493,11 +493,11 @@ frappe.ui.form.on("Production Plan Item", {
 	},
 });
 
-frappe.ui.form.on("Material Request Plan Item", {
+nts.ui.form.on("Material Request Plan Item", {
 	warehouse(frm, cdt, cdn) {
 		const row = locals[cdt][cdn];
 		if (row.warehouse && row.item_code && frm.doc.company) {
-			frappe.call({
+			nts.call({
 				method: "prodman.manufacturing.doctype.production_plan.production_plan.get_bin_details",
 				args: {
 					row: row,
@@ -508,7 +508,7 @@ frappe.ui.form.on("Material Request Plan Item", {
 					if (r.message) {
 						let { projected_qty, actual_qty } = r.message[0];
 
-						frappe.model.set_value(cdt, cdn, {
+						nts.model.set_value(cdt, cdn, {
 							projected_qty: projected_qty,
 							actual_qty: actual_qty,
 						});
@@ -522,12 +522,12 @@ frappe.ui.form.on("Material Request Plan Item", {
 		let row = locals[cdt][cdn];
 
 		if (row.from_warehouse && row.material_request_type !== "Material Transfer") {
-			frappe.model.set_value(cdt, cdn, "from_warehouse", "");
+			nts.model.set_value(cdt, cdn, "from_warehouse", "");
 		}
 	},
 });
 
-frappe.ui.form.on("Production Plan Sales Order", {
+nts.ui.form.on("Production Plan Sales Order", {
 	sales_order(frm, cdt, cdn) {
 		let row = locals[cdt][cdn];
 		const sales_order = row.sales_order;
@@ -543,14 +543,14 @@ frappe.ui.form.on("Production Plan Sales Order", {
 					sales_order: row.sales_order,
 				},
 				callback(r) {
-					frappe.call({
+					nts.call({
 						method: "prodman.manufacturing.doctype.production_plan.production_plan.get_so_details",
 						args: { sales_order },
 						callback(r) {
 							const { transaction_date, customer, grand_total } = r.message;
-							frappe.model.set_value(cdt, cdn, "sales_order_date", transaction_date);
-							frappe.model.set_value(cdt, cdn, "customer", customer);
-							frappe.model.set_value(cdt, cdn, "grand_total", grand_total);
+							nts.model.set_value(cdt, cdn, "sales_order_date", transaction_date);
+							nts.model.set_value(cdt, cdn, "customer", customer);
+							nts.model.set_value(cdt, cdn, "grand_total", grand_total);
 						},
 					});
 				},
@@ -559,7 +559,7 @@ frappe.ui.form.on("Production Plan Sales Order", {
 	},
 });
 
-frappe.ui.form.on("Production Plan Sub Assembly Item", {
+nts.ui.form.on("Production Plan Sub Assembly Item", {
 	fg_warehouse(frm, cdt, cdn) {
 		prodman.utils.copy_value_in_all_rows(frm.doc, cdt, cdn, "sub_assembly_items", "fg_warehouse");
 
@@ -570,7 +570,7 @@ frappe.ui.form.on("Production Plan Sub Assembly Item", {
 				warehouse: row.fg_warehouse,
 			};
 
-			frappe.call({
+			nts.call({
 				method: "prodman.manufacturing.doctype.production_plan.production_plan.get_bin_details",
 				args: {
 					row: child_row,
@@ -579,7 +579,7 @@ frappe.ui.form.on("Production Plan Sub Assembly Item", {
 				},
 				callback: function (r) {
 					if (r.message && r.message.length) {
-						frappe.model.set_value(cdt, cdn, "actual_qty", r.message[0].actual_qty);
+						nts.model.set_value(cdt, cdn, "actual_qty", r.message[0].actual_qty);
 					}
 				},
 			});
@@ -587,7 +587,7 @@ frappe.ui.form.on("Production Plan Sub Assembly Item", {
 	},
 });
 
-frappe.tour["Production Plan"] = [
+nts.tour["Production Plan"] = [
 	{
 		fieldname: "get_items_from",
 		title: "Get Items From",

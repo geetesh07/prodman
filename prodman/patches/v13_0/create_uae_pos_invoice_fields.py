@@ -1,18 +1,18 @@
-# Copyright (c) 2019, Frappe and Contributors
+# Copyright (c) 2019, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 from prodman.regional.united_arab_emirates.setup import make_custom_fields
 
 
 def execute():
-	company = frappe.get_all("Company", filters={"country": ["in", ["Saudi Arabia", "United Arab Emirates"]]})
+	company = nts.get_all("Company", filters={"country": ["in", ["Saudi Arabia", "United Arab Emirates"]]})
 	if not company:
 		return
 
-	frappe.reload_doc("accounts", "doctype", "pos_invoice")
-	frappe.reload_doc("accounts", "doctype", "pos_invoice_item")
+	nts.reload_doc("accounts", "doctype", "pos_invoice")
+	nts.reload_doc("accounts", "doctype", "pos_invoice_item")
 
 	make_custom_fields()

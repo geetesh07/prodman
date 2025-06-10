@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.query_reports["Budget Variance Report"] = {
+nts .query_reports["Budget Variance Report"] = {
 	filters: get_filters(),
 	formatter: function (value, row, column, data, default_formatter) {
 		value = default_formatter(value, row, column, data);
@@ -20,7 +20,7 @@ frappe.query_reports["Budget Variance Report"] = {
 function get_filters() {
 	function get_dimensions() {
 		let result = [];
-		frappe.call({
+		nts .call({
 			method: "prodman.accounts.doctype.accounting_dimension.accounting_dimension.get_dimensions",
 			args: {
 				with_cost_center_and_project: true,
@@ -43,7 +43,7 @@ function get_filters() {
 			label: __("From Fiscal Year"),
 			fieldtype: "Link",
 			options: "Fiscal Year",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today()),
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today()),
 			reqd: 1,
 		},
 		{
@@ -51,7 +51,7 @@ function get_filters() {
 			label: __("To Fiscal Year"),
 			fieldtype: "Link",
 			options: "Fiscal Year",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today()),
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today()),
 			reqd: 1,
 		},
 		{
@@ -72,7 +72,7 @@ function get_filters() {
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts .defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -83,8 +83,8 @@ function get_filters() {
 			default: "Cost Center",
 			reqd: 1,
 			on_change: function () {
-				frappe.query_report.set_filter_value("budget_against_filter", []);
-				frappe.query_report.refresh();
+				nts .query_report.set_filter_value("budget_against_filter", []);
+				nts .query_report.refresh();
 			},
 		},
 		{
@@ -93,12 +93,12 @@ function get_filters() {
 			fieldtype: "MultiSelectList",
 			options: "budget_against",
 			get_data: function (txt) {
-				if (!frappe.query_report.filters) return;
+				if (!nts .query_report.filters) return;
 
-				let budget_against = frappe.query_report.get_filter_value("budget_against");
+				let budget_against = nts .query_report.get_filter_value("budget_against");
 				if (!budget_against) return;
 
-				return frappe.db.get_link_options(budget_against, txt);
+				return nts .db.get_link_options(budget_against, txt);
 			},
 		},
 		{

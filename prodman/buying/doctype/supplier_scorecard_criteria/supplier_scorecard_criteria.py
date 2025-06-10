@@ -1,15 +1,15 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import re
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
+import nts
+from nts import _
+from nts.model.document import Document
 
 
-class InvalidFormulaVariable(frappe.ValidationError):
+class InvalidFormulaVariable(nts.ValidationError):
 	pass
 
 
@@ -20,7 +20,7 @@ class SupplierScorecardCriteria(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		criteria_name: DF.Data
 		formula: DF.SmallText
@@ -48,14 +48,14 @@ class SupplierScorecardCriteria(Document):
 				test_formula = test_formula.replace("{" + match.group(1) + "}", "0")
 
 		try:
-			frappe.safe_eval(test_formula, None, {"max": max, "min": min})
+			nts.safe_eval(test_formula, None, {"max": max, "min": min})
 		except Exception:
-			frappe.throw(_("Error evaluating the criteria formula"))
+			nts.throw(_("Error evaluating the criteria formula"))
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_criteria_list():
-	criteria = frappe.db.sql(
+	criteria = nts.db.sql(
 		"""
 		SELECT
 			scs.name
@@ -69,7 +69,7 @@ def get_criteria_list():
 
 
 def get_variables(criteria_name):
-	criteria = frappe.get_doc("Supplier Scorecard Criteria", criteria_name)
+	criteria = nts.get_doc("Supplier Scorecard Criteria", criteria_name)
 	return _get_variables(criteria)
 
 
@@ -81,7 +81,7 @@ def _get_variables(criteria):
 	for _dummy1, match in enumerate(mylist):
 		for _dummy2 in range(0, len(match.groups())):
 			try:
-				var = frappe.db.sql(
+				var = nts.db.sql(
 					"""
 					SELECT
 						scv.variable_label, scv.description, scv.param_name, scv.path
@@ -94,7 +94,7 @@ def _get_variables(criteria):
 				)[0]
 				my_variables.append(var)
 			except Exception:
-				frappe.throw(
+				nts.throw(
 					_("Unable to find variable:") + " " + str(match.group(1)), InvalidFormulaVariable
 				)
 

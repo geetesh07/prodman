@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-import frappe
+import nts
 
 import prodman
 from prodman.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
@@ -21,10 +21,10 @@ test_dependencies = ["Territory", "Customer Group", "Supplier Group", "Item"]
 
 class TestUaeVat201(TestCase):
 	def setUp(self):
-		frappe.set_user("Administrator")
+		nts.set_user("Administrator")
 
-		frappe.db.sql("delete from `tabSales Invoice` where company='_Test Company UAE VAT'")
-		frappe.db.sql("delete from `tabPurchase Invoice` where company='_Test Company UAE VAT'")
+		nts.db.sql("delete from `tabSales Invoice` where company='_Test Company UAE VAT'")
+		nts.db.sql("delete from `tabPurchase Invoice` where company='_Test Company UAE VAT'")
 
 		make_company("_Test Company UAE VAT", "_TCUV")
 		set_vat_accounts()
@@ -96,8 +96,8 @@ class TestUaeVat201(TestCase):
 
 
 def make_company(company_name, abbr):
-	if not frappe.db.exists("Company", company_name):
-		company = frappe.get_doc(
+	if not nts.db.exists("Company", company_name):
+		company = nts.get_doc(
 			{
 				"doctype": "Company",
 				"company_name": company_name,
@@ -109,11 +109,11 @@ def make_company(company_name, abbr):
 		)
 		company.insert()
 	else:
-		company = frappe.get_doc("Company", company_name)
+		company = nts.get_doc("Company", company_name)
 
 	company.create_default_warehouses()
 
-	if not frappe.db.get_value("Cost Center", {"is_group": 0, "company": company.name}):
+	if not nts.db.get_value("Cost Center", {"is_group": 0, "company": company.name}):
 		company.create_default_cost_center()
 
 	company.save()
@@ -121,8 +121,8 @@ def make_company(company_name, abbr):
 
 
 def set_vat_accounts():
-	if not frappe.db.exists("UAE VAT Settings", "_Test Company UAE VAT"):
-		vat_accounts = frappe.get_all(
+	if not nts.db.exists("UAE VAT Settings", "_Test Company UAE VAT"):
+		vat_accounts = nts.get_all(
 			"Account",
 			fields=["name"],
 			filters={"company": "_Test Company UAE VAT", "is_group": 0, "account_type": "Tax"},
@@ -132,7 +132,7 @@ def set_vat_accounts():
 		for account in vat_accounts:
 			uae_vat_accounts.append({"doctype": "UAE VAT Account", "account": account.name})
 
-		frappe.get_doc(
+		nts.get_doc(
 			{
 				"company": "_Test Company UAE VAT",
 				"uae_vat_accounts": uae_vat_accounts,
@@ -142,8 +142,8 @@ def set_vat_accounts():
 
 
 def make_customer():
-	if not frappe.db.exists("Customer", "_Test UAE Customer"):
-		customer = frappe.get_doc(
+	if not nts.db.exists("Customer", "_Test UAE Customer"):
+		customer = nts.get_doc(
 			{
 				"doctype": "Customer",
 				"customer_name": "_Test UAE Customer",
@@ -154,8 +154,8 @@ def make_customer():
 
 
 def make_supplier():
-	if not frappe.db.exists("Supplier", "_Test UAE Supplier"):
-		frappe.get_doc(
+	if not nts.db.exists("Supplier", "_Test UAE Supplier"):
+		nts.get_doc(
 			{
 				"supplier_group": "Local",
 				"supplier_name": "_Test UAE Supplier",
@@ -170,8 +170,8 @@ def create_warehouse(warehouse_name, properties=None, company=None):
 		company = "_Test Company"
 
 	warehouse_id = prodman.encode_company_abbr(warehouse_name, company)
-	if not frappe.db.exists("Warehouse", warehouse_id):
-		warehouse = frappe.new_doc("Warehouse")
+	if not nts.db.exists("Warehouse", warehouse_id):
+		warehouse = nts.new_doc("Warehouse")
 		warehouse.warehouse_name = warehouse_name
 		warehouse.parent_warehouse = "All Warehouses - _TCUV"
 		warehouse.company = company
@@ -185,10 +185,10 @@ def create_warehouse(warehouse_name, properties=None, company=None):
 
 
 def make_item(item_code, properties=None):
-	if frappe.db.exists("Item", item_code):
-		return frappe.get_doc("Item", item_code)
+	if nts.db.exists("Item", item_code):
+		return nts.get_doc("Item", item_code)
 
-	item = frappe.get_doc(
+	item = nts.get_doc(
 		{
 			"doctype": "Item",
 			"item_code": item_code,

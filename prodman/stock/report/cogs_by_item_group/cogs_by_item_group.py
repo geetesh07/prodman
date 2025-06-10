@@ -1,23 +1,23 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import datetime
 from collections import OrderedDict
 
-import frappe
-from frappe import _
-from frappe.utils import date_diff
+import nts
+from nts import _
+from nts.utils import date_diff
 
 from prodman.accounts.report.general_ledger.general_ledger import get_gl_entries
 
-Filters = frappe._dict
-Row = frappe._dict
+Filters = nts._dict
+Row = nts._dict
 Data = list[Row]
 Columns = list[dict[str, str]]
 DateTime = datetime.date | datetime.datetime
 FilteredEntries = list[dict[str, str | float | DateTime | None]]
 ItemGroupsDict = dict[tuple[int, int], dict[str, str | int]]
-SVDList = list[frappe._dict]
+SVDList = list[nts._dict]
 
 
 def execute(filters: Filters) -> tuple[Columns, Data]:
@@ -29,13 +29,13 @@ def execute(filters: Filters) -> tuple[Columns, Data]:
 
 
 def update_filters_with_account(filters: Filters) -> None:
-	account = frappe.get_value("Company", filters.get("company"), "default_expense_account")
+	account = nts.get_value("Company", filters.get("company"), "default_expense_account")
 	filters.update(dict(account=account))
 
 
 def validate_filters(filters: Filters) -> None:
 	if filters.from_date > filters.to_date:
-		frappe.throw(_("From Date must be before To Date"))
+		nts.throw(_("From Date must be before To Date"))
 
 
 def get_columns() -> Columns:
@@ -78,7 +78,7 @@ def get_filtered_entries(filters: Filters) -> FilteredEntries:
 
 def get_stock_value_difference_list(filtered_entries: FilteredEntries) -> SVDList:
 	voucher_nos = [fe.get("voucher_no") for fe in filtered_entries]
-	svd_list = frappe.get_list(
+	svd_list = nts.get_list(
 		"Stock Ledger Entry",
 		fields=["item_code", "stock_value_difference"],
 		filters=[("voucher_no", "in", voucher_nos), ("is_cancelled", "=", 0)],
@@ -147,8 +147,8 @@ def assign_agg_values(leveled_dict: OrderedDict) -> None:
 def get_row(name: str, value: float, is_bold: int, indent: int) -> Row:
 	item_group = name
 	if is_bold:
-		item_group = frappe.bold(item_group)
-	return frappe._dict(item_group=item_group, cogs_debit=value, indent=indent)
+		item_group = nts.bold(item_group)
+	return nts._dict(item_group=item_group, cogs_debit=value, indent=indent)
 
 
 def assign_item_groups_to_svd_list(svd_list: SVDList) -> None:
@@ -159,14 +159,14 @@ def assign_item_groups_to_svd_list(svd_list: SVDList) -> None:
 
 def get_item_groups_map(svd_list: SVDList) -> dict[str, str]:
 	item_codes = set(i["item_code"] for i in svd_list)
-	ig_list = frappe.get_list(
+	ig_list = nts.get_list(
 		"Item", fields=["item_code", "item_group"], filters=[("item_code", "in", item_codes)]
 	)
 	return {i["item_code"]: i["item_group"] for i in ig_list}
 
 
 def get_item_groups_dict() -> ItemGroupsDict:
-	item_groups_list = frappe.get_all("Item Group", fields=("name", "is_group", "lft", "rgt"))
+	item_groups_list = nts.get_all("Item Group", fields=("name", "is_group", "lft", "rgt"))
 	return {(i["lft"], i["rgt"]): {"name": i["name"], "is_group": i["is_group"]} for i in item_groups_list}
 
 

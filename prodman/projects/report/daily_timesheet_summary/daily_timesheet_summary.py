@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.desk.reportview import build_match_conditions
+import nts
+from nts import _
+from nts.desk.reportview import build_match_conditions
 
 
 def execute(filters=None):
@@ -37,7 +37,7 @@ def get_column():
 
 
 def get_data(conditions, filters):
-	time_sheet = frappe.db.sql(
+	time_sheet = nts.db.sql(
 		""" select `tabTimesheet`.name, `tabTimesheet`.employee, `tabTimesheet`.employee_name,
 		`tabTimesheet Detail`.from_time, `tabTimesheet Detail`.to_time, `tabTimesheet Detail`.hours,
 		`tabTimesheet Detail`.activity_type, `tabTimesheet Detail`.task, `tabTimesheet Detail`.project,

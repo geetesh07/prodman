@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 # prodman - web based ERP (http://prodman.com)
@@ -7,11 +7,11 @@
 
 import json
 
-import frappe
-from frappe import _, msgprint
-from frappe.model.mapper import get_mapped_doc
-from frappe.query_builder.functions import Sum
-from frappe.utils import cint, cstr, flt, get_link_to_form, getdate, new_line_sep, nowdate
+import nts
+from nts import _, msgprint
+from nts.model.mapper import get_mapped_doc
+from nts.query_builder.functions import Sum
+from nts.utils import cint, cstr, flt, get_link_to_form, getdate, new_line_sep, nowdate
 
 from prodman.buying.utils import check_on_hold_or_closed_status, validate_for_items
 from prodman.controllers.buying_controller import BuyingController
@@ -29,7 +29,7 @@ class MaterialRequest(BuyingController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.stock.doctype.material_request_item.material_request_item import MaterialRequestItem
 
@@ -89,7 +89,7 @@ class MaterialRequest(BuyingController):
 
 		for so_no in so_items.keys():
 			for item in so_items[so_no].keys():
-				already_indented = frappe.db.sql(
+				already_indented = nts.db.sql(
 					"""select sum(qty)
 					from `tabMaterial Request Item`
 					where item_code = %s and sales_order = %s and
@@ -98,7 +98,7 @@ class MaterialRequest(BuyingController):
 				)
 				already_indented = already_indented and flt(already_indented[0][0]) or 0
 
-				actual_so_qty = frappe.db.sql(
+				actual_so_qty = nts.db.sql(
 					"""select sum(stock_qty) from `tabSales Order Item`
 					where parent = %s and item_code = %s and docstatus = 1""",
 					(so_no, item),
@@ -106,7 +106,7 @@ class MaterialRequest(BuyingController):
 				actual_so_qty = actual_so_qty and flt(actual_so_qty[0][0]) or 0
 
 				if actual_so_qty and (flt(so_items[so_no][item]) + already_indented > actual_so_qty):
-					frappe.throw(
+					nts.throw(
 						_(
 							"Material Request of maximum {0} can be made for Item {1} against Sales Order {2}"
 						).format(actual_so_qty - already_indented, item, so_no)
@@ -169,7 +169,7 @@ class MaterialRequest(BuyingController):
 	def on_submit(self):
 		self.update_requested_qty_in_production_plan()
 		self.update_requested_qty()
-		if self.material_request_type == "Purchase" and frappe.db.exists(
+		if self.material_request_type == "Purchase" and nts.db.exists(
 			"Budget", {"applicable_on_material_request": 1, "docstatus": 1}
 		):
 			self.validate_budget()
@@ -187,11 +187,11 @@ class MaterialRequest(BuyingController):
 		self.set_status(update=True, status="Cancelled")
 
 	def check_modified_date(self):
-		mod_db = frappe.db.sql("""select modified from `tabMaterial Request` where name = %s""", self.name)
-		date_diff = frappe.db.sql(f"""select TIMEDIFF('{mod_db[0][0]}', '{cstr(self.modified)}')""")
+		mod_db = nts.db.sql("""select modified from `tabMaterial Request` where name = %s""", self.name)
+		date_diff = nts.db.sql(f"""select TIMEDIFF('{mod_db[0][0]}', '{cstr(self.modified)}')""")
 
 		if date_diff and date_diff[0][0]:
-			frappe.throw(_("{0} {1} has been modified. Please refresh.").format(_(self.doctype), self.name))
+			nts.throw(_("{0} {1} has been modified. Please refresh.").format(_(self.doctype), self.name))
 
 	def update_status(self, status):
 		self.check_modified_date()
@@ -207,21 +207,21 @@ class MaterialRequest(BuyingController):
 		if self.status and self.status == "Cancelled":
 			# cancelled documents cannot change
 			if status != self.status:
-				frappe.throw(
+				nts.throw(
 					_("{0} {1} is cancelled so the action cannot be completed").format(
 						_(self.doctype), self.name
 					),
-					frappe.InvalidStatusError,
+					nts.InvalidStatusError,
 				)
 
 		elif self.status and self.status == "Draft":
 			# draft document to pending only
 			if status != "Pending":
-				frappe.throw(
+				nts.throw(
 					_("{0} {1} has not been submitted so the action cannot be completed").format(
 						_(self.doctype), self.name
 					),
-					frappe.InvalidStatusError,
+					nts.InvalidStatusError,
 				)
 
 	def on_cancel(self):
@@ -234,15 +234,15 @@ class MaterialRequest(BuyingController):
 
 		doctype = qty_field = None
 		if self.material_request_type in ("Material Issue", "Material Transfer", "Customer Provided"):
-			doctype = frappe.qb.DocType("Stock Entry Detail")
+			doctype = nts.qb.DocType("Stock Entry Detail")
 			qty_field = doctype.transfer_qty
 		elif self.material_request_type == "Manufacture":
-			doctype = frappe.qb.DocType("Work Order")
+			doctype = nts.qb.DocType("Work Order")
 			qty_field = doctype.qty
 
 		if doctype and qty_field:
 			query = (
-				frappe.qb.from_(doctype)
+				nts.qb.from_(doctype)
 				.select(doctype.material_request_item, Sum(qty_field))
 				.where(
 					(doctype.material_request == self.name)
@@ -252,7 +252,7 @@ class MaterialRequest(BuyingController):
 				.groupby(doctype.material_request_item)
 			)
 
-			mr_items_ordered_qty = frappe._dict(query.run())
+			mr_items_ordered_qty = nts._dict(query.run())
 
 		return mr_items_ordered_qty
 
@@ -264,7 +264,7 @@ class MaterialRequest(BuyingController):
 			mr_items = [d.name for d in self.get("items")]
 
 		mr_items_ordered_qty = self.get_mr_items_ordered_qty(mr_items)
-		mr_qty_allowance = frappe.db.get_single_value("Stock Settings", "mr_qty_allowance")
+		mr_qty_allowance = nts.db.get_single_value("Stock Settings", "mr_qty_allowance")
 
 		for d in self.get("items"):
 			precision = d.precision("ordered_qty")
@@ -278,14 +278,14 @@ class MaterialRequest(BuyingController):
 						)
 
 						if d.ordered_qty and flt(d.ordered_qty, precision) > flt(allowed_qty, precision):
-							frappe.throw(
+							nts.throw(
 								_(
 									"The total Issue / Transfer quantity {0} in Material Request {1}  cannot be greater than allowed requested quantity {2} for Item {3}"
 								).format(d.ordered_qty, d.parent, allowed_qty, d.item_code)
 							)
 
 					elif d.ordered_qty and flt(d.ordered_qty, precision) > flt(d.stock_qty, precision):
-						frappe.throw(
+						nts.throw(
 							_(
 								"The total Issue / Transfer quantity {0} in Material Request {1} cannot be greater than requested quantity {2} for Item {3}"
 							).format(d.ordered_qty, d.parent, d.qty, d.item_code)
@@ -294,7 +294,7 @@ class MaterialRequest(BuyingController):
 				elif self.material_request_type == "Manufacture":
 					d.ordered_qty = flt(mr_items_ordered_qty.get(d.name))
 
-				frappe.db.set_value(d.doctype, d.name, "ordered_qty", d.ordered_qty)
+				nts.db.set_value(d.doctype, d.name, "ordered_qty", d.ordered_qty)
 
 		self._update_percent_field(
 			{
@@ -316,7 +316,7 @@ class MaterialRequest(BuyingController):
 				(not mr_item_rows or d.name in mr_item_rows)
 				and [d.item_code, d.warehouse] not in item_wh_list
 				and d.warehouse
-				and frappe.db.get_value("Item", d.item_code, "is_stock_item") == 1
+				and nts.db.get_value("Item", d.item_code, "is_stock_item") == 1
 			):
 				item_wh_list.append([d.item_code, d.warehouse])
 
@@ -334,7 +334,7 @@ class MaterialRequest(BuyingController):
 		for d in self.get("items"):
 			if d.production_plan and d.material_request_plan_item:
 				qty = d.qty if self.docstatus == 1 else 0
-				frappe.db.set_value(
+				nts.db.set_value(
 					"Material Request Plan Item", d.material_request_plan_item, "requested_qty", qty
 				)
 
@@ -342,7 +342,7 @@ class MaterialRequest(BuyingController):
 					production_plans.append(d.production_plan)
 
 		for production_plan in production_plans:
-			doc = frappe.get_doc("Production Plan", production_plan)
+			doc = nts.get_doc("Production Plan", production_plan)
 			doc.set_status()
 			doc.db_set("status", doc.status)
 
@@ -357,12 +357,12 @@ def update_completed_and_requested_qty(stock_entry, method):
 
 		for mr, mr_item_rows in material_request_map.items():
 			if mr and mr_item_rows:
-				mr_obj = frappe.get_doc("Material Request", mr)
+				mr_obj = nts.get_doc("Material Request", mr)
 
 				if mr_obj.status in ["Stopped", "Cancelled"]:
-					frappe.throw(
+					nts.throw(
 						_("{0} {1} is cancelled or stopped").format(_("Material Request"), mr),
-						frappe.InvalidStatusError,
+						nts.InvalidStatusError,
 					)
 
 				mr_obj.update_completed_qty(mr_item_rows)
@@ -402,14 +402,14 @@ def get_list_context(context=None):
 	return list_context
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def update_status(name, status):
-	material_request = frappe.get_doc("Material Request", name)
+	material_request = nts.get_doc("Material Request", name)
 	material_request.check_permission("write")
 	material_request.update_status(status)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_purchase_order(source_name, target_doc=None, args=None):
 	if args is None:
 		args = {}
@@ -417,12 +417,12 @@ def make_purchase_order(source_name, target_doc=None, args=None):
 		args = json.loads(args)
 
 	def postprocess(source, target_doc):
-		if frappe.flags.args and frappe.flags.args.default_supplier:
+		if nts.flags.args and nts.flags.args.default_supplier:
 			# items only for given default supplier
 			supplier_items = []
 			for d in target_doc.items:
 				default_supplier = get_item_defaults(d.item_code, target_doc.company).get("default_supplier")
-				if frappe.flags.args.default_supplier == default_supplier:
+				if nts.flags.args.default_supplier == default_supplier:
 					supplier_items.append(d)
 			target_doc.items = supplier_items
 
@@ -467,7 +467,7 @@ def make_purchase_order(source_name, target_doc=None, args=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_request_for_quotation(source_name, target_doc=None):
 	doclist = get_mapped_doc(
 		"Material Request",
@@ -492,7 +492,7 @@ def make_request_for_quotation(source_name, target_doc=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_purchase_order_based_on_supplier(source_name, target_doc=None, args=None):
 	mr = source_name
 
@@ -535,11 +535,11 @@ def make_purchase_order_based_on_supplier(source_name, target_doc=None, args=Non
 	return target_doc
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_items_based_on_default_supplier(supplier):
 	supplier_items = [
 		d.parent
-		for d in frappe.db.get_all(
+		for d in nts.db.get_all(
 			"Item Default", {"default_supplier": supplier, "parenttype": "Item"}, "parent"
 		)
 	]
@@ -547,8 +547,8 @@ def get_items_based_on_default_supplier(supplier):
 	return supplier_items
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def get_material_requests_based_on_supplier(doctype, txt, searchfield, start, page_len, filters):
 	conditions = ""
 	if txt:
@@ -562,9 +562,9 @@ def get_material_requests_based_on_supplier(doctype, txt, searchfield, start, pa
 	supplier_items = get_items_based_on_default_supplier(supplier)
 
 	if not supplier_items:
-		frappe.throw(_("{0} is not the default supplier for any items.").format(supplier))
+		nts.throw(_("{0} is not the default supplier for any items.").format(supplier))
 
-	material_requests = frappe.db.sql(
+	material_requests = nts.db.sql(
 		"""select distinct mr.name, transaction_date,company
 		from `tabMaterial Request` mr, `tabMaterial Request Item` mr_item
 		where mr.name = mr_item.parent
@@ -586,18 +586,18 @@ def get_material_requests_based_on_supplier(doctype, txt, searchfield, start, pa
 	return material_requests
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def get_default_supplier_query(doctype, txt, searchfield, start, page_len, filters):
-	doc = frappe.get_doc("Material Request", filters.get("doc"))
+	doc = nts.get_doc("Material Request", filters.get("doc"))
 	item_list = []
 	for d in doc.items:
 		item_list.append(d.item_code)
 
-	supplier = frappe.qb.DocType("Supplier")
-	item_default = frappe.qb.DocType("Item Default")
+	supplier = nts.qb.DocType("Supplier")
+	item_default = nts.qb.DocType("Item Default")
 	query = (
-		frappe.qb.from_(supplier)
+		nts.qb.from_(supplier)
 		.left_join(item_default)
 		.on(supplier.name == item_default.default_supplier)
 		.select(item_default.default_supplier)
@@ -610,14 +610,14 @@ def get_default_supplier_query(doctype, txt, searchfield, start, page_len, filte
 		.limit(page_len)
 	)
 
-	meta = frappe.get_meta("Supplier")
+	meta = nts.get_meta("Supplier")
 	if meta.show_title_field_in_link and meta.title_field:
 		query = query.select(supplier[meta.title_field])
 
 	return query.run(as_dict=False)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_supplier_quotation(source_name, target_doc=None):
 	def postprocess(source, target_doc):
 		set_missing_values(source, target_doc)
@@ -647,7 +647,7 @@ def make_supplier_quotation(source_name, target_doc=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_stock_entry(source_name, target_doc=None):
 	def update_item(obj, target, source_parent):
 		qty = (
@@ -691,7 +691,7 @@ def make_stock_entry(source_name, target_doc=None):
 		target.set_job_card_data()
 
 		if source.job_card:
-			job_card_details = frappe.get_all(
+			job_card_details = nts.get_all(
 				"Job Card", filters={"name": source.job_card}, fields=["bom_no", "for_quantity"]
 			)
 
@@ -737,17 +737,17 @@ def make_stock_entry(source_name, target_doc=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def raise_work_orders(material_request):
-	mr = frappe.get_doc("Material Request", material_request)
+	mr = nts.get_doc("Material Request", material_request)
 	errors = []
 	work_orders = []
-	default_wip_warehouse = frappe.db.get_single_value("Manufacturing Settings", "default_wip_warehouse")
+	default_wip_warehouse = nts.db.get_single_value("Manufacturing Settings", "default_wip_warehouse")
 
 	for d in mr.items:
 		if (d.stock_qty - d.ordered_qty) > 0:
-			if frappe.db.exists("BOM", {"item": d.item_code, "is_default": 1}):
-				wo_order = frappe.new_doc("Work Order")
+			if nts.db.exists("BOM", {"item": d.item_code, "is_default": 1}):
+				wo_order = nts.new_doc("Work Order")
 				wo_order.update(
 					{
 						"production_item": d.item_code,
@@ -786,23 +786,23 @@ def raise_work_orders(material_request):
 		if len(work_orders) > 1:
 			msgprint(
 				_("The following {0} were created: {1}").format(
-					frappe.bold(_("Work Orders")), "<br>" + ", ".join(work_orders_list)
+					nts.bold(_("Work Orders")), "<br>" + ", ".join(work_orders_list)
 				)
 			)
 		else:
 			msgprint(
-				_("The {0} {1} created sucessfully").format(frappe.bold(_("Work Order")), work_orders_list[0])
+				_("The {0} {1} created sucessfully").format(nts.bold(_("Work Order")), work_orders_list[0])
 			)
 
 	if errors:
-		frappe.throw(
+		nts.throw(
 			_("Work Order cannot be created for following reason: <br> {0}").format(new_line_sep(errors))
 		)
 
 	return work_orders
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def create_pick_list(source_name, target_doc=None):
 	doc = get_mapped_doc(
 		"Material Request",
@@ -826,7 +826,7 @@ def create_pick_list(source_name, target_doc=None):
 	return doc
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_in_transit_stock_entry(source_name, in_transit_warehouse):
 	ste_doc = make_stock_entry(source_name)
 	ste_doc.add_to_transit = 1

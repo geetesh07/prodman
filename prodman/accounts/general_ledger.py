@@ -1,13 +1,13 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import copy
 
-import frappe
-from frappe import _
-from frappe.model.meta import get_field_precision
-from frappe.utils import cint, flt, formatdate, get_link_to_form, getdate, now
+import nts 
+from nts  import _
+from nts .model.meta import get_field_precision
+from nts .utils import cint, flt, formatdate, get_link_to_form, getdate, now
 
 import prodman
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
@@ -48,7 +48,7 @@ def make_gl_entries(
 				save_entries(gl_map, adv_adj, update_outstanding, from_repost)
 			# Post GL Map proccess there may no be any GL Entries
 			elif gl_map:
-				frappe.throw(
+				nts .throw(
 					_(
 						"Incorrect number of General Ledger Entries found. You might have selected a wrong Account in the transaction."
 					)
@@ -94,11 +94,11 @@ def make_acc_dimensions_offsetting_entry(gl_map):
 
 
 def get_accounting_dimensions_for_offsetting_entry(gl_map, company):
-	acc_dimension = frappe.qb.DocType("Accounting Dimension")
-	dimension_detail = frappe.qb.DocType("Accounting Dimension Detail")
+	acc_dimension = nts .qb.DocType("Accounting Dimension")
+	dimension_detail = nts .qb.DocType("Accounting Dimension Detail")
 
 	acc_dimensions = (
-		frappe.qb.from_(acc_dimension)
+		nts .qb.from_(acc_dimension)
 		.inner_join(dimension_detail)
 		.on(acc_dimension.name == dimension_detail.parent)
 		.select(acc_dimension.fieldname, acc_dimension.name, dimension_detail.offsetting_account)
@@ -112,7 +112,7 @@ def get_accounting_dimensions_for_offsetting_entry(gl_map, company):
 	accounting_dimensions_to_offset = []
 	for acc_dimension in acc_dimensions:
 		values = set([entry.get(acc_dimension.fieldname) for entry in gl_map])
-		acc_dimension.account_currency = frappe.get_cached_value(
+		acc_dimension.account_currency = nts .get_cached_value(
 			"Account", acc_dimension.offsetting_account, "account_currency"
 		)
 		if len(values) > 1:
@@ -124,7 +124,7 @@ def get_accounting_dimensions_for_offsetting_entry(gl_map, company):
 def validate_disabled_accounts(gl_map):
 	accounts = [d.account for d in gl_map if d.account]
 
-	disabled_accounts = frappe.get_all(
+	disabled_accounts = nts .get_all(
 		"Account",
 		filters={"disabled": 1, "is_group": 0, "company": gl_map[0].company},
 		fields=["name"],
@@ -133,15 +133,15 @@ def validate_disabled_accounts(gl_map):
 	used_disabled_accounts = set(accounts).intersection(set([d.name for d in disabled_accounts]))
 	if used_disabled_accounts:
 		account_list = "<br>"
-		account_list += ", ".join([frappe.bold(d) for d in used_disabled_accounts])
-		frappe.throw(
+		account_list += ", ".join([nts .bold(d) for d in used_disabled_accounts])
+		nts .throw(
 			_("Cannot create accounting entries against disabled accounts: {0}").format(account_list),
 			title=_("Disabled Account Selected"),
 		)
 
 
 def validate_accounting_period(gl_map):
-	accounting_periods = frappe.db.sql(
+	accounting_periods = nts .db.sql(
 		""" SELECT
 			ap.name as name
 		FROM
@@ -162,10 +162,10 @@ def validate_accounting_period(gl_map):
 	)
 
 	if accounting_periods:
-		frappe.throw(
+		nts .throw(
 			_(
 				"You cannot create or cancel any accounting entries with in the closed Accounting Period {0}"
-			).format(frappe.bold(accounting_periods[0].name)),
+			).format(nts .bold(accounting_periods[0].name)),
 			ClosedAccountingPeriod,
 		)
 
@@ -214,7 +214,7 @@ def distribute_gl_based_on_cost_center_allocation(gl_map, precision=None, from_r
 
 
 def get_cost_center_allocation_data(company, posting_date, cost_center):
-	cost_center_allocation = frappe.db.get_value(
+	cost_center_allocation = nts .db.get_value(
 		"Cost Center Allocation",
 		{
 			"docstatus": 1,
@@ -229,7 +229,7 @@ def get_cost_center_allocation_data(company, posting_date, cost_center):
 	if not cost_center_allocation:
 		return []
 
-	records = frappe.db.get_all(
+	records = nts .db.get_all(
 		"Cost Center Allocation Percentage",
 		{"parent": cost_center_allocation},
 		["cost_center", "percentage"],
@@ -275,7 +275,7 @@ def merge_similar_entries(gl_map, precision=None):
 	company_currency = prodman.get_company_currency(company)
 
 	if not precision:
-		precision = get_field_precision(frappe.get_meta("GL Entry").get_field("debit"), company_currency)
+		precision = get_field_precision(nts .get_meta("GL Entry").get_field("debit"), company_currency)
 
 	# filter zero debit and credit entries
 	merged_gl_map = filter(
@@ -283,7 +283,7 @@ def merge_similar_entries(gl_map, precision=None):
 		or flt(x.credit, precision) != 0
 		or (
 			x.voucher_type == "Journal Entry"
-			and frappe.get_cached_value("Journal Entry", x.voucher_no, "voucher_type")
+			and nts .get_cached_value("Journal Entry", x.voucher_no, "voucher_type")
 			== "Exchange Gain Or Loss"
 		),
 		merged_gl_map,
@@ -387,7 +387,7 @@ def save_entries(gl_map, adv_adj, update_outstanding, from_repost=False):
 
 
 def make_entry(args, adv_adj, update_outstanding, from_repost=False):
-	gle = frappe.new_doc("GL Entry")
+	gle = nts .new_doc("GL Entry")
 	gle.update(args)
 	gle.flags.ignore_permissions = 1
 	gle.flags.from_repost = from_repost
@@ -407,12 +407,12 @@ def validate_cwip_accounts(gl_map):
 
 	cwip_enabled = any(
 		cint(ac.enable_cwip_accounting)
-		for ac in frappe.db.get_all("Asset Category", "enable_cwip_accounting")
+		for ac in nts .db.get_all("Asset Category", "enable_cwip_accounting")
 	)
 	if cwip_enabled:
 		cwip_accounts = [
 			d[0]
-			for d in frappe.db.sql(
+			for d in nts .db.sql(
 				"""select name from tabAccount
 			where account_type = 'Capital Work in Progress' and is_group=0"""
 			)
@@ -420,7 +420,7 @@ def validate_cwip_accounts(gl_map):
 
 		for entry in gl_map:
 			if entry.account in cwip_accounts:
-				frappe.throw(
+				nts .throw(
 					_(
 						"Account: <b>{0}</b> is capital Work in progress and can not be updated by Journal Entry"
 					).format(entry.account)
@@ -429,8 +429,8 @@ def validate_cwip_accounts(gl_map):
 
 def process_debit_credit_difference(gl_map):
 	precision = get_field_precision(
-		frappe.get_meta("GL Entry").get_field("debit"),
-		currency=frappe.get_cached_value("Company", gl_map[0].company, "default_currency"),
+		nts .get_meta("GL Entry").get_field("debit"),
+		currency=nts .get_cached_value("Company", gl_map[0].company, "default_currency"),
 	)
 
 	voucher_type = gl_map[0].voucher_type
@@ -442,7 +442,7 @@ def process_debit_credit_difference(gl_map):
 	if abs(debit_credit_diff) > allowance:
 		if not (
 			voucher_type == "Journal Entry"
-			and frappe.get_cached_value("Journal Entry", voucher_no, "voucher_type")
+			and nts .get_cached_value("Journal Entry", voucher_no, "voucher_type")
 			== "Exchange Gain Or Loss"
 		):
 			raise_debit_credit_not_equal_error(debit_credit_diff, voucher_type, voucher_no)
@@ -454,7 +454,7 @@ def process_debit_credit_difference(gl_map):
 	if abs(debit_credit_diff) > allowance:
 		if not (
 			voucher_type == "Journal Entry"
-			and frappe.get_cached_value("Journal Entry", voucher_no, "voucher_type")
+			and nts .get_cached_value("Journal Entry", voucher_no, "voucher_type")
 			== "Exchange Gain Or Loss"
 		):
 			raise_debit_credit_not_equal_error(debit_credit_diff, voucher_type, voucher_no)
@@ -491,7 +491,7 @@ def get_debit_credit_allowance(voucher_type, precision):
 
 
 def raise_debit_credit_not_equal_error(debit_credit_diff, voucher_type, voucher_no):
-	frappe.throw(
+	nts .throw(
 		_("Debit and Credit not equal for {0} #{1}. Difference is {2}.").format(
 			voucher_type, voucher_no, debit_credit_diff
 		)
@@ -509,15 +509,15 @@ def make_round_off_gle(gl_map, debit_credit_diff, trx_cur_debit_credit_diff, pre
 	round_off_account, round_off_cost_center, round_off_for_opening = get_round_off_account_and_cost_center(
 		gl_map[0].company, gl_map[0].voucher_type, gl_map[0].voucher_no
 	)
-	round_off_gle = frappe._dict()
+	round_off_gle = nts ._dict()
 	round_off_account_exists = False
 	has_opening_entry = has_opening_entries(gl_map)
 
 	if has_opening_entry:
 		if not round_off_for_opening:
-			frappe.throw(
+			nts .throw(
 				_("Please set '{0}' in Company: {1}").format(
-					frappe.bold("Round Off for Opening"), get_link_to_form("Company", gl_map[0].company)
+					nts .bold("Round Off for Opening"), get_link_to_form("Company", gl_map[0].company)
 				)
 			)
 
@@ -575,7 +575,7 @@ def make_round_off_gle(gl_map, debit_credit_diff, trx_cur_debit_credit_diff, pre
 
 def update_accounting_dimensions(round_off_gle):
 	dimensions = get_accounting_dimensions()
-	meta = frappe.get_meta(round_off_gle["voucher_type"])
+	meta = nts .get_meta(round_off_gle["voucher_type"])
 	has_all_dimensions = True
 
 	for dimension in dimensions:
@@ -583,7 +583,7 @@ def update_accounting_dimensions(round_off_gle):
 			has_all_dimensions = False
 
 	if dimensions and has_all_dimensions:
-		dimension_values = frappe.db.get_value(
+		dimension_values = nts .db.get_value(
 			round_off_gle["voucher_type"], round_off_gle["voucher_no"], dimensions, as_dict=1
 		)
 
@@ -592,33 +592,33 @@ def update_accounting_dimensions(round_off_gle):
 
 
 def get_round_off_account_and_cost_center(company, voucher_type, voucher_no, use_company_default=False):
-	round_off_account, round_off_cost_center, round_off_for_opening = frappe.get_cached_value(
+	round_off_account, round_off_cost_center, round_off_for_opening = nts .get_cached_value(
 		"Company", company, ["round_off_account", "round_off_cost_center", "round_off_for_opening"]
 	) or [None, None, None]
 
 	# Use expense account as fallback
 	if not round_off_account:
-		round_off_account = frappe.get_cached_value("Company", company, "default_expense_account")
+		round_off_account = nts .get_cached_value("Company", company, "default_expense_account")
 
-	meta = frappe.get_meta(voucher_type)
+	meta = nts .get_meta(voucher_type)
 
 	# Give first preference to parent cost center for round off GLE
 	if not use_company_default and meta.has_field("cost_center"):
-		parent_cost_center = frappe.db.get_value(voucher_type, voucher_no, "cost_center")
+		parent_cost_center = nts .db.get_value(voucher_type, voucher_no, "cost_center")
 		if parent_cost_center:
 			round_off_cost_center = parent_cost_center
 
 	if not round_off_account:
-		frappe.throw(
+		nts .throw(
 			_("Please mention '{0}' in Company: {1}").format(
-				frappe.bold("Round Off Account"), get_link_to_form("Company", company)
+				nts .bold("Round Off Account"), get_link_to_form("Company", company)
 			)
 		)
 
 	if not round_off_cost_center:
-		frappe.throw(
+		nts .throw(
 			_("Please mention '{0}' in Company: {1}").format(
-				frappe.bold("Round Off Cost Center"), get_link_to_form("Company", company)
+				nts .bold("Round Off Cost Center"), get_link_to_form("Company", company)
 			)
 		)
 
@@ -641,9 +641,9 @@ def make_reverse_gl_entries(
 	immutable_ledger_enabled = is_immutable_ledger_enabled()
 
 	if not gl_entries:
-		gl_entry = frappe.qb.DocType("GL Entry")
+		gl_entry = nts .qb.DocType("GL Entry")
 		gl_entries = (
-			frappe.qb.from_(gl_entry)
+			nts .qb.from_(gl_entry)
 			.select("*")
 			.where(gl_entry.voucher_type == voucher_type)
 			.where(gl_entry.voucher_no == voucher_no)
@@ -667,12 +667,12 @@ def make_reverse_gl_entries(
 		if partial_cancel:
 			# Partial cancel is only used by `Advance` in separate account feature.
 			# Only cancel GL entries for unlinked reference using `voucher_detail_no`
-			gle = frappe.qb.DocType("GL Entry")
+			gle = nts .qb.DocType("GL Entry")
 			for x in gl_entries:
 				query = (
-					frappe.qb.update(gle)
+					nts .qb.update(gle)
 					.set(gle.modified, now())
-					.set(gle.modified_by, frappe.session.user)
+					.set(gle.modified_by, nts .session.user)
 					.where(
 						(gle.company == x.company)
 						& (gle.account == x.account)
@@ -717,7 +717,7 @@ def make_reverse_gl_entries(
 
 			if immutable_ledger_enabled:
 				new_gle["is_cancelled"] = 0
-				new_gle["posting_date"] = frappe.form_dict.get("posting_date") or getdate()
+				new_gle["posting_date"] = nts .form_dict.get("posting_date") or getdate()
 
 			if new_gle["debit"] or new_gle["credit"]:
 				make_entry(new_gle, adv_adj, "Yes")
@@ -732,15 +732,15 @@ def check_freezing_date(posting_date, adv_adj=False):
 	Hence stop admin to bypass if accounts are freezed
 	"""
 	if not adv_adj:
-		acc_frozen_upto = frappe.db.get_value("Accounts Settings", None, "acc_frozen_upto")
+		acc_frozen_upto = nts .db.get_value("Accounts Settings", None, "acc_frozen_upto")
 		if acc_frozen_upto:
-			frozen_accounts_modifier = frappe.db.get_value(
+			frozen_accounts_modifier = nts .db.get_value(
 				"Accounts Settings", None, "frozen_accounts_modifier"
 			)
 			if getdate(posting_date) <= getdate(acc_frozen_upto) and (
-				frozen_accounts_modifier not in frappe.get_roles() or frappe.session.user == "Administrator"
+				frozen_accounts_modifier not in nts .get_roles() or nts .session.user == "Administrator"
 			):
-				frappe.throw(
+				nts .throw(
 					_("You are not authorized to add or update entries before {0}").format(
 						formatdate(acc_frozen_upto)
 					)
@@ -748,13 +748,13 @@ def check_freezing_date(posting_date, adv_adj=False):
 
 
 def validate_against_pcv(is_opening, posting_date, company):
-	if is_opening and frappe.db.exists("Period Closing Voucher", {"docstatus": 1, "company": company}):
-		frappe.throw(
+	if is_opening and nts .db.exists("Period Closing Voucher", {"docstatus": 1, "company": company}):
+		nts .throw(
 			_("Opening Entry can not be created after Period Closing Voucher is created."),
 			title=_("Invalid Opening Entry"),
 		)
 
-	last_pcv_date = frappe.db.get_value(
+	last_pcv_date = nts .db.get_value(
 		"Period Closing Voucher", {"docstatus": 1, "company": company}, "max(period_end_date)"
 	)
 
@@ -762,18 +762,18 @@ def validate_against_pcv(is_opening, posting_date, company):
 		message = _("Books have been closed till the period ending on {0}").format(formatdate(last_pcv_date))
 		message += "</br >"
 		message += _("You cannot create/amend any accounting entries till this date.")
-		frappe.throw(message, title=_("Period Closed"))
+		nts .throw(message, title=_("Period Closed"))
 
 
 def set_as_cancel(voucher_type, voucher_no):
 	"""
 	Set is_cancelled=1 in all original gl entries for the voucher
 	"""
-	frappe.db.sql(
+	nts .db.sql(
 		"""UPDATE `tabGL Entry` SET is_cancelled = 1,
 		modified=%s, modified_by=%s
 		where voucher_type=%s and voucher_no=%s and is_cancelled = 0""",
-		(now(), frappe.session.user, voucher_type, voucher_no),
+		(now(), nts .session.user, voucher_type, voucher_no),
 	)
 
 
@@ -784,34 +784,34 @@ def validate_allowed_dimensions(gl_entry, dimension_filter_map):
 
 		if gl_entry.account == account:
 			if value["is_mandatory"] and not gl_entry.get(dimension):
-				frappe.throw(
+				nts .throw(
 					_("{0} is mandatory for account {1}").format(
-						frappe.bold(frappe.unscrub(dimension)), frappe.bold(gl_entry.account)
+						nts .bold(nts .unscrub(dimension)), nts .bold(gl_entry.account)
 					),
 					MandatoryAccountDimensionError,
 				)
 
 			if value["allow_or_restrict"] == "Allow":
 				if gl_entry.get(dimension) and gl_entry.get(dimension) not in value["allowed_dimensions"]:
-					frappe.throw(
+					nts .throw(
 						_("Invalid value {0} for {1} against account {2}").format(
-							frappe.bold(gl_entry.get(dimension)),
-							frappe.bold(frappe.unscrub(dimension)),
-							frappe.bold(gl_entry.account),
+							nts .bold(gl_entry.get(dimension)),
+							nts .bold(nts .unscrub(dimension)),
+							nts .bold(gl_entry.account),
 						),
 						InvalidAccountDimensionError,
 					)
 			else:
 				if gl_entry.get(dimension) and gl_entry.get(dimension) in value["allowed_dimensions"]:
-					frappe.throw(
+					nts .throw(
 						_("Invalid value {0} for {1} against account {2}").format(
-							frappe.bold(gl_entry.get(dimension)),
-							frappe.bold(frappe.unscrub(dimension)),
-							frappe.bold(gl_entry.account),
+							nts .bold(gl_entry.get(dimension)),
+							nts .bold(nts .unscrub(dimension)),
+							nts .bold(gl_entry.account),
 						),
 						InvalidAccountDimensionError,
 					)
 
 
 def is_immutable_ledger_enabled():
-	return frappe.db.get_single_value("Accounts Settings", "enable_immutable_ledger")
+	return nts .db.get_single_value("Accounts Settings", "enable_immutable_ledger")

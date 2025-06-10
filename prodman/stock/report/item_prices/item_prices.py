@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import IfNull, Sum
-from frappe.utils import flt
+import nts
+from nts import _
+from nts.query_builder.functions import IfNull, Sum
+from nts.utils import flt
 
 
 def execute(filters=None):
@@ -68,9 +68,9 @@ def get_item_details(filters):
 
 	item_map = {}
 
-	item = frappe.qb.DocType("Item")
+	item = nts.qb.DocType("Item")
 	query = (
-		frappe.qb.from_(item)
+		nts.qb.from_(item)
 		.select(item.name, item.item_group, item.item_name, item.description, item.brand, item.stock_uom)
 		.orderby(item.item_code, item.item_group)
 	)
@@ -91,12 +91,12 @@ def get_price_list():
 
 	rate = {}
 
-	ip = frappe.qb.DocType("Item Price")
-	pl = frappe.qb.DocType("Price List")
-	cu = frappe.qb.DocType("Currency")
+	ip = nts.qb.DocType("Item Price")
+	pl = nts.qb.DocType("Price List")
+	cu = nts.qb.DocType("Currency")
 
 	price_list = (
-		frappe.qb.from_(ip)
+		nts.qb.from_(ip)
 		.from_(pl)
 		.from_(cu)
 		.select(
@@ -135,29 +135,29 @@ def get_price_list():
 def get_last_purchase_rate():
 	item_last_purchase_rate_map = {}
 
-	po = frappe.qb.DocType("Purchase Order")
-	pr = frappe.qb.DocType("Purchase Receipt")
-	pi = frappe.qb.DocType("Purchase Invoice")
-	po_item = frappe.qb.DocType("Purchase Order Item")
-	pr_item = frappe.qb.DocType("Purchase Receipt Item")
-	pi_item = frappe.qb.DocType("Purchase Invoice Item")
+	po = nts.qb.DocType("Purchase Order")
+	pr = nts.qb.DocType("Purchase Receipt")
+	pi = nts.qb.DocType("Purchase Invoice")
+	po_item = nts.qb.DocType("Purchase Order Item")
+	pr_item = nts.qb.DocType("Purchase Receipt Item")
+	pi_item = nts.qb.DocType("Purchase Invoice Item")
 
 	query = (
-		frappe.qb.from_(
+		nts.qb.from_(
 			(
-				frappe.qb.from_(po)
+				nts.qb.from_(po)
 				.from_(po_item)
 				.select(po_item.item_code, po.transaction_date.as_("posting_date"), po_item.base_rate)
 				.where((po.name == po_item.parent) & (po.docstatus == 1))
 			)
 			+ (
-				frappe.qb.from_(pr)
+				nts.qb.from_(pr)
 				.from_(pr_item)
 				.select(pr_item.item_code, pr.posting_date, pr_item.base_rate)
 				.where((pr.name == pr_item.parent) & (pr.docstatus == 1))
 			)
 			+ (
-				frappe.qb.from_(pi)
+				nts.qb.from_(pi)
 				.from_(pi_item)
 				.select(pi_item.item_code, pi.posting_date, pi_item.base_rate)
 				.where((pi.name == pi_item.parent) & (pi.docstatus == 1) & (pi.update_stock == 1))
@@ -178,9 +178,9 @@ def get_item_bom_rate():
 
 	item_bom_map = {}
 
-	bom = frappe.qb.DocType("BOM")
+	bom = nts.qb.DocType("BOM")
 	bom_data = (
-		frappe.qb.from_(bom)
+		nts.qb.from_(bom)
 		.select(bom.item, (bom.total_cost / bom.quantity).as_("bom_rate"))
 		.where((bom.is_active == 1) & (bom.is_default == 1))
 	).run(as_dict=True)
@@ -196,9 +196,9 @@ def get_valuation_rate():
 
 	item_val_rate_map = {}
 
-	bin = frappe.qb.DocType("Bin")
+	bin = nts.qb.DocType("Bin")
 	bin_data = (
-		frappe.qb.from_(bin)
+		nts.qb.from_(bin)
 		.select(
 			bin.item_code, (Sum(bin.actual_qty * bin.valuation_rate) / Sum(bin.actual_qty)).as_("val_rate")
 		)

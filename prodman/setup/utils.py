@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe import _
-from frappe.utils import add_days, flt, get_datetime_str, nowdate
-from frappe.utils.data import getdate, now_datetime
-from frappe.utils.nestedset import get_root_of
+import nts
+from nts import _
+from nts.utils import add_days, flt, get_datetime_str, nowdate
+from nts.utils.data import getdate, now_datetime
+from nts.utils.nestedset import get_root_of
 
 from prodman import get_default_company
 
@@ -15,11 +15,11 @@ PEGGED_CURRENCIES = {
 
 
 def before_tests():
-	frappe.clear_cache()
+	nts.clear_cache()
 	# complete setup if missing
-	from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
+	from nts.desk.page.setup_wizard.setup_wizard import setup_complete
 
-	if not frappe.db.a_row_exists("Company"):
+	if not nts.db.a_row_exists("Company"):
 		current_year = now_datetime().year
 		setup_complete(
 			{
@@ -40,13 +40,13 @@ def before_tests():
 			}
 		)
 
-	frappe.db.sql("delete from `tabItem Price`")
+	nts.db.sql("delete from `tabItem Price`")
 
 	_enable_all_roles_for_admin()
 
 	set_defaults_for_tests()
 
-	frappe.db.commit()
+	nts.db.commit()
 
 
 def get_pegged_rate(from_currency: str, to_currency: str, transaction_date) -> float | None:
@@ -57,7 +57,7 @@ def get_pegged_rate(from_currency: str, to_currency: str, transaction_date) -> f
 	return None
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_exchange_rate(from_currency, to_currency, transaction_date=None, args=None):
 	if not (from_currency and to_currency):
 		# manqala 19/09/2016: Should this be an empty return or should it throw and exception?
@@ -68,7 +68,7 @@ def get_exchange_rate(from_currency, to_currency, transaction_date=None, args=No
 	if not transaction_date:
 		transaction_date = nowdate()
 
-	currency_settings = frappe.get_doc("Accounts Settings").as_dict()
+	currency_settings = nts.get_doc("Accounts Settings").as_dict()
 	allow_stale_rates = currency_settings.get("allow_stale")
 
 	filters = [
@@ -88,27 +88,27 @@ def get_exchange_rate(from_currency, to_currency, transaction_date=None, args=No
 		filters.append(["date", ">", get_datetime_str(checkpoint_date)])
 
 	# cksgb 19/09/2016: get last entry in Currency Exchange with from_currency and to_currency.
-	entries = frappe.get_all(
+	entries = nts.get_all(
 		"Currency Exchange", fields=["exchange_rate"], filters=filters, order_by="date desc", limit=1
 	)
 	if entries:
 		return flt(entries[0].exchange_rate)
 
-	if frappe.get_cached_value("Currency Exchange Settings", "Currency Exchange Settings", "disabled"):
+	if nts.get_cached_value("Currency Exchange Settings", "Currency Exchange Settings", "disabled"):
 		return 0.00
 
 	if rate := get_pegged_rate(from_currency, to_currency, transaction_date):
 		return rate
 
 	try:
-		cache = frappe.cache()
+		cache = nts.cache()
 		key = f"currency_exchange_rate_{transaction_date}:{from_currency}:{to_currency}"
 		value = cache.get(key)
 
 		if not value:
 			import requests
 
-			settings = frappe.get_cached_doc("Currency Exchange Settings")
+			settings = nts.get_cached_doc("Currency Exchange Settings")
 			req_params = {
 				"transaction_date": transaction_date,
 				"from_currency": from_currency if from_currency != "AED" else "USD",
@@ -134,8 +134,8 @@ def get_exchange_rate(from_currency, to_currency, transaction_date=None, args=No
 
 		return flt(value)
 	except Exception:
-		frappe.log_error("Unable to fetch exchange rate")
-		frappe.msgprint(
+		nts.log_error("Unable to fetch exchange rate")
+		nts.msgprint(
 			_(
 				"Unable to find exchange rate for {0} to {1} for key date {2}. Please create a Currency Exchange record manually"
 			).format(from_currency, to_currency, transaction_date)
@@ -157,11 +157,11 @@ def enable_all_roles_and_domains():
 
 
 def _enable_all_roles_for_admin():
-	from frappe.desk.page.setup_wizard.setup_wizard import add_all_roles_to
+	from nts.desk.page.setup_wizard.setup_wizard import add_all_roles_to
 
-	all_roles = set(frappe.db.get_values("Role", pluck="name"))
+	all_roles = set(nts.db.get_values("Role", pluck="name"))
 	admin_roles = set(
-		frappe.db.get_values("Has Role", {"parent": "Administrator"}, fieldname="role", pluck="role")
+		nts.db.get_values("Has Role", {"parent": "Administrator"}, fieldname="role", pluck="role")
 	)
 
 	if all_roles.difference(admin_roles):
@@ -173,14 +173,14 @@ def set_defaults_for_tests():
 		"customer_group": get_root_of("Customer Group"),
 		"territory": get_root_of("Territory"),
 	}
-	frappe.db.set_single_value("Selling Settings", defaults)
+	nts.db.set_single_value("Selling Settings", defaults)
 	for key, value in defaults.items():
-		frappe.db.set_default(key, value)
-	frappe.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 0)
+		nts.db.set_default(key, value)
+	nts.db.set_single_value("Stock Settings", "auto_insert_price_list_rate_if_missing", 0)
 
 
 def insert_record(records):
-	from frappe.desk.page.setup_wizard.setup_wizard import make_records
+	from nts.desk.page.setup_wizard.setup_wizard import make_records
 
 	make_records(records)
 

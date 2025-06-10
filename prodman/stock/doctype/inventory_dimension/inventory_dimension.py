@@ -1,21 +1,21 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _, bold, scrub
-from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
-from frappe.model.document import Document
+import nts
+from nts import _, bold, scrub
+from nts.custom.doctype.custom_field.custom_field import create_custom_fields
+from nts.model.document import Document
 
 
-class DoNotChangeError(frappe.ValidationError):
+class DoNotChangeError(nts.ValidationError):
 	pass
 
 
-class CanNotBeChildDoc(frappe.ValidationError):
+class CanNotBeChildDoc(nts.ValidationError):
 	pass
 
 
-class CanNotBeDefaultDimension(frappe.ValidationError):
+class CanNotBeDefaultDimension(nts.ValidationError):
 	pass
 
 
@@ -26,7 +26,7 @@ class InventoryDimension(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		apply_to_all_doctypes: DF.Check
 		condition: DF.Code | None
@@ -45,14 +45,14 @@ class InventoryDimension(Document):
 	# end: auto-generated types
 
 	def onload(self):
-		if not self.is_new() and frappe.db.has_column("Stock Ledger Entry", self.target_fieldname):
+		if not self.is_new() and nts.db.has_column("Stock Ledger Entry", self.target_fieldname):
 			self.set_onload("has_stock_ledger", self.has_stock_ledger())
 
 	def has_stock_ledger(self) -> str:
 		if not self.target_fieldname:
 			return
 
-		return frappe.get_all(
+		return nts.get_all(
 			"Stock Ledger Entry", filters={self.target_fieldname: ("is", "set"), "is_cancelled": 0}, limit=1
 		)
 
@@ -87,14 +87,14 @@ class InventoryDimension(Document):
 			"validate_negative_stock",
 		]
 
-		for field in frappe.get_meta("Inventory Dimension").fields:
+		for field in nts.get_meta("Inventory Dimension").fields:
 			if field.fieldname not in allow_to_edit_fields and old_doc.get(field.fieldname) != self.get(
 				field.fieldname
 			):
 				msg = f"""The user can not change value of the field {bold(field.label)} because
 					stock transactions exists against the dimension {bold(self.name)}."""
 
-				frappe.throw(_(msg), DoNotChangeError)
+				nts.throw(_(msg), DoNotChangeError)
 
 	def on_trash(self):
 		self.delete_custom_fields()
@@ -115,11 +115,11 @@ class InventoryDimension(Document):
 		if self.document_type:
 			filters["dt"] = self.document_type
 
-		for field in frappe.get_all("Custom Field", filters=filters):
-			frappe.delete_doc("Custom Field", field.name)
+		for field in nts.get_all("Custom Field", filters=filters):
+			nts.delete_doc("Custom Field", field.name)
 
 		msg = f"Deleted custom fields related to the dimension {self.name}"
-		frappe.msgprint(_(msg))
+		nts.msgprint(_(msg))
 
 	def reset_value(self):
 		if self.apply_to_all_doctypes:
@@ -130,13 +130,13 @@ class InventoryDimension(Document):
 				self.set(field, None)
 
 	def validate_reference_document(self):
-		if frappe.get_cached_value("DocType", self.reference_document, "istable") == 1:
+		if nts.get_cached_value("DocType", self.reference_document, "istable") == 1:
 			msg = f"The reference document {self.reference_document} can not be child table."
-			frappe.throw(_(msg), CanNotBeChildDoc)
+			nts.throw(_(msg), CanNotBeChildDoc)
 
 		if self.reference_document in ["Batch", "Serial No", "Warehouse", "Item"]:
 			msg = f"The reference document {self.reference_document} can not be an Inventory Dimension."
-			frappe.throw(_(msg), CanNotBeDefaultDimension)
+			nts.throw(_(msg), CanNotBeDefaultDimension)
 
 	def set_source_and_target_fieldname(self) -> None:
 		if not self.source_fieldname:
@@ -150,7 +150,7 @@ class InventoryDimension(Document):
 
 	@staticmethod
 	def get_insert_after_fieldname(doctype):
-		return frappe.get_all(
+		return nts.get_all(
 			"DocField",
 			fields=["fieldname"],
 			filters={"parent": doctype},
@@ -225,7 +225,7 @@ class InventoryDimension(Document):
 
 		if (
 			dimension_fields
-			and not frappe.db.get_value(
+			and not nts.db.get_value(
 				"Custom Field", {"dt": "Stock Ledger Entry", "fieldname": self.target_fieldname}
 			)
 			and not field_exists("Stock Ledger Entry", self.target_fieldname)
@@ -307,10 +307,10 @@ class InventoryDimension(Document):
 
 
 def field_exists(doctype, fieldname) -> str or None:
-	return frappe.db.get_value("DocField", {"parent": doctype, "fieldname": fieldname}, "name")
+	return nts.db.get_value("DocField", {"parent": doctype, "fieldname": fieldname}, "name")
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_inventory_documents(
 	doctype=None, txt=None, searchfield=None, start=None, page_len=None, filters=None
 ):
@@ -323,7 +323,7 @@ def get_inventory_documents(
 	if txt:
 		and_filters.append(["DocField", "parent", "like", f"%{txt}%"])
 
-	return frappe.get_all(
+	return nts.get_all(
 		"DocField",
 		fields=["distinct parent"],
 		filters=and_filters,
@@ -356,7 +356,7 @@ def get_evaluated_inventory_dimension(doc, sl_dict, parent_doc=None):
 		if parent_doc:
 			evals["parent"] = parent_doc
 
-		if row.condition and frappe.safe_eval(row.condition, evals):
+		if row.condition and nts.safe_eval(row.condition, evals):
 			filter_dimensions.append(row)
 		else:
 			filter_dimensions.append(row)
@@ -365,11 +365,11 @@ def get_evaluated_inventory_dimension(doc, sl_dict, parent_doc=None):
 
 
 def get_document_wise_inventory_dimensions(doctype) -> dict:
-	if not hasattr(frappe.local, "document_wise_inventory_dimensions"):
-		frappe.local.document_wise_inventory_dimensions = {}
+	if not hasattr(nts.local, "document_wise_inventory_dimensions"):
+		nts.local.document_wise_inventory_dimensions = {}
 
-	if not frappe.local.document_wise_inventory_dimensions.get(doctype):
-		dimensions = frappe.get_all(
+	if not nts.local.document_wise_inventory_dimensions.get(doctype):
+		dimensions = nts.get_all(
 			"Inventory Dimension",
 			fields=[
 				"name",
@@ -383,18 +383,18 @@ def get_document_wise_inventory_dimensions(doctype) -> dict:
 			or_filters={"document_type": doctype, "apply_to_all_doctypes": 1},
 		)
 
-		frappe.local.document_wise_inventory_dimensions[doctype] = dimensions
+		nts.local.document_wise_inventory_dimensions[doctype] = dimensions
 
-	return frappe.local.document_wise_inventory_dimensions[doctype]
+	return nts.local.document_wise_inventory_dimensions[doctype]
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_inventory_dimensions():
-	if not hasattr(frappe.local, "inventory_dimensions"):
-		frappe.local.inventory_dimensions = {}
+	if not hasattr(nts.local, "inventory_dimensions"):
+		nts.local.inventory_dimensions = {}
 
-	if not frappe.local.inventory_dimensions:
-		dimensions = frappe.get_all(
+	if not nts.local.inventory_dimensions:
+		dimensions = nts.get_all(
 			"Inventory Dimension",
 			fields=[
 				"distinct target_fieldname as fieldname",
@@ -405,25 +405,25 @@ def get_inventory_dimensions():
 			filters={"disabled": 0},
 		)
 
-		frappe.local.inventory_dimensions = dimensions
+		nts.local.inventory_dimensions = dimensions
 
-	return frappe.local.inventory_dimensions
+	return nts.local.inventory_dimensions
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def delete_dimension(dimension):
-	doc = frappe.get_doc("Inventory Dimension", dimension)
+	doc = nts.get_doc("Inventory Dimension", dimension)
 	doc.delete()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_parent_fields(child_doctype, dimension_name):
-	parent_doctypes = frappe.get_all("DocField", fields=["parent"], filters={"options": child_doctype})
+	parent_doctypes = nts.get_all("DocField", fields=["parent"], filters={"options": child_doctype})
 
 	fields = []
 
 	fields.extend(
-		frappe.get_all(
+		nts.get_all(
 			"DocField",
 			fields=["fieldname as value", "label"],
 			filters={"options": dimension_name, "parent": ("in", [d.parent for d in parent_doctypes])},
@@ -431,7 +431,7 @@ def get_parent_fields(child_doctype, dimension_name):
 	)
 
 	fields.extend(
-		frappe.get_all(
+		nts.get_all(
 			"Custom Field",
 			fields=["fieldname as value", "label"],
 			filters={"options": dimension_name, "dt": ("in", [d.parent for d in parent_doctypes])},

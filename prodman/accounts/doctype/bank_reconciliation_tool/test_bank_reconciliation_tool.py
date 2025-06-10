@@ -1,11 +1,11 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2020, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
-import frappe
-from frappe import qb
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days, today
+import nts 
+from nts  import qb
+from nts .tests.utils import nts TestCase
+from nts .utils import add_days, today
 
 from prodman.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool import (
 	auto_reconcile_vouchers,
@@ -15,7 +15,7 @@ from prodman.accounts.doctype.payment_entry.test_payment_entry import create_pay
 from prodman.accounts.test.accounts_mixin import AccountsTestMixin
 
 
-class TestBankReconciliationTool(AccountsTestMixin, FrappeTestCase):
+class TestBankReconciliationTool(AccountsTestMixin, nts TestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_customer()
@@ -25,10 +25,10 @@ class TestBankReconciliationTool(AccountsTestMixin, FrappeTestCase):
 		self.create_bank_account()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def create_bank_account(self):
-		bank = frappe.get_doc(
+		bank = nts .get_doc(
 			{
 				"doctype": "Bank",
 				"bank_name": "HDFC",
@@ -36,7 +36,7 @@ class TestBankReconciliationTool(AccountsTestMixin, FrappeTestCase):
 		).save()
 
 		self.bank_account = (
-			frappe.get_doc(
+			nts .get_doc(
 				{
 					"doctype": "Bank Account",
 					"account_name": "HDFC _current_",
@@ -68,7 +68,7 @@ class TestBankReconciliationTool(AccountsTestMixin, FrappeTestCase):
 
 		# make bank transaction
 		bank_transaction = (
-			frappe.get_doc(
+			nts .get_doc(
 				{
 					"doctype": "Bank Transaction",
 					"date": to_date,

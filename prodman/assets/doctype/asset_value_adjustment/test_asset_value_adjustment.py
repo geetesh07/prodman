@@ -1,10 +1,10 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe.utils import add_days, cstr, get_last_day, getdate, nowdate
+import nts 
+from nts .utils import add_days, cstr, get_last_day, getdate, nowdate
 
 from prodman.assets.doctype.asset.asset import get_asset_value_after_depreciation
 from prodman.assets.doctype.asset.depreciation import post_depreciation_entries
@@ -19,15 +19,15 @@ from prodman.stock.doctype.purchase_receipt.test_purchase_receipt import make_pu
 class TestAssetValueAdjustment(unittest.TestCase):
 	def setUp(self):
 		create_asset_data()
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Company", "_Test Company", "capital_work_in_progress_account", "CWIP Account - _TC"
 		)
 
 	def test_current_asset_value(self):
 		pr = make_purchase_receipt(item_code="Macbook Pro", qty=1, rate=100000.0, location="Test Location")
 
-		asset_name = frappe.db.get_value("Asset", {"purchase_receipt": pr.name}, "name")
-		asset_doc = frappe.get_doc("Asset", asset_name)
+		asset_name = nts .db.get_value("Asset", {"purchase_receipt": pr.name}, "name")
+		asset_doc = nts .get_doc("Asset", asset_name)
 
 		month_end_date = get_last_day(nowdate())
 		purchase_date = nowdate() if nowdate() != month_end_date else add_days(nowdate(), -15)
@@ -53,8 +53,8 @@ class TestAssetValueAdjustment(unittest.TestCase):
 	def test_asset_depreciation_value_adjustment(self):
 		pr = make_purchase_receipt(item_code="Macbook Pro", qty=1, rate=120000.0, location="Test Location")
 
-		asset_name = frappe.db.get_value("Asset", {"purchase_receipt": pr.name}, "name")
-		asset_doc = frappe.get_doc("Asset", asset_name)
+		asset_name = nts .db.get_value("Asset", {"purchase_receipt": pr.name}, "name")
+		asset_doc = nts .get_doc("Asset", asset_name)
 		asset_doc.calculate_depreciation = 1
 		asset_doc.available_for_use_date = "2023-01-15"
 		asset_doc.purchase_date = "2023-01-15"
@@ -97,7 +97,7 @@ class TestAssetValueAdjustment(unittest.TestCase):
 			("_Test Fixed Asset - _TC", 0.0, 4625.29),
 		)
 
-		gle = frappe.db.sql(
+		gle = nts .db.sql(
 			"""select account, debit, credit from `tabGL Entry`
 			where voucher_type='Journal Entry' and voucher_no = %s
 			order by account""",
@@ -132,8 +132,8 @@ class TestAssetValueAdjustment(unittest.TestCase):
 	def test_depreciation_after_cancelling_asset_repair(self):
 		pr = make_purchase_receipt(item_code="Macbook Pro", qty=1, rate=120000.0, location="Test Location")
 
-		asset_name = frappe.db.get_value("Asset", {"purchase_receipt": pr.name}, "name")
-		asset_doc = frappe.get_doc("Asset", asset_name)
+		asset_name = nts .db.get_value("Asset", {"purchase_receipt": pr.name}, "name")
+		asset_doc = nts .get_doc("Asset", asset_name)
 		asset_doc.calculate_depreciation = 1
 		asset_doc.available_for_use_date = "2023-01-15"
 		asset_doc.purchase_date = "2023-01-15"
@@ -181,7 +181,7 @@ class TestAssetValueAdjustment(unittest.TestCase):
 			("_Test Fixed Asset - _TC", 0.0, 5625.29),
 		)
 
-		gle = frappe.db.sql(
+		gle = nts .db.sql(
 			"""select account, debit, credit from `tabGL Entry`
 			where voucher_type='Journal Entry' and voucher_no = %s
 			order by account""",
@@ -262,8 +262,8 @@ class TestAssetValueAdjustment(unittest.TestCase):
 	def test_difference_amount(self):
 		pr = make_purchase_receipt(item_code="Macbook Pro", qty=1, rate=120000.0, location="Test Location")
 
-		asset_name = frappe.db.get_value("Asset", {"purchase_receipt": pr.name}, "name")
-		asset_doc = frappe.get_doc("Asset", asset_name)
+		asset_name = nts .db.get_value("Asset", {"purchase_receipt": pr.name}, "name")
+		asset_doc = nts .get_doc("Asset", asset_name)
 		asset_doc.calculate_depreciation = 1
 		asset_doc.available_for_use_date = "2023-01-15"
 		asset_doc.purchase_date = "2023-01-15"
@@ -294,9 +294,9 @@ class TestAssetValueAdjustment(unittest.TestCase):
 
 
 def make_asset_value_adjustment(**args):
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 
-	doc = frappe.get_doc(
+	doc = nts .get_doc(
 		{
 			"doctype": "Asset Value Adjustment",
 			"company": args.company or "_Test Company",
@@ -314,8 +314,8 @@ def make_asset_value_adjustment(**args):
 
 def make_difference_account(**args):
 	account = "_Test Difference Account - _TC"
-	if not frappe.db.exists("Account", account):
-		acc = frappe.new_doc("Account")
+	if not nts .db.exists("Account", account):
+		acc = nts .new_doc("Account")
 		acc.account_name = "_Test Difference Account"
 		acc.parent_account = "Direct Income - _TC"
 		acc.company = "_Test Company"

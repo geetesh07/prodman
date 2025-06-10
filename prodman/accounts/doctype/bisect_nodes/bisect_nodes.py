@@ -1,8 +1,8 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-# import frappe
-from frappe.model.document import Document
+# import nts 
+from nts .model.document import Document
 
 
 class BisectNodes(Document):
@@ -12,7 +12,7 @@ class BisectNodes(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		balance_sheet_summary: DF.Float
 		difference: DF.Float

@@ -1,9 +1,9 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2019, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts 
 
 from prodman.accounts.doctype.promotional_scheme.promotional_scheme import TransactionExists
 from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
@@ -11,18 +11,18 @@ from prodman.selling.doctype.sales_order.test_sales_order import make_sales_orde
 
 class TestPromotionalScheme(unittest.TestCase):
 	def setUp(self):
-		if frappe.db.exists("Promotional Scheme", "_Test Scheme"):
-			frappe.delete_doc("Promotional Scheme", "_Test Scheme")
+		if nts .db.exists("Promotional Scheme", "_Test Scheme"):
+			nts .delete_doc("Promotional Scheme", "_Test Scheme")
 
 	def test_promotional_scheme(self):
 		ps = make_promotional_scheme(applicable_for="Customer", customer="_Test Customer")
-		price_rules = frappe.get_all(
+		price_rules = nts .get_all(
 			"Pricing Rule",
 			fields=["promotional_scheme_id", "name", "creation"],
 			filters={"promotional_scheme": ps.name},
 		)
 		self.assertTrue(len(price_rules), 1)
-		price_doc_details = frappe.db.get_value(
+		price_doc_details = nts .db.get_value(
 			"Pricing Rule", price_rules[0].name, ["customer", "min_qty", "discount_percentage"], as_dict=1
 		)
 		self.assertTrue(price_doc_details.customer, "_Test Customer")
@@ -32,28 +32,28 @@ class TestPromotionalScheme(unittest.TestCase):
 		ps.price_discount_slabs[0].min_qty = 6
 		ps.append("customer", {"customer": "_Test Customer 2"})
 		ps.save()
-		price_rules = frappe.get_all(
+		price_rules = nts .get_all(
 			"Pricing Rule",
 			fields=["promotional_scheme_id", "name"],
 			filters={"promotional_scheme": ps.name},
 		)
 		self.assertTrue(len(price_rules), 2)
 
-		price_doc_details = frappe.db.get_value(
+		price_doc_details = nts .db.get_value(
 			"Pricing Rule", price_rules[1].name, ["customer", "min_qty", "discount_percentage"], as_dict=1
 		)
 		self.assertTrue(price_doc_details.customer, "_Test Customer 2")
 		self.assertTrue(price_doc_details.min_qty, 6)
 		self.assertTrue(price_doc_details.discount_percentage, 20)
 
-		price_doc_details = frappe.db.get_value(
+		price_doc_details = nts .db.get_value(
 			"Pricing Rule", price_rules[0].name, ["customer", "min_qty", "discount_percentage"], as_dict=1
 		)
 		self.assertTrue(price_doc_details.customer, "_Test Customer")
 		self.assertTrue(price_doc_details.min_qty, 6)
 
-		frappe.delete_doc("Promotional Scheme", ps.name)
-		price_rules = frappe.get_all(
+		nts .delete_doc("Promotional Scheme", ps.name)
+		price_rules = nts .get_all(
 			"Pricing Rule",
 			fields=["promotional_scheme_id", "name"],
 			filters={"promotional_scheme": ps.name},
@@ -62,17 +62,17 @@ class TestPromotionalScheme(unittest.TestCase):
 
 	def test_promotional_scheme_without_applicable_for(self):
 		ps = make_promotional_scheme()
-		price_rules = frappe.get_all("Pricing Rule", filters={"promotional_scheme": ps.name})
+		price_rules = nts .get_all("Pricing Rule", filters={"promotional_scheme": ps.name})
 
 		self.assertTrue(len(price_rules), 1)
-		frappe.delete_doc("Promotional Scheme", ps.name)
+		nts .delete_doc("Promotional Scheme", ps.name)
 
-		price_rules = frappe.get_all("Pricing Rule", filters={"promotional_scheme": ps.name})
+		price_rules = nts .get_all("Pricing Rule", filters={"promotional_scheme": ps.name})
 		self.assertEqual(price_rules, [])
 
 	def test_change_applicable_for_in_promotional_scheme(self):
 		ps = make_promotional_scheme()
-		price_rules = frappe.get_all("Pricing Rule", filters={"promotional_scheme": ps.name})
+		price_rules = nts .get_all("Pricing Rule", filters={"promotional_scheme": ps.name})
 		self.assertTrue(len(price_rules), 1)
 
 		so = make_sales_order(qty=5, currency="USD", do_not_save=True)
@@ -85,9 +85,9 @@ class TestPromotionalScheme(unittest.TestCase):
 
 		self.assertRaises(TransactionExists, ps.save)
 
-		frappe.delete_doc("Sales Order", so.name)
-		frappe.delete_doc("Promotional Scheme", ps.name)
-		price_rules = frappe.get_all("Pricing Rule", filters={"promotional_scheme": ps.name})
+		nts .delete_doc("Sales Order", so.name)
+		nts .delete_doc("Promotional Scheme", ps.name)
+		price_rules = nts .get_all("Pricing Rule", filters={"promotional_scheme": ps.name})
 		self.assertEqual(price_rules, [])
 
 	def test_change_applicable_for_values_in_promotional_scheme(self):
@@ -95,7 +95,7 @@ class TestPromotionalScheme(unittest.TestCase):
 		ps.append("customer", {"customer": "_Test Customer 2"})
 		ps.save()
 
-		price_rules = frappe.get_all(
+		price_rules = nts .get_all(
 			"Pricing Rule", filters={"promotional_scheme": ps.name, "applicable_for": "Customer"}
 		)
 		self.assertTrue(len(price_rules), 2)
@@ -104,7 +104,7 @@ class TestPromotionalScheme(unittest.TestCase):
 		ps.append("customer", {"customer": "_Test Customer 2"})
 		ps.save()
 
-		price_rules = frappe.get_all(
+		price_rules = nts .get_all(
 			"Pricing Rule",
 			filters={
 				"promotional_scheme": ps.name,
@@ -113,7 +113,7 @@ class TestPromotionalScheme(unittest.TestCase):
 			},
 		)
 		self.assertEqual(price_rules, [])
-		frappe.delete_doc("Promotional Scheme", ps.name)
+		nts .delete_doc("Promotional Scheme", ps.name)
 
 	def test_min_max_amount_configuration(self):
 		ps = make_promotional_scheme()
@@ -121,15 +121,15 @@ class TestPromotionalScheme(unittest.TestCase):
 		ps.price_discount_slabs[0].max_amount = 1000
 		ps.save()
 
-		price_rules_data = frappe.db.get_value(
+		price_rules_data = nts .db.get_value(
 			"Pricing Rule", {"promotional_scheme": ps.name}, ["min_amt", "max_amt"], as_dict=1
 		)
 
 		self.assertEqual(price_rules_data.min_amt, 10)
 		self.assertEqual(price_rules_data.max_amt, 1000)
 
-		frappe.delete_doc("Promotional Scheme", ps.name)
-		price_rules = frappe.get_all("Pricing Rule", filters={"promotional_scheme": ps.name})
+		nts .delete_doc("Promotional Scheme", ps.name)
+		price_rules = nts .get_all("Pricing Rule", filters={"promotional_scheme": ps.name})
 		self.assertEqual(price_rules, [])
 
 	def test_pricing_rule_for_product_discount_slabs(self):
@@ -149,7 +149,7 @@ class TestPromotionalScheme(unittest.TestCase):
 			],
 		)
 		ps.save()
-		pr = frappe.get_doc("Pricing Rule", {"promotional_scheme_id": ps.product_discount_slabs[0].name})
+		pr = nts .get_doc("Pricing Rule", {"promotional_scheme_id": ps.product_discount_slabs[0].name})
 		self.assertSequenceEqual(
 			[pr.min_qty, pr.free_item, pr.free_qty, pr.recurse_for], [12, "_Test Item 2", 1, 12]
 		)
@@ -171,13 +171,13 @@ class TestPromotionalScheme(unittest.TestCase):
 			],
 		)
 		ps.mixed_conditions = True
-		self.assertRaises(frappe.ValidationError, ps.save)
+		self.assertRaises(nts .ValidationError, ps.save)
 
 
 def make_promotional_scheme(**args):
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 
-	ps = frappe.new_doc("Promotional Scheme")
+	ps = nts .new_doc("Promotional Scheme")
 	ps.name = "_Test Scheme"
 	ps.append("items", {"item_code": "_Test Item"})
 
@@ -196,8 +196,8 @@ def make_promotional_scheme(**args):
 	if args.applicable_for:
 		ps.applicable_for = args.applicable_for
 		ps.append(
-			frappe.scrub(args.applicable_for),
-			{frappe.scrub(args.applicable_for): args.get(frappe.scrub(args.applicable_for))},
+			nts .scrub(args.applicable_for),
+			{nts .scrub(args.applicable_for): args.get(nts .scrub(args.applicable_for))},
 		)
 
 	ps.save()

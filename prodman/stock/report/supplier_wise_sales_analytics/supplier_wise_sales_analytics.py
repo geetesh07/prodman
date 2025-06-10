@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import IfNull
-from frappe.utils import flt
+import nts
+from nts import _
+from nts.query_builder.functions import IfNull
+from nts.utils import flt
 
 
 def execute(filters=None):
@@ -71,11 +71,11 @@ def get_columns(filters):
 
 
 def get_consumed_details(filters):
-	item = frappe.qb.DocType("Item")
-	sle = frappe.qb.DocType("Stock Ledger Entry")
+	item = nts.qb.DocType("Item")
+	sle = nts.qb.DocType("Stock Ledger Entry")
 
 	query = (
-		frappe.qb.from_(sle)
+		nts.qb.from_(sle)
 		.from_(item)
 		.select(
 			sle.item_code,
@@ -106,12 +106,12 @@ def get_suppliers_details(filters):
 	item_supplier_map = {}
 	supplier = filters.get("supplier")
 
-	item = frappe.qb.DocType("Item")
-	pr = frappe.qb.DocType("Purchase Receipt")
-	pr_item = frappe.qb.DocType("Purchase Receipt Item")
+	item = nts.qb.DocType("Item")
+	pr = nts.qb.DocType("Purchase Receipt")
+	pr_item = nts.qb.DocType("Purchase Receipt Item")
 
 	query = (
-		frappe.qb.from_(pr)
+		nts.qb.from_(pr)
 		.from_(pr_item)
 		.select(pr.supplier, pr_item.item_code)
 		.where(
@@ -120,7 +120,7 @@ def get_suppliers_details(filters):
 			& (
 				pr_item.item_code
 				== (
-					frappe.qb.from_(item)
+					nts.qb.from_(item)
 					.select(item.name)
 					.where((item.is_stock_item == 1) & (item.name == pr_item.item_code))
 				)
@@ -131,11 +131,11 @@ def get_suppliers_details(filters):
 	for d in query.run(as_dict=True):
 		item_supplier_map.setdefault(d.item_code, []).append(d.supplier)
 
-	pi = frappe.qb.DocType("Purchase Invoice")
-	pi_item = frappe.qb.DocType("Purchase Invoice Item")
+	pi = nts.qb.DocType("Purchase Invoice")
+	pi_item = nts.qb.DocType("Purchase Invoice Item")
 
 	query = (
-		frappe.qb.from_(pi)
+		nts.qb.from_(pi)
 		.from_(pi_item)
 		.select(pi.supplier, pi_item.item_code)
 		.where(
@@ -145,7 +145,7 @@ def get_suppliers_details(filters):
 			& (
 				pi_item.item_code
 				== (
-					frappe.qb.from_(item)
+					nts.qb.from_(item)
 					.select(item.name)
 					.where((item.is_stock_item == 1) & (item.name == pi_item.item_code))
 				)
@@ -170,9 +170,9 @@ def get_suppliers_details(filters):
 
 
 def get_material_transfer_vouchers():
-	se = frappe.qb.DocType("Stock Entry")
+	se = nts.qb.DocType("Stock Entry")
 	query = (
-		frappe.qb.from_(se).select(se.name).where((se.purpose == "Material Transfer") & (se.docstatus == 1))
+		nts.qb.from_(se).select(se.name).where((se.purpose == "Material Transfer") & (se.docstatus == 1))
 	)
 
 	return [r[0] for r in query.run()]

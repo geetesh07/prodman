@@ -1,6 +1,6 @@
 import unittest
 
-import frappe
+import nts
 
 import prodman
 
@@ -12,5 +12,5 @@ def test_method():
 
 class TestInit(unittest.TestCase):
 	def test_regional_overrides(self):
-		frappe.flags.country = "Maldives"
+		nts.flags.country = "Maldives"
 		self.assertEqual(test_method(), "original")

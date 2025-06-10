@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
 # For license information, please see license.txt
@@ -6,9 +6,9 @@
 
 import json
 
-import frappe
-from frappe.model.document import Document
-from frappe.utils import flt
+import nts
+from nts.model.document import Document
+from nts.utils import flt
 
 from prodman.stock.get_item_details import get_item_details, get_price_list_rate
 
@@ -20,7 +20,7 @@ class PackedItem(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		actual_batch_qty: DF.Float
 		actual_qty: DF.Float
@@ -60,7 +60,7 @@ def make_packing_list(doc):
 		return
 
 	parent_items_price, reset = {}, False
-	set_price_from_children = frappe.db.get_single_value("Selling Settings", "editable_bundle_item_rates")
+	set_price_from_children = nts.db.get_single_value("Selling Settings", "editable_bundle_item_rates")
 
 	stale_packed_items_table = get_indexed_packed_items_table(doc)
 
@@ -90,7 +90,7 @@ def make_packing_list(doc):
 
 
 def is_product_bundle(item_code: str) -> bool:
-	return bool(frappe.db.exists("Product Bundle", {"new_item_code": item_code, "disabled": 0}))
+	return bool(nts.db.exists("Product Bundle", {"new_item_code": item_code, "disabled": 0}))
 
 
 def get_indexed_packed_items_table(doc):
@@ -133,11 +133,11 @@ def reset_packing_list(doc):
 
 
 def get_product_bundle_items(item_code):
-	product_bundle = frappe.qb.DocType("Product Bundle")
-	product_bundle_item = frappe.qb.DocType("Product Bundle Item")
+	product_bundle = nts.qb.DocType("Product Bundle")
+	product_bundle_item = nts.qb.DocType("Product Bundle Item")
 
 	query = (
-		frappe.qb.from_(product_bundle_item)
+		nts.qb.from_(product_bundle_item)
 		.join(product_bundle)
 		.on(product_bundle_item.parent == product_bundle.name)
 		.select(
@@ -177,10 +177,10 @@ def add_packed_item_row(doc, packing_item, main_item_row, packed_items_table, re
 
 
 def get_packed_item_details(item_code, company):
-	item = frappe.qb.DocType("Item")
-	item_default = frappe.qb.DocType("Item Default")
+	item = nts.qb.DocType("Item")
+	item_default = nts.qb.DocType("Item Default")
 	query = (
-		frappe.qb.from_(item)
+		nts.qb.from_(item)
 		.left_join(item_default)
 		.on((item_default.parent == item.name) & (item_default.company == company))
 		.select(
@@ -225,7 +225,7 @@ def update_packed_item_stock_data(main_item_row, pi_row, packing_item, item_data
 	bin = get_packed_item_bin_qty(packing_item.item_code, pi_row.warehouse)
 	pi_row.actual_qty = flt(bin.get("actual_qty"))
 	pi_row.projected_qty = flt(bin.get("projected_qty"))
-	pi_row.use_serial_batch_fields = frappe.db.get_single_value("Stock Settings", "use_serial_batch_fields")
+	pi_row.use_serial_batch_fields = nts.db.get_single_value("Stock Settings", "use_serial_batch_fields")
 
 
 def update_packed_item_price_data(pi_row, item_data, doc):
@@ -233,7 +233,7 @@ def update_packed_item_price_data(pi_row, item_data, doc):
 	if pi_row.rate:
 		return
 
-	item_doc = frappe.get_cached_doc("Item", pi_row.item_code)
+	item_doc = nts.get_cached_doc("Item", pi_row.item_code)
 	row_data = pi_row.as_dict().copy()
 	row_data.update(
 		{
@@ -267,7 +267,7 @@ def update_packed_item_from_cancelled_doc(main_item_row, packing_item, pi_row, d
 
 
 def get_packed_item_bin_qty(item, warehouse):
-	bin_data = frappe.db.get_values(
+	bin_data = nts.db.get_values(
 		"Bin",
 		fieldname=["actual_qty", "projected_qty"],
 		filters={"item_code": item, "warehouse": warehouse},
@@ -309,10 +309,10 @@ def set_product_bundle_rate_amount(doc, parent_items_price):
 
 
 def on_doctype_update():
-	frappe.db.add_index("Packed Item", ["item_code", "warehouse"])
+	nts.db.add_index("Packed Item", ["item_code", "warehouse"])
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_items_from_product_bundle(row):
 	row, items = json.loads(row), []
 

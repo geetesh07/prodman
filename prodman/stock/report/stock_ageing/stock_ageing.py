@@ -1,17 +1,17 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 from collections.abc import Iterator
 from operator import itemgetter
 
-import frappe
-from frappe import _
-from frappe.utils import cint, date_diff, flt, get_datetime
+import nts
+from nts import _
+from nts.utils import cint, date_diff, flt, get_datetime
 
 from prodman.stock.doctype.serial_no.serial_no import get_serial_nos
 
-Filters = frappe._dict
+Filters = nts._dict
 
 
 def execute(filters: Filters = None) -> tuple:
@@ -32,7 +32,7 @@ def format_report_data(filters: Filters, item_details: dict, to_date: str) -> li
 	_func = itemgetter(1)
 	data = []
 
-	precision = cint(frappe.db.get_single_value("System Settings", "float_precision", cache=True))
+	precision = cint(nts.db.get_single_value("System Settings", "float_precision", cache=True))
 
 	for _item, item_dict in item_details.items():
 		if not flt(item_dict.get("total_qty"), precision):
@@ -79,7 +79,7 @@ def format_report_data(filters: Filters, item_details: dict, to_date: str) -> li
 def check_and_replace_valuations_if_moving_average(range_values, item_valuation_method, valuation_rate):
 	if item_valuation_method == "Moving Average" or (
 		not item_valuation_method
-		and frappe.db.get_single_value("Stock Settings", "valuation_method") == "Moving Average"
+		and nts.db.get_single_value("Stock Settings", "valuation_method") == "Moving Average"
 	):
 		for i in range(0, len(range_values), 2):
 			range_values[i + 1] = range_values[i] * valuation_rate
@@ -101,7 +101,7 @@ def get_average_age(fifo_queue: list, to_date: str) -> float:
 
 
 def get_range_age(filters: Filters, fifo_queue: list, to_date: str, item_dict: dict) -> list:
-	precision = cint(frappe.db.get_single_value("System Settings", "float_precision", cache=True))
+	precision = cint(nts.db.get_single_value("System Settings", "float_precision", cache=True))
 	range_values = [0.0] * ((len(filters.ranges) * 2) + 2)
 
 	for item in fifo_queue:
@@ -250,11 +250,11 @@ class FIFOSlots:
 
 		stock_ledger_entries = self.sle
 
-		bundle_wise_serial_nos = frappe._dict({})
+		bundle_wise_serial_nos = nts._dict({})
 		if stock_ledger_entries is None:
 			bundle_wise_serial_nos = self.__get_bundle_wise_serial_nos()
 
-		with frappe.db.unbuffered_cursor():
+		with nts.db.unbuffered_cursor():
 			if stock_ledger_entries is None:
 				stock_ledger_entries = self.__get_stock_ledger_entries()
 
@@ -420,7 +420,7 @@ class FIFOSlots:
 				item_aggregated_data.setdefault(
 					item,
 					{
-						"details": frappe._dict(),
+						"details": nts._dict(),
 						"fifo_queue": [],
 						"qty_after_transaction": 0.0,
 						"total_qty": 0.0,
@@ -436,12 +436,12 @@ class FIFOSlots:
 		return item_aggregated_data
 
 	def __get_stock_ledger_entries(self) -> Iterator[dict]:
-		sle = frappe.qb.DocType("Stock Ledger Entry")
+		sle = nts.qb.DocType("Stock Ledger Entry")
 		item = self.__get_item_query()  # used as derived table in sle query
 		to_date = get_datetime(self.filters.get("to_date") + " 23:59:59")
 
 		sle_query = (
-			frappe.qb.from_(sle)
+			nts.qb.from_(sle)
 			.from_(item)
 			.select(
 				item.name,
@@ -475,7 +475,7 @@ class FIFOSlots:
 		if self.filters.get("warehouse"):
 			sle_query = self.__get_warehouse_conditions(sle, sle_query)
 		elif self.filters.get("warehouse_type"):
-			warehouses = frappe.get_all(
+			warehouses = nts.get_all(
 				"Warehouse",
 				filters={"warehouse_type": self.filters.get("warehouse_type"), "is_group": 0},
 				pluck="name",
@@ -489,11 +489,11 @@ class FIFOSlots:
 		return sle_query.run(as_dict=True, as_iterator=True)
 
 	def __get_bundle_wise_serial_nos(self) -> dict:
-		bundle = frappe.qb.DocType("Serial and Batch Bundle")
-		entry = frappe.qb.DocType("Serial and Batch Entry")
+		bundle = nts.qb.DocType("Serial and Batch Bundle")
+		entry = nts.qb.DocType("Serial and Batch Entry")
 
 		query = (
-			frappe.qb.from_(bundle)
+			nts.qb.from_(bundle)
 			.join(entry)
 			.on(bundle.name == entry.parent)
 			.select(bundle.name, entry.serial_no)
@@ -512,16 +512,16 @@ class FIFOSlots:
 		if self.filters.get("warehouse"):
 			query = self.__get_warehouse_conditions(bundle, query)
 
-		bundle_wise_serial_nos = frappe._dict({})
+		bundle_wise_serial_nos = nts._dict({})
 		for bundle_name, serial_no in query.run():
 			bundle_wise_serial_nos.setdefault(bundle_name, []).append(serial_no)
 
 		return bundle_wise_serial_nos
 
 	def __get_item_query(self) -> str:
-		item_table = frappe.qb.DocType("Item")
+		item_table = nts.qb.DocType("Item")
 
-		item = frappe.qb.from_("Item").select(
+		item = nts.qb.from_("Item").select(
 			"name",
 			"item_name",
 			"description",
@@ -541,11 +541,11 @@ class FIFOSlots:
 		return item
 
 	def __get_warehouse_conditions(self, sle, sle_query) -> str:
-		warehouse = frappe.qb.DocType("Warehouse")
-		lft, rgt = frappe.db.get_value("Warehouse", self.filters.get("warehouse"), ["lft", "rgt"])
+		warehouse = nts.qb.DocType("Warehouse")
+		lft, rgt = nts.db.get_value("Warehouse", self.filters.get("warehouse"), ["lft", "rgt"])
 
 		warehouse_results = (
-			frappe.qb.from_(warehouse)
+			nts.qb.from_(warehouse)
 			.select("name")
 			.where((warehouse.lft >= lft) & (warehouse.rgt <= rgt))
 			.run()

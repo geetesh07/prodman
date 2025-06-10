@@ -1,10 +1,10 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Contract", {
+nts.ui.form.on("Contract", {
 	contract_template: function (frm) {
 		if (frm.doc.contract_template) {
-			frappe.call({
+			nts.call({
 				method: "prodman.crm.doctype.contract_template.contract_template.get_contract_template",
 				args: {
 					template_name: frm.doc.contract_template,
@@ -31,7 +31,7 @@ frappe.ui.form.on("Contract", {
 	},
 	party_name: function (frm) {
 		let field = frm.doc.party_type.toLowerCase() + "_name";
-		frappe.db.get_value(frm.doc.party_type, frm.doc.party_name, field, (r) => {
+		nts.db.get_value(frm.doc.party_type, frm.doc.party_name, field, (r) => {
 			frm.set_value("party_full_name", r[field]);
 		});
 	},

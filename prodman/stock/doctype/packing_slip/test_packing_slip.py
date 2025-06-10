@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 from prodman.selling.doctype.product_bundle.test_product_bundle import make_product_bundle
 from prodman.stock.doctype.delivery_note.delivery_note import make_packing_slip
@@ -11,7 +11,7 @@ from prodman.stock.doctype.delivery_note.test_delivery_note import create_delive
 from prodman.stock.doctype.item.test_item import make_item
 
 
-class TestPackingSlip(FrappeTestCase):
+class TestPackingSlip(ntsTestCase):
 	def test_packing_slip(self):
 		# Step - 1: Create a Product Bundle
 		items = create_items()
@@ -43,7 +43,7 @@ class TestPackingSlip(FrappeTestCase):
 		# Test - 1: `Packed Qty` should be updated to 4 in Delivery Note Items and Packed Items.
 		dn.load_from_db()
 		for item in dn.items:
-			if not frappe.db.exists("Product Bundle", {"new_item_code": item.item_code}):
+			if not nts.db.exists("Product Bundle", {"new_item_code": item.item_code}):
 				self.assertEqual(item.packed_qty, 4)
 
 		for item in dn.packed_items:
@@ -57,7 +57,7 @@ class TestPackingSlip(FrappeTestCase):
 		# Test - 2: `Packed Qty` should be updated to 10 in Delivery Note Items and Packed Items.
 		dn.load_from_db()
 		for item in dn.items:
-			if not frappe.db.exists("Product Bundle", {"new_item_code": item.item_code}):
+			if not nts.db.exists("Product Bundle", {"new_item_code": item.item_code}):
 				self.assertEqual(item.packed_qty, 10)
 
 		for item in dn.packed_items:
@@ -69,7 +69,7 @@ class TestPackingSlip(FrappeTestCase):
 		# Test - 3: `Packed Qty` should be updated to 4 in Delivery Note Items and Packed Items.
 		dn.load_from_db()
 		for item in dn.items:
-			if not frappe.db.exists("Product Bundle", {"new_item_code": item.item_code}):
+			if not nts.db.exists("Product Bundle", {"new_item_code": item.item_code}):
 				self.assertEqual(item.packed_qty, 6)
 
 		for item in dn.packed_items:
@@ -81,7 +81,7 @@ class TestPackingSlip(FrappeTestCase):
 		# Test - 4: `Packed Qty` should be updated to 0 in Delivery Note Items and Packed Items.
 		dn.load_from_db()
 		for item in dn.items:
-			if not frappe.db.exists("Product Bundle", {"new_item_code": item.item_code}):
+			if not nts.db.exists("Product Bundle", {"new_item_code": item.item_code}):
 				self.assertEqual(item.packed_qty, 0)
 
 		for item in dn.packed_items:
@@ -92,7 +92,7 @@ class TestPackingSlip(FrappeTestCase):
 		ps3.items[0].qty = 20
 
 		# Test - 5: Should throw an ValidationError, as Packing Slip Qty is more than Delivery Note Qty
-		self.assertRaises(frappe.exceptions.ValidationError, ps3.save)
+		self.assertRaises(nts.exceptions.ValidationError, ps3.save)
 
 		# Step - 8: Make Packing Slip for less Qty than Delivery Note
 		ps4 = make_packing_slip(dn.name)
@@ -102,7 +102,7 @@ class TestPackingSlip(FrappeTestCase):
 
 		# Test - 6: Delivery Note should throw a ValidationError on Submit, as Packed Qty and Delivery Note Qty are not the same
 		dn.load_from_db()
-		self.assertRaises(frappe.exceptions.ValidationError, dn.submit)
+		self.assertRaises(nts.exceptions.ValidationError, dn.submit)
 
 
 def create_items():

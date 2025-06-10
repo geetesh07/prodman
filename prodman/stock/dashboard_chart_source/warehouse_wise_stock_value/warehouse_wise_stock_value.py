@@ -1,13 +1,13 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils.dashboard import cache_source
+import nts
+from nts import _
+from nts.utils.dashboard import cache_source
 
 
-@frappe.whitelist()
+@nts.whitelist()
 @cache_source
 def get(
 	chart_name=None,
@@ -21,15 +21,15 @@ def get(
 	heatmap_year=None,
 ):
 	labels, datapoints = [], []
-	filters = frappe.parse_json(filters)
+	filters = nts.parse_json(filters)
 
 	warehouse_filters = [["is_group", "=", 0]]
 	if filters and filters.get("company"):
 		warehouse_filters.append(["company", "=", filters.get("company")])
 
-	warehouses = frappe.get_list("Warehouse", pluck="name", filters=warehouse_filters, order_by="name")
+	warehouses = nts.get_list("Warehouse", pluck="name", filters=warehouse_filters, order_by="name")
 
-	warehouses = frappe.get_list(
+	warehouses = nts.get_list(
 		"Bin",
 		fields=["warehouse", "sum(stock_value) stock_value"],
 		filters={"warehouse": ["IN", warehouses], "stock_value": [">", 0]},

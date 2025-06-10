@@ -1,14 +1,14 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import json
 
-import frappe
-from frappe import _, qb
-from frappe.model.document import Document
-from frappe.query_builder import Criterion
-from frappe.query_builder.functions import Abs, Sum
-from frappe.utils.data import comma_and
+import nts 
+from nts  import _, qb
+from nts .model.document import Document
+from nts .query_builder import Criterion
+from nts .query_builder.functions import Abs, Sum
+from nts .utils.data import comma_and
 
 from prodman.accounts.utils import (
 	cancel_exchange_gain_loss_journal,
@@ -24,7 +24,7 @@ class UnreconcilePayment(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.unreconcile_payment_entries.unreconcile_payment_entries import (
 			UnreconcilePaymentEntries,
@@ -40,9 +40,9 @@ class UnreconcilePayment(Document):
 	def validate(self):
 		self.supported_types = ["Payment Entry", "Journal Entry"]
 		if self.voucher_type not in self.supported_types:
-			frappe.throw(_("Only {0} are supported").format(comma_and(self.supported_types)))
+			nts .throw(_("Only {0} are supported").format(comma_and(self.supported_types)))
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def get_allocations_from_payment(self):
 		allocated_references = []
 		ple = qb.DocType("Payment Ledger Entry")
@@ -78,33 +78,33 @@ class UnreconcilePayment(Document):
 	def on_submit(self):
 		# todo: more granular unreconciliation
 		for alloc in self.allocations:
-			doc = frappe.get_doc(alloc.reference_doctype, alloc.reference_name)
+			doc = nts .get_doc(alloc.reference_doctype, alloc.reference_name)
 			unlink_ref_doc_from_payment_entries(doc, self.voucher_no)
 			cancel_exchange_gain_loss_journal(doc, self.voucher_type, self.voucher_no)
 			update_voucher_outstanding(
 				alloc.reference_doctype, alloc.reference_name, alloc.account, alloc.party_type, alloc.party
 			)
-			if doc.doctype in frappe.get_hooks("advance_payment_doctypes"):
+			if doc.doctype in nts .get_hooks("advance_payment_doctypes"):
 				doc.set_total_advance_paid()
 
-			frappe.db.set_value("Unreconcile Payment Entries", alloc.name, "unlinked", True)
+			nts .db.set_value("Unreconcile Payment Entries", alloc.name, "unlinked", True)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def doc_has_references(doctype: str | None = None, docname: str | None = None):
 	if doctype in ["Sales Invoice", "Purchase Invoice"]:
-		return frappe.db.count(
+		return nts .db.count(
 			"Payment Ledger Entry",
 			filters={"delinked": 0, "against_voucher_no": docname, "amount": ["<", 0]},
 		)
 	else:
-		return frappe.db.count(
+		return nts .db.count(
 			"Payment Ledger Entry",
 			filters={"delinked": 0, "voucher_no": docname, "against_voucher_no": ["!=", docname]},
 		)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_linked_payments_for_doc(
 	company: str | None = None, doctype: str | None = None, docname: str | None = None
 ) -> list:
@@ -160,13 +160,13 @@ def get_linked_payments_for_doc(
 	return []
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def create_unreconcile_doc_for_selection(selections=None):
 	if selections:
 		selections = json.loads(selections)
 		# assuming each row is a unique voucher
 		for row in selections:
-			unrecon = frappe.new_doc("Unreconcile Payment")
+			unrecon = nts .new_doc("Unreconcile Payment")
 			unrecon.company = row.get("company")
 			unrecon.voucher_type = row.get("voucher_type")
 			unrecon.voucher_no = row.get("voucher_no")

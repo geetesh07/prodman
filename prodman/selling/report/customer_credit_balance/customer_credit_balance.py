@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import flt
+import nts
+from nts import _
+from nts.utils import flt
 
 from prodman.selling.doctype.customer.customer import get_credit_limit, get_customer_outstanding
 
@@ -13,7 +13,7 @@ def execute(filters=None):
 	if not filters:
 		filters = {}
 	# Check if customer id is according to naming series or customer name
-	customer_naming_type = frappe.db.get_value("Selling Settings", None, "cust_master_name")
+	customer_naming_type = nts.db.get_value("Selling Settings", None, "cust_master_name")
 	columns = get_columns(customer_naming_type)
 
 	data = []
@@ -90,4 +90,4 @@ def get_details(filters):
 	if filters.get("customer"):
 		sql_query += " AND c.name = %(customer)s"
 
-	return frappe.db.sql(sql_query, filters, as_dict=1)
+	return nts.db.sql(sql_query, filters, as_dict=1)

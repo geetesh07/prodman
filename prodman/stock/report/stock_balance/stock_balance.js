@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Stock Balance"] = {
+nts.query_reports["Stock Balance"] = {
 	filters: [
 		{
 			fieldname: "company",
@@ -9,7 +9,7 @@ frappe.query_reports["Stock Balance"] = {
 			fieldtype: "Link",
 			width: "80",
 			options: "Company",
-			default: frappe.defaults.get_default("company"),
+			default: nts.defaults.get_default("company"),
 		},
 		{
 			fieldname: "from_date",
@@ -17,7 +17,7 @@ frappe.query_reports["Stock Balance"] = {
 			fieldtype: "Date",
 			width: "80",
 			reqd: 1,
-			default: frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+			default: nts.datetime.add_months(nts.datetime.get_today(), -1),
 		},
 		{
 			fieldname: "to_date",
@@ -25,7 +25,7 @@ frappe.query_reports["Stock Balance"] = {
 			fieldtype: "Date",
 			width: "80",
 			reqd: 1,
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 		},
 		{
 			fieldname: "item_group",
@@ -41,7 +41,7 @@ frappe.query_reports["Stock Balance"] = {
 			width: "80",
 			options: "Item",
 			get_query: function () {
-				let item_group = frappe.query_report.get_filter_value("item_group");
+				let item_group = nts.query_report.get_filter_value("item_group");
 
 				return {
 					query: "prodman.controllers.queries.item_query",
@@ -59,8 +59,8 @@ frappe.query_reports["Stock Balance"] = {
 			width: "80",
 			options: "Warehouse",
 			get_query: () => {
-				let warehouse_type = frappe.query_report.get_filter_value("warehouse_type");
-				let company = frappe.query_report.get_filter_value("company");
+				let warehouse_type = nts.query_report.get_filter_value("warehouse_type");
+				let company = nts.query_report.get_filter_value("company");
 
 				return {
 					filters: {

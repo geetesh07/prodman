@@ -1,10 +1,10 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.accounts");
-frappe.provide("prodman.journal_entry");
+nts .provide("prodman.accounts");
+nts .provide("prodman.journal_entry");
 
-frappe.ui.form.on("Journal Entry", {
+nts .ui.form.on("Journal Entry", {
 	setup: function (frm) {
 		frm.add_fetch("bank_account", "account", "account");
 		frm.ignore_doctypes_on_cancel_all = [
@@ -29,7 +29,7 @@ frappe.ui.form.on("Journal Entry", {
 			frm.add_custom_button(
 				__("Ledger"),
 				function () {
-					frappe.route_options = {
+					nts .route_options = {
 						voucher_no: frm.doc.name,
 						from_date: frm.doc.posting_date,
 						to_date: moment(frm.doc.modified).format("YYYY-MM-DD"),
@@ -38,7 +38,7 @@ frappe.ui.form.on("Journal Entry", {
 						categorize_by: "",
 						show_cancelled_entries: frm.doc.docstatus === 2,
 					};
-					frappe.set_route("query-report", "General Ledger");
+					nts .set_route("query-report", "General Ledger");
 				},
 				__("View")
 			);
@@ -86,16 +86,16 @@ frappe.ui.form.on("Journal Entry", {
 			);
 			if (payment_entry_references.length > 0) {
 				let rows = payment_entry_references.map((x) => "#" + x.idx);
-				frappe.throw(
+				nts .throw(
 					__("Rows: {0} have 'Payment Entry' as reference_type. This should not be set manually.", [
-						frappe.utils.comma_and(rows),
+						nts .utils.comma_and(rows),
 					])
 				);
 			}
 		}
 	},
 	make_inter_company_journal_entry: function (frm) {
-		var d = new frappe.ui.Dialog({
+		var d = new nts .ui.Dialog({
 			title: __("Select Company"),
 			fields: [
 				{
@@ -115,7 +115,7 @@ frappe.ui.form.on("Journal Entry", {
 		d.set_primary_action(__("Create"), function () {
 			d.hide();
 			var args = d.get_values();
-			frappe.call({
+			nts .call({
 				args: {
 					name: frm.doc.name,
 					voucher_type: frm.doc.voucher_type,
@@ -124,8 +124,8 @@ frappe.ui.form.on("Journal Entry", {
 				method: "prodman.accounts.doctype.journal_entry.journal_entry.make_inter_company_journal_entry",
 				callback: function (r) {
 					if (r.message) {
-						var doc = frappe.model.sync(r.message)[0];
-						frappe.set_route("Form", doc.doctype, doc.name);
+						var doc = nts .model.sync(r.message)[0];
+						nts .set_route("Form", doc.doctype, doc.name);
 					}
 				},
 			});
@@ -146,8 +146,8 @@ frappe.ui.form.on("Journal Entry", {
 	},
 
 	company: function (frm) {
-		frappe.call({
-			method: "frappe.client.get_value",
+		nts .call({
+			method: "nts .client.get_value",
 			args: {
 				doctype: "Company",
 				filters: { name: frm.doc.company },
@@ -156,7 +156,7 @@ frappe.ui.form.on("Journal Entry", {
 			callback: function (r) {
 				if (r.message) {
 					$.each(frm.doc.accounts || [], function (i, jvd) {
-						frappe.model.set_value(jvd.doctype, jvd.name, "cost_center", r.message.cost_center);
+						nts .model.set_value(jvd.doctype, jvd.name, "cost_center", r.message.cost_center);
 					});
 				}
 			},
@@ -173,7 +173,7 @@ frappe.ui.form.on("Journal Entry", {
 			((frm.doc.accounts || []).length === 1 && !frm.doc.accounts[0].account)
 		) {
 			if (["Bank Entry", "Cash Entry"].includes(frm.doc.voucher_type)) {
-				return frappe.call({
+				return nts .call({
 					type: "GET",
 					method: "prodman.accounts.doctype.journal_entry.journal_entry.get_default_bank_cash_account",
 					args: {
@@ -200,8 +200,8 @@ frappe.ui.form.on("Journal Entry", {
 
 	from_template: function (frm) {
 		if (frm.doc.from_template) {
-			frappe.db.get_doc("Journal Entry Template", frm.doc.from_template).then((doc) => {
-				frappe.model.clear_table(frm.doc, "accounts");
+			nts .db.get_doc("Journal Entry Template", frm.doc.from_template).then((doc) => {
+				nts .model.clear_table(frm.doc, "accounts");
 				frm.set_value({
 					company: doc.company,
 					voucher_type: doc.voucher_type,
@@ -217,13 +217,13 @@ frappe.ui.form.on("Journal Entry", {
 
 var update_jv_details = function (doc, r) {
 	$.each(r, function (i, d) {
-		var row = frappe.model.add_child(doc, "Journal Entry Account", "accounts");
-		frappe.model.set_value(row.doctype, row.name, "account", d.account);
+		var row = nts .model.add_child(doc, "Journal Entry Account", "accounts");
+		nts .model.set_value(row.doctype, row.name, "account", d.account);
 	});
 	refresh_field("accounts");
 };
 
-prodman.accounts.JournalEntry = class JournalEntry extends frappe.ui.form.Controller {
+prodman.accounts.JournalEntry = class JournalEntry extends nts .ui.form.Controller {
 	onload() {
 		this.load_defaults();
 		this.setup_queries();
@@ -237,13 +237,13 @@ prodman.accounts.JournalEntry = class JournalEntry extends frappe.ui.form.Contro
 	load_defaults() {
 		//this.frm.show_print_first = true;
 		if (this.frm.doc.__islocal && this.frm.doc.company) {
-			frappe.model.set_default_values(this.frm.doc);
+			nts .model.set_default_values(this.frm.doc);
 			$.each(this.frm.doc.accounts || [], function (i, jvd) {
-				frappe.model.set_default_values(jvd);
+				nts .model.set_default_values(jvd);
 			});
 			var posting_date = this.frm.doc.posting_date;
 			if (!this.frm.doc.amended_from)
-				this.frm.set_value("posting_date", posting_date || frappe.datetime.get_today());
+				this.frm.set_value("posting_date", posting_date || nts .datetime.get_today());
 		}
 	}
 
@@ -266,11 +266,11 @@ prodman.accounts.JournalEntry = class JournalEntry extends frappe.ui.form.Contro
 		});
 
 		me.frm.set_query("reference_name", "accounts", function (doc, cdt, cdn) {
-			var jvd = frappe.get_doc(cdt, cdn);
+			var jvd = nts .get_doc(cdt, cdn);
 
 			// journal entry
 			if (jvd.reference_type === "Journal Entry") {
-				frappe.model.validate_missing(jvd, "account");
+				nts .model.validate_missing(jvd, "account");
 				return {
 					query: "prodman.accounts.doctype.journal_entry.journal_entry.get_against_jv",
 					filters: {
@@ -291,15 +291,15 @@ prodman.accounts.JournalEntry = class JournalEntry extends frappe.ui.form.Contro
 					out.filters.push([jvd.reference_type, "cost_center", "in", ["", jvd.cost_center]]);
 				}
 				// account filter
-				frappe.model.validate_missing(jvd, "account");
+				nts .model.validate_missing(jvd, "account");
 				var party_account_field = jvd.reference_type === "Sales Invoice" ? "debit_to" : "credit_to";
 				out.filters.push([jvd.reference_type, party_account_field, "=", jvd.account]);
 			}
 
 			if (["Sales Order", "Purchase Order"].includes(jvd.reference_type)) {
 				// party_type and party mandatory
-				frappe.model.validate_missing(jvd, "party_type");
-				frappe.model.validate_missing(jvd, "party");
+				nts .model.validate_missing(jvd, "party_type");
+				nts .model.validate_missing(jvd, "party");
 
 				out.filters.push([jvd.reference_type, "per_billed", "<", 100]);
 			}
@@ -322,7 +322,7 @@ prodman.accounts.JournalEntry = class JournalEntry extends frappe.ui.form.Contro
 	}
 
 	reference_name(doc, cdt, cdn) {
-		var d = frappe.get_doc(cdt, cdn);
+		var d = nts .get_doc(cdt, cdn);
 
 		if (d.reference_name) {
 			if (d.reference_type === "Purchase Invoice" && !flt(d.debit)) {
@@ -345,13 +345,13 @@ prodman.accounts.JournalEntry = class JournalEntry extends frappe.ui.form.Contro
 			company: company,
 		};
 
-		return frappe.call({
+		return nts .call({
 			method: "prodman.accounts.doctype.journal_entry.journal_entry.get_outstanding",
 			args: { args: args },
 			callback: function (r) {
 				if (r.message) {
 					$.each(r.message, function (field, value) {
-						frappe.model.set_value(child.doctype, child.name, field, value);
+						nts .model.set_value(child.doctype, child.name, field, value);
 					});
 				}
 			},
@@ -359,7 +359,7 @@ prodman.accounts.JournalEntry = class JournalEntry extends frappe.ui.form.Contro
 	}
 
 	accounts_add(doc, cdt, cdn) {
-		var row = frappe.get_doc(cdt, cdn);
+		var row = nts .get_doc(cdt, cdn);
 		row.exchange_rate = 1;
 		$.each(doc.accounts, function (i, d) {
 			if (d.account && d.party && d.party_type) {
@@ -414,11 +414,11 @@ cur_frm.cscript.validate = function (doc, cdt, cdn) {
 	cur_frm.cscript.update_totals(doc);
 };
 
-frappe.ui.form.on("Journal Entry Account", {
+nts .ui.form.on("Journal Entry Account", {
 	party: function (frm, cdt, cdn) {
-		var d = frappe.get_doc(cdt, cdn);
+		var d = nts .get_doc(cdt, cdn);
 		if (!d.account && d.party_type && d.party) {
-			if (!frm.doc.company) frappe.throw(__("Please select Company"));
+			if (!frm.doc.company) nts .throw(__("Please select Company"));
 			return frm.call({
 				method: "prodman.accounts.doctype.journal_entry.journal_entry.get_party_account_and_currency",
 				child: d,
@@ -452,18 +452,18 @@ frappe.ui.form.on("Journal Entry Account", {
 	},
 
 	exchange_rate: function (frm, cdt, cdn) {
-		var company_currency = frappe.get_doc(":Company", frm.doc.company).default_currency;
+		var company_currency = nts .get_doc(":Company", frm.doc.company).default_currency;
 		var row = locals[cdt][cdn];
 
 		if (row.account_currency == company_currency || !frm.doc.multi_currency) {
-			frappe.model.set_value(cdt, cdn, "exchange_rate", 1);
+			nts .model.set_value(cdt, cdn, "exchange_rate", 1);
 		}
 
 		prodman.journal_entry.set_debit_credit_in_company_currency(frm, cdt, cdn);
 	},
 });
 
-frappe.ui.form.on("Journal Entry Account", "accounts_remove", function (frm) {
+nts .ui.form.on("Journal Entry Account", "accounts_remove", function (frm) {
 	cur_frm.cscript.update_totals(frm.doc);
 });
 
@@ -492,14 +492,14 @@ $.extend(prodman.journal_entry, {
 	set_debit_credit_in_company_currency: function (frm, cdt, cdn) {
 		var row = locals[cdt][cdn];
 
-		frappe.model.set_value(
+		nts .model.set_value(
 			cdt,
 			cdn,
 			"debit",
 			flt(flt(row.debit_in_account_currency) * row.exchange_rate, precision("debit", row))
 		);
 
-		frappe.model.set_value(
+		nts .model.set_value(
 			cdt,
 			cdn,
 			"credit",
@@ -510,14 +510,14 @@ $.extend(prodman.journal_entry, {
 	},
 
 	set_exchange_rate: function (frm, cdt, cdn) {
-		var company_currency = frappe.get_doc(":Company", frm.doc.company).default_currency;
+		var company_currency = nts .get_doc(":Company", frm.doc.company).default_currency;
 		var row = locals[cdt][cdn];
 
 		if (row.account_currency == company_currency || !frm.doc.multi_currency) {
 			row.exchange_rate = 1;
 			prodman.journal_entry.set_debit_credit_in_company_currency(frm, cdt, cdn);
 		} else if (!row.exchange_rate || row.exchange_rate == 1 || row.account_type == "Bank") {
-			frappe.call({
+			nts .call({
 				method: "prodman.accounts.doctype.journal_entry.journal_entry.get_exchange_rate",
 				args: {
 					posting_date: frm.doc.posting_date,
@@ -548,7 +548,7 @@ $.extend(prodman.journal_entry, {
 		var naming_series_default =
 			frm.fields_dict.naming_series.df.default || naming_series_options.split("\n")[0];
 
-		var dialog = new frappe.ui.Dialog({
+		var dialog = new nts .ui.Dialog({
 			title: __("Quick Journal Entry"),
 			fields: [
 				{ fieldtype: "Currency", fieldname: "debit", label: __("Amount"), reqd: 1 },
@@ -607,8 +607,8 @@ $.extend(prodman.journal_entry, {
 			// this is required because triggers try to refresh the grid
 
 			var debit_row = frm.fields_dict.accounts.grid.add_new_row();
-			frappe.model.set_value(debit_row.doctype, debit_row.name, "account", values.debit_account);
-			frappe.model.set_value(
+			nts .model.set_value(debit_row.doctype, debit_row.name, "account", values.debit_account);
+			nts .model.set_value(
 				debit_row.doctype,
 				debit_row.name,
 				"debit_in_account_currency",
@@ -616,8 +616,8 @@ $.extend(prodman.journal_entry, {
 			);
 
 			var credit_row = frm.fields_dict.accounts.grid.add_new_row();
-			frappe.model.set_value(credit_row.doctype, credit_row.name, "account", values.credit_account);
-			frappe.model.set_value(
+			nts .model.set_value(credit_row.doctype, credit_row.name, "account", values.credit_account);
+			nts .model.set_value(
 				credit_row.doctype,
 				credit_row.name,
 				"credit_in_account_currency",
@@ -641,7 +641,7 @@ $.extend(prodman.journal_entry, {
 			$.extend(filters, {
 				account_currency: [
 					"in",
-					[frappe.get_doc(":Company", frm.doc.company).default_currency, null],
+					[nts .get_doc(":Company", frm.doc.company).default_currency, null],
 				],
 			});
 		}
@@ -649,7 +649,7 @@ $.extend(prodman.journal_entry, {
 	},
 
 	reverse_journal_entry: function () {
-		frappe.model.open_mapped_doc({
+		nts .model.open_mapped_doc({
 			method: "prodman.accounts.doctype.journal_entry.journal_entry.make_reverse_journal_entry",
 			frm: cur_frm,
 		});
@@ -660,10 +660,10 @@ $.extend(prodman.journal_entry, {
 	set_account_details: function (frm, dt, dn) {
 		var d = locals[dt][dn];
 		if (d.account) {
-			if (!frm.doc.company) frappe.throw(__("Please select Company first"));
-			if (!frm.doc.posting_date) frappe.throw(__("Please select Posting Date first"));
+			if (!frm.doc.company) nts .throw(__("Please select Company first"));
+			if (!frm.doc.posting_date) nts .throw(__("Please select Posting Date first"));
 
-			return frappe.call({
+			return nts .call({
 				method: "prodman.accounts.doctype.journal_entry.journal_entry.get_account_details_and_party_type",
 				args: {
 					account: d.account,

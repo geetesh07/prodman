@@ -1,4 +1,4 @@
-frappe.listview_settings["Quotation"] = {
+nts.listview_settings["Quotation"] = {
 	add_fields: ["customer_name", "base_grand_total", "status", "company", "currency", "valid_till"],
 
 	onload: function (listview) {
@@ -12,13 +12,13 @@ frappe.listview_settings["Quotation"] = {
 			};
 		}
 
-		if (frappe.model.can_create("Sales Order")) {
+		if (nts.model.can_create("Sales Order")) {
 			listview.page.add_action_item(__("Sales Order"), () => {
 				prodman.bulk_transaction_processing.create(listview, "Quotation", "Sales Order");
 			});
 		}
 
-		if (frappe.model.can_create("Sales Invoice")) {
+		if (nts.model.can_create("Sales Invoice")) {
 			listview.page.add_action_item(__("Sales Invoice"), () => {
 				prodman.bulk_transaction_processing.create(listview, "Quotation", "Sales Invoice");
 			});

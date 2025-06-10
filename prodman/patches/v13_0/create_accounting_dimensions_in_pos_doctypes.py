@@ -1,10 +1,10 @@
-import frappe
-from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+import nts
+from nts.custom.doctype.custom_field.custom_field import create_custom_field
 
 
 def execute():
-	frappe.reload_doc("accounts", "doctype", "accounting_dimension")
-	accounting_dimensions = frappe.db.sql(
+	nts.reload_doc("accounts", "doctype", "accounting_dimension")
+	accounting_dimensions = nts.db.sql(
 		"""select fieldname, label, document_type, disabled from
 		`tabAccounting Dimension`""",
 		as_dict=1,
@@ -21,11 +21,11 @@ def execute():
 			insert_after_field = "accounting_dimensions_section"
 
 		for doctype in ["POS Invoice", "POS Invoice Item"]:
-			field = frappe.db.get_value("Custom Field", {"dt": doctype, "fieldname": d.fieldname})
+			field = nts.db.get_value("Custom Field", {"dt": doctype, "fieldname": d.fieldname})
 
 			if field:
 				continue
-			meta = frappe.get_meta(doctype, cached=False)
+			meta = nts.get_meta(doctype, cached=False)
 			fieldnames = [d.fieldname for d in meta.get("fields")]
 
 			df = {
@@ -38,6 +38,6 @@ def execute():
 
 			if df["fieldname"] not in fieldnames:
 				create_custom_field(doctype, df)
-				frappe.clear_cache(doctype=doctype)
+				nts.clear_cache(doctype=doctype)
 
 		count += 1

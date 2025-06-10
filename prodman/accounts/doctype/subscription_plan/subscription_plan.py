@@ -1,12 +1,12 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
+import nts 
 from dateutil import relativedelta
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import date_diff, flt, get_first_day, get_last_day, getdate
+from nts  import _
+from nts .model.document import Document
+from nts .utils import date_diff, flt, get_first_day, get_last_day, getdate
 
 from prodman.utilities.product import get_price
 
@@ -18,7 +18,7 @@ class SubscriptionPlan(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		billing_interval: DF.Literal["Day", "Week", "Month", "Year"]
 		billing_interval_count: DF.Int
@@ -38,20 +38,20 @@ class SubscriptionPlan(Document):
 
 	def validate_interval_count(self):
 		if self.billing_interval_count < 1:
-			frappe.throw(_("Billing Interval Count cannot be less than 1"))
+			nts .throw(_("Billing Interval Count cannot be less than 1"))
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_plan_rate(
 	plan, quantity=1, customer=None, start_date=None, end_date=None, prorate_factor=1, party=None
 ):
-	plan = frappe.get_doc("Subscription Plan", plan)
+	plan = nts .get_doc("Subscription Plan", plan)
 	if plan.price_determination == "Fixed Rate":
 		return plan.cost * prorate_factor
 
 	elif plan.price_determination == "Based On Price List":
 		if customer:
-			customer_group = frappe.db.get_value("Customer", customer, "customer_group")
+			customer_group = nts .db.get_value("Customer", customer, "customer_group")
 		else:
 			customer_group = None
 
@@ -76,7 +76,7 @@ def get_plan_rate(
 		cost = plan.cost * no_of_months
 
 		# Adjust cost if start or end date is not month start or end
-		prorate = frappe.db.get_single_value("Subscription Settings", "prorate")
+		prorate = nts .db.get_single_value("Subscription Settings", "prorate")
 
 		if prorate:
 			cost -= plan.cost * get_prorate_factor(start_date, end_date)

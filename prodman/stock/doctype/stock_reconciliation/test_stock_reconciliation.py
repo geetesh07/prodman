@@ -1,4 +1,4 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 # prodman - web based ERP (http://prodman.com)
@@ -6,9 +6,9 @@
 
 import json
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, cstr, flt, nowdate, nowtime
+import nts
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import add_days, cstr, flt, nowdate, nowtime
 
 from prodman.accounts.utils import get_stock_and_account_balance
 from prodman.stock.doctype.item.test_item import create_item
@@ -28,16 +28,16 @@ from prodman.stock.tests.test_utils import StockTestMixin
 from prodman.stock.utils import get_incoming_rate, get_stock_value_on, get_valuation_method
 
 
-class TestStockReconciliation(FrappeTestCase, StockTestMixin):
+class TestStockReconciliation(ntsTestCase, StockTestMixin):
 	@classmethod
 	def setUpClass(cls):
 		create_batch_or_serial_no_items()
 		super().setUpClass()
-		frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
+		nts.db.set_single_value("Stock Settings", "allow_negative_stock", 1)
 
 	def tearDown(self):
-		frappe.local.future_sle = {}
-		frappe.flags.pop("dont_execute_stock_reposts", None)
+		nts.local.future_sle = {}
+		nts.flags.pop("dont_execute_stock_reposts", None)
 
 	def test_reco_for_fifo(self):
 		self._test_reco_sle_gle("FIFO")
@@ -49,7 +49,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 		item_code = self.make_item(properties={"valuation_method": valuation_method}).name
 
 		se1, se2, se3 = insert_existing_sle(warehouse="Stores - TCP1", item_code=item_code)
-		company = frappe.db.get_value("Warehouse", "Stores - TCP1", "company")
+		company = nts.db.get_value("Warehouse", "Stores - TCP1", "company")
 		# [[qty, valuation_rate, posting_date,
 		# 		posting_time, expected_stock_value, bin_qty, bin_valuation]]
 
@@ -84,7 +84,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			)
 
 			# check stock value
-			sle = frappe.db.sql(
+			sle = nts.db.sql(
 				"""select * from `tabStock Ledger Entry`
 				where voucher_type='Stock Reconciliation' and voucher_no=%s""",
 				stock_reco.name,
@@ -105,7 +105,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 
 				# no gl entries
 				self.assertTrue(
-					frappe.db.get_value(
+					nts.db.get_value(
 						"Stock Ledger Entry",
 						{"voucher_type": "Stock Reconciliation", "voucher_no": stock_reco.name},
 					)
@@ -162,7 +162,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			item_code=serial_item_code, warehouse=serial_warehouse, qty=5, rate=200
 		)
 
-		serial_nos = frappe.get_doc(
+		serial_nos = nts.get_doc(
 			"Serial and Batch Bundle", sr.items[0].serial_and_batch_bundle
 		).get_serial_nos()
 		self.assertEqual(len(serial_nos), 5)
@@ -185,7 +185,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			item_code=serial_item_code, warehouse=serial_warehouse, qty=5, rate=300, serial_no=serial_nos
 		)
 
-		sn_doc = frappe.get_doc("Serial and Batch Bundle", sr.items[0].serial_and_batch_bundle)
+		sn_doc = nts.get_doc("Serial and Batch Bundle", sr.items[0].serial_and_batch_bundle)
 
 		self.assertEqual(len(sn_doc.get_serial_nos()), 5)
 
@@ -205,7 +205,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 		to_delete_records.reverse()
 
 		for d in to_delete_records:
-			stock_doc = frappe.get_doc("Stock Reconciliation", d)
+			stock_doc = nts.get_doc("Stock Reconciliation", d)
 			stock_doc.cancel()
 
 	def test_stock_reco_for_batch_item(self):
@@ -216,7 +216,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 		warehouse = "_Test Warehouse for Stock Reco2 - _TC"
 		self.make_item(
 			item_code,
-			frappe._dict(
+			nts._dict(
 				{
 					"is_stock_item": 1,
 					"has_batch_no": 1,
@@ -263,7 +263,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 
 		to_delete_records.reverse()
 		for d in to_delete_records:
-			stock_doc = frappe.get_doc("Stock Reconciliation", d)
+			stock_doc = nts.get_doc("Stock Reconciliation", d)
 			stock_doc.cancel()
 
 	def test_stock_reco_for_serial_and_batch_item(self):
@@ -283,11 +283,11 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 
 		serial_nos = get_serial_nos_from_bundle(sr.items[0].serial_and_batch_bundle)
 		self.assertEqual(len(serial_nos), 1)
-		self.assertEqual(frappe.db.get_value("Serial No", serial_nos[0], "batch_no"), batch_no)
+		self.assertEqual(nts.db.get_value("Serial No", serial_nos[0], "batch_no"), batch_no)
 
 		sr.cancel()
 
-		self.assertEqual(frappe.db.get_value("Serial No", serial_nos[0], "warehouse"), None)
+		self.assertEqual(nts.db.get_value("Serial No", serial_nos[0], "warehouse"), None)
 
 	def test_stock_reco_for_serial_and_batch_item_with_future_dependent_entry(self):
 		"""
@@ -334,11 +334,11 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 		self.assertEqual(batch_qty, 1)
 
 		# Check if Serial No from Stock Reconcilation is intact
-		self.assertEqual(frappe.db.get_value("Serial No", reco_serial_no, "batch_no"), batch_no)
-		self.assertTrue(frappe.db.get_value("Serial No", reco_serial_no, "warehouse"))
+		self.assertEqual(nts.db.get_value("Serial No", reco_serial_no, "batch_no"), batch_no)
+		self.assertTrue(nts.db.get_value("Serial No", reco_serial_no, "warehouse"))
 
 		# Check if Serial No from Stock Entry is Unlinked and Inactive
-		self.assertFalse(frappe.db.get_value("Serial No", serial_no_2, "warehouse"))
+		self.assertFalse(nts.db.get_value("Serial No", serial_no_2, "warehouse"))
 
 		stock_reco.cancel()
 
@@ -368,10 +368,10 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 		item_code = self.make_item().name
 		warehouse = "_Test Warehouse - _TC"
 
-		frappe.flags.dont_execute_stock_reposts = True
+		nts.flags.dont_execute_stock_reposts = True
 
 		def assertBalance(doc, qty_after_transaction):
-			sle_balance = frappe.db.get_value(
+			sle_balance = nts.db.get_value(
 				"Stock Ledger Entry", {"voucher_no": doc.name, "is_cancelled": 0}, "qty_after_transaction"
 			)
 			self.assertEqual(sle_balance, qty_after_transaction)
@@ -441,10 +441,10 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			item_code=item_code, warehouse=warehouse, qty=2, rate=120, posting_date=nowdate()
 		)
 
-		pr1_balance = frappe.db.get_value(
+		pr1_balance = nts.db.get_value(
 			"Stock Ledger Entry", {"voucher_no": pr1.name, "is_cancelled": 0}, "qty_after_transaction"
 		)
-		dn2_balance = frappe.db.get_value(
+		dn2_balance = nts.db.get_value(
 			"Stock Ledger Entry", {"voucher_no": dn2.name, "is_cancelled": 0}, "qty_after_transaction"
 		)
 		self.assertEqual(pr1_balance, 10)
@@ -494,7 +494,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			item_code=item_code, warehouse=warehouse, qty=100, rate=120, posting_date=nowdate()
 		)
 
-		dn_balance = frappe.db.get_value(
+		dn_balance = nts.db.get_value(
 			"Stock Ledger Entry", {"voucher_no": dn.name, "is_cancelled": 0}, "qty_after_transaction"
 		)
 		self.assertEqual(dn_balance, 0)
@@ -503,7 +503,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 		self.assertRaises(NegativeStockError, sr.cancel)
 
 		repost_exists = bool(
-			frappe.db.exists("Repost Item Valuation", {"voucher_no": sr.name, "status": "Queued"})
+			nts.db.exists("Repost Item Valuation", {"voucher_no": sr.name, "status": "Queued"})
 		)
 		self.assertFalse(repost_exists, msg="Negative stock validation not working on reco cancellation")
 
@@ -519,10 +519,10 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 		"""
 		from prodman.stock.doctype.delivery_note.test_delivery_note import create_delivery_note
 
-		frappe.db.rollback()
+		nts.db.rollback()
 
 		# repost will make this test useless, qty should update in realtime without reposts
-		frappe.flags.dont_execute_stock_reposts = True
+		nts.flags.dont_execute_stock_reposts = True
 
 		item_code = self.make_item().name
 		warehouse = "_Test Warehouse - _TC"
@@ -534,25 +534,25 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 		create_delivery_note(
 			item_code=item_code, warehouse=warehouse, qty=5, rate=120, posting_date=add_days(nowdate(), 12)
 		)
-		old_bin_qty = frappe.db.get_value(
+		old_bin_qty = nts.db.get_value(
 			"Bin", {"item_code": item_code, "warehouse": warehouse}, "actual_qty"
 		)
 
 		create_stock_reconciliation(
 			item_code=item_code, warehouse=warehouse, qty=11, rate=100, posting_date=add_days(nowdate(), 11)
 		)
-		new_bin_qty = frappe.db.get_value(
+		new_bin_qty = nts.db.get_value(
 			"Bin", {"item_code": item_code, "warehouse": warehouse}, "actual_qty"
 		)
 
 		self.assertEqual(old_bin_qty + 1, new_bin_qty)
-		frappe.db.rollback()
+		nts.db.rollback()
 
 	def test_valid_batch(self):
 		create_batch_item_with_batch("Testing Batch Item 1", "001")
 		create_batch_item_with_batch("Testing Batch Item 2", "002")
 
-		doc = frappe.get_doc(
+		doc = nts.get_doc(
 			{
 				"doctype": "Serial and Batch Bundle",
 				"item_code": "Testing Batch Item 1",
@@ -568,7 +568,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			}
 		)
 
-		self.assertRaises(frappe.ValidationError, doc.save)
+		self.assertRaises(nts.ValidationError, doc.save)
 
 	def test_serial_no_cancellation(self):
 		from prodman.stock.doctype.stock_entry.test_stock_entry import make_stock_entry
@@ -593,7 +593,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 		)
 		sr.cancel()
 
-		active_sr_no = frappe.get_all(
+		active_sr_no = nts.get_all(
 			"Serial No", filters={"item_code": item_code, "warehouse": warehouse, "status": "Active"}
 		)
 
@@ -608,8 +608,8 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 		item_code = item.name
 		warehouse = "_Test Warehouse - _TC"
 
-		if not frappe.db.exists("Serial No", "SR-CREATED-SR-NO"):
-			frappe.get_doc(
+		if not nts.db.exists("Serial No", "SR-CREATED-SR-NO"):
+			nts.get_doc(
 				{
 					"doctype": "Serial No",
 					"item_code": item_code,
@@ -629,13 +629,13 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 		self.assertEqual(cstr(sr.items[0].current_serial_no), "")
 		sr.submit()
 
-		active_sr_no = frappe.get_all(
+		active_sr_no = nts.get_all(
 			"Serial No", filters={"item_code": item_code, "warehouse": warehouse, "status": "Active"}
 		)
 		self.assertEqual(len(active_sr_no), 1)
 
 		sr.cancel()
-		active_sr_no = frappe.get_all(
+		active_sr_no = nts.get_all(
 			"Serial No", filters={"item_code": item_code, "warehouse": warehouse, "status": "Active"}
 		)
 		self.assertEqual(len(active_sr_no), 0)
@@ -662,7 +662,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			rate=100,
 		)
 
-		sl_entry = frappe.db.get_value(
+		sl_entry = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_type": "Stock Reconciliation", "voucher_no": sr.name},
 			["actual_qty", "qty_after_transaction"],
@@ -715,7 +715,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			rate=100,
 		)
 
-		sle = frappe.get_all(
+		sle = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"is_cancelled": 0, "voucher_no": stock_reco.name, "actual_qty": ("<", 0)},
 			fields=["actual_qty"],
@@ -733,14 +733,14 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			basic_rate=700,
 		)
 
-		self.assertFalse(frappe.db.exists("Repost Item Valuation", {"voucher_no": stock_reco.name}))
+		self.assertFalse(nts.db.exists("Repost Item Valuation", {"voucher_no": stock_reco.name}))
 
 		# Cancel the backdated Stock Entry se2,
 		# Since Stock Reco entry in the future the Balace Qty should remain as it's (50)
 
 		se2.cancel()
 
-		sle = frappe.get_all(
+		sle = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"item_code": item_code, "warehouse": warehouse, "is_cancelled": 0},
 			fields=["qty_after_transaction", "actual_qty", "voucher_type", "voucher_no"],
@@ -749,7 +749,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 
 		self.assertEqual(flt(sle[0].qty_after_transaction), flt(50.0))
 
-		sle = frappe.get_all(
+		sle = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"is_cancelled": 0, "voucher_no": stock_reco.name, "actual_qty": ("<", 0)},
 			fields=["actual_qty"],
@@ -843,7 +843,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 				qty=0.0,
 			)
 
-			serial_batch_bundle = frappe.get_all(
+			serial_batch_bundle = nts.get_all(
 				"Stock Ledger Entry",
 				{"item_code": item_code, "warehouse": warehouse, "is_cancelled": 0, "voucher_no": _reco.name},
 				"serial_and_batch_bundle",
@@ -853,7 +853,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 
 			_reco.cancel()
 
-			serial_batch_bundle = frappe.get_all(
+			serial_batch_bundle = nts.get_all(
 				"Stock Ledger Entry",
 				{"item_code": item_code, "warehouse": warehouse, "is_cancelled": 0, "voucher_no": _reco.name},
 				"serial_and_batch_bundle",
@@ -889,7 +889,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			serial_no=serial_nos,
 		)
 
-		data = frappe.get_all(
+		data = nts.get_all(
 			"Stock Ledger Entry",
 			fields=["serial_no", "actual_qty", "stock_value_difference"],
 			filters={"voucher_no": sr1.name, "is_cancelled": 0},
@@ -909,7 +909,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			item_code=item_code, warehouse=warehouse, qty=10, rate=200, posting_date=add_days(nowdate(), -5)
 		)
 
-		data = frappe.get_all(
+		data = nts.get_all(
 			"Stock Ledger Entry",
 			fields=["serial_no", "actual_qty", "stock_value_difference"],
 			filters={"voucher_no": sr1.name, "is_cancelled": 0},
@@ -924,7 +924,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 				self.assertEqual(d.actual_qty, 5.0)
 				self.assertAlmostEqual(d.stock_value_difference, 500.0)
 
-		active_serial_no = frappe.get_all("Serial No", filters={"status": "Active", "item_code": item_code})
+		active_serial_no = nts.get_all("Serial No", filters={"status": "Active", "item_code": item_code})
 		self.assertEqual(len(active_serial_no), 5)
 
 	def test_balance_qty_for_batch_with_backdated_stock_reco_and_future_entries(self):
@@ -976,7 +976,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			posting_date=nowdate(),
 		)
 
-		sle = frappe.get_all(
+		sle = nts.get_all(
 			"Stock Ledger Entry",
 			filters={
 				"item_code": item.name,
@@ -1015,7 +1015,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 		sr.save()
 		sr.submit()
 
-		sle = frappe.get_all(
+		sle = nts.get_all(
 			"Stock Ledger Entry",
 			filters={
 				"item_code": item.name,
@@ -1098,7 +1098,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			)
 
 			batch_no = get_batch_from_bundle(se.items[0].serial_and_batch_bundle)
-			batches.append(frappe._dict({"batch_no": batch_no, "qty": qty}))
+			batches.append(nts._dict({"batch_no": batch_no, "qty": qty}))
 
 		sr = create_stock_reconciliation(
 			item_code=item.name,
@@ -1114,7 +1114,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 
 		self.assertTrue(sr.items[0].current_valuation_rate)
 		current_sabb = sr.items[0].current_serial_and_batch_bundle
-		doc = frappe.get_doc("Serial and Batch Bundle", current_sabb)
+		doc = nts.get_doc("Serial and Batch Bundle", current_sabb)
 		for row in doc.entries:
 			self.assertEqual(row.batch_no, batches[0].batch_no)
 			self.assertEqual(row.qty, batches[0].qty * -1)
@@ -1122,14 +1122,14 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 		batch_qty = get_batch_qty(batches[0].batch_no, warehouse, item.name)
 		self.assertEqual(batch_qty, 100)
 
-		for row in frappe.get_all("Repost Item Valuation", filters={"voucher_no": sr.name}):
-			rdoc = frappe.get_doc("Repost Item Valuation", row.name)
+		for row in nts.get_all("Repost Item Valuation", filters={"voucher_no": sr.name}):
+			rdoc = nts.get_doc("Repost Item Valuation", row.name)
 			rdoc.cancel()
 			rdoc.delete()
 
 		sr.cancel()
 
-		for row in frappe.get_all(
+		for row in nts.get_all(
 			"Serial and Batch Bundle", fields=["docstatus"], filters={"voucher_no": sr.name}
 		):
 			self.assertEqual(row.docstatus, 2)
@@ -1172,12 +1172,12 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 
 		sr.reload()
 		current_sabb = sr.items[0].current_serial_and_batch_bundle
-		doc = frappe.get_doc("Serial and Batch Bundle", current_sabb)
+		doc = nts.get_doc("Serial and Batch Bundle", current_sabb)
 		for row in doc.entries:
 			self.assertEqual(row.serial_no, serial_nos[row.idx - 1])
 
 		sabb = sr.items[0].serial_and_batch_bundle
-		doc = frappe.get_doc("Serial and Batch Bundle", sabb)
+		doc = nts.get_doc("Serial and Batch Bundle", sabb)
 		for row in doc.entries:
 			self.assertEqual(row.qty, 1)
 			self.assertAlmostEqual(row.incoming_rate, 1000.00)
@@ -1198,12 +1198,12 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 
 		warehouse = "_Test Warehouse - _TC"
 
-		frappe.flags.ignore_serial_batch_bundle_validation = True
-		frappe.flags.use_serial_and_batch_fields = True
+		nts.flags.ignore_serial_batch_bundle_validation = True
+		nts.flags.use_serial_and_batch_fields = True
 
 		batch_id = "BH1-NRALL-S-0001"
-		if not frappe.db.exists("Batch", batch_id):
-			batch_doc = frappe.get_doc(
+		if not nts.db.exists("Batch", batch_id):
+			batch_doc = nts.get_doc(
 				{
 					"doctype": "Batch",
 					"batch_id": batch_id,
@@ -1224,7 +1224,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			qty_after_transaction += qty
 			balance_value += qty_after_transaction * valuation
 
-			doc = frappe.get_doc(
+			doc = nts.get_doc(
 				{
 					"doctype": "Stock Ledger Entry",
 					"posting_date": add_days(nowdate(), -2 * i),
@@ -1250,10 +1250,10 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			doc.submit()
 			doc.reload()
 
-		frappe.flags.ignore_serial_batch_bundle_validation = False
-		frappe.flags.use_serial_and_batch_fields = False
+		nts.flags.ignore_serial_batch_bundle_validation = False
+		nts.flags.use_serial_and_batch_fields = False
 
-		batch_doc = frappe.get_doc("Batch", batch_id)
+		batch_doc = nts.get_doc("Batch", batch_id)
 
 		qty = get_batch_qty(batch_id, warehouse, batch_item_code)
 		self.assertEqual(qty, 30)
@@ -1309,7 +1309,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			qty=15,
 		)
 
-		stock_value_difference = frappe.db.get_value(
+		stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry", {"voucher_no": se.name, "is_cancelled": 0}, "stock_value_difference"
 		)
 
@@ -1324,7 +1324,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			basic_rate=100,
 		)
 
-		stock_value_difference = frappe.db.get_value(
+		stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry", {"voucher_no": se.name, "is_cancelled": 0}, "stock_value_difference"
 		)
 
@@ -1368,13 +1368,13 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			batch_no=batch_no,
 		)
 
-		sles = frappe.get_all(
+		sles = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"voucher_no": se.name, "is_cancelled": 0},
 		)
 
 		# intentionally setting negative qty
-		doc = frappe.get_doc("Stock Ledger Entry", sles[0].name)
+		doc = nts.get_doc("Stock Ledger Entry", sles[0].name)
 		doc.db_set(
 			{
 				"actual_qty": -20,
@@ -1382,7 +1382,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			}
 		)
 
-		sabb_doc = frappe.get_doc("Serial and Batch Bundle", doc.serial_and_batch_bundle)
+		sabb_doc = nts.get_doc("Serial and Batch Bundle", doc.serial_and_batch_bundle)
 		for row in sabb_doc.entries:
 			row.db_set("qty", -20)
 
@@ -1416,7 +1416,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 		warehouse = "_Test Warehouse - _TC"
 		self.make_item(
 			item_code,
-			frappe._dict(
+			nts._dict(
 				{
 					"is_stock_item": 1,
 					"has_batch_no": 1,
@@ -1474,7 +1474,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 		self.assertEqual(sr.items[0].current_valuation_rate, 0)
 
 		batch_no = get_batch_from_bundle(sr.items[0].serial_and_batch_bundle)
-		stock_ledgers = frappe.get_all(
+		stock_ledgers = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"voucher_no": sr.name, "is_cancelled": 0},
 			pluck="name",
@@ -1502,7 +1502,7 @@ class TestStockReconciliation(FrappeTestCase, StockTestMixin):
 			posting_date=add_days(nowdate(), -1),
 		)
 
-		stock_ledgers = frappe.get_all(
+		stock_ledgers = nts.get_all(
 			"Stock Ledger Entry",
 			filters={"voucher_no": sr.name, "is_cancelled": 0},
 			pluck="name",
@@ -1522,8 +1522,8 @@ def create_batch_item_with_batch(item_name, batch_id):
 		batch_item_doc.create_new_batch = 1
 		batch_item_doc.save(ignore_permissions=True)
 
-	if not frappe.db.exists("Batch", batch_id):
-		b = frappe.new_doc("Batch")
+	if not nts.db.exists("Batch", batch_id):
+		b = nts.new_doc("Batch")
 		b.item = item_name
 		b.batch_id = batch_id
 		b.save()
@@ -1589,8 +1589,8 @@ def create_batch_or_serial_no_items():
 
 
 def create_stock_reconciliation(**args):
-	args = frappe._dict(args)
-	sr = frappe.new_doc("Stock Reconciliation")
+	args = nts._dict(args)
+	sr = nts.new_doc("Stock Reconciliation")
 	sr.purpose = args.purpose or "Stock Reconciliation"
 	sr.posting_date = args.posting_date or nowdate()
 	sr.posting_time = args.posting_time or nowtime()
@@ -1598,28 +1598,28 @@ def create_stock_reconciliation(**args):
 	sr.company = args.company or "_Test Company"
 	sr.expense_account = args.expense_account or (
 		(
-			frappe.get_cached_value("Company", sr.company, "stock_adjustment_account")
-			or frappe.get_cached_value(
+			nts.get_cached_value("Company", sr.company, "stock_adjustment_account")
+			or nts.get_cached_value(
 				"Account", {"account_type": "Stock Adjustment", "company": sr.company}, "name"
 			)
 		)
-		if frappe.get_all("Stock Ledger Entry", {"company": sr.company})
-		else frappe.get_cached_value("Account", {"account_type": "Temporary", "company": sr.company}, "name")
+		if nts.get_all("Stock Ledger Entry", {"company": sr.company})
+		else nts.get_cached_value("Account", {"account_type": "Temporary", "company": sr.company}, "name")
 	)
 	sr.cost_center = (
 		args.cost_center
-		or frappe.get_cached_value("Company", sr.company, "cost_center")
-		or frappe.get_cached_value("Cost Center", filters={"is_group": 0, "company": sr.company})
+		or nts.get_cached_value("Company", sr.company, "cost_center")
+		or nts.get_cached_value("Cost Center", filters={"is_group": 0, "company": sr.company})
 	)
 
 	bundle_id = None
 	if not args.use_serial_batch_fields and (args.batch_no or args.serial_no) and args.qty:
-		batches = frappe._dict({})
+		batches = nts._dict({})
 		if args.batch_no:
 			batches[args.batch_no] = args.qty
 
 		bundle_id = make_serial_batch_bundle(
-			frappe._dict(
+			nts._dict(
 				{
 					"item_code": args.item_code or "_Test Item",
 					"warehouse": args.warehouse or "_Test Warehouse - _TC",
@@ -1673,9 +1673,9 @@ def set_valuation_method(item_code, valuation_method):
 	if valuation_method == existing_valuation_method:
 		return
 
-	frappe.db.set_value("Item", item_code, "valuation_method", valuation_method)
+	nts.db.set_value("Item", item_code, "valuation_method", valuation_method)
 
-	for warehouse in frappe.get_all(
+	for warehouse in nts.get_all(
 		"Warehouse", filters={"company": "_Test Company"}, fields=["name", "is_group"]
 	):
 		if not warehouse.is_group:

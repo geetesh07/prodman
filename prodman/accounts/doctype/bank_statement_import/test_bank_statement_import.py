@@ -1,7 +1,7 @@
-# Copyright (c) 2020, Frappe Technologies and Contributors
+# Copyright (c) 2020, nts  Technologies and Contributors
 # See license.txt
 
-# import frappe
+# import nts 
 import unittest
 
 

@@ -1,4 +1,4 @@
-import frappe
+import nts
 
 
 def execute():
@@ -8,7 +8,7 @@ def execute():
 	"""
 
 	# update for selling
-	frappe.db.sql(
+	nts.db.sql(
 		"""UPDATE `tabItem Price` ip, `tabPrice List` pl
         SET ip.`reference` = ip.`customer`, ip.`supplier` = NULL
         WHERE ip.`selling` = 1
@@ -19,7 +19,7 @@ def execute():
 	)
 
 	# update for buying
-	frappe.db.sql(
+	nts.db.sql(
 		"""UPDATE `tabItem Price` ip, `tabPrice List` pl
         SET ip.`reference` = ip.`supplier`, ip.`customer` = NULL
         WHERE ip.`selling` = 0

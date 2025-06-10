@@ -1,13 +1,13 @@
-import frappe
-from frappe.model.utils.rename_field import rename_field
+import nts
+from nts.model.utils.rename_field import rename_field
 
 
 def execute():
-	if frappe.db.table_exists("Membership Settings"):
-		frappe.rename_doc("DocType", "Membership Settings", "Non Profit Settings")
-		frappe.reload_doctype("Non Profit Settings", force=True)
+	if nts.db.table_exists("Membership Settings"):
+		nts.rename_doc("DocType", "Membership Settings", "Non Profit Settings")
+		nts.reload_doctype("Non Profit Settings", force=True)
 
-	if frappe.db.table_exists("Non Profit Settings"):
+	if nts.db.table_exists("Non Profit Settings"):
 		rename_fields_map = {
 			"enable_invoicing": "allow_invoicing",
 			"create_for_web_forms": "automate_membership_invoicing",

@@ -1,8 +1,8 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2018, nts Technologies Pvt. Ltd. and Contributors
 // MIT License. See license.txt
-frappe.provide("frappe.desk");
+nts.provide("nts.desk");
 
-frappe.ui.form.on("Event", {
+nts.ui.form.on("Event", {
 	refresh: function (frm) {
 		frm.set_query("reference_doctype", "event_participants", function () {
 			return {
@@ -15,7 +15,7 @@ frappe.ui.form.on("Event", {
 		frm.add_custom_button(
 			__("Add Leads"),
 			function () {
-				new frappe.desk.eventParticipants(frm, "Lead");
+				new nts.desk.eventParticipants(frm, "Lead");
 			},
 			__("Add Participants")
 		);
@@ -23,7 +23,7 @@ frappe.ui.form.on("Event", {
 		frm.add_custom_button(
 			__("Add Customers"),
 			function () {
-				new frappe.desk.eventParticipants(frm, "Customer");
+				new nts.desk.eventParticipants(frm, "Customer");
 			},
 			__("Add Participants")
 		);
@@ -31,7 +31,7 @@ frappe.ui.form.on("Event", {
 		frm.add_custom_button(
 			__("Add Suppliers"),
 			function () {
-				new frappe.desk.eventParticipants(frm, "Supplier");
+				new nts.desk.eventParticipants(frm, "Supplier");
 			},
 			__("Add Participants")
 		);
@@ -39,7 +39,7 @@ frappe.ui.form.on("Event", {
 		frm.add_custom_button(
 			__("Add Employees"),
 			function () {
-				new frappe.desk.eventParticipants(frm, "Employee");
+				new nts.desk.eventParticipants(frm, "Employee");
 			},
 			__("Add Participants")
 		);
@@ -47,7 +47,7 @@ frappe.ui.form.on("Event", {
 		frm.add_custom_button(
 			__("Add Sales Partners"),
 			function () {
-				new frappe.desk.eventParticipants(frm, "Sales Partner");
+				new nts.desk.eventParticipants(frm, "Sales Partner");
 			},
 			__("Add Participants")
 		);

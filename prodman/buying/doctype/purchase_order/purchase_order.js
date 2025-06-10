@@ -1,8 +1,8 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.buying");
-frappe.provide("prodman.accounts.dimensions");
+nts.provide("prodman.buying");
+nts.provide("prodman.accounts.dimensions");
 
 cur_frm.cscript.tax_table = "Purchase Taxes and Charges";
 
@@ -10,7 +10,7 @@ prodman.accounts.taxes.setup_tax_filters("Purchase Taxes and Charges");
 prodman.accounts.taxes.setup_tax_validations("Purchase Order");
 prodman.buying.setup_buying_controller();
 
-frappe.ui.form.on("Purchase Order", {
+nts.ui.form.on("Purchase Order", {
 	setup: function (frm) {
 		frm.ignore_doctypes_on_cancel_all = ["Unreconcile Payment", "Unreconcile Payment Entries"];
 		if (frm.doc.is_old_subcontracting_flow) {
@@ -128,8 +128,8 @@ frappe.ui.form.on("Purchase Order", {
 						},
 						callback: function (r) {
 							if (r && r.message) {
-								const doc = frappe.model.sync(r.message);
-								frappe.set_route("Form", doc[0].doctype, doc[0].name);
+								const doc = nts.model.sync(r.message);
+								nts.set_route("Form", doc[0].doctype, doc[0].name);
 							}
 						},
 					});
@@ -142,7 +142,7 @@ frappe.ui.form.on("Purchase Order", {
 	onload: function (frm) {
 		set_schedule_date(frm);
 		if (!frm.doc.transaction_date) {
-			frm.set_value("transaction_date", frappe.datetime.get_today());
+			frm.set_value("transaction_date", nts.datetime.get_today());
 		}
 
 		if (frm.doc.__onload && frm.doc.supplier) {
@@ -173,7 +173,7 @@ frappe.ui.form.on("Purchase Order", {
 	},
 
 	get_subcontracting_boms_for_finished_goods: function (fg_item) {
-		return frappe.call({
+		return nts.call({
 			method: "prodman.subcontracting.doctype.subcontracting_bom.subcontracting_bom.get_subcontracting_boms_for_finished_goods",
 			args: {
 				fg_items: fg_item,
@@ -182,7 +182,7 @@ frappe.ui.form.on("Purchase Order", {
 	},
 
 	get_subcontracting_boms_for_service_item: function (service_item) {
-		return frappe.call({
+		return nts.call({
 			method: "prodman.subcontracting.doctype.subcontracting_bom.subcontracting_bom.get_subcontracting_boms_for_service_item",
 			args: {
 				service_item: service_item,
@@ -191,7 +191,7 @@ frappe.ui.form.on("Purchase Order", {
 	},
 });
 
-frappe.ui.form.on("Purchase Order Item", {
+nts.ui.form.on("Purchase Order Item", {
 	schedule_date: function (frm, cdt, cdn) {
 		var row = locals[cdt][cdn];
 		if (row.schedule_date) {
@@ -219,7 +219,7 @@ frappe.ui.form.on("Purchase Order Item", {
 						row.uom = result.message[finished_goods[0]].finished_good_uom;
 						refresh_field("items");
 					} else {
-						const dialog = new frappe.ui.Dialog({
+						const dialog = new nts.ui.Dialog({
 							title: __("Select Finished Good"),
 							size: "small",
 							fields: [
@@ -259,14 +259,14 @@ frappe.ui.form.on("Purchase Order Item", {
 				var result = await frm.events.get_subcontracting_boms_for_finished_goods(row.fg_item);
 
 				if (result.message && Object.keys(result.message).length) {
-					frappe.model.set_value(cdt, cdn, "item_code", result.message.service_item);
-					frappe.model.set_value(
+					nts.model.set_value(cdt, cdn, "item_code", result.message.service_item);
+					nts.model.set_value(
 						cdt,
 						cdn,
 						"qty",
 						flt(row.fg_item_qty) * flt(result.message.conversion_factor)
 					);
-					frappe.model.set_value(cdt, cdn, "uom", result.message.service_item_uom);
+					nts.model.set_value(cdt, cdn, "uom", result.message.service_item_uom);
 				}
 			}
 		}
@@ -284,7 +284,7 @@ frappe.ui.form.on("Purchase Order Item", {
 					row.item_code == result.message.service_item &&
 					row.uom == result.message.service_item_uom
 				) {
-					frappe.model.set_value(
+					nts.model.set_value(
 						cdt,
 						cdn,
 						"fg_item_qty",
@@ -511,28 +511,28 @@ prodman.buying.PurchaseOrderController = class PurchaseOrderController extends (
 	}
 
 	make_stock_entry() {
-		frappe.call({
+		nts.call({
 			method: "prodman.controllers.subcontracting_controller.make_rm_stock_entry",
 			args: {
 				subcontract_order: cur_frm.doc.name,
 				order_doctype: cur_frm.doc.doctype,
 			},
 			callback: function (r) {
-				var doclist = frappe.model.sync(r.message);
-				frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				var doclist = nts.model.sync(r.message);
+				nts.set_route("Form", doclist[0].doctype, doclist[0].name);
 			},
 		});
 	}
 
 	make_inter_company_order(frm) {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.buying.doctype.purchase_order.purchase_order.make_inter_company_sales_order",
 			frm: frm,
 		});
 	}
 
 	make_purchase_receipt() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.buying.doctype.purchase_order.purchase_order.make_purchase_receipt",
 			frm: cur_frm,
 			freeze_message: __("Creating Purchase Receipt ..."),
@@ -540,14 +540,14 @@ prodman.buying.PurchaseOrderController = class PurchaseOrderController extends (
 	}
 
 	make_purchase_invoice() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.buying.doctype.purchase_order.purchase_order.make_purchase_invoice",
 			frm: cur_frm,
 		});
 	}
 
 	make_subcontracting_order() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.buying.doctype.purchase_order.purchase_order.make_subcontracting_order",
 			frm: cur_frm,
 			freeze_message: __("Creating Subcontracting Order ..."),
@@ -604,7 +604,7 @@ prodman.buying.PurchaseOrderController = class PurchaseOrderController extends (
 		this.frm.add_custom_button(
 			__("Update Rate as per Last Purchase"),
 			function () {
-				frappe.call({
+				nts.call({
 					method: "get_last_purchase_rate",
 					doc: me.frm.doc,
 					callback: function (r, rt) {
@@ -625,7 +625,7 @@ prodman.buying.PurchaseOrderController = class PurchaseOrderController extends (
 						my_items.push(me.frm.doc.items[i].item_code);
 					}
 				}
-				frappe.call({
+				nts.call({
 					method: "prodman.buying.utils.get_linked_material_requests",
 					args: {
 						items: my_items,
@@ -653,7 +653,7 @@ prodman.buying.PurchaseOrderController = class PurchaseOrderController extends (
 										my_qty * me.frm.doc.items[i].conversion_factor;
 									me.frm.doc.items[i].qty = my_qty;
 
-									frappe.msgprint(
+									nts.msgprint(
 										"Assigning " +
 											d.mr_name +
 											" to " +
@@ -663,8 +663,8 @@ prodman.buying.PurchaseOrderController = class PurchaseOrderController extends (
 											")"
 									);
 									if (qty > 0) {
-										frappe.msgprint("Splitting " + qty + " units of " + d.item_code);
-										var new_row = frappe.model.add_child(
+										nts.msgprint("Splitting " + qty + " units of " + d.item_code);
+										var new_row = nts.model.add_child(
 											me.frm.doc,
 											me.frm.doc.items[i].doctype,
 											"items"
@@ -698,7 +698,7 @@ prodman.buying.PurchaseOrderController = class PurchaseOrderController extends (
 	}
 
 	items_add(doc, cdt, cdn) {
-		var row = frappe.get_doc(cdt, cdn);
+		var row = nts.get_doc(cdt, cdn);
 		if (doc.schedule_date) {
 			row.schedule_date = doc.schedule_date;
 			refresh_field("schedule_date", cdn, "items");
@@ -713,7 +713,7 @@ prodman.buying.PurchaseOrderController = class PurchaseOrderController extends (
 
 	hold_purchase_order() {
 		var me = this;
-		var d = new frappe.ui.Dialog({
+		var d = new nts.ui.Dialog({
 			title: __("Reason for Hold"),
 			fields: [
 				{
@@ -726,14 +726,14 @@ prodman.buying.PurchaseOrderController = class PurchaseOrderController extends (
 				var data = d.get_values();
 				let reason_for_hold = "Reason for hold: " + data.reason_for_hold;
 
-				frappe.call({
-					method: "frappe.desk.form.utils.add_comment",
+				nts.call({
+					method: "nts.desk.form.utils.add_comment",
 					args: {
 						reference_doctype: me.frm.doctype,
 						reference_name: me.frm.docname,
 						content: __(reason_for_hold),
-						comment_email: frappe.session.user,
-						comment_by: frappe.session.user_fullname,
+						comment_email: nts.session.user,
+						comment_by: nts.session.user_fullname,
 					},
 					callback: function (r) {
 						if (!r.exc) {
@@ -772,7 +772,7 @@ prodman.buying.PurchaseOrderController = class PurchaseOrderController extends (
 extend_cscript(cur_frm.cscript, new prodman.buying.PurchaseOrderController({ frm: cur_frm }));
 
 cur_frm.cscript.update_status = function (label, status) {
-	frappe.call({
+	nts.call({
 		method: "prodman.buying.doctype.purchase_order.purchase_order.update_status",
 		args: { status: status, name: cur_frm.doc.name },
 		callback: function (r) {
@@ -814,9 +814,9 @@ function set_schedule_date(frm) {
 	}
 }
 
-frappe.provide("prodman.buying");
+nts.provide("prodman.buying");
 
-frappe.ui.form.on("Purchase Order", "is_subcontracted", function (frm) {
+nts.ui.form.on("Purchase Order", "is_subcontracted", function (frm) {
 	if (frm.doc.is_old_subcontracting_flow) {
 		prodman.buying.get_default_bom(frm);
 	}

@@ -1,15 +1,15 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 from prodman import get_default_currency
 
 
 def execute(filters=None):
-	filters = frappe._dict(filters)
+	filters = nts._dict(filters)
 	columns = get_columns()
 	data = get_data(filters)
 	return columns, data
@@ -64,7 +64,7 @@ def get_data(filters=None):
 	sales_orders = get_sales_orders(quotations)
 	sales_invoices = get_sales_invoice(sales_orders)
 
-	for territory in frappe.get_all("Territory"):
+	for territory in nts.get_all("Territory"):
 		territory_opportunities = []
 		if opportunities:
 			territory_opportunities = list(filter(lambda x: x.territory == territory.name, opportunities))
@@ -108,8 +108,8 @@ def get_opportunities(filters):
 
 	if filters.get("transaction_date"):
 		conditions = " WHERE transaction_date between {} and {}".format(
-			frappe.db.escape(filters["transaction_date"][0]),
-			frappe.db.escape(filters["transaction_date"][1]),
+			nts.db.escape(filters["transaction_date"][0]),
+			nts.db.escape(filters["transaction_date"][1]),
 		)
 
 	if filters.company:
@@ -119,7 +119,7 @@ def get_opportunities(filters):
 			conditions += " WHERE"
 		conditions += " company = %(company)s"
 
-	return frappe.db.sql(
+	return nts.db.sql(
 		f"""
 		SELECT name, territory, opportunity_amount
 		FROM `tabOpportunity` {conditions}
@@ -135,7 +135,7 @@ def get_quotations(opportunities):
 
 	opportunity_names = [o.name for o in opportunities]
 
-	return frappe.db.sql(
+	return nts.db.sql(
 		"""
 		SELECT `name`,`base_grand_total`, `opportunity`
 		FROM `tabQuotation`
@@ -152,7 +152,7 @@ def get_sales_orders(quotations):
 
 	quotation_names = [q.name for q in quotations]
 
-	return frappe.db.sql(
+	return nts.db.sql(
 		"""
 	SELECT so.`name`, so.`base_grand_total`, soi.prevdoc_docname as quotation
 	FROM `tabSales Order` so, `tabSales Order Item` soi
@@ -169,7 +169,7 @@ def get_sales_invoice(sales_orders):
 
 	so_names = [so.name for so in sales_orders]
 
-	return frappe.db.sql(
+	return nts.db.sql(
 		"""
 	SELECT si.name, si.base_grand_total, sii.sales_order
 	FROM `tabSales Invoice` si, `tabSales Invoice Item` sii

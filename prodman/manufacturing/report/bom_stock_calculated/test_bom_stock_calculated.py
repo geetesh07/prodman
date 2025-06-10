@@ -1,7 +1,7 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-from frappe.tests.utils import FrappeTestCase
+from nts.tests.utils import ntsTestCase
 
 from prodman.manufacturing.doctype.production_plan.test_production_plan import make_bom
 from prodman.manufacturing.report.bom_stock_calculated.bom_stock_calculated import (
@@ -10,7 +10,7 @@ from prodman.manufacturing.report.bom_stock_calculated.bom_stock_calculated impo
 from prodman.stock.doctype.item.test_item import make_item
 
 
-class TestBOMStockCalculated(FrappeTestCase):
+class TestBOMStockCalculated(ntsTestCase):
 	def setUp(self):
 		self.fg_item, self.rm_items = create_items()
 		self.boms = create_boms(self.fg_item, self.rm_items)

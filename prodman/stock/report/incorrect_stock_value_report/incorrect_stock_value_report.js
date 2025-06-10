@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Incorrect Stock Value Report"] = {
+nts.query_reports["Incorrect Stock Value Report"] = {
 	filters: [
 		{
 			label: __("Company"),
@@ -9,7 +9,7 @@ frappe.query_reports["Incorrect Stock Value Report"] = {
 			fieldtype: "Link",
 			options: "Company",
 			reqd: 1,
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 		},
 		{
 			label: __("Account"),
@@ -17,7 +17,7 @@ frappe.query_reports["Incorrect Stock Value Report"] = {
 			fieldtype: "Link",
 			options: "Account",
 			get_query: function () {
-				var company = frappe.query_report.get_filter_value("company");
+				var company = nts.query_report.get_filter_value("company");
 				return {
 					filters: {
 						account_type: "Stock",

@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 # coding=utf-8
 
 
-import frappe
-from frappe import _
-from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
-from frappe.permissions import add_permission, update_permission_property
+import nts
+from nts import _
+from nts.custom.doctype.custom_field.custom_field import create_custom_fields
+from nts.permissions import add_permission, update_permission_property
 
 from prodman.regional.italy import (
 	fiscal_regimes,
@@ -111,7 +111,7 @@ def make_custom_fields(update=True):
 				fieldtype="Select",
 				insert_after="sb_e_invoicing",
 				print_hide=1,
-				options="\n".join(map(lambda x: frappe.safe_decode(x, encoding="utf-8"), fiscal_regimes)),
+				options="\n".join(map(lambda x: nts.safe_decode(x, encoding="utf-8"), fiscal_regimes)),
 			),
 			dict(
 				fieldname="fiscal_code",
@@ -128,7 +128,7 @@ def make_custom_fields(update=True):
 				insert_after="fiscal_code",
 				print_hide=1,
 				options="\n".join(
-					map(lambda x: frappe.safe_decode(x, encoding="utf-8"), vat_collectability_options)
+					map(lambda x: nts.safe_decode(x, encoding="utf-8"), vat_collectability_options)
 				),
 			),
 			dict(
@@ -188,7 +188,7 @@ def make_custom_fields(update=True):
 				print_hide=1,
 				depends_on='eval:doc.charge_type!="Actual" && doc.rate==0.0',
 				options="\n"
-				+ "\n".join(map(lambda x: frappe.safe_decode(x, encoding="utf-8"), tax_exemption_reasons)),
+				+ "\n".join(map(lambda x: nts.safe_decode(x, encoding="utf-8"), tax_exemption_reasons)),
 			),
 			dict(
 				fieldname="tax_exemption_law",
@@ -256,7 +256,7 @@ def make_custom_fields(update=True):
 				insert_after="included_in_print_rate",
 				print_hide=1,
 				options="\n".join(
-					map(lambda x: frappe.safe_decode(x, encoding="utf-8"), mode_of_payment_codes)
+					map(lambda x: nts.safe_decode(x, encoding="utf-8"), mode_of_payment_codes)
 				),
 			)
 		],
@@ -268,7 +268,7 @@ def make_custom_fields(update=True):
 				insert_after="mode_of_payment",
 				print_hide=1,
 				options="\n".join(
-					map(lambda x: frappe.safe_decode(x, encoding="utf-8"), mode_of_payment_codes)
+					map(lambda x: nts.safe_decode(x, encoding="utf-8"), mode_of_payment_codes)
 				),
 				fetch_from="mode_of_payment.mode_of_payment_code",
 				read_only=1,
@@ -326,7 +326,7 @@ def make_custom_fields(update=True):
 				insert_after="taxes_and_charges",
 				print_hide=1,
 				options="\n".join(
-					map(lambda x: frappe.safe_decode(x, encoding="utf-8"), vat_collectability_options)
+					map(lambda x: nts.safe_decode(x, encoding="utf-8"), vat_collectability_options)
 				),
 				fetch_from="company.vat_collectability",
 			),
@@ -460,15 +460,15 @@ def make_custom_fields(update=True):
 		],
 	}
 
-	create_custom_fields(custom_fields, ignore_validate=frappe.flags.in_patch, update=update)
+	create_custom_fields(custom_fields, ignore_validate=nts.flags.in_patch, update=update)
 
 
 def setup_report():
 	report_name = "Electronic Invoice Register"
-	frappe.db.set_value("Report", report_name, "disabled", 0)
+	nts.db.set_value("Report", report_name, "disabled", 0)
 
-	if not frappe.db.get_value("Custom Role", dict(report=report_name)):
-		frappe.get_doc(
+	if not nts.db.get_value("Custom Role", dict(report=report_name)):
+		nts.get_doc(
 			dict(
 				doctype="Custom Role",
 				report=report_name,

@@ -1,5 +1,5 @@
-frappe.pages["bom-comparison-tool"].on_page_load = function (wrapper) {
-	var page = frappe.ui.make_app_page({
+nts.pages["bom-comparison-tool"].on_page_load = function (wrapper) {
+	var page = nts.ui.make_app_page({
 		parent: wrapper,
 		title: __("BOM Comparison Tool"),
 		single_column: true,
@@ -15,7 +15,7 @@ prodman.BOMComparisonTool = class BOMComparisonTool {
 	}
 
 	make_form() {
-		this.form = new frappe.ui.FieldGroup({
+		this.form = new nts.ui.FieldGroup({
 			fields: [
 				{
 					label: __("BOM 1"),
@@ -75,14 +75,14 @@ prodman.BOMComparisonTool = class BOMComparisonTool {
 			</div>
 		`);
 
-		frappe
+		nts
 			.call("prodman.manufacturing.doctype.bom.bom.get_bom_diff", {
 				bom1: name1,
 				bom2: name2,
 			})
 			.then((r) => {
 				let diff = r.message;
-				frappe.model.with_doctype("BOM", () => {
+				nts.model.with_doctype("BOM", () => {
 					this.render("BOM", name1, name2, diff);
 				});
 			});
@@ -95,7 +95,7 @@ prodman.BOMComparisonTool = class BOMComparisonTool {
 					let [fieldname, value1, value2] = change;
 					return `
 						<tr>
-							<td>${frappe.meta.get_label(doctype, fieldname)}</td>
+							<td>${nts.meta.get_label(doctype, fieldname)}</td>
 							<td>${value1}</td>
 							<td>${value2}</td>
 						</tr>
@@ -125,12 +125,12 @@ prodman.BOMComparisonTool = class BOMComparisonTool {
 		let table_changes = Object.keys(row_changes_by_fieldname)
 			.map((fieldname) => {
 				let changes = row_changes_by_fieldname[fieldname];
-				let df = frappe.meta.get_docfield(doctype, fieldname);
+				let df = nts.meta.get_docfield(doctype, fieldname);
 
 				let html = changes
 					.map((change) => {
 						let [fieldname, , item_code, changes] = change;
-						let df = frappe.meta.get_docfield(doctype, fieldname);
+						let df = nts.meta.get_docfield(doctype, fieldname);
 						let child_doctype = df.options;
 						let values_changed = this.get_changed_values(child_doctype, changes);
 
@@ -142,7 +142,7 @@ prodman.BOMComparisonTool = class BOMComparisonTool {
 								return `
 						<tr>
 							${th}
-							<td>${frappe.meta.get_label(child_doctype, fieldname)}</td>
+							<td>${nts.meta.get_label(child_doctype, fieldname)}</td>
 							<td>${value1}</td>
 							<td>${value2}</td>
 						</tr>
@@ -171,8 +171,8 @@ prodman.BOMComparisonTool = class BOMComparisonTool {
 			return Object.keys(grouped_items)
 				.map((fieldname) => {
 					let rows = grouped_items[fieldname];
-					let df = frappe.meta.get_docfield(doctype, fieldname);
-					let fields = frappe.meta.get_docfields(df.options).filter((df) => df.in_list_view);
+					let df = nts.meta.get_docfield(doctype, fieldname);
+					let fields = nts.meta.get_docfields(df.options).filter((df) => df.in_list_view);
 
 					let html = rows
 						.map((row) => {
@@ -216,7 +216,7 @@ prodman.BOMComparisonTool = class BOMComparisonTool {
 			if (!value1) value1 = "";
 			if (!value2) value2 = "";
 			if (value1 === value2) return false;
-			let df = frappe.meta.get_docfield(doctype, fieldname);
+			let df = nts.meta.get_docfield(doctype, fieldname);
 			if (!df) return false;
 			if (df.hidden) return false;
 			return true;

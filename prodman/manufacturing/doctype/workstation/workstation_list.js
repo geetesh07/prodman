@@ -1,4 +1,4 @@
-frappe.listview_settings["Workstation"] = {
+nts.listview_settings["Workstation"] = {
 	add_fields: ["status"],
 	get_indicator: function (doc) {
 		let color_map = {

@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import cint, flt
+import nts 
+from nts  import _
+from nts .utils import cint, flt
 
 from prodman.accounts.report.financial_statements import (
 	compute_growth_view_data,
@@ -28,7 +28,7 @@ def execute(filters=None):
 
 	filters.period_start_date = period_list[0]["year_start_date"]
 
-	currency = filters.presentation_currency or frappe.get_cached_value(
+	currency = filters.presentation_currency or nts .get_cached_value(
 		"Company", filters.company, "default_currency"
 	)
 
@@ -115,7 +115,7 @@ def get_provisional_profit_loss(
 	total_row = {}
 	if asset:
 		total = total_row_total = 0
-		currency = currency or frappe.get_cached_value("Company", company, "default_currency")
+		currency = currency or nts .get_cached_value("Company", company, "default_currency")
 		total_row = {
 			"account_name": "'" + _("Total (Credit)") + "'",
 			"account": "'" + _("Total (Credit)") + "'",
@@ -162,7 +162,7 @@ def get_provisional_profit_loss(
 def check_opening_balance(asset, liability, equity):
 	# Check if previous year balance sheet closed
 	opening_balance = 0
-	float_precision = cint(frappe.db.get_default("float_precision")) or 2
+	float_precision = cint(nts .db.get_default("float_precision")) or 2
 	if asset:
 		opening_balance = flt(asset[-1].get("opening_balance", 0), float_precision)
 	if liability:

@@ -1,13 +1,13 @@
-// Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Process Payment Reconciliation", {
+nts .ui.form.on("Process Payment Reconciliation", {
 	onload: function (frm) {
 		// set queries
 		frm.set_query("party_type", function () {
 			return {
 				filters: {
-					name: ["in", Object.keys(frappe.boot.party_account_types)],
+					name: ["in", Object.keys(nts .boot.party_account_types)],
 				},
 			};
 		});
@@ -16,7 +16,7 @@ frappe.ui.form.on("Process Payment Reconciliation", {
 				filters: {
 					company: doc.company,
 					is_group: 0,
-					account_type: frappe.boot.party_account_types[doc.party_type],
+					account_type: nts .boot.party_account_types[doc.party_type],
 				},
 			};
 		});
@@ -61,7 +61,7 @@ frappe.ui.form.on("Process Payment Reconciliation", {
 					},
 				}).then((r) => {
 					if (!r.exc) {
-						frappe.show_alert(__("Job Started"));
+						nts .show_alert(__("Job Started"));
 						frm.reload_doc();
 					}
 				});
@@ -103,7 +103,7 @@ frappe.ui.form.on("Process Payment Reconciliation", {
 					},
 				}).then((r) => {
 					if (!r.exc) {
-						frappe.show_alert(__("Job Paused"));
+						nts .show_alert(__("Job Paused"));
 						frm.reload_doc();
 					}
 				});
@@ -123,7 +123,7 @@ frappe.ui.form.on("Process Payment Reconciliation", {
 		frm.set_value("receivable_payable_account", "");
 		frm.set_value("default_advance_account", "");
 		if (!frm.doc.receivable_payable_account && frm.doc.party_type && frm.doc.party) {
-			return frappe.call({
+			return nts .call({
 				method: "prodman.accounts.party.get_party_account",
 				args: {
 					company: frm.doc.company,

@@ -1,10 +1,10 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
+import nts 
+from nts  import _
+from nts .model.document import Document
 
 
 class ItemTaxTemplate(Document):
@@ -14,7 +14,7 @@ class ItemTaxTemplate(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.item_tax_template_detail.item_tax_template_detail import (
 			ItemTaxTemplateDetail,
@@ -31,7 +31,7 @@ class ItemTaxTemplate(Document):
 
 	def autoname(self):
 		if self.company and self.title:
-			abbr = frappe.get_cached_value("Company", self.company, "abbr")
+			abbr = nts .get_cached_value("Company", self.company, "abbr")
 			self.name = f"{self.title} - {abbr}"
 
 	def validate_tax_accounts(self):
@@ -39,7 +39,7 @@ class ItemTaxTemplate(Document):
 		check_list = []
 		for d in self.get("taxes"):
 			if d.tax_type:
-				account_type = frappe.get_cached_value("Account", d.tax_type, "account_type")
+				account_type = nts .get_cached_value("Account", d.tax_type, "account_type")
 
 				if account_type not in [
 					"Tax",
@@ -48,13 +48,13 @@ class ItemTaxTemplate(Document):
 					"Expense Account",
 					"Expenses Included In Valuation",
 				]:
-					frappe.throw(
+					nts .throw(
 						_(
 							"Item Tax Row {0} must have account of type Tax or Income or Expense or Chargeable"
 						).format(d.idx)
 					)
 				else:
 					if d.tax_type in check_list:
-						frappe.throw(_("{0} entered twice in Item Tax").format(d.tax_type))
+						nts .throw(_("{0} entered twice in Item Tax").format(d.tax_type))
 					else:
 						check_list.append(d.tax_type)

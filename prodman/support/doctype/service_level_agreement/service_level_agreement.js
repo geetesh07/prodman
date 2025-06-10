@@ -1,7 +1,7 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Service Level Agreement", {
+nts.ui.form.on("Service Level Agreement", {
 	setup: function (frm) {
 		if (cint(frm.doc.apply_sla_for_resolution) === 1) {
 			frm.get_field("priorities").grid.editable_fields = [
@@ -66,8 +66,8 @@ frappe.ui.form.on("Service Level Agreement", {
 		let exclude_statuses = [];
 
 		if (frm.doc.document_type) {
-			frappe.model.with_doctype(frm.doc.document_type, () => {
-				let statuses = frappe.meta.get_docfield(
+			nts.model.with_doctype(frm.doc.document_type, () => {
+				let statuses = nts.meta.get_docfield(
 					frm.doc.document_type,
 					"status",
 					frm.doc.name
@@ -114,7 +114,7 @@ frappe.ui.form.on("Service Level Agreement", {
 
 	onload: function (frm) {
 		frm.set_query("document_type", function () {
-			let invalid_doctypes = frappe.model.core_doctypes_list;
+			let invalid_doctypes = nts.model.core_doctypes_list;
 			invalid_doctypes.push(frm.doc.doctype, "Cost Center", "Company");
 
 			return {

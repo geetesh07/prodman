@@ -1,22 +1,22 @@
-# Copyright (c) 2020, Frappe and Contributors
+# Copyright (c) 2020, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe.utils import cint, cstr, flt
+import nts
+from nts.utils import cint, cstr, flt
 
 from prodman.controllers.stock_controller import create_repost_item_valuation_entry
 from prodman.stock.stock_ledger import make_sl_entries
 
 
 def execute():
-	if not frappe.db.has_column("Work Order", "has_batch_no"):
+	if not nts.db.has_column("Work Order", "has_batch_no"):
 		return
 
-	frappe.reload_doc("manufacturing", "doctype", "manufacturing_settings")
-	if cint(frappe.db.get_single_value("Manufacturing Settings", "make_serial_no_batch_from_work_order")):
+	nts.reload_doc("manufacturing", "doctype", "manufacturing_settings")
+	if cint(nts.db.get_single_value("Manufacturing Settings", "make_serial_no_batch_from_work_order")):
 		return
 
-	frappe.reload_doc("manufacturing", "doctype", "work_order")
+	nts.reload_doc("manufacturing", "doctype", "work_order")
 	filters = {
 		"docstatus": 1,
 		"produced_qty": (">", 0),
@@ -26,14 +26,14 @@ def execute():
 
 	fields = ["name", "production_item"]
 
-	work_orders = [d.name for d in frappe.get_all("Work Order", filters=filters, fields=fields)]
+	work_orders = [d.name for d in nts.get_all("Work Order", filters=filters, fields=fields)]
 
 	if not work_orders:
 		return
 
 	repost_stock_entries = []
 
-	stock_entries = frappe.db.sql_list(
+	stock_entries = nts.db.sql_list(
 		"""
 		SELECT
 			se.name
@@ -54,7 +54,7 @@ def execute():
 		print("Length of stock entries", len(stock_entries))
 
 	for stock_entry in stock_entries:
-		doc = frappe.get_doc("Stock Entry", stock_entry)
+		doc = nts.get_doc("Stock Entry", stock_entry)
 		doc.set_work_order_details()
 		doc.load_items_from_bom()
 		doc.calculate_rate_and_amount()
@@ -73,7 +73,7 @@ def execute():
 def set_expense_account(doc):
 	for row in doc.items:
 		if row.is_finished_item and not row.expense_account:
-			row.expense_account = frappe.get_cached_value("Company", doc.company, "stock_adjustment_account")
+			row.expense_account = nts.get_cached_value("Company", doc.company, "stock_adjustment_account")
 
 
 def repost_stock_entry(doc):
@@ -111,7 +111,7 @@ def get_sle_for_target_warehouse(doc, sl_entries, finished_item_row):
 
 
 def repost_future_sle_and_gle(doc):
-	args = frappe._dict(
+	args = nts._dict(
 		{
 			"posting_date": doc.posting_date,
 			"posting_time": doc.posting_time,

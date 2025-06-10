@@ -1,8 +1,8 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts 
+from nts .tests.utils import nts TestCase
 
 from prodman.accounts.report.bank_reconciliation_statement.bank_reconciliation_statement import (
 	execute,
@@ -10,14 +10,14 @@ from prodman.accounts.report.bank_reconciliation_statement.bank_reconciliation_s
 from prodman.tests.utils import if_lending_app_installed
 
 
-class TestBankReconciliationStatement(FrappeTestCase):
+class TestBankReconciliationStatement(nts TestCase):
 	def setUp(self):
 		for dt in [
 			"Journal Entry",
 			"Journal Entry Account",
 			"Payment Entry",
 		]:
-			frappe.db.delete(dt)
+			nts .db.delete(dt)
 		clear_loan_transactions()
 
 	@if_lending_app_installed
@@ -32,7 +32,7 @@ class TestBankReconciliationStatement(FrappeTestCase):
 
 		repayment_entry = create_loan_and_repayment()
 
-		filters = frappe._dict(
+		filters = nts ._dict(
 			{
 				"company": "Test Company",
 				"account": "Payment Account - _TC",
@@ -50,4 +50,4 @@ def clear_loan_transactions():
 		"Loan Disbursement",
 		"Loan Repayment",
 	]:
-		frappe.db.delete(dt)
+		nts .db.delete(dt)

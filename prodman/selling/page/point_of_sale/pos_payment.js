@@ -42,7 +42,7 @@ prodman.PointOfSale.Payment = class {
 
 	make_invoice_fields_control() {
 		this.reqd_invoice_fields = [];
-		frappe.db.get_doc("POS Settings", undefined).then((doc) => {
+		nts.db.get_doc("POS Settings", undefined).then((doc) => {
 			const fields = doc.invoice_fields;
 			if (!fields.length) return;
 
@@ -72,7 +72,7 @@ prodman.PointOfSale.Payment = class {
 					this.reqd_invoice_fields.push({ fieldname: df.fieldname, label: df.label });
 				}
 
-				this[`${df.fieldname}_field`] = frappe.ui.form.make_control({
+				this[`${df.fieldname}_field`] = nts.ui.form.make_control({
 					df: {
 						...df,
 						...df_events,
@@ -164,7 +164,7 @@ prodman.PointOfSale.Payment = class {
 			}
 		});
 
-		frappe.ui.form.on("POS Invoice", "contact_mobile", (frm) => {
+		nts.ui.form.on("POS Invoice", "contact_mobile", (frm) => {
 			const contact = frm.doc.contact_mobile;
 			const request_button = $(this.request_for_payment_field?.$input[0]);
 			if (contact) {
@@ -174,11 +174,11 @@ prodman.PointOfSale.Payment = class {
 			}
 		});
 
-		frappe.ui.form.on("POS Invoice", "coupon_code", (frm) => {
+		nts.ui.form.on("POS Invoice", "coupon_code", (frm) => {
 			if (frm.doc.coupon_code && !frm.applying_pos_coupon_code) {
 				if (!frm.doc.ignore_pricing_rule) {
 					frm.applying_pos_coupon_code = true;
-					frappe.run_serially([
+					nts.run_serially([
 						() => (frm.doc.ignore_pricing_rule = 1),
 						() => frm.trigger("ignore_pricing_rule"),
 						() => (frm.doc.ignore_pricing_rule = 0),
@@ -188,7 +188,7 @@ prodman.PointOfSale.Payment = class {
 						() => (frm.applying_pos_coupon_code = false),
 					]);
 				} else if (frm.doc.ignore_pricing_rule) {
-					frappe.show_alert({
+					nts.show_alert({
 						message: __("Ignore Pricing Rule is enabled. Cannot apply coupon code."),
 						indicator: "orange",
 					});
@@ -216,15 +216,15 @@ prodman.PointOfSale.Payment = class {
 				const message = items.length
 					? __("You cannot submit the order without payment.")
 					: __("You cannot submit empty order.");
-				frappe.show_alert({ message, indicator: "orange" });
-				frappe.utils.play_sound("error");
+				nts.show_alert({ message, indicator: "orange" });
+				nts.utils.play_sound("error");
 				return;
 			}
 
 			this.events.submit_invoice();
 		});
 
-		frappe.ui.form.on("POS Invoice", "paid_amount", (frm) => {
+		nts.ui.form.on("POS Invoice", "paid_amount", (frm) => {
 			this.update_totals_section(frm.doc);
 
 			// need to re calculate cash shortcuts after discount is applied
@@ -235,12 +235,12 @@ prodman.PointOfSale.Payment = class {
 			this.render_payment_mode_dom();
 		});
 
-		frappe.ui.form.on("POS Invoice", "loyalty_amount", (frm) => {
+		nts.ui.form.on("POS Invoice", "loyalty_amount", (frm) => {
 			const formatted_currency = format_currency(frm.doc.loyalty_amount, frm.doc.currency);
 			this.$payment_modes.find(`.loyalty-amount-amount`).html(formatted_currency);
 		});
 
-		frappe.ui.form.on("Sales Invoice Payment", "amount", (frm, cdt, cdn) => {
+		nts.ui.form.on("Sales Invoice Payment", "amount", (frm, cdt, cdn) => {
 			// for setting correct amount after loyalty points are redeemed
 			const default_mop = locals[cdt][cdn];
 			const mode = this.sanitize_mode_of_payment(default_mop.mode_of_payment);
@@ -251,18 +251,18 @@ prodman.PointOfSale.Payment = class {
 	}
 
 	setup_listener_for_payments() {
-		frappe.realtime.on("process_phone_payment", (data) => {
+		nts.realtime.on("process_phone_payment", (data) => {
 			const doc = this.events.get_frm().doc;
 			const { response, amount, success, failure_message } = data;
 			let message, title;
 
 			if (success) {
 				title = __("Payment Received");
-				const grand_total = cint(frappe.sys_defaults.disable_rounded_total)
+				const grand_total = cint(nts.sys_defaults.disable_rounded_total)
 					? doc.grand_total
 					: doc.rounded_total;
 				if (amount >= grand_total) {
-					frappe.dom.unfreeze();
+					nts.dom.unfreeze();
 					message = __("Payment of {0} received successfully.", [
 						format_currency(amount, doc.currency, 0),
 					]);
@@ -279,13 +279,13 @@ prodman.PointOfSale.Payment = class {
 				title = __("Payment Failed");
 			}
 
-			frappe.msgprint({ message: message, title: title });
+			nts.msgprint({ message: message, title: title });
 		});
 	}
 
 	auto_set_remaining_amount() {
 		const doc = this.events.get_frm().doc;
-		const grand_total = cint(frappe.sys_defaults.disable_rounded_total)
+		const grand_total = cint(nts.sys_defaults.disable_rounded_total)
 			? doc.grand_total
 			: doc.rounded_total;
 		const remaining_amount = grand_total - doc.paid_amount;
@@ -296,9 +296,9 @@ prodman.PointOfSale.Payment = class {
 	}
 
 	attach_shortcuts() {
-		const ctrl_label = frappe.utils.is_mac() ? "⌘" : "Ctrl";
+		const ctrl_label = nts.utils.is_mac() ? "⌘" : "Ctrl";
 		this.$component.find(".submit-order-btn").attr("title", `${ctrl_label}+Enter`);
-		frappe.ui.keys.on("ctrl+enter", () => {
+		nts.ui.keys.on("ctrl+enter", () => {
 			const payment_is_visible = this.$component.is(":visible");
 			const active_mode = this.$payment_modes.find(".border-primary");
 			if (payment_is_visible && active_mode.length) {
@@ -306,7 +306,7 @@ prodman.PointOfSale.Payment = class {
 			}
 		});
 
-		frappe.ui.keys.add_shortcut({
+		nts.ui.keys.add_shortcut({
 			shortcut: "tab",
 			action: () => {
 				const payment_is_visible = this.$component.is(":visible");
@@ -371,11 +371,11 @@ prodman.PointOfSale.Payment = class {
 	}
 
 	toggle_remarks_control() {
-		if (this.$remarks.find(".frappe-control").length) {
+		if (this.$remarks.find(".nts-control").length) {
 			this.$remarks.html("+ Add Remark");
 		} else {
 			this.$remarks.html("");
-			this[`remark_control`] = frappe.ui.form.make_control({
+			this[`remark_control`] = nts.ui.form.make_control({
 				df: {
 					label: __("Remark"),
 					fieldtype: "Data",
@@ -417,15 +417,15 @@ prodman.PointOfSale.Payment = class {
 		payments.forEach((p) => {
 			const mode = this.sanitize_mode_of_payment(p.mode_of_payment);
 			const me = this;
-			this[`${mode}_control`] = frappe.ui.form.make_control({
+			this[`${mode}_control`] = nts.ui.form.make_control({
 				df: {
 					label: p.mode_of_payment,
 					fieldtype: "Currency",
 					placeholder: __("Enter {0} amount.", [p.mode_of_payment]),
 					onchange: function () {
-						const current_value = frappe.model.get_value(p.doctype, p.name, "amount");
+						const current_value = nts.model.get_value(p.doctype, p.name, "amount");
 						if (current_value != this.value) {
-							frappe.model
+							nts.model
 								.set_value(p.doctype, p.name, "amount", flt(this.value))
 								.then(() => me.update_totals_section());
 
@@ -460,7 +460,7 @@ prodman.PointOfSale.Payment = class {
 	}
 
 	attach_cash_shortcuts(doc) {
-		const grand_total = cint(frappe.sys_defaults.disable_rounded_total)
+		const grand_total = cint(nts.sys_defaults.disable_rounded_total)
 			? doc.grand_total
 			: doc.rounded_total;
 		const currency = doc.currency;
@@ -533,7 +533,7 @@ prodman.PointOfSale.Payment = class {
 			</div>`
 		);
 
-		this["loyalty-amount_control"] = frappe.ui.form.make_control({
+		this["loyalty-amount_control"] = nts.ui.form.make_control({
 			df: {
 				label: __("Redeem Loyalty Points"),
 				fieldtype: "Currency",
@@ -544,24 +544,24 @@ prodman.PointOfSale.Payment = class {
 					if (!loyalty_points) return;
 
 					if (this.value > max_redeemable_amount) {
-						frappe.show_alert({
+						nts.show_alert({
 							message: __("You cannot redeem more than {0}.", [
 								format_currency(max_redeemable_amount),
 							]),
 							indicator: "red",
 						});
-						frappe.utils.play_sound("submit");
+						nts.utils.play_sound("submit");
 						me["loyalty-amount_control"].set_value(0);
 						return;
 					}
 					const redeem_loyalty_points = this.value > 0 ? 1 : 0;
-					await frappe.model.set_value(
+					await nts.model.set_value(
 						doc.doctype,
 						doc.name,
 						"redeem_loyalty_points",
 						redeem_loyalty_points
 					);
-					frappe.model.set_value(
+					nts.model.set_value(
 						doc.doctype,
 						doc.name,
 						"loyalty_points",
@@ -591,7 +591,7 @@ prodman.PointOfSale.Payment = class {
 	update_totals_section(doc) {
 		if (!doc) doc = this.events.get_frm().doc;
 		const paid_amount = doc.paid_amount;
-		const grand_total = cint(frappe.sys_defaults.disable_rounded_total)
+		const grand_total = cint(nts.sys_defaults.disable_rounded_total)
 			? doc.grand_total
 			: doc.rounded_total;
 		const remaining = grand_total - doc.paid_amount;
@@ -631,7 +631,7 @@ prodman.PointOfSale.Payment = class {
 
 	async unset_grand_total_to_default_mop() {
 		const doc = this.events.get_frm().doc;
-		let r = await frappe.db.get_value(
+		let r = await nts.db.get_value(
 			"POS Profile",
 			doc.pos_profile,
 			"disable_grand_total_to_default_mop"
@@ -648,11 +648,11 @@ prodman.PointOfSale.Payment = class {
 		for (let field of this.reqd_invoice_fields) {
 			if (!doc[field.fieldname]) {
 				validation_flag = false;
-				frappe.show_alert({
+				nts.show_alert({
 					message: __("{0} is a mandatory field.", [field.label]),
 					indicator: "orange",
 				});
-				frappe.utils.play_sound("error");
+				nts.utils.play_sound("error");
 			}
 		}
 		return validation_flag;

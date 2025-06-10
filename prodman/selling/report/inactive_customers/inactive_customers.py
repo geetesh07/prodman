@@ -1,10 +1,10 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import cint
+import nts
+from nts import _
+from nts.utils import cint
 
 
 def execute(filters=None):
@@ -15,7 +15,7 @@ def execute(filters=None):
 	doctype = filters.get("doctype")
 
 	if cint(days_since_last_order) <= 0:
-		frappe.throw(_("'Days Since Last Order' must be greater than or equal to zero"))
+		nts.throw(_("'Days Since Last Order' must be greater than or equal to zero"))
 
 	columns = get_columns()
 	customers = get_sales_details(doctype)
@@ -39,7 +39,7 @@ def get_sales_details(doctype):
 			max(so.transaction_date) as 'last_order_date',
 			DATEDIFF(CURRENT_DATE, max(so.transaction_date)) as 'days_since_last_order'"""
 
-	return frappe.db.sql(
+	return nts.db.sql(
 		f"""select
 			cust.name,
 			cust.customer_name,
@@ -59,7 +59,7 @@ def get_last_sales_amt(customer, doctype):
 	cond = "posting_date"
 	if doctype == "Sales Order":
 		cond = "transaction_date"
-	res = frappe.db.sql(
+	res = nts.db.sql(
 		f"""select base_net_total from `tab{doctype}`
 		where customer = %s and docstatus = 1 order by {cond} desc
 		limit 1""",

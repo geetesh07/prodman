@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
-import frappe
-from frappe import qb
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import add_days, flt, nowdate
+import nts 
+from nts  import qb
+from nts .tests.utils import nts TestCase, change_settings
+from nts .utils import add_days, flt, nowdate
 
 from prodman.accounts.doctype.account.test_account import create_account
 from prodman.accounts.doctype.payment_entry.payment_entry import (
@@ -28,14 +28,14 @@ from prodman.setup.doctype.employee.test_employee import make_employee
 test_dependencies = ["Item"]
 
 
-class TestPaymentEntry(FrappeTestCase):
+class TestPaymentEntry(nts TestCase):
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def get_journals_for(self, voucher_type: str, voucher_no: str) -> list:
 		journals = []
 		if voucher_type and voucher_no:
-			journals = frappe.db.get_all(
+			journals = nts .db.get_all(
 				"Journal Entry Account",
 				filters={"reference_type": voucher_type, "reference_name": voucher_no, "docstatus": 1},
 				fields=["parent"],
@@ -57,12 +57,12 @@ class TestPaymentEntry(FrappeTestCase):
 
 		self.validate_gl_entries(pe.name, expected_gle)
 
-		so_advance_paid = frappe.db.get_value("Sales Order", so.name, "advance_paid")
+		so_advance_paid = nts .db.get_value("Sales Order", so.name, "advance_paid")
 		self.assertEqual(so_advance_paid, 1000)
 
 		pe.cancel()
 
-		so_advance_paid = frappe.db.get_value("Sales Order", so.name, "advance_paid")
+		so_advance_paid = nts .db.get_value("Sales Order", so.name, "advance_paid")
 		self.assertEqual(so_advance_paid, 0)
 
 	def test_payment_against_sales_order_usd_to_inr(self):
@@ -89,27 +89,27 @@ class TestPaymentEntry(FrappeTestCase):
 
 		self.validate_gl_entries(pe.name, expected_gle)
 
-		so_advance_paid = frappe.db.get_value("Sales Order", so.name, "advance_paid")
+		so_advance_paid = nts .db.get_value("Sales Order", so.name, "advance_paid")
 		self.assertEqual(so_advance_paid, 100)
 
 		pe.cancel()
 
-		so_advance_paid = frappe.db.get_value("Sales Order", so.name, "advance_paid")
+		so_advance_paid = nts .db.get_value("Sales Order", so.name, "advance_paid")
 		self.assertEqual(so_advance_paid, 0)
 
 	def test_payment_entry_for_blocked_supplier_invoice(self):
-		supplier = frappe.get_doc("Supplier", "_Test Supplier")
+		supplier = nts .get_doc("Supplier", "_Test Supplier")
 		supplier.on_hold = 1
 		supplier.hold_type = "Invoices"
 		supplier.save()
 
-		self.assertRaises(frappe.ValidationError, make_purchase_invoice)
+		self.assertRaises(nts .ValidationError, make_purchase_invoice)
 
 		supplier.on_hold = 0
 		supplier.save()
 
 	def test_payment_entry_for_blocked_supplier_payments(self):
-		supplier = frappe.get_doc("Supplier", "_Test Supplier")
+		supplier = nts .get_doc("Supplier", "_Test Supplier")
 		supplier.on_hold = 1
 		supplier.hold_type = "Payments"
 		supplier.save()
@@ -117,7 +117,7 @@ class TestPaymentEntry(FrappeTestCase):
 		pi = make_purchase_invoice()
 
 		self.assertRaises(
-			frappe.ValidationError,
+			nts .ValidationError,
 			get_payment_entry,
 			dt="Purchase Invoice",
 			dn=pi.name,
@@ -128,7 +128,7 @@ class TestPaymentEntry(FrappeTestCase):
 		supplier.save()
 
 	def test_payment_entry_for_blocked_supplier_payments_today_date(self):
-		supplier = frappe.get_doc("Supplier", "_Test Supplier")
+		supplier = nts .get_doc("Supplier", "_Test Supplier")
 		supplier.on_hold = 1
 		supplier.hold_type = "Payments"
 		supplier.release_date = nowdate()
@@ -137,7 +137,7 @@ class TestPaymentEntry(FrappeTestCase):
 		pi = make_purchase_invoice()
 
 		self.assertRaises(
-			frappe.ValidationError,
+			nts .ValidationError,
 			get_payment_entry,
 			dt="Purchase Invoice",
 			dn=pi.name,
@@ -151,7 +151,7 @@ class TestPaymentEntry(FrappeTestCase):
 		# this test is meant to fail only if something fails in the try block
 		with self.assertRaises(Exception):
 			try:
-				supplier = frappe.get_doc("Supplier", "_Test Supplier")
+				supplier = nts .get_doc("Supplier", "_Test Supplier")
 				supplier.on_hold = 1
 				supplier.hold_type = "Payments"
 				supplier.release_date = "2018-03-01"
@@ -192,12 +192,12 @@ class TestPaymentEntry(FrappeTestCase):
 
 		self.validate_gl_entries(pe.name, expected_gle)
 
-		outstanding_amount = flt(frappe.db.get_value("Sales Invoice", si.name, "outstanding_amount"))
+		outstanding_amount = flt(nts .db.get_value("Sales Invoice", si.name, "outstanding_amount"))
 		self.assertEqual(outstanding_amount, 0)
 
 		pe.cancel()
 
-		outstanding_amount = flt(frappe.db.get_value("Sales Invoice", si.name, "outstanding_amount"))
+		outstanding_amount = flt(nts .db.get_value("Sales Invoice", si.name, "outstanding_amount"))
 		self.assertEqual(outstanding_amount, 100)
 
 	def test_payment_entry_against_pi(self):
@@ -224,7 +224,7 @@ class TestPaymentEntry(FrappeTestCase):
 
 		self.validate_gl_entries(pe.name, expected_gle)
 
-		outstanding_amount = flt(frappe.db.get_value("Sales Invoice", pi.name, "outstanding_amount"))
+		outstanding_amount = flt(nts .db.get_value("Sales Invoice", pi.name, "outstanding_amount"))
 		self.assertEqual(outstanding_amount, 0)
 
 	def test_payment_against_sales_invoice_to_check_status(self):
@@ -242,7 +242,7 @@ class TestPaymentEntry(FrappeTestCase):
 		pe.insert()
 		pe.submit()
 
-		outstanding_amount, status = frappe.db.get_value(
+		outstanding_amount, status = nts .db.get_value(
 			"Sales Invoice", si.name, ["outstanding_amount", "status"]
 		)
 		self.assertEqual(flt(outstanding_amount), 0)
@@ -250,7 +250,7 @@ class TestPaymentEntry(FrappeTestCase):
 
 		pe.cancel()
 
-		outstanding_amount, status = frappe.db.get_value(
+		outstanding_amount, status = nts .db.get_value(
 			"Sales Invoice", si.name, ["outstanding_amount", "status"]
 		)
 		self.assertEqual(flt(outstanding_amount), 100)
@@ -289,7 +289,7 @@ class TestPaymentEntry(FrappeTestCase):
 		create_payment_terms_template_with_discount()
 		pi.payment_terms_template = "Test Discount Template"
 
-		frappe.db.set_value("Company", pi.company, "default_discount_account", "Write Off - _TC")
+		nts .db.set_value("Company", pi.company, "default_discount_account", "Write Off - _TC")
 
 		pi.append(
 			"taxes",
@@ -304,7 +304,7 @@ class TestPaymentEntry(FrappeTestCase):
 		pi.save()
 		pi.submit()
 
-		frappe.db.set_single_value("Accounts Settings", "book_tax_discount_loss", 1)
+		nts .db.set_single_value("Accounts Settings", "book_tax_discount_loss", 1)
 		pe_with_tax_loss = get_payment_entry("Purchase Invoice", pi.name, bank_account="_Test Cash - _TC")
 
 		self.assertEqual(pe_with_tax_loss.references[0].payment_term, "30 Credit Days with 10% Discount")
@@ -316,7 +316,7 @@ class TestPaymentEntry(FrappeTestCase):
 		self.assertEqual(pe_with_tax_loss.deductions[1].amount, -4.5)  # Loss on Tax
 		self.assertEqual(pe_with_tax_loss.deductions[1].account, "_Test Account Service Tax - _TC")
 
-		frappe.db.set_single_value("Accounts Settings", "book_tax_discount_loss", 0)
+		nts .db.set_single_value("Accounts Settings", "book_tax_discount_loss", 0)
 		pe = get_payment_entry("Purchase Invoice", pi.name, bank_account="_Test Cash - _TC")
 
 		self.assertEqual(pe.references[0].payment_term, "30 Credit Days with 10% Discount")
@@ -331,7 +331,7 @@ class TestPaymentEntry(FrappeTestCase):
 		create_payment_terms_template_with_discount()
 		si.payment_terms_template = "Test Discount Template"
 
-		frappe.db.set_value("Company", si.company, "default_discount_account", "Write Off - _TC")
+		nts .db.set_value("Company", si.company, "default_discount_account", "Write Off - _TC")
 
 		si.append(
 			"taxes",
@@ -346,7 +346,7 @@ class TestPaymentEntry(FrappeTestCase):
 		si.save()
 		si.submit()
 
-		frappe.db.set_single_value("Accounts Settings", "book_tax_discount_loss", 1)
+		nts .db.set_single_value("Accounts Settings", "book_tax_discount_loss", 1)
 		pe_with_tax_loss = get_payment_entry("Sales Invoice", si.name, bank_account="_Test Cash - _TC")
 
 		self.assertEqual(pe_with_tax_loss.references[0].payment_term, "30 Credit Days with 10% Discount")
@@ -356,7 +356,7 @@ class TestPaymentEntry(FrappeTestCase):
 		self.assertEqual(pe_with_tax_loss.deductions[1].amount, 3.6)  # Loss on Tax
 		self.assertEqual(pe_with_tax_loss.deductions[1].account, "_Test Account Service Tax - _TC")
 
-		frappe.db.set_single_value("Accounts Settings", "book_tax_discount_loss", 0)
+		nts .db.set_single_value("Accounts Settings", "book_tax_discount_loss", 0)
 		pe = get_payment_entry("Sales Invoice", si.name, bank_account="_Test Cash - _TC")
 
 		self.assertEqual(pe.references[0].allocated_amount, 236.0)
@@ -382,7 +382,7 @@ class TestPaymentEntry(FrappeTestCase):
 			discount=50,
 			template_name="Test Discount Amount Template",
 		)
-		frappe.db.set_value("Company", si.company, "default_discount_account", "Write Off - _TC")
+		nts .db.set_value("Company", si.company, "default_discount_account", "Write Off - _TC")
 
 		si.append(
 			"taxes",
@@ -402,18 +402,18 @@ class TestPaymentEntry(FrappeTestCase):
 			"Sales Invoice",
 			si.name,
 			bank_account="_Test Cash - _TC",
-			reference_date=frappe.utils.add_days(si.posting_date, 2),
+			reference_date=nts .utils.add_days(si.posting_date, 2),
 		)
 		self.assertEqual(pe_1.paid_amount, 236.0)  # discount not applied
 
 		# Test if tax loss is booked on enabling configuration
-		frappe.db.set_single_value("Accounts Settings", "book_tax_discount_loss", 1)
+		nts .db.set_single_value("Accounts Settings", "book_tax_discount_loss", 1)
 		pe_with_tax_loss = get_payment_entry("Sales Invoice", si.name, bank_account="_Test Cash - _TC")
 		self.assertEqual(pe_with_tax_loss.deductions[0].amount, 42.37)  # Loss on Income
 		self.assertEqual(pe_with_tax_loss.deductions[1].amount, 7.63)  # Loss on Tax
 		self.assertEqual(pe_with_tax_loss.deductions[1].account, "_Test Account Service Tax - _TC")
 
-		frappe.db.set_single_value("Accounts Settings", "book_tax_discount_loss", 0)
+		nts .db.set_single_value("Accounts Settings", "book_tax_discount_loss", 0)
 		pe = get_payment_entry("Sales Invoice", si.name, bank_account="_Test Cash - _TC")
 		self.assertEqual(pe.references[0].allocated_amount, 236.0)
 		self.assertEqual(pe.paid_amount, 186)
@@ -454,7 +454,7 @@ class TestPaymentEntry(FrappeTestCase):
 		create_payment_terms_template_with_discount()
 		si.payment_terms_template = "Test Discount Template"
 
-		frappe.db.set_value("Company", si.company, "default_discount_account", "Write Off - _TC")
+		nts .db.set_value("Company", si.company, "default_discount_account", "Write Off - _TC")
 		si.save()
 		si.submit()
 
@@ -487,7 +487,7 @@ class TestPaymentEntry(FrappeTestCase):
 
 		self.validate_gl_entries(pe.name, expected_gle)
 
-		outstanding_amount = flt(frappe.db.get_value("Sales Invoice", si.name, "outstanding_amount"))
+		outstanding_amount = flt(nts .db.get_value("Sales Invoice", si.name, "outstanding_amount"))
 		self.assertEqual(outstanding_amount, 0)
 
 	def test_payment_entry_multicurrency_accounting_si_with_early_payment_discount(self):
@@ -508,7 +508,7 @@ class TestPaymentEntry(FrappeTestCase):
 		create_payment_terms_template_with_discount()
 		si.payment_terms_template = "Test Discount Template"
 
-		frappe.db.set_value("Company", si.company, "default_discount_account", "Write Off - _TC")
+		nts .db.set_value("Company", si.company, "default_discount_account", "Write Off - _TC")
 		si.save()
 		si.submit()
 
@@ -544,7 +544,7 @@ class TestPaymentEntry(FrappeTestCase):
 
 		self.validate_gl_entries(pe.name, expected_gle)
 
-		outstanding_amount = flt(frappe.db.get_value("Sales Invoice", si.name, "outstanding_amount"))
+		outstanding_amount = flt(nts .db.get_value("Sales Invoice", si.name, "outstanding_amount"))
 		self.assertEqual(outstanding_amount, 0)
 
 	def test_payment_against_purchase_invoice_to_check_status(self):
@@ -564,7 +564,7 @@ class TestPaymentEntry(FrappeTestCase):
 
 		self.assertEqual(pe.paid_from_account_type, "Bank")
 
-		outstanding_amount, status = frappe.db.get_value(
+		outstanding_amount, status = nts .db.get_value(
 			"Purchase Invoice", pi.name, ["outstanding_amount", "status"]
 		)
 		self.assertEqual(flt(outstanding_amount), 0)
@@ -572,7 +572,7 @@ class TestPaymentEntry(FrappeTestCase):
 
 		pe.cancel()
 
-		outstanding_amount, status = frappe.db.get_value(
+		outstanding_amount, status = nts .db.get_value(
 			"Purchase Invoice", pi.name, ["outstanding_amount", "status"]
 		)
 		self.assertEqual(flt(outstanding_amount), 250)
@@ -609,7 +609,7 @@ class TestPaymentEntry(FrappeTestCase):
 
 		self.validate_gl_entries(pe.name, expected_gle)
 
-		outstanding_amount = flt(frappe.db.get_value("Sales Invoice", si.name, "outstanding_amount"))
+		outstanding_amount = flt(nts .db.get_value("Sales Invoice", si.name, "outstanding_amount"))
 		self.assertEqual(outstanding_amount, 80)
 
 	def test_payment_entry_against_si_usd_to_usd_with_deduction_in_base_currency(self):
@@ -650,7 +650,7 @@ class TestPaymentEntry(FrappeTestCase):
 
 		save_new_records(test_records)
 
-		pe = frappe.new_doc("Payment Entry")
+		pe = nts .new_doc("Payment Entry")
 		pe.payment_type = "Pay"
 		pe.company = "_Test Company"
 		pe.posting_date = "2016-01-10"
@@ -671,7 +671,7 @@ class TestPaymentEntry(FrappeTestCase):
 		self.assertEqual(pe.source_exchange_rate, 65.1, f"{pe.source_exchange_rate} is not equal to {65.1}")
 
 	def test_internal_transfer_usd_to_inr(self):
-		pe = frappe.new_doc("Payment Entry")
+		pe = nts .new_doc("Payment Entry")
 		pe.payment_type = "Internal Transfer"
 		pe.company = "_Test Company"
 		pe.paid_from = "_Test Bank USD - _TC"
@@ -715,10 +715,10 @@ class TestPaymentEntry(FrappeTestCase):
 
 		# create return entry against si1
 		cr_note = create_sales_invoice(is_return=1, return_against=si1.name, qty=-1)
-		si1_outstanding = frappe.db.get_value("Sales Invoice", si1.name, "outstanding_amount")
+		si1_outstanding = nts .db.get_value("Sales Invoice", si1.name, "outstanding_amount")
 
 		# create JE(credit note) manually against si1 and cr_note
-		je = frappe.get_doc(
+		je = nts .get_doc(
 			{
 				"doctype": "Journal Entry",
 				"company": si1.company,
@@ -758,7 +758,7 @@ class TestPaymentEntry(FrappeTestCase):
 		)
 		je.save().submit()
 
-		si1_outstanding = frappe.db.get_value("Sales Invoice", si1.name, "outstanding_amount")
+		si1_outstanding = nts .db.get_value("Sales Invoice", si1.name, "outstanding_amount")
 		self.assertEqual(si1_outstanding, -100)
 
 		# pay more than outstanding against si1
@@ -777,12 +777,12 @@ class TestPaymentEntry(FrappeTestCase):
 
 		self.validate_gl_entries(pe3.name, expected_gle)
 
-		outstanding_amount = flt(frappe.db.get_value("Sales Invoice", si1.name, "outstanding_amount"))
+		outstanding_amount = flt(nts .db.get_value("Sales Invoice", si1.name, "outstanding_amount"))
 		self.assertEqual(outstanding_amount, 0)
 
 		pe3.cancel()
 
-		outstanding_amount = flt(frappe.db.get_value("Sales Invoice", si1.name, "outstanding_amount"))
+		outstanding_amount = flt(nts .db.get_value("Sales Invoice", si1.name, "outstanding_amount"))
 		self.assertEqual(outstanding_amount, -100)
 
 	def validate_gl_entries(self, voucher_no, expected_gle):
@@ -797,7 +797,7 @@ class TestPaymentEntry(FrappeTestCase):
 			self.assertEqual(expected_gle[gle.account][3], gle.against_voucher)
 
 	def get_gle(self, voucher_no):
-		return frappe.db.sql(
+		return nts .db.sql(
 			"""select account, debit, credit, against_voucher
 			from `tabGL Entry` where voucher_type='Payment Entry' and voucher_no=%s
 			order by account asc""",
@@ -871,7 +871,7 @@ class TestPaymentEntry(FrappeTestCase):
 		exc_je_for_pe = self.get_journals_for(pe.doctype, pe.name)
 
 		self.assertEqual(exc_je_for_si, exc_je_for_pe)
-		outstanding_amount = flt(frappe.db.get_value("Sales Invoice", si.name, "outstanding_amount"))
+		outstanding_amount = flt(nts .db.get_value("Sales Invoice", si.name, "outstanding_amount"))
 		self.assertEqual(outstanding_amount, 0)
 
 	def test_payment_entry_against_sales_invoice_with_cost_centre(self):
@@ -897,7 +897,7 @@ class TestPaymentEntry(FrappeTestCase):
 			"Debtors - _TC": {"cost_center": cost_center},
 		}
 
-		gl_entries = frappe.db.sql(
+		gl_entries = nts .db.sql(
 			"""select account, cost_center, account_currency, debit, credit,
 			debit_in_account_currency, credit_in_account_currency
 			from `tabGL Entry` where voucher_type='Payment Entry' and voucher_no=%s
@@ -934,7 +934,7 @@ class TestPaymentEntry(FrappeTestCase):
 			"Creditors - _TC": {"cost_center": cost_center},
 		}
 
-		gl_entries = frappe.db.sql(
+		gl_entries = nts .db.sql(
 			"""select account, cost_center, account_currency, debit, credit,
 			debit_in_account_currency, credit_in_account_currency
 			from `tabGL Entry` where voucher_type='Payment Entry' and voucher_no=%s
@@ -1100,7 +1100,7 @@ class TestPaymentEntry(FrappeTestCase):
 		# block invoice after creating payment entry
 		# since `get_payment_entry` will not attach blocked invoice to payment
 		pi.block_invoice()
-		with self.assertRaises(frappe.ValidationError) as err:
+		with self.assertRaises(nts .ValidationError) as err:
 			pe.save()
 
 		self.assertTrue("is on hold" in str(err.exception).lower())
@@ -1118,7 +1118,7 @@ class TestPaymentEntry(FrappeTestCase):
 		pe = get_payment_entry("Sales Invoice", si.name)
 		pe.submit()
 
-		self.assertRaises(frappe.ValidationError, pe_draft.submit)
+		self.assertRaises(nts .ValidationError, pe_draft.submit)
 
 	def test_duplicate_payment_entry_partial_allocate_amount(self):
 		si = create_sales_invoice()
@@ -1131,7 +1131,7 @@ class TestPaymentEntry(FrappeTestCase):
 		pe.references[0].allocated_amount = si.total / 2
 		pe.submit()
 
-		self.assertRaises(frappe.ValidationError, pe_draft.submit)
+		self.assertRaises(nts .ValidationError, pe_draft.submit)
 
 	def test_details_update_on_reference_table(self):
 		from prodman.accounts.party import get_party_account
@@ -1196,7 +1196,7 @@ class TestPaymentEntry(FrappeTestCase):
 		pe.paid_amount = 400
 		pe.references[0].allocated_amount = 200
 		pe.references[1].allocated_amount = 200
-		self.assertRaises(frappe.ValidationError, pe.save)
+		self.assertRaises(nts .ValidationError, pe.save)
 		pe.delete()
 		si1.cancel()
 		si1.delete()
@@ -1224,7 +1224,7 @@ class TestPaymentEntry(FrappeTestCase):
 		pe.paid_amount = 200
 		pe.references[0].allocated_amount = 100
 		pe.references[1].allocated_amount = 100
-		self.assertRaises(frappe.ValidationError, pe.save)
+		self.assertRaises(nts .ValidationError, pe.save)
 		pe.delete()
 		si2.cancel()
 		si2.delete()
@@ -1253,7 +1253,7 @@ class TestPaymentEntry(FrappeTestCase):
 		pe.paid_amount = 16000
 		pe.references[0].allocated_amount = 8000
 		pe.references[1].allocated_amount = 8000
-		self.assertRaises(frappe.ValidationError, pe.save)
+		self.assertRaises(nts .ValidationError, pe.save)
 		pe.delete()
 		si3.cancel()
 		si3.delete()
@@ -1274,7 +1274,7 @@ class TestPaymentEntry(FrappeTestCase):
 		create_customer()
 		create_payment_terms_template()
 
-		template = frappe.get_doc("Payment Terms Template", "Test Receivable Template")
+		template = nts .get_doc("Payment Terms Template", "Test Receivable Template")
 		template.allocate_payment_based_on_payment_terms = 0
 		template.save()
 
@@ -1298,9 +1298,9 @@ class TestPaymentEntry(FrappeTestCase):
 
 		pe.paid_amount = si.grand_total + 1
 		pe.references[0].allocated_amount = si.grand_total + 1
-		self.assertRaises(frappe.ValidationError, pe.save)
+		self.assertRaises(nts .ValidationError, pe.save)
 
-		template = frappe.get_doc("Payment Terms Template", "Test Receivable Template")
+		template = nts .get_doc("Payment Terms Template", "Test Receivable Template")
 		template.allocate_payment_based_on_payment_terms = 1
 		template.save()
 
@@ -1401,7 +1401,7 @@ class TestPaymentEntry(FrappeTestCase):
 			account_type="Receivable",
 		)
 
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Company",
 			company,
 			{
@@ -1443,7 +1443,7 @@ class TestPaymentEntry(FrappeTestCase):
 		self.check_pl_entries()
 
 		# Partially reconcile advance against invoice
-		pr = frappe.get_doc("Payment Reconciliation")
+		pr = nts .get_doc("Payment Reconciliation")
 		pr.company = company
 		pr.party_type = "Customer"
 		pr.party = "_Test Customer"
@@ -1458,7 +1458,7 @@ class TestPaymentEntry(FrappeTestCase):
 
 		invoices = [x.as_dict() for x in pr.get("invoices")]
 		payments = [x.as_dict() for x in pr.get("payments")]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.allocation[0].allocated_amount = 400
 		pr.reconcile()
 
@@ -1494,7 +1494,7 @@ class TestPaymentEntry(FrappeTestCase):
 
 		# Unreconcile
 		(
-			frappe.get_doc(
+			nts .get_doc(
 				{
 					"doctype": "Unreconcile Payment",
 					"company": company,
@@ -1528,7 +1528,7 @@ class TestPaymentEntry(FrappeTestCase):
 			account_type="Payable",
 		)
 
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Company",
 			company,
 			{
@@ -1576,9 +1576,9 @@ class TestPaymentEntry(FrappeTestCase):
 		self.check_gl_entries()
 
 	def check_pl_entries(self):
-		ple = frappe.qb.DocType("Payment Ledger Entry")
+		ple = nts .qb.DocType("Payment Ledger Entry")
 		pl_entries = (
-			frappe.qb.from_(ple)
+			nts .qb.from_(ple)
 			.select(ple.account, ple.voucher_no, ple.against_voucher_no, ple.amount)
 			.where((ple.voucher_no == self.voucher_no) & (ple.delinked == 0))
 			.orderby(ple.creation)
@@ -1588,16 +1588,16 @@ class TestPaymentEntry(FrappeTestCase):
 				self.assertEqual(self.expected_ple[row][field], pl_entries[row][field])
 
 	def check_gl_entries(self):
-		gle = frappe.qb.DocType("GL Entry")
+		gle = nts .qb.DocType("GL Entry")
 		gl_entries = (
-			frappe.qb.from_(gle)
+			nts .qb.from_(gle)
 			.select(
 				gle.account,
 				gle.debit,
 				gle.credit,
 			)
 			.where((gle.voucher_no == self.voucher_no) & (gle.is_cancelled == 0))
-			.orderby(gle.account, gle.debit, gle.credit, order=frappe.qb.desc)
+			.orderby(gle.account, gle.debit, gle.credit, order=nts .qb.desc)
 		).run(as_dict=True)
 		for row in range(len(self.expected_gle)):
 			for field in ["account", "debit", "credit"]:
@@ -1641,7 +1641,7 @@ class TestPaymentEntry(FrappeTestCase):
 		self.assertEqual(references[2].payment_term, "Tax Receivable")
 
 	def test_reverse_payment_reconciliation(self):
-		customer = create_customer(frappe.generate_hash(length=10), "INR")
+		customer = create_customer(nts .generate_hash(length=10), "INR")
 		pe = create_payment_entry(
 			party_type="Customer",
 			party=customer,
@@ -1660,7 +1660,7 @@ class TestPaymentEntry(FrappeTestCase):
 		)
 		reverse_pe.submit()
 
-		pr = frappe.get_doc("Payment Reconciliation")
+		pr = nts .get_doc("Payment Reconciliation")
 		pr.company = "_Test Company"
 		pr.party_type = "Customer"
 		pr.party = customer
@@ -1674,14 +1674,14 @@ class TestPaymentEntry(FrappeTestCase):
 
 		invoices = [x.as_dict() for x in pr.invoices]
 		payments = [pr.payments[0].as_dict()]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.reconcile()
 		self.assertEqual(len(pr.invoices), 0)
 		self.assertEqual(len(pr.payments), 0)
 
 	def test_advance_reverse_payment_reconciliation(self):
 		company = "_Test Company"
-		customer = create_customer(frappe.generate_hash(length=10), "INR")
+		customer = create_customer(nts .generate_hash(length=10), "INR")
 		advance_account = create_account(
 			parent_account="Current Liabilities - _TC",
 			account_name="Advances Received",
@@ -1689,7 +1689,7 @@ class TestPaymentEntry(FrappeTestCase):
 			account_type="Receivable",
 		)
 
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Company",
 			company,
 			{
@@ -1720,7 +1720,7 @@ class TestPaymentEntry(FrappeTestCase):
 		pe.submit()
 
 		# Partially reconcile advance against invoice
-		pr = frappe.get_doc("Payment Reconciliation")
+		pr = nts .get_doc("Payment Reconciliation")
 		pr.company = company
 		pr.party_type = "Customer"
 		pr.party = customer
@@ -1733,7 +1733,7 @@ class TestPaymentEntry(FrappeTestCase):
 
 		invoices = [x.as_dict() for x in pr.get("invoices")]
 		payments = [x.as_dict() for x in pr.get("payments")]
-		pr.allocate_entries(frappe._dict({"invoices": invoices, "payments": payments}))
+		pr.allocate_entries(nts ._dict({"invoices": invoices, "payments": payments}))
 		pr.allocation[0].allocated_amount = 400
 		pr.reconcile()
 
@@ -1770,7 +1770,7 @@ class TestPaymentEntry(FrappeTestCase):
 
 		# Unreconcile
 		(
-			frappe.get_doc(
+			nts .get_doc(
 				{
 					"doctype": "Unreconcile Payment",
 					"company": company,
@@ -1813,7 +1813,7 @@ class TestPaymentEntry(FrappeTestCase):
 		)
 
 		# Enable Advance in separate party account
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Company",
 			company,
 			{
@@ -1833,14 +1833,14 @@ class TestPaymentEntry(FrappeTestCase):
 		adv.save()  # use save() to trigger set_liability_account()
 		adv.submit()
 
-		gl_with_opening_set = frappe.db.get_all(
+		gl_with_opening_set = nts .db.get_all(
 			"GL Entry", filters={"voucher_no": adv.name, "is_opening": "Yes"}
 		)
 		# 'Is Opening' can be 'Yes' for Advances in separate party account
 		self.assertNotEqual(gl_with_opening_set, [])
 
 		# Disable Advance in separate party account
-		frappe.db.set_value(
+		nts .db.set_value(
 			"Company",
 			company,
 			{
@@ -1858,7 +1858,7 @@ class TestPaymentEntry(FrappeTestCase):
 		payment.is_opening = "Yes"
 		payment.save()
 		payment.submit()
-		gl_with_opening_set = frappe.db.get_all(
+		gl_with_opening_set = nts .db.get_all(
 			"GL Entry", filters={"voucher_no": payment.name, "is_opening": "Yes"}
 		)
 		# 'Is Opening' should always be 'No' for normal advance payments
@@ -1881,7 +1881,7 @@ class TestPaymentEntry(FrappeTestCase):
 
 		# create a customer
 		customer = make_customer(customer="_Test Party USD")
-		cust_doc = frappe.get_doc("Customer", customer)
+		cust_doc = nts .get_doc("Customer", customer)
 		cust_doc.default_currency = "USD"
 		test_account_details = {
 			"company": "_Test Company",
@@ -1905,7 +1905,7 @@ class TestPaymentEntry(FrappeTestCase):
 		# create a payment entry for the invoice
 		pe = get_payment_entry("Sales Invoice", si.name)
 		pe.reference_no = "1"
-		pe.reference_date = frappe.utils.nowdate()
+		pe.reference_date = nts .utils.nowdate()
 		pe.paid_amount = 100
 		pe.source_exchange_rate = 90
 		pe.append(
@@ -1920,7 +1920,7 @@ class TestPaymentEntry(FrappeTestCase):
 		pe.submit()
 
 		# check creation of journal entry
-		jv = frappe.get_all(
+		jv = nts .get_all(
 			"Journal Entry Account",
 			{"reference_type": pe.doctype, "reference_name": pe.name, "docstatus": 1},
 			pluck="parent",
@@ -1930,16 +1930,16 @@ class TestPaymentEntry(FrappeTestCase):
 		# check cancellation of payment entry and journal entry
 		pe.cancel()
 		self.assertTrue(pe.docstatus == 2)
-		self.assertTrue(frappe.db.get_value("Journal Entry", {"name": jv[0]}, "docstatus") == 2)
+		self.assertTrue(nts .db.get_value("Journal Entry", {"name": jv[0]}, "docstatus") == 2)
 
 		# check deletion of payment entry and journal entry
 		pe.delete()
-		self.assertRaises(frappe.DoesNotExistError, frappe.get_doc, pe.doctype, pe.name)
-		self.assertRaises(frappe.DoesNotExistError, frappe.get_doc, "Journal Entry", jv[0])
+		self.assertRaises(nts .DoesNotExistError, nts .get_doc, pe.doctype, pe.name)
+		self.assertRaises(nts .DoesNotExistError, nts .get_doc, "Journal Entry", jv[0])
 
 
 def create_payment_entry(**args):
-	payment_entry = frappe.new_doc("Payment Entry")
+	payment_entry = nts .new_doc("Payment Entry")
 	payment_entry.company = args.get("company") or "_Test Company"
 	payment_entry.payment_type = args.get("payment_type") or "Pay"
 	payment_entry.party_type = args.get("party_type") or "Supplier"
@@ -1971,8 +1971,8 @@ def create_payment_terms_template():
 	create_payment_term("Basic Amount Receivable")
 	create_payment_term("Tax Receivable")
 
-	if not frappe.db.exists("Payment Terms Template", "Test Receivable Template"):
-		frappe.get_doc(
+	if not nts .db.exists("Payment Terms Template", "Test Receivable Template"):
+		nts .get_doc(
 			{
 				"doctype": "Payment Terms Template",
 				"template_name": "Test Receivable Template",
@@ -2006,8 +2006,8 @@ def create_payment_terms_template_with_discount(
 	create_payment_term(name or "30 Credit Days with 10% Discount")
 	template_name = template_name or "Test Discount Template"
 
-	if not frappe.db.exists("Payment Terms Template", template_name):
-		frappe.get_doc(
+	if not nts .db.exists("Payment Terms Template", template_name):
+		nts .get_doc(
 			{
 				"doctype": "Payment Terms Template",
 				"template_name": template_name,
@@ -2030,16 +2030,16 @@ def create_payment_terms_template_with_discount(
 
 
 def create_payment_term(name):
-	if not frappe.db.exists("Payment Term", name):
-		frappe.get_doc({"doctype": "Payment Term", "payment_term_name": name}).insert()
+	if not nts .db.exists("Payment Term", name):
+		nts .get_doc({"doctype": "Payment Term", "payment_term_name": name}).insert()
 
 
 def create_customer(name="_Test Customer 2 USD", currency="USD"):
 	customer = None
-	if frappe.db.exists("Customer", name):
+	if nts .db.exists("Customer", name):
 		customer = name
 	else:
-		customer = frappe.new_doc("Customer")
+		customer = nts .new_doc("Customer")
 		customer.customer_name = name
 		customer.default_currency = currency
 		customer.type = "Individual"

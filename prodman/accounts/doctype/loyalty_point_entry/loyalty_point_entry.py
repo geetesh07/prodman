@@ -1,10 +1,10 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe.model.document import Document
-from frappe.utils import today
+import nts 
+from nts .model.document import Document
+from nts .utils import today
 
 exclude_from_linked_with = True
 
@@ -16,7 +16,7 @@ class LoyaltyPointEntry(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		company: DF.Link | None
 		customer: DF.Link | None
@@ -38,7 +38,7 @@ def get_loyalty_point_entries(customer, loyalty_program, company, expiry_date=No
 	if not expiry_date:
 		expiry_date = today()
 
-	return frappe.db.sql(
+	return nts .db.sql(
 		"""
 		select name, loyalty_points, expiry_date, loyalty_program_tier, invoice_type, invoice
 		from `tabLoyalty Point Entry`
@@ -52,8 +52,8 @@ def get_loyalty_point_entries(customer, loyalty_program, company, expiry_date=No
 
 
 def get_redemption_details(customer, loyalty_program, company):
-	return frappe._dict(
-		frappe.db.sql(
+	return nts ._dict(
+		nts .db.sql(
 			"""
 		select redeem_against, sum(loyalty_points)
 		from `tabLoyalty Point Entry`

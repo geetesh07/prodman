@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Accounts Settings", {
+nts .ui.form.on("Accounts Settings", {
 	refresh: function (frm) {},
 	enable_immutable_ledger: function (frm) {
 		if (!frm.doc.enable_immutable_ledger) {
@@ -14,7 +14,7 @@ frappe.ui.form.on("Accounts Settings", {
 		msg += "<br>";
 		msg += __("Do you still want to enable immutable ledger?");
 
-		frappe.confirm(
+		nts .confirm(
 			msg,
 			() => {},
 			() => {

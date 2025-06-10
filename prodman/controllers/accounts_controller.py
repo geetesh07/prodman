@@ -1,17 +1,17 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 from collections import defaultdict
 
-import frappe
-from frappe import _, bold, qb, throw
-from frappe.model.workflow import get_workflow_name, is_transition_condition_satisfied
-from frappe.query_builder import Criterion, DocType
-from frappe.query_builder.custom import ConstantColumn
-from frappe.query_builder.functions import Abs, Sum
-from frappe.utils import (
+import nts
+from nts import _, bold, qb, throw
+from nts.model.workflow import get_workflow_name, is_transition_condition_satisfied
+from nts.query_builder import Criterion, DocType
+from nts.query_builder.custom import ConstantColumn
+from nts.query_builder.functions import Abs, Sum
+from nts.utils import (
 	add_days,
 	add_months,
 	cint,
@@ -72,11 +72,11 @@ from prodman.utilities.regional import temporary_flag
 from prodman.utilities.transaction_base import TransactionBase
 
 
-class AccountMissingError(frappe.ValidationError):
+class AccountMissingError(nts.ValidationError):
 	pass
 
 
-class InvalidQtyError(frappe.ValidationError):
+class InvalidQtyError(nts.ValidationError):
 	pass
 
 
@@ -120,7 +120,7 @@ class AccountsController(TransactionBase):
 	def onload(self):
 		self.set_onload(
 			"make_payment_via_journal_entry",
-			frappe.db.get_single_value("Accounts Settings", "make_payment_via_journal_entry"),
+			nts.db.get_single_value("Accounts Settings", "make_payment_via_journal_entry"),
 		)
 
 		if self.is_new():
@@ -153,26 +153,26 @@ class AccountsController(TransactionBase):
 
 		if is_buying_invoice or is_supplier_payment:
 			supplier_name = self.supplier if is_buying_invoice else self.party
-			supplier = frappe.get_doc("Supplier", supplier_name)
+			supplier = nts.get_doc("Supplier", supplier_name)
 
 		if supplier and supplier_name and supplier.on_hold:
 			if (is_buying_invoice and supplier.hold_type in ["All", "Invoices"]) or (
 				is_supplier_payment and supplier.hold_type in ["All", "Payments"]
 			):
 				if not supplier.release_date or getdate(nowdate()) <= supplier.release_date:
-					frappe.msgprint(
+					nts.msgprint(
 						_("{0} is blocked so this transaction cannot proceed").format(supplier_name),
 						raise_exception=1,
 					)
 
 	def validate_against_voucher_outstanding(self):
-		from frappe.model.meta import get_meta
+		from nts.model.meta import get_meta
 
 		if not get_meta(self.doctype).has_field("outstanding_amount"):
 			return
 
 		if self.get("is_return") and self.return_against and not self.get("is_pos"):
-			against_voucher_outstanding = frappe.get_value(
+			against_voucher_outstanding = nts.get_value(
 				self.doctype, self.return_against, "outstanding_amount"
 			)
 			document_type = "Credit Note" if self.doctype == "Sales Invoice" else "Debit Note"
@@ -183,9 +183,9 @@ class AccountsController(TransactionBase):
 					"We can see {0} is made against {1}. If you want {1}'s outstanding to be updated, "
 					"uncheck '{2}' checkbox. <br><br>Or"
 				).format(
-					frappe.bold(document_type),
+					nts.bold(document_type),
 					get_link_to_form(self.doctype, self.get("return_against")),
-					frappe.bold(_("Update Outstanding for Self")),
+					nts.bold(_("Update Outstanding for Self")),
 				)
 
 			elif not self.update_outstanding_for_self and (
@@ -205,7 +205,7 @@ class AccountsController(TransactionBase):
 					get_link_to_form("Payment Reconciliation", "Payment Reconciliation"),
 					get_link_to_form(self.doctype, self.get("return_against")),
 				)
-				frappe.msgprint(_(msg))
+				nts.msgprint(_(msg))
 
 	def validate(self):
 		if not self.get("is_return") and not self.get("is_debit_note"):
@@ -262,12 +262,12 @@ class AccountsController(TransactionBase):
 
 		if self.doctype in ["Purchase Invoice", "Sales Invoice"]:
 			if invalid_advances := [x for x in self.advances if not x.reference_type or not x.reference_name]:
-				frappe.throw(
+				nts.throw(
 					_(
 						"Rows: {0} in {1} section are Invalid. Reference Name should point to a valid Payment Entry or Journal Entry."
 					).format(
-						frappe.bold(comma_and([x.idx for x in invalid_advances])),
-						frappe.bold(_("Advance Payments")),
+						nts.bold(comma_and([x.idx for x in invalid_advances])),
+						nts.bold(_("Advance Payments")),
 					)
 				)
 
@@ -304,7 +304,7 @@ class AccountsController(TransactionBase):
 
 	def set_default_letter_head(self):
 		if hasattr(self, "letter_head") and not self.letter_head:
-			self.letter_head = frappe.db.get_value("Company", self.company, "default_letter_head")
+			self.letter_head = nts.db.get_value("Company", self.company, "default_letter_head")
 
 	def init_internal_values(self):
 		# init all the internal values as 0 on sa
@@ -320,21 +320,21 @@ class AccountsController(TransactionBase):
 		validate_einvoice_fields(self)
 
 	def _remove_references_in_unreconcile(self):
-		upe = frappe.qb.DocType("Unreconcile Payment Entries")
+		upe = nts.qb.DocType("Unreconcile Payment Entries")
 		rows = (
-			frappe.qb.from_(upe)
+			nts.qb.from_(upe)
 			.select(upe.name, upe.parent)
 			.where((upe.reference_doctype == self.doctype) & (upe.reference_name == self.name))
 			.run(as_dict=True)
 		)
 
 		if rows:
-			references_map = frappe._dict()
+			references_map = nts._dict()
 			for x in rows:
 				references_map.setdefault(x.parent, []).append(x.name)
 
 			for doc, rows in references_map.items():
-				unreconcile_doc = frappe.get_doc("Unreconcile Payment", doc)
+				unreconcile_doc = nts.get_doc("Unreconcile Payment", doc)
 				for row in rows:
 					unreconcile_doc.remove(unreconcile_doc.get("allocations", {"name": row})[0])
 
@@ -343,9 +343,9 @@ class AccountsController(TransactionBase):
 				unreconcile_doc.save(ignore_permissions=True)
 
 		# delete docs upon parent doc deletion
-		unreconcile_docs = frappe.db.get_all("Unreconcile Payment", filters={"voucher_no": self.name})
+		unreconcile_docs = nts.db.get_all("Unreconcile Payment", filters={"voucher_no": self.name})
 		for x in unreconcile_docs:
-			_doc = frappe.get_doc("Unreconcile Payment", x.name)
+			_doc = nts.get_doc("Unreconcile Payment", x.name)
 			if _doc.docstatus == 1:
 				_doc.cancel()
 			_doc.delete()
@@ -354,21 +354,21 @@ class AccountsController(TransactionBase):
 		repost_doctypes = ["Repost Payment Ledger Items", "Repost Accounting Ledger Items"]
 
 		for _doctype in repost_doctypes:
-			dt = frappe.qb.DocType(_doctype)
+			dt = nts.qb.DocType(_doctype)
 			rows = (
-				frappe.qb.from_(dt)
+				nts.qb.from_(dt)
 				.select(dt.name, dt.parent, dt.parenttype)
 				.where((dt.voucher_type == self.doctype) & (dt.voucher_no == self.name))
 				.run(as_dict=True)
 			)
 
 			if rows:
-				references_map = frappe._dict()
+				references_map = nts._dict()
 				for x in rows:
 					references_map.setdefault((x.parenttype, x.parent), []).append(x.name)
 
 				for doc, rows in references_map.items():
-					repost_doc = frappe.get_doc(doc[0], doc[1])
+					repost_doc = nts.get_doc(doc[0], doc[1])
 
 					for row in rows:
 						if _doctype == "Repost Payment Ledger Items":
@@ -384,7 +384,7 @@ class AccountsController(TransactionBase):
 		adv = qb.DocType("Advance Payment Ledger Entry")
 		qb.from_(adv).delete().where(adv.voucher_type.eq(self.doctype) & adv.voucher_no.eq(self.name)).run()
 
-		advance_payment_doctypes = frappe.get_hooks("advance_payment_doctypes")
+		advance_payment_doctypes = nts.get_hooks("advance_payment_doctypes")
 
 		if self.doctype in advance_payment_doctypes:
 			qb.from_(adv).delete().where(
@@ -400,12 +400,12 @@ class AccountsController(TransactionBase):
 		self.remove_serial_and_batch_bundle()
 
 		# delete sl and gl entries on deletion of transaction
-		if frappe.db.get_single_value("Accounts Settings", "delete_linked_ledger_entries"):
+		if nts.db.get_single_value("Accounts Settings", "delete_linked_ledger_entries"):
 			# delete linked exchange gain/loss journal
 			delete_exchange_gain_loss_journal(self)
 
-			ple = frappe.qb.DocType("Payment Ledger Entry")
-			frappe.qb.from_(ple).delete().where(
+			ple = nts.qb.DocType("Payment Ledger Entry")
+			nts.qb.from_(ple).delete().where(
 				(ple.voucher_type == self.doctype) & (ple.voucher_no == self.name)
 				| (
 					(ple.against_voucher_type == self.doctype)
@@ -414,35 +414,35 @@ class AccountsController(TransactionBase):
 					== 1
 				)
 			).run()
-			gle = frappe.qb.DocType("GL Entry")
-			frappe.qb.from_(gle).delete().where(
+			gle = nts.qb.DocType("GL Entry")
+			nts.qb.from_(gle).delete().where(
 				(gle.voucher_type == self.doctype) & (gle.voucher_no == self.name)
 			).run()
-			sle = frappe.qb.DocType("Stock Ledger Entry")
-			frappe.qb.from_(sle).delete().where(
+			sle = nts.qb.DocType("Stock Ledger Entry")
+			nts.qb.from_(sle).delete().where(
 				(sle.voucher_type == self.doctype) & (sle.voucher_no == self.name)
 			).run()
 
 	def remove_serial_and_batch_bundle(self):
-		bundles = frappe.get_all(
+		bundles = nts.get_all(
 			"Serial and Batch Bundle",
 			filters={"voucher_type": self.doctype, "voucher_no": self.name, "docstatus": ("!=", 1)},
 		)
 
 		for bundle in bundles:
-			frappe.delete_doc("Serial and Batch Bundle", bundle.name)
+			nts.delete_doc("Serial and Batch Bundle", bundle.name)
 
-		batches = frappe.get_all(
+		batches = nts.get_all(
 			"Batch", filters={"reference_doctype": self.doctype, "reference_name": self.name}
 		)
 		for row in batches:
-			frappe.delete_doc("Batch", row.name)
+			nts.delete_doc("Batch", row.name)
 
 	def validate_company_in_accounting_dimension(self):
 		doc_field = DocType("DocField")
 		accounting_dimension = DocType("Accounting Dimension")
 		dimension_list = (
-			frappe.qb.from_(accounting_dimension)
+			nts.qb.from_(accounting_dimension)
 			.select(accounting_dimension.document_type)
 			.join(doc_field)
 			.on(doc_field.parent == accounting_dimension.document_type)
@@ -458,16 +458,16 @@ class AccountsController(TransactionBase):
 	def validate_company(self, dimension_list, child=None):
 		for dimension in dimension_list:
 			if not child:
-				dimension_value = self.get(frappe.scrub(dimension))
+				dimension_value = self.get(nts.scrub(dimension))
 			else:
-				dimension_value = child.get(frappe.scrub(dimension))
+				dimension_value = child.get(nts.scrub(dimension))
 
 			if dimension_value:
-				company = frappe.get_cached_value(dimension, dimension_value, "company")
+				company = nts.get_cached_value(dimension, dimension_value, "company")
 				if company and company != self.company:
-					frappe.throw(
+					nts.throw(
 						_("{0}: {1} does not belong to the Company: {2}").format(
-							dimension, frappe.bold(dimension_value), self.company
+							dimension, nts.bold(dimension_value), self.company
 						)
 					)
 
@@ -491,38 +491,38 @@ class AccountsController(TransactionBase):
 
 	def validate_party_address(self, party, party_type, billing_address, shipping_address=None):
 		if billing_address or shipping_address:
-			party_address = frappe.get_all(
+			party_address = nts.get_all(
 				"Dynamic Link",
 				{"link_doctype": party_type, "link_name": party, "parenttype": "Address"},
 				pluck="parent",
 			)
 			if billing_address and billing_address not in party_address:
-				frappe.throw(_("Billing Address does not belong to the {0}").format(party))
+				nts.throw(_("Billing Address does not belong to the {0}").format(party))
 			elif shipping_address and shipping_address not in party_address:
-				frappe.throw(_("Shipping Address does not belong to the {0}").format(party))
+				nts.throw(_("Shipping Address does not belong to the {0}").format(party))
 
 	def validate_party_contact(self, party, party_type):
 		if self.get("contact_person"):
-			contact = frappe.get_all(
+			contact = nts.get_all(
 				"Dynamic Link",
 				{"link_doctype": party_type, "link_name": party, "parenttype": "Contact"},
 				pluck="parent",
 			)
 			if self.contact_person and self.contact_person not in contact:
-				frappe.throw(_("Contact Person does not belong to the {0}").format(party))
+				nts.throw(_("Contact Person does not belong to the {0}").format(party))
 
 	def validate_return_against_account(self):
 		if self.doctype in ["Sales Invoice", "Purchase Invoice"] and self.is_return and self.return_against:
 			cr_dr_account_field = "debit_to" if self.doctype == "Sales Invoice" else "credit_to"
-			original_account = frappe.get_value(self.doctype, self.return_against, cr_dr_account_field)
+			original_account = nts.get_value(self.doctype, self.return_against, cr_dr_account_field)
 			if original_account != self.get(cr_dr_account_field):
-				frappe.throw(
+				nts.throw(
 					_(
 						"Please set {0} to {1}, the same account that was used in the original invoice {2}."
 					).format(
-						frappe.bold(_(self.meta.get_label(cr_dr_account_field), context=self.doctype)),
-						frappe.bold(original_account),
-						frappe.bold(self.return_against),
+						nts.bold(_(self.meta.get_label(cr_dr_account_field), context=self.doctype)),
+						nts.bold(original_account),
+						nts.bold(self.return_against),
 					)
 				)
 
@@ -535,11 +535,11 @@ class AccountsController(TransactionBase):
 		for item in self.get("items"):
 			if item.get("enable_deferred_revenue") or item.get("enable_deferred_expense"):
 				if not item.get(field_map.get(self.doctype)):
-					default_deferred_account = frappe.get_cached_value(
+					default_deferred_account = nts.get_cached_value(
 						"Company", self.company, "default_" + field_map.get(self.doctype)
 					)
 					if not default_deferred_account:
-						frappe.throw(
+						nts.throw(
 							_(
 								"Row #{0}: Please update deferred revenue/expense account in item row or default account in company master"
 							).format(item.idx)
@@ -549,25 +549,25 @@ class AccountsController(TransactionBase):
 
 	def validate_auto_repeat_subscription_dates(self):
 		if self.get("from_date") and self.get("to_date") and getdate(self.from_date) > getdate(self.to_date):
-			frappe.throw(_("To Date cannot be before From Date"), title=_("Invalid Auto Repeat Date"))
+			nts.throw(_("To Date cannot be before From Date"), title=_("Invalid Auto Repeat Date"))
 
 	def validate_deferred_start_and_end_date(self):
 		for d in self.items:
 			if d.get("enable_deferred_revenue") or d.get("enable_deferred_expense"):
 				if not (d.service_start_date and d.service_end_date):
-					frappe.throw(
+					nts.throw(
 						_("Row #{0}: Service Start and End Date is required for deferred accounting").format(
 							d.idx
 						)
 					)
 				elif getdate(d.service_start_date) > getdate(d.service_end_date):
-					frappe.throw(
+					nts.throw(
 						_("Row #{0}: Service Start Date cannot be greater than Service End Date").format(
 							d.idx
 						)
 					)
 				elif getdate(self.posting_date) > getdate(d.service_end_date):
-					frappe.throw(
+					nts.throw(
 						_("Row #{0}: Service End Date cannot be before Invoice Posting Date").format(d.idx)
 					)
 
@@ -634,7 +634,7 @@ class AccountsController(TransactionBase):
 			if is_paid:
 				if not self.cash_bank_account:
 					# show message that the amount is not paid
-					frappe.throw(
+					nts.throw(
 						_(
 							"Note: Payment Entry will not be created since 'Cash or Bank Account' was not specified"
 						)
@@ -654,7 +654,7 @@ class AccountsController(TransactionBase):
 				self.base_paid_amount = 0
 
 	def set_missing_values(self, for_validate=False):
-		if frappe.flags.in_test:
+		if nts.flags.in_test:
 			for fieldname in ["posting_date", "transaction_date"]:
 				if self.meta.get_field(fieldname) and not self.get(fieldname):
 					self.set(fieldname, today())
@@ -704,12 +704,12 @@ class AccountsController(TransactionBase):
 
 		for item in self.get("items"):
 			if item.get(item_field) == self.get(party_account_field):
-				frappe.throw(
+				nts.throw(
 					_("Row {0}: {1} {2} cannot be same as {3} (Party Account) {4}").format(
 						item.idx,
-						frappe.bold(frappe.unscrub(item_field)),
+						nts.bold(nts.unscrub(item_field)),
 						item.get(item_field),
-						frappe.bold(frappe.unscrub(party_account_field)),
+						nts.bold(nts.unscrub(party_account_field)),
 						self.get(party_account_field),
 					)
 				)
@@ -729,21 +729,21 @@ class AccountsController(TransactionBase):
 			) and not self.get("is_return"):
 				msg = _("Internal Sale or Delivery Reference missing.")
 				msg += _("Please create purchase from internal sale or delivery document itself")
-				frappe.throw(msg, title=_("Internal Sales Reference Missing"))
+				nts.throw(msg, title=_("Internal Sales Reference Missing"))
 
 			label = "Delivery Note Item" if self.doctype == "Purchase Receipt" else "Sales Invoice Item"
 
-			field = frappe.scrub(label)
+			field = nts.scrub(label)
 
 			for row in self.get("items"):
 				if not row.get(field):
 					msg = f"At Row {row.idx}: The field {bold(label)} is mandatory for internal transfer"
-					frappe.throw(_(msg), title=_("Internal Transfer Reference Missing"))
+					nts.throw(_(msg), title=_("Internal Transfer Reference Missing"))
 
 	def disable_pricing_rule_on_internal_transfer(self):
 		if not self.get("ignore_pricing_rule") and self.is_internal_transfer():
 			self.ignore_pricing_rule = 1
-			frappe.msgprint(
+			nts.msgprint(
 				_("Disabled pricing rules since this {} is an internal transfer").format(self.doctype),
 				alert=1,
 			)
@@ -757,7 +757,7 @@ class AccountsController(TransactionBase):
 					tax_updated = True
 
 			if tax_updated:
-				frappe.msgprint(
+				nts.msgprint(
 					_("Disabled tax included prices since this {} is an internal transfer").format(
 						self.doctype
 					),
@@ -775,12 +775,12 @@ class AccountsController(TransactionBase):
 		)
 
 		# skip due date validation for records via Data Import
-		if frappe.flags.in_import and getdate(self.due_date) < getdate(posting_date):
+		if nts.flags.in_import and getdate(self.due_date) < getdate(posting_date):
 			self.due_date = posting_date
 
 		elif self.doctype == "Sales Invoice":
 			if not self.due_date:
-				frappe.throw(_("Due Date is mandatory"))
+				nts.throw(_("Due Date is mandatory"))
 
 			validate_due_date(posting_date, self.due_date, None, self.payment_terms_template, self.doctype)
 		elif self.doctype == "Purchase Invoice":
@@ -804,7 +804,7 @@ class AccountsController(TransactionBase):
 				args = "for_buying"
 
 			if self.meta.get_field(fieldname) and self.get(fieldname):
-				self.price_list_currency = frappe.db.get_value("Price List", self.get(fieldname), "currency")
+				self.price_list_currency = nts.db.get_value("Price List", self.get(fieldname), "currency")
 
 				if self.price_list_currency == self.company_currency:
 					self.plc_conversion_rate = 1.0
@@ -828,7 +828,7 @@ class AccountsController(TransactionBase):
 			if (
 				self.currency
 				and buying_or_selling == "Buying"
-				and frappe.db.get_single_value("Buying Settings", "use_transaction_date_exchange_rate")
+				and nts.db.get_single_value("Buying Settings", "use_transaction_date_exchange_rate")
 				and self.doctype == "Purchase Invoice"
 			):
 				self.use_transaction_date_exchange_rate = True
@@ -996,14 +996,14 @@ class AccountsController(TransactionBase):
 
 		elif pricing_rule_args.get("validate_applied_rule"):
 			for pricing_rule in get_applied_pricing_rules(item.get("pricing_rules")):
-				pricing_rule_doc = frappe.get_cached_doc("Pricing Rule", pricing_rule)
+				pricing_rule_doc = nts.get_cached_doc("Pricing Rule", pricing_rule)
 				for field in ["discount_percentage", "discount_amount", "rate"]:
 					if item.get(field) < pricing_rule_doc.get(field):
 						title = get_link_to_form("Pricing Rule", pricing_rule)
 
-						frappe.msgprint(
+						nts.msgprint(
 							_("Row {0}: user has not applied the rule {1} on the item {2}").format(
-								item.idx, frappe.bold(title), frappe.bold(item.item_code)
+								item.idx, nts.bold(title), nts.bold(item.item_code)
 							)
 						)
 
@@ -1032,7 +1032,7 @@ class AccountsController(TransactionBase):
 		if (self.is_new() or self.is_pos_profile_changed()) and not self.get("taxes"):
 			if self.company and not self.get("taxes_and_charges"):
 				# get the default tax master
-				self.taxes_and_charges = frappe.db.get_value(
+				self.taxes_and_charges = nts.db.get_value(
 					tax_master_doctype, {"is_default": 1, "company": self.company}
 				)
 
@@ -1042,12 +1042,12 @@ class AccountsController(TransactionBase):
 		if (
 			self.doctype == "Sales Invoice"
 			and self.is_pos
-			and self.pos_profile != frappe.db.get_value("Sales Invoice", self.name, "pos_profile")
+			and self.pos_profile != nts.db.get_value("Sales Invoice", self.name, "pos_profile")
 		):
 			return True
 
 	def set_taxes_and_charges(self):
-		if frappe.db.get_single_value("Accounts Settings", "add_taxes_from_item_tax_template"):
+		if nts.db.get_single_value("Accounts Settings", "add_taxes_from_item_tax_template"):
 			if hasattr(self, "taxes_and_charges") and not self.get("taxes") and not self.get("is_pos"):
 				if tax_master_doctype := self.meta.get_field("taxes_and_charges").options:
 					self.append_taxes_from_master(tax_master_doctype)
@@ -1060,7 +1060,7 @@ class AccountsController(TransactionBase):
 			self.extend("taxes", get_taxes_and_charges(tax_master_doctype, self.get("taxes_and_charges")))
 
 	def append_taxes_from_item_tax_template(self):
-		if not frappe.db.get_single_value("Accounts Settings", "add_taxes_from_item_tax_template"):
+		if not nts.db.get_single_value("Accounts Settings", "add_taxes_from_item_tax_template"):
 			return
 
 		for row in self.items:
@@ -1096,17 +1096,17 @@ class AccountsController(TransactionBase):
 
 	def validate_enabled_taxes_and_charges(self):
 		taxes_and_charges_doctype = self.meta.get_options("taxes_and_charges")
-		if self.taxes_and_charges and frappe.get_cached_value(
+		if self.taxes_and_charges and nts.get_cached_value(
 			taxes_and_charges_doctype, self.taxes_and_charges, "disabled"
 		):
-			frappe.throw(_("{0} '{1}' is disabled").format(taxes_and_charges_doctype, self.taxes_and_charges))
+			nts.throw(_("{0} '{1}' is disabled").format(taxes_and_charges_doctype, self.taxes_and_charges))
 
 	def validate_tax_account_company(self):
 		for d in self.get("taxes"):
 			if d.account_head:
-				tax_account_company = frappe.get_cached_value("Account", d.account_head, "company")
+				tax_account_company = nts.get_cached_value("Account", d.account_head, "company")
 				if tax_account_company != self.company:
-					frappe.throw(
+					nts.throw(
 						_("Row #{0}: Account {1} does not belong to company {2}").format(
 							d.idx, d.account_head, self.company
 						)
@@ -1118,7 +1118,7 @@ class AccountsController(TransactionBase):
 		posting_date = args.get("posting_date") or self.get("posting_date")
 		fiscal_years = get_fiscal_years(posting_date, company=self.company)
 		if len(fiscal_years) > 1:
-			frappe.throw(
+			nts.throw(
 				_("Multiple fiscal years exist for the date {0}. Please set company in Fiscal Year").format(
 					formatdate(posting_date)
 				)
@@ -1126,7 +1126,7 @@ class AccountsController(TransactionBase):
 		else:
 			fiscal_year = fiscal_years[0][0]
 
-		gl_dict = frappe._dict(
+		gl_dict = nts._dict(
 			{
 				"company": self.company,
 				"posting_date": posting_date,
@@ -1152,7 +1152,7 @@ class AccountsController(TransactionBase):
 			update_gl_dict_with_regional_fields(self, gl_dict)
 
 		accounting_dimensions = get_accounting_dimensions()
-		dimension_dict = frappe._dict()
+		dimension_dict = nts._dict()
 
 		for dimension in accounting_dimensions:
 			dimension_dict[dimension] = self.get(dimension)
@@ -1215,8 +1215,8 @@ class AccountsController(TransactionBase):
 			"Asset Capitalization": "entry_type",
 		}
 
-		for method_name in frappe.get_hooks("voucher_subtypes"):
-			voucher_subtype = frappe.get_attr(method_name)(self)
+		for method_name in nts.get_hooks("voucher_subtypes"):
+			voucher_subtype = nts.get_attr(method_name)(self)
 
 			if voucher_subtype:
 				return voucher_subtype
@@ -1248,10 +1248,10 @@ class AccountsController(TransactionBase):
 			if not flt(item.qty):
 				rows.append(item)
 		if rows:
-			frappe.throw(
+			nts.throw(
 				_(
 					"For Return Invoices with Stock effect, '0' qty Items are not allowed. Following rows are affected: {0}"
-				).format(frappe.bold(comma_and(["#" + str(x.idx) for x in rows])))
+				).format(nts.bold(comma_and(["#" + str(x.idx) for x in rows])))
 			)
 
 	def validate_qty_is_not_zero(self):
@@ -1263,9 +1263,9 @@ class AccountsController(TransactionBase):
 				continue
 
 			if not flt(item.qty):
-				frappe.throw(
+				nts.throw(
 					msg=_("Row #{0}: Quantity for Item {1} cannot be zero.").format(
-						item.idx, frappe.bold(item.item_code)
+						item.idx, nts.bold(item.item_code)
 					),
 					title=_("Invalid Quantity"),
 					exc=InvalidQtyError,
@@ -1277,7 +1277,7 @@ class AccountsController(TransactionBase):
 			valid_currency.append(self.currency)
 
 		if account_currency not in valid_currency:
-			frappe.throw(
+			nts.throw(
 				_("Account {0} is invalid. Account Currency must be {1}").format(
 					account, (" " + _("or") + " ").join(valid_currency)
 				)
@@ -1286,17 +1286,17 @@ class AccountsController(TransactionBase):
 	def clear_unallocated_advances(self, childtype, parentfield):
 		self.set(parentfield, self.get(parentfield, {"allocated_amount": ["not in", [0, None, ""]]}))
 
-		doctype = frappe.qb.DocType(childtype)
-		frappe.qb.from_(doctype).delete().where(
+		doctype = nts.qb.DocType(childtype)
+		nts.qb.from_(doctype).delete().where(
 			(doctype.parentfield == parentfield)
 			& (doctype.parent == self.name)
 			& (doctype.allocated_amount == 0)
 		).run()
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def apply_shipping_rule(self):
 		if self.shipping_rule:
-			shipping_rule = frappe.get_doc("Shipping Rule", self.shipping_rule)
+			shipping_rule = nts.get_doc("Shipping Rule", self.shipping_rule)
 			shipping_rule.apply(self)
 			self.calculate_taxes_and_totals()
 
@@ -1310,11 +1310,11 @@ class AccountsController(TransactionBase):
 			shipping_field = self.meta.get_field(fieldname)
 			if shipping_field and shipping_field.fieldtype == "Link":
 				if self.get(fieldname):
-					return frappe.get_doc("Address", self.get(fieldname))
+					return nts.get_doc("Address", self.get(fieldname))
 
 		return {}
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def set_advances(self):
 		"""Returns list of advances against Account, Party, Reference"""
 
@@ -1398,7 +1398,7 @@ class AccountsController(TransactionBase):
 		return res
 
 	def is_inclusive_tax(self):
-		is_inclusive = cint(frappe.db.get_single_value("Accounts Settings", "show_inclusive_tax_in_print"))
+		is_inclusive = cint(nts.db.get_single_value("Accounts Settings", "show_inclusive_tax_in_print"))
 
 		if is_inclusive:
 			is_inclusive = 0
@@ -1408,7 +1408,7 @@ class AccountsController(TransactionBase):
 		return is_inclusive
 
 	def should_show_taxes_as_table_in_print(self):
-		return cint(frappe.db.get_single_value("Accounts Settings", "show_taxes_as_table_in_print"))
+		return cint(nts.db.get_single_value("Accounts Settings", "show_taxes_as_table_in_print"))
 
 	def validate_advance_entries(self):
 		order_field = "sales_order" if self.doctype == "Sales Invoice" else "purchase_order"
@@ -1423,7 +1423,7 @@ class AccountsController(TransactionBase):
 			advance_entries_against_si = [d.reference_name for d in self.get("advances")]
 			for d in advance_entries:
 				if not advance_entries_against_si or d.reference_name not in advance_entries_against_si:
-					frappe.msgprint(
+					nts.msgprint(
 						_(
 							"Payment Entry {0} is linked against Order {1}, check if it should be pulled as advance in this invoice."
 						).format(d.reference_name, d.against_order)
@@ -1489,7 +1489,7 @@ class AccountsController(TransactionBase):
 		"""
 		Check if gain/loss is booked
 		"""
-		if res := frappe.db.get_all(
+		if res := nts.db.get_all(
 			"Journal Entry Account",
 			filters={
 				"docstatus": 1,
@@ -1502,7 +1502,7 @@ class AccountsController(TransactionBase):
 		):
 			# deduplicate
 			res = list({x for x in res})
-			if exc_vouchers := frappe.db.get_all(
+			if exc_vouchers := nts.db.get_all(
 				"Journal Entry",
 				filters={"name": ["in", res], "voucher_type": "Exchange Gain Or Loss"},
 				fields=["voucher_type", "total_debit", "total_credit"],
@@ -1526,7 +1526,7 @@ class AccountsController(TransactionBase):
 		# see accounts/utils.py:cancel_exchange_gain_loss_journal()
 		if self.docstatus == 1:
 			if dimensions_dict is None:
-				dimensions_dict = frappe._dict()
+				dimensions_dict = nts._dict()
 				active_dimensions = get_dimensions()[0]
 				for dim in active_dimensions:
 					dimensions_dict[dim.fieldname] = self.get(dim.fieldname)
@@ -1560,7 +1560,7 @@ class AccountsController(TransactionBase):
 								self.name,
 								arg.get("referenced_row"),
 							):
-								posting_date = arg.get("difference_posting_date") or frappe.db.get_value(
+								posting_date = arg.get("difference_posting_date") or nts.db.get_value(
 									arg.voucher_type, arg.voucher_no, "posting_date"
 								)
 								je = create_gain_loss_journal(
@@ -1582,7 +1582,7 @@ class AccountsController(TransactionBase):
 									arg.get("cost_center"),
 									dimensions_dict,
 								)
-								frappe.msgprint(
+								nts.msgprint(
 									_("Exchange Gain/Loss amount has been booked through {0}").format(
 										get_link_to_form("Journal Entry", je)
 									)
@@ -1644,7 +1644,7 @@ class AccountsController(TransactionBase):
 
 						reverse_dr_or_cr = "debit" if dr_or_cr == "credit" else "credit"
 
-						gain_loss_account = frappe.get_cached_value(
+						gain_loss_account = nts.get_cached_value(
 							"Company", self.company, "exchange_gain_loss_account"
 						)
 						je = create_gain_loss_journal(
@@ -1666,7 +1666,7 @@ class AccountsController(TransactionBase):
 							self.cost_center,
 							dimensions_dict,
 						)
-						frappe.msgprint(
+						nts.msgprint(
 							_("Exchange Gain/Loss amount has been booked through {0}").format(
 								get_link_to_form("Journal Entry", je)
 							)
@@ -1675,7 +1675,7 @@ class AccountsController(TransactionBase):
 	def is_payable_account(self, reference_doctype, account):
 		if reference_doctype == "Purchase Invoice" or (
 			reference_doctype == "Journal Entry"
-			and frappe.get_cached_value("Account", account, "account_type") == "Payable"
+			and nts.get_cached_value("Account", account, "account_type") == "Payable"
 		):
 			return True
 		return False
@@ -1702,7 +1702,7 @@ class AccountsController(TransactionBase):
 		lst = []
 		for d in self.get("advances"):
 			if flt(d.allocated_amount) > 0:
-				args = frappe._dict(
+				args = nts._dict(
 					{
 						"voucher_type": d.reference_type,
 						"voucher_no": d.reference_name,
@@ -1728,7 +1728,7 @@ class AccountsController(TransactionBase):
 							else self.grand_total
 						),
 						"outstanding_amount": self.outstanding_amount,
-						"difference_account": frappe.get_cached_value(
+						"difference_account": nts.get_cached_value(
 							"Company", self.company, "exchange_gain_loss_account"
 						),
 						"exchange_gain_loss": flt(d.get("exchange_gain_loss")),
@@ -1752,7 +1752,7 @@ class AccountsController(TransactionBase):
 		# Cancel 'Credit/Debit' Note Journal Entries, if found.
 		if self.doctype in ["Sales Invoice", "Purchase Invoice"]:
 			voucher_type = "Credit Note" if self.doctype == "Sales Invoice" else "Debit Note"
-			journals = frappe.db.get_all(
+			journals = nts.db.get_all(
 				"Journal Entry",
 				filters={
 					"is_system_generated": 1,
@@ -1764,7 +1764,7 @@ class AccountsController(TransactionBase):
 				pluck="name",
 			)
 			for x in journals:
-				frappe.get_doc("Journal Entry", x).cancel()
+				nts.get_doc("Journal Entry", x).cancel()
 
 	def on_cancel(self):
 		from prodman.accounts.doctype.bank_transaction.bank_transaction import (
@@ -1785,11 +1785,11 @@ class AccountsController(TransactionBase):
 			cancel_exchange_gain_loss_journal(self)
 			cancel_common_party_journal(self)
 
-			if frappe.db.get_single_value("Accounts Settings", "unlink_payment_on_cancellation_of_invoice"):
+			if nts.db.get_single_value("Accounts Settings", "unlink_payment_on_cancellation_of_invoice"):
 				unlink_ref_doc_from_payment_entries(self)
 
 		elif self.doctype in ["Sales Order", "Purchase Order"]:
-			if frappe.db.get_single_value(
+			if nts.db.get_single_value(
 				"Accounts Settings", "unlink_advance_payment_on_cancelation_of_order"
 			):
 				unlink_ref_doc_from_payment_entries(self)
@@ -1804,7 +1804,7 @@ class AccountsController(TransactionBase):
 
 		linked_po = list(
 			set(
-				frappe.get_all(
+				nts.get_all(
 					"Purchase Order Item",
 					filters={
 						"sales_order": self.name,
@@ -1817,13 +1817,13 @@ class AccountsController(TransactionBase):
 		)
 
 		if linked_po:
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Purchase Order Item",
 				{"sales_order": self.name, "sales_order_item": ["in", so_items], "docstatus": ["<", 2]},
 				{"sales_order": None, "sales_order_item": None},
 			)
 
-			frappe.msgprint(_("Purchase Orders {0} are un-linked").format("\n".join(linked_po)))
+			nts.msgprint(_("Purchase Orders {0} are un-linked").format("\n".join(linked_po)))
 
 	def get_tax_map(self):
 		tax_map = {}
@@ -1868,11 +1868,11 @@ class AccountsController(TransactionBase):
 	def make_discount_gl_entries(self, gl_entries):
 		if self.doctype == "Purchase Invoice":
 			enable_discount_accounting = cint(
-				frappe.db.get_single_value("Buying Settings", "enable_discount_accounting")
+				nts.db.get_single_value("Buying Settings", "enable_discount_accounting")
 			)
 		elif self.doctype == "Sales Invoice":
 			enable_discount_accounting = cint(
-				frappe.db.get_single_value("Selling Settings", "enable_discount_accounting")
+				nts.db.get_single_value("Selling Settings", "enable_discount_accounting")
 			)
 
 		if self.doctype == "Purchase Invoice":
@@ -1967,10 +1967,10 @@ class AccountsController(TransactionBase):
 		item_allowance = {}
 		global_qty_allowance, global_amount_allowance = None, None
 
-		role_allowed_to_over_bill = frappe.get_cached_value(
+		role_allowed_to_over_bill = nts.get_cached_value(
 			"Accounts Settings", None, "role_allowed_to_over_bill"
 		)
-		user_roles = frappe.get_roles()
+		user_roles = nts.get_roles()
 
 		total_overbilled_amt = 0.0
 
@@ -1986,7 +1986,7 @@ class AccountsController(TransactionBase):
 
 			if not ref_amt:
 				if based_on_amt:  # Skip warning for free items
-					frappe.msgprint(
+					nts.msgprint(
 						_(
 							"System will not check over billing since amount for Item {0} in {1} is zero"
 						).format(item.item_code, ref_dt),
@@ -2017,14 +2017,14 @@ class AccountsController(TransactionBase):
 				if self.doctype != "Purchase Invoice":
 					self.throw_overbill_exception(item, max_allowed_amt)
 				elif not cint(
-					frappe.db.get_single_value(
+					nts.db.get_single_value(
 						"Buying Settings", "bill_for_rejected_quantity_in_purchase_invoice"
 					)
 				):
 					self.throw_overbill_exception(item, max_allowed_amt)
 
 		if role_allowed_to_over_bill in user_roles and total_overbilled_amt > 0.1:
-			frappe.msgprint(
+			nts.msgprint(
 				_("Overbilling of {} ignored because you have {} role.").format(
 					total_overbilled_amt, role_allowed_to_over_bill
 				),
@@ -2033,8 +2033,8 @@ class AccountsController(TransactionBase):
 			)
 
 	def get_billing_reference_details(self, reference_names, reference_doctype, based_on):
-		return frappe._dict(
-			frappe.get_all(
+		return nts._dict(
+			nts.get_all(
 				reference_doctype,
 				filters={"name": ("in", reference_names)},
 				fields=["name", based_on],
@@ -2050,15 +2050,15 @@ class AccountsController(TransactionBase):
 		that are submitted OR not submitted but are under current invoice
 		"""
 
-		from frappe.query_builder import Criterion
-		from frappe.query_builder.functions import Sum
+		from nts.query_builder import Criterion
+		from nts.query_builder.functions import Sum
 
-		item_doctype = frappe.qb.DocType(item.doctype)
-		based_on_field = frappe.qb.Field(based_on)
-		join_field = frappe.qb.Field(item_ref_dn)
+		item_doctype = nts.qb.DocType(item.doctype)
+		based_on_field = nts.qb.Field(based_on)
+		join_field = nts.qb.Field(item_ref_dn)
 
 		result = (
-			frappe.qb.from_(item_doctype)
+			nts.qb.from_(item_doctype)
 			.select(Sum(based_on_field))
 			.where(join_field == item.get(item_ref_dn))
 			.where(
@@ -2085,7 +2085,7 @@ class AccountsController(TransactionBase):
 		return result[0][0] if result else 0
 
 	def throw_overbill_exception(self, item, max_allowed_amt):
-		frappe.throw(
+		nts.throw(
 			_(
 				"Cannot overbill for Item {0} in row {1} more than {2}. To allow over-billing, please set allowance in Accounts Settings"
 			).format(item.item_code, item.idx, max_allowed_amt)
@@ -2100,16 +2100,16 @@ class AccountsController(TransactionBase):
 		stock_items = []
 		item_codes = list(set(item.item_code for item in self.get("items")))
 		if item_codes:
-			stock_items = frappe.db.get_values(
+			stock_items = nts.db.get_values(
 				"Item", {"name": ["in", item_codes], "is_stock_item": 1}, pluck="name", cache=True
 			)
 
 		return stock_items
 
 	def calculate_total_advance_from_ledger(self):
-		adv = frappe.qb.DocType("Advance Payment Ledger Entry")
+		adv = nts.qb.DocType("Advance Payment Ledger Entry")
 		advance = (
-			frappe.qb.from_(adv)
+			nts.qb.from_(adv)
 			.select(adv.currency.as_("account_currency"), Abs(Sum(adv.amount)).as_("amount"))
 			.where(
 				(adv.against_voucher_type == self.doctype)
@@ -2133,7 +2133,7 @@ class AccountsController(TransactionBase):
 			)
 
 			if advance.account_currency:
-				frappe.db.set_value(
+				nts.db.set_value(
 					self.doctype, self.name, "party_account_currency", advance.account_currency
 				)
 
@@ -2149,7 +2149,7 @@ class AccountsController(TransactionBase):
 			)
 
 			if self.currency == self.company_currency and advance_paid > order_total:
-				frappe.throw(
+				nts.throw(
 					_(
 						"Total advance ({0}) against Order {1} cannot be greater than the Grand Total ({2})"
 					).format(formatted_advance_paid, self.name, formatted_order_total)
@@ -2160,21 +2160,21 @@ class AccountsController(TransactionBase):
 	@property
 	def company_abbr(self):
 		if not hasattr(self, "_abbr"):
-			self._abbr = frappe.get_cached_value("Company", self.company, "abbr")
+			self._abbr = nts.get_cached_value("Company", self.company, "abbr")
 
 		return self._abbr
 
 	def raise_missing_debit_credit_account_error(self, party_type, party):
 		"""Raise an error if debit to/credit to account does not exist."""
 		db_or_cr = (
-			frappe.bold(_("Debit To")) if self.doctype == "Sales Invoice" else frappe.bold(_("Credit To"))
+			nts.bold(_("Debit To")) if self.doctype == "Sales Invoice" else nts.bold(_("Credit To"))
 		)
 		rec_or_pay = "Receivable" if self.doctype == "Sales Invoice" else "Payable"
 
-		link_to_party = frappe.utils.get_link_to_form(party_type, party)
-		link_to_company = frappe.utils.get_link_to_form("Company", self.company)
+		link_to_party = nts.utils.get_link_to_form(party_type, party)
+		link_to_company = nts.utils.get_link_to_form("Company", self.company)
 
-		message = _("{0} Account not found against Customer {1}.").format(db_or_cr, frappe.bold(party) or "")
+		message = _("{0} Account not found against Customer {1}.").format(db_or_cr, nts.bold(party) or "")
 		message += "<br>" + _("Please set one of the following:") + "<br>"
 		message += (
 			"<br><ul><li>"
@@ -2187,7 +2187,7 @@ class AccountsController(TransactionBase):
 			+ "</li></ul>"
 		)
 
-		frappe.throw(message, title=_("Account Missing"), exc=AccountMissingError)
+		nts.throw(message, title=_("Account Missing"), exc=AccountMissingError)
 
 	def validate_party(self):
 		party_type, party = self.get_party()
@@ -2227,7 +2227,7 @@ class AccountsController(TransactionBase):
 					and party_account_currency != self.company_currency
 					and self.currency != party_account_currency
 				):
-					frappe.throw(
+					nts.throw(
 						_("Accounting Entry for {0}: {1} can only be made in currency: {2}").format(
 							party_type, party, party_account_currency
 						),
@@ -2249,7 +2249,7 @@ class AccountsController(TransactionBase):
 		party_gle_currency = get_party_gle_currency(party_type, party, self.company)
 		party_account = self.get("debit_to") if self.doctype == "Sales Invoice" else self.get("credit_to")
 		party_account_currency = get_account_currency(party_account)
-		allow_multi_currency_invoices_against_single_party_account = frappe.db.get_singles_value(
+		allow_multi_currency_invoices_against_single_party_account = nts.db.get_singles_value(
 			"Accounts Settings", "allow_multi_currency_invoices_against_single_party_account"
 		)
 
@@ -2258,9 +2258,9 @@ class AccountsController(TransactionBase):
 			and (party_account_currency != self.currency)
 			and not allow_multi_currency_invoices_against_single_party_account
 		):
-			frappe.throw(
+			nts.throw(
 				_("Party Account {0} currency ({1}) and document currency ({2}) should be same").format(
-					frappe.bold(party_account), party_account_currency, self.currency
+					nts.bold(party_account), party_account_currency, self.currency
 				)
 			)
 
@@ -2269,15 +2269,15 @@ class AccountsController(TransactionBase):
 		for adv in self.advances:
 			consider_for_total_advance = True
 			if adv.reference_name == linked_doc_name:
-				doctype = frappe.qb.DocType(self.doctype + " Advance")
-				frappe.qb.from_(doctype).delete().where(doctype.name == adv.name).run()
+				doctype = nts.qb.DocType(self.doctype + " Advance")
+				nts.qb.from_(doctype).delete().where(doctype.name == adv.name).run()
 
 				consider_for_total_advance = False
 
 			if consider_for_total_advance:
 				total_allocated_amount += flt(adv.allocated_amount, adv.precision("allocated_amount"))
 
-		frappe.db.set_value(
+		nts.db.set_value(
 			self.doctype, self.name, "total_advance", total_allocated_amount, update_modified=False
 		)
 
@@ -2286,7 +2286,7 @@ class AccountsController(TransactionBase):
 		# to update serial number in print
 		count = 0
 
-		fields_to_group = frappe.get_hooks("fields_for_group_similar_items")
+		fields_to_group = nts.get_hooks("fields_for_group_similar_items")
 		fields_to_group = set(fields_to_group)
 
 		for item in self.items:
@@ -2340,7 +2340,7 @@ class AccountsController(TransactionBase):
 			grand_total = grand_total - flt(self.write_off_amount)
 			po_or_so, doctype, fieldname = self.get_order_details()
 			automatically_fetch_payment_terms = cint(
-				frappe.db.get_single_value("Accounts Settings", "automatically_fetch_payment_terms")
+				nts.db.get_single_value("Accounts Settings", "automatically_fetch_payment_terms")
 			)
 
 		if self.get("total_advance"):
@@ -2381,7 +2381,7 @@ class AccountsController(TransactionBase):
 				)
 				self.append("payment_schedule", data)
 
-		allocate_payment_based_on_payment_terms = frappe.db.get_value(
+		allocate_payment_based_on_payment_terms = nts.db.get_value(
 			"Payment Terms Template", self.payment_terms_template, "allocate_payment_based_on_payment_terms"
 		)
 
@@ -2441,10 +2441,10 @@ class AccountsController(TransactionBase):
 		return True
 
 	def linked_order_has_payment_terms_template(self, po_or_so, doctype):
-		return frappe.get_value(doctype, po_or_so, "payment_terms_template")
+		return nts.get_value(doctype, po_or_so, "payment_terms_template")
 
 	def linked_order_has_payment_schedule(self, po_or_so):
-		return frappe.get_all("Payment Schedule", filters={"parent": po_or_so})
+		return nts.get_all("Payment Schedule", filters={"parent": po_or_so})
 
 	def fetch_payment_terms_from_order(
 		self, po_or_so, po_or_so_doctype, grand_total, base_grand_total, automatically_fetch_payment_terms
@@ -2452,7 +2452,7 @@ class AccountsController(TransactionBase):
 		"""
 		Fetch Payment Terms from Purchase/Sales Order on creating a new Purchase/Sales Invoice.
 		"""
-		po_or_so = frappe.get_cached_doc(po_or_so_doctype, po_or_so)
+		po_or_so = nts.get_cached_doc(po_or_so_doctype, po_or_so)
 
 		self.payment_schedule = []
 		self.payment_terms_template = po_or_so.payment_terms_template
@@ -2507,7 +2507,7 @@ class AccountsController(TransactionBase):
 		for d in self.get("payment_schedule"):
 			d.validate_from_to_dates("discount_date", "due_date")
 			if self.doctype == "Sales Order" and getdate(d.due_date) < getdate(self.transaction_date):
-				frappe.throw(
+				nts.throw(
 					_("Row {0}: Due Date in the Payment Terms table cannot be before Posting Date").format(
 						d.idx
 					)
@@ -2518,7 +2518,7 @@ class AccountsController(TransactionBase):
 
 		if li:
 			duplicates = "<br>" + "<br>".join(li)
-			frappe.throw(_("Rows with duplicate due dates in other rows were found: {0}").format(duplicates))
+			nts.throw(_("Rows with duplicate due dates in other rows were found: {0}").format(duplicates))
 
 	def validate_payment_schedule_amount(self):
 		if (self.doctype == "Sales Invoice" and self.is_pos) or self.get("is_opening") == "Yes":
@@ -2569,7 +2569,7 @@ class AccountsController(TransactionBase):
 				)
 				> 0.1
 			):
-				frappe.throw(
+				nts.throw(
 					_("Total Payment Amount in Payment Schedule must be equal to Grand / Rounded Total")
 				)
 
@@ -2577,7 +2577,7 @@ class AccountsController(TransactionBase):
 		if self.meta.get_field("disable_rounded_total"):
 			return self.disable_rounded_total
 		else:
-			return frappe.db.get_single_value("Global Defaults", "disable_rounded_total")
+			return nts.db.get_single_value("Global Defaults", "disable_rounded_total")
 
 	def set_inter_company_account(self):
 		"""
@@ -2587,15 +2587,15 @@ class AccountsController(TransactionBase):
 		"""
 
 		if self.is_internal_transfer() and not self.unrealized_profit_loss_account:
-			unrealized_profit_loss_account = frappe.get_cached_value(
+			unrealized_profit_loss_account = nts.get_cached_value(
 				"Company", self.company, "unrealized_profit_loss_account"
 			)
 
 			if not unrealized_profit_loss_account:
 				msg = _(
 					"Please select Unrealized Profit / Loss account or add default Unrealized Profit / Loss account account for company {0}"
-				).format(frappe.bold(self.company))
-				frappe.throw(msg)
+				).format(nts.bold(self.company))
+				nts.throw(msg)
 
 			self.unrealized_profit_loss_account = unrealized_profit_loss_account
 
@@ -2621,14 +2621,14 @@ class AccountsController(TransactionBase):
 		if not is_invoice:
 			return
 
-		if frappe.db.get_single_value("Accounts Settings", "enable_common_party_accounting"):
+		if nts.db.get_single_value("Accounts Settings", "enable_common_party_accounting"):
 			party_link = self.get_common_party_link()
 			if party_link and self.outstanding_amount:
 				self.create_advance_and_reconcile(party_link)
 
 	def get_common_party_link(self):
 		party_type, party = self.get_party()
-		return frappe.db.get_value(
+		return nts.db.get_value(
 			doctype="Party Link",
 			filters={"secondary_role": party_type, "secondary_party": party},
 			fieldname=["primary_role", "primary_party"],
@@ -2650,15 +2650,15 @@ class AccountsController(TransactionBase):
 			primary_account_currency != default_currency or secondary_account_currency != default_currency
 		)
 
-		jv = frappe.new_doc("Journal Entry")
+		jv = nts.new_doc("Journal Entry")
 		jv.voucher_type = "Journal Entry"
 		jv.posting_date = self.posting_date
 		jv.company = self.company
 		jv.remark = f"Adjustment for {self.doctype} {self.name}"
 		jv.is_system_generated = True
 
-		reconcilation_entry = frappe._dict()
-		advance_entry = frappe._dict()
+		reconcilation_entry = nts._dict()
+		advance_entry = nts._dict()
 
 		reconcilation_entry.account = secondary_account
 		reconcilation_entry.party_type = secondary_party_type
@@ -2674,7 +2674,7 @@ class AccountsController(TransactionBase):
 		advance_entry.is_advance = "Yes"
 
 		# Update dimensions
-		dimensions_dict = frappe._dict()
+		dimensions_dict = nts._dict()
 		active_dimensions = get_dimensions()[0]
 		for dim in active_dimensions:
 			dimensions_dict[dim.fieldname] = self.get(dim.fieldname)
@@ -2752,7 +2752,7 @@ class AccountsController(TransactionBase):
 			throw(_("Conversion rate must be 1.00 if document currency is same as company currency"))
 
 		if self.currency != default_currency and flt(self.conversion_rate) == 1.00:
-			frappe.msgprint(
+			nts.msgprint(
 				_("Conversion rate is 1.00, but document currency is different from company currency")
 			)
 
@@ -2763,7 +2763,7 @@ class AccountsController(TransactionBase):
 			and not self.get("finance_book")
 			and asset.finance_books[0].finance_book
 		):
-			frappe.throw(
+			nts.throw(
 				_("Select finance book for the item {0} at row {1}").format(item.item_code, item.idx)
 			)
 
@@ -2787,9 +2787,9 @@ class AccountsController(TransactionBase):
 
 		return False
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def repost_accounting_entries(self):
-		repost_ledger = frappe.new_doc("Repost Accounting Ledger")
+		repost_ledger = nts.new_doc("Repost Accounting Ledger")
 		repost_ledger.company = self.company
 		repost_ledger.append("vouchers", {"voucher_type": self.doctype, "voucher_no": self.name})
 		repost_ledger.flags.ignore_permissions = True
@@ -2797,7 +2797,7 @@ class AccountsController(TransactionBase):
 		repost_ledger.submit()
 
 	def get_advance_payment_doctypes(self) -> list:
-		return frappe.get_hooks("advance_payment_doctypes")
+		return nts.get_hooks("advance_payment_doctypes")
 
 	def make_advance_payment_ledger_for_journal(self):
 		advance_payment_doctypes = self.get_advance_payment_doctypes()
@@ -2815,7 +2815,7 @@ class AccountsController(TransactionBase):
 
 			amount = x.get(dr_or_cr)
 			if amount > 0:
-				doc = frappe.new_doc("Advance Payment Ledger Entry")
+				doc = nts.new_doc("Advance Payment Ledger Entry")
 				doc.company = self.company
 				doc.voucher_type = self.doctype
 				doc.voucher_no = self.name
@@ -2838,7 +2838,7 @@ class AccountsController(TransactionBase):
 			else self.paid_to_account_currency
 		)
 		for x in advance_doctype_references:
-			doc = frappe.new_doc("Advance Payment Ledger Entry")
+			doc = nts.new_doc("Advance Payment Ledger Entry")
 			doc.company = self.company
 			doc.voucher_type = self.doctype
 			doc.voucher_no = self.name
@@ -2863,22 +2863,22 @@ class AccountsController(TransactionBase):
 			x["transaction_exchange_rate"] = self.get("conversion_rate") or 1
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_tax_rate(account_head):
-	return frappe.get_cached_value("Account", account_head, ["tax_rate", "account_name"], as_dict=True)
+	return nts.get_cached_value("Account", account_head, ["tax_rate", "account_name"], as_dict=True)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_default_taxes_and_charges(master_doctype, tax_template=None, company=None):
 	if not company:
 		return {}
 
 	if tax_template and company:
-		tax_template_company = frappe.get_cached_value(master_doctype, tax_template, "company")
+		tax_template_company = nts.get_cached_value(master_doctype, tax_template, "company")
 		if tax_template_company == company:
 			return
 
-	default_tax = frappe.db.get_value(master_doctype, {"is_default": 1, "company": company})
+	default_tax = nts.db.get_value(master_doctype, {"is_default": 1, "company": company})
 
 	return {
 		"taxes_and_charges": default_tax,
@@ -2886,13 +2886,13 @@ def get_default_taxes_and_charges(master_doctype, tax_template=None, company=Non
 	}
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_taxes_and_charges(master_doctype, master_name):
 	if not master_name:
 		return
-	from frappe.model import child_table_fields, default_fields
+	from nts.model import child_table_fields, default_fields
 
-	tax_master = frappe.get_doc(master_doctype, master_name)
+	tax_master = nts.get_doc(master_doctype, master_name)
 
 	taxes_and_charges = []
 	for _i, tax in enumerate(tax_master.get("taxes")):
@@ -2910,7 +2910,7 @@ def get_taxes_and_charges(master_doctype, master_name):
 def validate_conversion_rate(currency, conversion_rate, conversion_rate_label, company):
 	"""common validation for currency and price list currency"""
 
-	company_currency = frappe.get_cached_value("Company", company, "default_currency")
+	company_currency = nts.get_cached_value("Company", company, "default_currency")
 
 	if not conversion_rate:
 		throw(
@@ -2922,22 +2922,22 @@ def validate_conversion_rate(currency, conversion_rate, conversion_rate_label, c
 
 def validate_taxes_and_charges(tax):
 	if tax.charge_type in ["Actual", "On Net Total", "On Paid Amount"] and tax.row_id:
-		frappe.throw(
+		nts.throw(
 			_("Can refer row only if the charge type is 'On Previous Row Amount' or 'Previous Row Total'")
 		)
 	elif tax.charge_type in ["On Previous Row Amount", "On Previous Row Total"]:
 		if cint(tax.idx) == 1:
-			frappe.throw(
+			nts.throw(
 				_(
 					"Cannot select charge type as 'On Previous Row Amount' or 'On Previous Row Total' for first row"
 				)
 			)
 		elif not tax.row_id:
-			frappe.throw(
+			nts.throw(
 				_("Please specify a valid Row ID for row {0} in table {1}").format(tax.idx, _(tax.doctype))
 			)
 		elif tax.row_id and cint(tax.row_id) >= cint(tax.idx):
-			frappe.throw(
+			nts.throw(
 				_("Cannot refer row number greater than or equal to current row number for this Charge type")
 			)
 
@@ -2946,20 +2946,20 @@ def validate_taxes_and_charges(tax):
 
 
 def validate_account_head(idx, account, company, context=""):
-	account_company = frappe.get_cached_value("Account", account, "company")
-	is_group = frappe.get_cached_value("Account", account, "is_group")
+	account_company = nts.get_cached_value("Account", account, "company")
+	is_group = nts.get_cached_value("Account", account, "is_group")
 
 	if account_company != company:
-		frappe.throw(
+		nts.throw(
 			_("Row {0}: {3} Account {1} does not belong to Company {2}").format(
-				idx, frappe.bold(account), frappe.bold(company), context
+				idx, nts.bold(account), nts.bold(company), context
 			),
 			title=_("Invalid Account"),
 		)
 
 	if is_group:
-		frappe.throw(
-			_("Row {0}: Account {1} is a Group Account").format(idx, frappe.bold(account)),
+		nts.throw(
+			_("Row {0}: Account {1} is a Group Account").format(idx, nts.bold(account)),
 			title=_("Invalid Account"),
 		)
 
@@ -2968,12 +2968,12 @@ def validate_cost_center(tax, doc):
 	if not tax.cost_center:
 		return
 
-	company = frappe.get_cached_value("Cost Center", tax.cost_center, "company")
+	company = nts.get_cached_value("Cost Center", tax.cost_center, "company")
 
 	if company != doc.company:
-		frappe.throw(
+		nts.throw(
 			_("Row {0}: Cost Center {1} does not belong to Company {2}").format(
-				tax.idx, frappe.bold(tax.cost_center), frappe.bold(doc.company)
+				tax.idx, nts.bold(tax.cost_center), nts.bold(doc.company)
 			),
 			title=_("Invalid Cost Center"),
 		)
@@ -3006,14 +3006,14 @@ def validate_inclusive_tax(tax, doc):
 			# all rows about the referred tax should be inclusive
 			_on_previous_row_error("1 - %d" % (tax.row_id,))
 		elif tax.get("category") == "Valuation":
-			frappe.throw(_("Valuation type charges can not be marked as Inclusive"))
+			nts.throw(_("Valuation type charges can not be marked as Inclusive"))
 
 
 def set_balance_in_account_currency(
 	gl_dict, account_currency=None, conversion_rate=None, company_currency=None
 ):
 	if (not conversion_rate) and (account_currency != company_currency):
-		frappe.throw(
+		nts.throw(
 			_("Account: {0} with currency: {1} can not be selected").format(gl_dict.account, account_currency)
 		)
 
@@ -3044,10 +3044,10 @@ def get_advance_journal_entries(
 	order_list,
 	include_unallocated=True,
 ):
-	journal_entry = frappe.qb.DocType("Journal Entry")
-	journal_acc = frappe.qb.DocType("Journal Entry Account")
+	journal_entry = nts.qb.DocType("Journal Entry")
+	journal_acc = nts.qb.DocType("Journal Entry Account")
 	q = (
-		frappe.qb.from_(journal_entry)
+		nts.qb.from_(journal_entry)
 		.inner_join(journal_acc)
 		.on(journal_entry.name == journal_acc.parent)
 		.select(
@@ -3111,7 +3111,7 @@ def get_advance_payment_entries(
 	condition=None,
 ):
 	payment_entries = []
-	payment_entry = frappe.qb.DocType("Payment Entry")
+	payment_entry = nts.qb.DocType("Payment Entry")
 
 	if order_list or against_all_orders:
 		q = get_common_query(
@@ -3122,7 +3122,7 @@ def get_advance_payment_entries(
 			limit,
 			condition,
 		)
-		payment_ref = frappe.qb.DocType("Payment Entry Reference")
+		payment_ref = nts.qb.DocType("Payment Entry Reference")
 
 		q = q.inner_join(payment_ref).on(payment_entry.name == payment_ref.parent)
 		q = q.select(
@@ -3163,12 +3163,12 @@ def get_common_query(
 	limit,
 	condition,
 ):
-	account_type = frappe.db.get_value("Party Type", party_type, "account_type")
+	account_type = nts.db.get_value("Party Type", party_type, "account_type")
 	payment_type = "Receive" if account_type == "Receivable" else "Pay"
-	payment_entry = frappe.qb.DocType("Payment Entry")
+	payment_entry = nts.qb.DocType("Payment Entry")
 
 	q = (
-		frappe.qb.from_(payment_entry)
+		nts.qb.from_(payment_entry)
 		.select(
 			ConstantColumn("Payment Entry").as_("reference_type"),
 			(payment_entry.name).as_("reference_name"),
@@ -3246,36 +3246,36 @@ def get_common_query(
 def update_invoice_status():
 	"""Updates status as Overdue for applicable invoices. Runs daily."""
 	today = getdate()
-	payment_schedule = frappe.qb.DocType("Payment Schedule")
+	payment_schedule = nts.qb.DocType("Payment Schedule")
 	for doctype in ("Sales Invoice", "Purchase Invoice"):
-		invoice = frappe.qb.DocType(doctype)
+		invoice = nts.qb.DocType(doctype)
 
 		consider_base_amount = invoice.party_account_currency != invoice.currency
 		payment_amount = (
-			frappe.qb.terms.Case()
+			nts.qb.terms.Case()
 			.when(consider_base_amount, payment_schedule.base_payment_amount)
 			.else_(payment_schedule.payment_amount)
 		)
 
 		payable_amount = (
-			frappe.qb.from_(payment_schedule)
+			nts.qb.from_(payment_schedule)
 			.select(Sum(payment_amount))
 			.where((payment_schedule.parent == invoice.name) & (payment_schedule.due_date < today))
 		)
 
 		total = (
-			frappe.qb.terms.Case()
+			nts.qb.terms.Case()
 			.when(invoice.disable_rounded_total, invoice.grand_total)
 			.else_(invoice.rounded_total)
 		)
 
 		base_total = (
-			frappe.qb.terms.Case()
+			nts.qb.terms.Case()
 			.when(invoice.disable_rounded_total, invoice.base_grand_total)
 			.else_(invoice.base_rounded_total)
 		)
 
-		total_amount = frappe.qb.terms.Case().when(consider_base_amount, base_total).else_(total)
+		total_amount = nts.qb.terms.Case().when(consider_base_amount, base_total).else_(total)
 
 		is_overdue = total_amount - invoice.outstanding_amount < payable_amount
 
@@ -3291,22 +3291,22 @@ def update_invoice_status():
 		)
 
 		status = (
-			frappe.qb.terms.Case()
+			nts.qb.terms.Case()
 			.when(invoice.status.like("%Discounted"), "Overdue and Discounted")
 			.else_("Overdue")
 		)
 
-		frappe.qb.update(invoice).set("status", status).where(conditions).run()
+		nts.qb.update(invoice).set("status", status).where(conditions).run()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_payment_terms(
 	terms_template, posting_date=None, grand_total=None, base_grand_total=None, bill_date=None
 ):
 	if not terms_template:
 		return
 
-	terms_doc = frappe.get_doc("Payment Terms Template", terms_template)
+	terms_doc = nts.get_doc("Payment Terms Template", terms_template)
 
 	schedule = []
 	for d in terms_doc.get("terms"):
@@ -3316,13 +3316,13 @@ def get_payment_terms(
 	return schedule
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_payment_term_details(
 	term, posting_date=None, grand_total=None, base_grand_total=None, bill_date=None
 ):
-	term_details = frappe._dict()
+	term_details = nts._dict()
 	if isinstance(term, str):
-		term = frappe.get_doc("Payment Term", term)
+		term = nts.get_doc("Payment Term", term)
 	else:
 		term_details.payment_term = term.payment_term
 	term_details.description = term.description
@@ -3376,7 +3376,7 @@ def get_supplier_block_status(party_name):
 	Returns a dict containing the values of `on_hold`, `release_date` and `hold_type` of
 	a `Supplier`
 	"""
-	supplier = frappe.get_doc("Supplier", party_name)
+	supplier = nts.get_doc("Supplier", party_name)
 	info = {
 		"on_hold": supplier.on_hold,
 		"release_date": supplier.release_date,
@@ -3402,7 +3402,7 @@ def set_child_tax_template_and_map(item, child_item, parent_doc):
 
 
 def add_taxes_from_tax_template(child_item, parent_doc, db_insert=True):
-	add_taxes_from_item_tax_template = frappe.db.get_single_value(
+	add_taxes_from_item_tax_template = nts.db.get_single_value(
 		"Accounts Settings", "add_taxes_from_item_tax_template"
 	)
 
@@ -3433,9 +3433,9 @@ def set_order_defaults(parent_doctype, parent_doctype_name, child_doctype, child
 	"""
 	Returns a Sales/Purchase Order Item child item containing the default values
 	"""
-	p_doc = frappe.get_doc(parent_doctype, parent_doctype_name)
-	child_item = frappe.new_doc(child_doctype, parent_doc=p_doc, parentfield=child_docname)
-	item = frappe.get_doc("Item", trans_item.get("item_code"))
+	p_doc = nts.get_doc(parent_doctype, parent_doctype_name)
+	child_item = nts.new_doc(child_doctype, parent_doc=p_doc, parentfield=child_docname)
+	item = nts.get_doc("Item", trans_item.get("item_code"))
 
 	for field in ("item_code", "item_name", "description", "item_group"):
 		child_item.update({field: item.get(field)})
@@ -3455,10 +3455,10 @@ def set_order_defaults(parent_doctype, parent_doctype_name, child_doctype, child
 	if child_doctype == "Sales Order Item":
 		child_item.warehouse = get_item_warehouse(item, p_doc, overwrite_warehouse=True)
 		if not child_item.warehouse:
-			frappe.throw(
+			nts.throw(
 				_(
 					"Cannot find a default warehouse for item {0}. Please set one in the Item Master or in Stock Settings."
-				).format(frappe.bold(item.item_code))
+				).format(nts.bold(item.item_code))
 			)
 
 	set_child_tax_template_and_map(item, child_item, p_doc)
@@ -3470,33 +3470,33 @@ def validate_child_on_delete(row, parent):
 	"""Check if partially transacted item (row) is being deleted."""
 	if parent.doctype == "Sales Order":
 		if flt(row.delivered_qty):
-			frappe.throw(
+			nts.throw(
 				_("Row #{0}: Cannot delete item {1} which has already been delivered").format(
 					row.idx, row.item_code
 				)
 			)
 		if flt(row.work_order_qty):
-			frappe.throw(
+			nts.throw(
 				_("Row #{0}: Cannot delete item {1} which has work order assigned to it.").format(
 					row.idx, row.item_code
 				)
 			)
 		if flt(row.ordered_qty):
-			frappe.throw(
+			nts.throw(
 				_("Row #{0}: Cannot delete item {1} which is assigned to customer's purchase order.").format(
 					row.idx, row.item_code
 				)
 			)
 
 	if parent.doctype == "Purchase Order" and flt(row.received_qty):
-		frappe.throw(
+		nts.throw(
 			_("Row #{0}: Cannot delete item {1} which has already been received").format(
 				row.idx, row.item_code
 			)
 		)
 
 	if flt(row.billed_amt):
-		frappe.throw(
+		nts.throw(
 			_("Row #{0}: Cannot delete item {1} which has already been billed.").format(
 				row.idx, row.item_code
 			)
@@ -3551,15 +3551,15 @@ def validate_and_delete_children(parent, data) -> bool:
 	return bool(deleted_children)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def update_child_qty_rate(parent_doctype, trans_items, parent_doctype_name, child_docname="items"):
 	def check_doc_permissions(doc, perm_type="create"):
 		try:
 			doc.check_permission(perm_type)
-		except frappe.PermissionError:
+		except nts.PermissionError:
 			actions = {"create": "add", "write": "update"}
 
-			frappe.throw(
+			nts.throw(
 				_("You do not have permissions to {} items in a {}.").format(
 					actions[perm_type], parent_doctype
 				),
@@ -3571,9 +3571,9 @@ def update_child_qty_rate(parent_doctype, trans_items, parent_doctype_name, chil
 		if not workflow:
 			return
 
-		workflow_doc = frappe.get_doc("Workflow", workflow)
+		workflow_doc = nts.get_doc("Workflow", workflow)
 		current_state = doc.get(workflow_doc.workflow_state_field)
-		roles = frappe.get_roles()
+		roles = nts.get_roles()
 
 		transitions = []
 		for transition in workflow_doc.transitions:
@@ -3583,7 +3583,7 @@ def update_child_qty_rate(parent_doctype, trans_items, parent_doctype_name, chil
 				transitions.append(transition.as_dict())
 
 		if not transitions:
-			frappe.throw(
+			nts.throw(
 				_("You are not allowed to update as per the conditions set in {} Workflow.").format(
 					get_link_to_form("Workflow", workflow)
 				),
@@ -3596,18 +3596,18 @@ def update_child_qty_rate(parent_doctype, trans_items, parent_doctype_name, chil
 
 	def validate_quantity(child_item, new_data):
 		if not flt(new_data.get("qty")):
-			frappe.throw(
+			nts.throw(
 				_("Row #{0}: Quantity for Item {1} cannot be zero.").format(
-					new_data.get("idx"), frappe.bold(new_data.get("item_code"))
+					new_data.get("idx"), nts.bold(new_data.get("item_code"))
 				),
 				title=_("Invalid Qty"),
 			)
 
 		if parent_doctype == "Sales Order" and flt(new_data.get("qty")) < flt(child_item.delivered_qty):
-			frappe.throw(_("Cannot set quantity less than delivered quantity"))
+			nts.throw(_("Cannot set quantity less than delivered quantity"))
 
 		if parent_doctype == "Purchase Order" and flt(new_data.get("qty")) < flt(child_item.received_qty):
-			frappe.throw(_("Cannot set quantity less than received quantity"))
+			nts.throw(_("Cannot set quantity less than received quantity"))
 
 	def should_update_supplied_items(doc) -> bool:
 		"""Subcontracted PO can allow following changes *after submit*:
@@ -3623,32 +3623,32 @@ def update_child_qty_rate(parent_doctype, trans_items, parent_doctype_name, chil
 
 		update_supplied_items = any_qty_changed or items_added_or_removed or any_conversion_factor_changed
 		if update_supplied_items and supplied_items_processed:
-			frappe.throw(_("Item qty can not be updated as raw materials are already processed."))
+			nts.throw(_("Item qty can not be updated as raw materials are already processed."))
 
 		return update_supplied_items
 
 	def validate_fg_item_for_subcontracting(new_data, is_new):
 		if is_new:
 			if not new_data.get("fg_item"):
-				frappe.throw(
+				nts.throw(
 					_("Finished Good Item is not specified for service item {0}").format(
 						new_data["item_code"]
 					)
 				)
 			else:
-				is_sub_contracted_item, default_bom = frappe.db.get_value(
+				is_sub_contracted_item, default_bom = nts.db.get_value(
 					"Item", new_data["fg_item"], ["is_sub_contracted_item", "default_bom"]
 				)
 
 				if not is_sub_contracted_item:
-					frappe.throw(
+					nts.throw(
 						_("Finished Good Item {0} must be a sub-contracted item").format(new_data["fg_item"])
 					)
 				elif not default_bom:
-					frappe.throw(_("Default BOM not found for FG Item {0}").format(new_data["fg_item"]))
+					nts.throw(_("Default BOM not found for FG Item {0}").format(new_data["fg_item"]))
 
 		if not new_data.get("fg_item_qty"):
-			frappe.throw(_("Finished Good Item {0} Qty can not be zero").format(new_data["fg_item"]))
+			nts.throw(_("Finished Good Item {0} Qty can not be zero").format(new_data["fg_item"]))
 
 	data = json.loads(trans_items)
 
@@ -3656,7 +3656,7 @@ def update_child_qty_rate(parent_doctype, trans_items, parent_doctype_name, chil
 	items_added_or_removed = False  # updated to true if any new item is added or removed
 	any_conversion_factor_changed = False
 
-	parent = frappe.get_doc(parent_doctype, parent_doctype_name)
+	parent = nts.get_doc(parent_doctype, parent_doctype_name)
 
 	check_doc_permissions(parent, "write")
 	_removed_items = validate_and_delete_children(parent, data)
@@ -3676,7 +3676,7 @@ def update_child_qty_rate(parent_doctype, trans_items, parent_doctype_name, chil
 			child_item = get_new_child_item(d)
 		else:
 			check_doc_permissions(parent, "write")
-			child_item = frappe.get_doc(parent_doctype + " Item", d.get("docname"))
+			child_item = nts.get_doc(parent_doctype + " Item", d.get("docname"))
 
 			prev_rate, new_rate = flt(child_item.get("rate")), flt(d.get("rate"))
 			prev_qty, new_qty = flt(child_item.get("qty")), flt(d.get("qty"))
@@ -3737,7 +3737,7 @@ def update_child_qty_rate(parent_doctype, trans_items, parent_doctype_name, chil
 			row_rate * flt(d.get("qty"), qty_precision), rate_precision
 		)
 		if amount_below_billed_amt and row_rate > 0.0:
-			frappe.throw(
+			nts.throw(
 				_(
 					"Row #{0}: Cannot set Rate if the billed amount is greater than the amount for Item {1}."
 				).format(child_item.idx, child_item.item_code)
@@ -3806,7 +3806,7 @@ def update_child_qty_rate(parent_doctype, trans_items, parent_doctype_name, chil
 	if parent_doctype == "Sales Order":
 		make_packing_list(parent)
 		parent.set_gross_profit()
-	frappe.get_doc("Authorization Control").validate_approving_authority(
+	nts.get_doc("Authorization Control").validate_approving_authority(
 		parent.doctype, parent.company, parent.base_grand_total
 	)
 
@@ -3844,10 +3844,10 @@ def update_child_qty_rate(parent_doctype, trans_items, parent_doctype_name, chil
 				parent.save()
 			else:
 				if not parent.can_update_items():
-					frappe.throw(
+					nts.throw(
 						_(
 							"Items cannot be updated as Subcontracting Order is created against the Purchase Order {0}."
-						).format(frappe.bold(parent.name))
+						).format(nts.bold(parent.name))
 					)
 	else:  # Sales Order
 		parent.validate_for_duplicate_items()

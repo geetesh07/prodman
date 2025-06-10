@@ -15,17 +15,17 @@
 		{% for(var i=0, l=data.length; i<l; i++) { %}
 			{% if (data[i]["posting_date"]) { %}
 			<tr>
-				<td>{%= frappe.datetime.str_to_user(data[i]["posting_date"]) %}</td>
+				<td>{%= nts .datetime.str_to_user(data[i]["posting_date"]) %}</td>
 				<td>{%= data[i]["payment_entry"] %}</td>
 				<td>{%= __("Against") %}: {%= data[i]["against_account"] %}
 					{% if (data[i]["reference_no"]) { %}
 						<br>{%= __("Reference") %}: {%= data[i]["reference_no"] %}
 						{% if (data[i]["ref_date"]) { %}
-							<br>{%= __("Reference Date") %}: {%= frappe.datetime.str_to_user(data[i]["ref_date"]) %}
+							<br>{%= __("Reference Date") %}: {%= nts .datetime.str_to_user(data[i]["ref_date"]) %}
 						{% } %}
 					{% } %}
 					{% if (data[i]["clearance_date"]) { %}
-						<br>{%= __("Clearance Date") %}: {%= frappe.datetime.str_to_user(data[i]["clearance_date"]) %}
+						<br>{%= __("Clearance Date") %}: {%= nts .datetime.str_to_user(data[i]["clearance_date"]) %}
 					{% } %}
 				</td>
 				<td style="text-align: right">{%= format_currency(data[i]["debit"]) %}</td>
@@ -43,4 +43,4 @@
 		{% } %}
 	</tbody>
 </table>
-<p class="text-right text-muted">{%= __("Printed on {0}", [frappe.datetime.str_to_user(frappe.datetime.get_datetime_as_string())]) %}</p>
+<p class="text-right text-muted">{%= __("Printed on {0}", [nts .datetime.str_to_user(nts .datetime.get_datetime_as_string())]) %}</p>

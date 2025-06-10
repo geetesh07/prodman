@@ -1,7 +1,7 @@
 import json
 import unittest
 
-import frappe
+import nts
 
 from prodman.controllers.item_variant import copy_attributes_to_variant, make_variant_item_code
 from prodman.stock.doctype.item.test_item import set_item_variant_settings
@@ -23,11 +23,11 @@ def create_variant_with_tables(item, args):
 		args = json.loads(args)
 
 	qc_name = make_quality_inspection_template()
-	template = frappe.get_doc("Item", item)
+	template = nts.get_doc("Item", item)
 	template.quality_inspection_template = qc_name
 	template.save()
 
-	variant = frappe.new_doc("Item")
+	variant = nts.new_doc("Item")
 	variant.variant_based_on = "Item Attribute"
 	variant_attributes = []
 
@@ -42,7 +42,7 @@ def create_variant_with_tables(item, args):
 
 
 def make_item_variant():
-	frappe.delete_doc_if_exists("Item", "_Test Variant Item-XSL", force=1)
+	nts.delete_doc_if_exists("Item", "_Test Variant Item-XSL", force=1)
 	variant = create_variant_with_tables("_Test Variant Item", '{"Test Size": "Extra Small"}')
 	variant.item_code = "_Test Variant Item-XSL"
 	variant.item_name = "_Test Variant Item-XSL"
@@ -52,10 +52,10 @@ def make_item_variant():
 
 def make_quality_inspection_template():
 	qc_template = "_Test QC Template"
-	if frappe.db.exists("Quality Inspection Template", qc_template):
+	if nts.db.exists("Quality Inspection Template", qc_template):
 		return qc_template
 
-	qc = frappe.new_doc("Quality Inspection Template")
+	qc = nts.new_doc("Quality Inspection Template")
 	qc.quality_inspection_template_name = qc_template
 
 	create_quality_inspection_parameter("Moisture")

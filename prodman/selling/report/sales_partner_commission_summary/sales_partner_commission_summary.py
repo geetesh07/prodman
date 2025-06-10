@@ -1,9 +1,9 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _, msgprint
+import nts
+from nts import _, msgprint
 
 
 def execute(filters=None):
@@ -72,7 +72,7 @@ def get_entries(filters):
 	date_field = "transaction_date" if filters.get("doctype") == "Sales Order" else "posting_date"
 
 	conditions = get_conditions(filters, date_field)
-	entries = frappe.db.sql(
+	entries = nts.db.sql(
 		"""
 		SELECT
 			name, customer, territory, {} as posting_date, base_net_total as amount,

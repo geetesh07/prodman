@@ -1,25 +1,25 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import nowdate
+import nts 
+from nts .tests.utils import nts TestCase
+from nts .utils import nowdate
 
 from prodman.accounts.doctype.bank_transaction.test_bank_transaction import create_bank_account
 
 
-class TestAutoMatchParty(FrappeTestCase):
+class TestAutoMatchParty(nts TestCase):
 	@classmethod
 	def setUpClass(cls):
 		create_bank_account()
-		frappe.db.set_single_value("Accounts Settings", "enable_party_matching", 1)
-		frappe.db.set_single_value("Accounts Settings", "enable_fuzzy_matching", 1)
+		nts .db.set_single_value("Accounts Settings", "enable_party_matching", 1)
+		nts .db.set_single_value("Accounts Settings", "enable_fuzzy_matching", 1)
 		return super().setUpClass()
 
 	@classmethod
 	def tearDownClass(cls):
-		frappe.db.set_single_value("Accounts Settings", "enable_party_matching", 0)
-		frappe.db.set_single_value("Accounts Settings", "enable_fuzzy_matching", 0)
+		nts .db.set_single_value("Accounts Settings", "enable_party_matching", 0)
+		nts .db.set_single_value("Accounts Settings", "enable_fuzzy_matching", 0)
 
 	def test_match_by_account_number(self):
 		create_supplier_for_match(account_no="000000003716541159")
@@ -84,12 +84,12 @@ class TestAutoMatchParty(FrappeTestCase):
 
 
 def create_supplier_for_match(supplier_name="John Doe & Co.", iban=None, account_no=None):
-	if frappe.db.exists("Supplier", {"supplier_name": supplier_name}):
+	if nts .db.exists("Supplier", {"supplier_name": supplier_name}):
 		# Update related Bank Account details
 		if not (iban or account_no):
 			return
 
-		frappe.db.set_value(
+		nts .db.set_value(
 			dt="Bank Account",
 			dn={"party": supplier_name},
 			field={"iban": iban, "bank_account_no": account_no},
@@ -97,19 +97,19 @@ def create_supplier_for_match(supplier_name="John Doe & Co.", iban=None, account
 		return
 
 	# Create Supplier and Bank Account for the same
-	supplier = frappe.new_doc("Supplier")
+	supplier = nts .new_doc("Supplier")
 	supplier.supplier_name = supplier_name
 	supplier.supplier_group = "Services"
 	supplier.supplier_type = "Company"
 	supplier.insert()
 
-	if not frappe.db.exists("Bank", "TestBank"):
-		bank = frappe.new_doc("Bank")
+	if not nts .db.exists("Bank", "TestBank"):
+		bank = nts .new_doc("Bank")
 		bank.bank_name = "TestBank"
 		bank.insert(ignore_if_duplicate=True)
 
-	if not frappe.db.exists("Bank Account", supplier.name + " - " + "TestBank"):
-		bank_account = frappe.new_doc("Bank Account")
+	if not nts .db.exists("Bank Account", supplier.name + " - " + "TestBank"):
+		bank_account = nts .new_doc("Bank Account")
 		bank_account.account_name = supplier.name
 		bank_account.bank = "TestBank"
 		bank_account.iban = iban
@@ -128,7 +128,7 @@ def create_bank_transaction(
 	account_no=None,
 	iban=None,
 ):
-	doc = frappe.new_doc("Bank Transaction")
+	doc = nts .new_doc("Bank Transaction")
 	doc.update(
 		{
 			"doctype": "Bank Transaction",

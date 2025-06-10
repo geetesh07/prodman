@@ -1,16 +1,16 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import add_to_date, formatdate, get_link_to_form, getdate, nowdate
-from frappe.utils.dashboard import cache_source
-from frappe.utils.dateutils import get_from_date_from_timespan, get_period_ending
-from frappe.utils.nestedset import get_descendants_of
+import nts 
+from nts  import _
+from nts .utils import add_to_date, formatdate, get_link_to_form, getdate, nowdate
+from nts .utils.dashboard import cache_source
+from nts .utils.dateutils import get_from_date_from_timespan, get_period_ending
+from nts .utils.nestedset import get_descendants_of
 
 
-@frappe.whitelist()
+@nts .whitelist()
 @cache_source
 def get(
 	chart_name=None,
@@ -24,9 +24,9 @@ def get(
 	heatmap_year=None,
 ):
 	if chart_name:
-		chart = frappe.get_doc("Dashboard Chart", chart_name)
+		chart = nts .get_doc("Dashboard Chart", chart_name)
 	else:
-		chart = frappe._dict(frappe.parse_json(chart))
+		chart = nts ._dict(nts .parse_json(chart))
 	timespan = chart.timespan
 
 	if chart.timespan == "Select Date Range":
@@ -34,20 +34,20 @@ def get(
 		to_date = chart.to_date
 
 	timegrain = chart.time_interval
-	filters = frappe.parse_json(filters) or frappe.parse_json(chart.filters_json)
+	filters = nts .parse_json(filters) or nts .parse_json(chart.filters_json)
 
 	account = filters.get("account")
 	filters.get("company")
 
 	if not account and chart_name:
-		frappe.throw(
+		nts .throw(
 			_("Account is not set for the dashboard chart {0}").format(
 				get_link_to_form("Dashboard Chart", chart_name)
 			)
 		)
 
-	if not frappe.db.exists("Account", account) and chart_name:
-		frappe.throw(
+	if not nts .db.exists("Account", account) and chart_name:
+		nts .throw(
 			_("Account {0} does not exists in the dashboard chart {1}").format(
 				account, get_link_to_form("Dashboard Chart", chart_name)
 			)
@@ -76,7 +76,7 @@ def get(
 
 def build_result(account, dates, gl_entries):
 	result = [[getdate(date), 0.0] for date in dates]
-	root_type = frappe.get_cached_value("Account", account, "root_type")
+	root_type = nts .get_cached_value("Account", account, "root_type")
 
 	# start with the first date
 	date_index = 0
@@ -107,7 +107,7 @@ def get_gl_entries(account, to_date):
 	child_accounts = get_descendants_of("Account", account, ignore_permissions=True)
 	child_accounts.append(account)
 
-	return frappe.db.get_all(
+	return nts .db.get_all(
 		"GL Entry",
 		fields=["posting_date", "debit", "credit"],
 		filters=[

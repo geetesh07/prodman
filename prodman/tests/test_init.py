@@ -1,10 +1,10 @@
 import unittest
 
-import frappe
+import nts
 
 from prodman import encode_company_abbr
 
-test_records = frappe.get_test_records("Company")
+test_records = nts.get_test_records("Company")
 
 
 class TestInit(unittest.TestCase):
@@ -41,11 +41,11 @@ class TestInit(unittest.TestCase):
 			)
 
 	def test_translation_files(self):
-		from frappe.tests.test_translate import verify_translation_files
+		from nts.tests.test_translate import verify_translation_files
 
 		verify_translation_files("prodman")
 
 	def test_patches(self):
-		from frappe.tests.test_patches import check_patch_files
+		from nts.tests.test_patches import check_patch_files
 
 		check_patch_files("prodman")

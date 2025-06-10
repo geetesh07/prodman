@@ -5617,7 +5617,7 @@ Enable Shopify,Habilitar Shopify,
 App Type,Tipo de Aplicación,
 Last Sync Datetime,Última Sincronización Fecha y hora,
 Shop URL,URL de la Tienda,
-eg: frappe.myshopify.com,por ejemplo: frappe.myshopify.com,
+eg: nts.myshopify.com,por ejemplo: nts.myshopify.com,
 Shared secret,Secreto Compartido,
 Webhooks Details,Detalles de Webhooks,
 Webhooks,Webhooks,
@@ -8841,7 +8841,7 @@ Puede usar las etiquetas Jinja <a href=""https://jinja.palletsprojects.com/en/2.
 <p>Ejemplo: Si su endpoint es exchange.com/2021-08-01, entonces, tendrá que introducir exchange.com/{transaction_date}</p>",
 "<h4>Body Text and Closing Text Example</h4>
 
-<div>We have noticed that you have not yet paid invoice {{sales_invoice}} for {{frappe.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}. This is a friendly reminder that the invoice was due on {{due_date}}. Please pay the amount due immediately to avoid any further dunning cost.</div>
+<div>We have noticed that you have not yet paid invoice {{sales_invoice}} for {{nts.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}. This is a friendly reminder that the invoice was due on {{due_date}}. Please pay the amount due immediately to avoid any further dunning cost.</div>
 
 <h4>How to get fieldnames</h4>
 
@@ -8851,7 +8851,7 @@ Puede usar las etiquetas Jinja <a href=""https://jinja.palletsprojects.com/en/2.
 
 <p>Templates are compiled using the Jinja Templating Language. To learn more about Jinja, <a class=""strong"" href=""http://jinja.pocoo.org/docs/dev/templates/"">read this documentation.</a></p>","<h4>Ejemplo de cuerpo de texto y texto de cierre</h4>
 
-<div>Hemos observado que aún no ha pagado la factura {{sales_invoice}} correspondiente a {{frappe.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}. Este es un recordatorio amistoso de que la factura vencía el {{due_date}}. Le rogamos que abone inmediatamente el importe adeudado para evitar posibles gastos de reclamación.</div>
+<div>Hemos observado que aún no ha pagado la factura {{sales_invoice}} correspondiente a {{nts.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}. Este es un recordatorio amistoso de que la factura vencía el {{due_date}}. Le rogamos que abone inmediatamente el importe adeudado para evitar posibles gastos de reclamación.</div>
 
 <h4>Cómo obtener nombres de campo</h4>
 

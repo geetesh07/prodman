@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Delayed Tasks Summary"] = {
+nts.query_reports["Delayed Tasks Summary"] = {
 	filters: [
 		{
 			fieldname: "from_date",

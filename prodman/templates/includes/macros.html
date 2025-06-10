@@ -2,7 +2,7 @@
 <div class="product-image product-image-square h-100 rounded
 	{% if not website_image -%} missing-image {%- endif %} {{ css_class }}"
 	{% if website_image -%}
-	style="background-image: url('{{ frappe.utils.quoted(website_image) | abs_url }}');"
+	style="background-image: url('{{ nts.utils.quoted(website_image) | abs_url }}');"
 	{%- endif %}>
 </div>
 {% endmacro %}
@@ -10,10 +10,10 @@
 {% macro product_image(website_image, css_class="product-image", alt="", no_border=False) %}
 	<div class="{{ 'border' if not no_border else ''}} text-center rounded {{ css_class }}" style="overflow: hidden;">
 		{% if website_image %}
-			<img itemprop="image" class="website-image h-100 w-100" alt="{{ alt }}" src="{{ frappe.utils.quoted(website_image) | abs_url }}">
+			<img itemprop="image" class="website-image h-100 w-100" alt="{{ alt }}" src="{{ nts.utils.quoted(website_image) | abs_url }}">
 		{% else %}
 			<div class="card-img-top no-image-item">
-				{{ frappe.utils.get_abbr(alt) or "NA" }}
+				{{ nts.utils.get_abbr(alt) or "NA" }}
 			</div>
 		{% endif %}
 	</div>
@@ -25,8 +25,8 @@
 		<div class="sidebar-standard-image"> <div class="standard-image" style="background-color: rgb(250, 251, 252);">{{name}}</div> </div>
 		{%- endif %}
 		{% if website_image -%}
-			<a href="{{ frappe.utils.quoted(website_image) }}">
-				<img itemprop="image" src="{{ frappe.utils.quoted(website_image) | abs_url }}"
+			<a href="{{ nts.utils.quoted(website_image) }}">
+				<img itemprop="image" src="{{ nts.utils.quoted(website_image) | abs_url }}"
 					class="img-responsive img-thumbnail sidebar-image" style="min-height:100%; min-width:100%;">
 			</a>
 		{%- endif %}
@@ -108,7 +108,7 @@
 		{% else %}
 		<a href="/{{ item.route or '#' }}" style="text-decoration: none;">
 			<div class="card-img-top no-image">
-				{{ frappe.utils.get_abbr(title) }}
+				{{ nts.utils.get_abbr(title) }}
 			</div>
 		</a>
 		{% endif %}
@@ -154,7 +154,7 @@
 					<img class="card-img" src="{{ item.image }}" alt="{{ title }}">
 				{% else %}
 					<div class="card-img-top no-image">
-						{{ frappe.utils.get_abbr(title) }}
+						{{ nts.utils.get_abbr(title) }}
 					</div>
 				{% endif %}
 			</a>
@@ -231,16 +231,16 @@
 			{{ average_rating or 0 }}
 		</h2>
 		<div class="mb-2" style="margin-top: -.5rem;">
-			{{ frappe.utils.cstr(total_reviews or 0) + " " + _("ratings") }}
+			{{ nts.utils.cstr(total_reviews or 0) + " " + _("ratings") }}
 		</div>
 
 		<!-- Ratings Summary -->
 		{% if reviews %}
-			{% set rating_title = frappe.utils.cstr(average_rating) + " " + _("out of 5") if not for_summary else ''%}
+			{% set rating_title = nts.utils.cstr(average_rating) + " " + _("out of 5") if not for_summary else ''%}
 			{{ ratings_with_title(average_whole_rating, rating_title, "md", "rating-summary-title", for_summary) }}
 		{% endif %}
 
-		<div class="mt-2">{{ frappe.utils.cstr(average_rating or 0) + " " + _("out of 5") }}</div>
+		<div class="mt-2">{{ nts.utils.cstr(average_rating or 0) + " " + _("out of 5") }}</div>
 	</div>
 
 	<!-- Rating Progress Bars -->
@@ -366,7 +366,7 @@
 			{{ product_image(item.website_item_thumbnail, css_class="r-product-image", alt="item.website_item_name", no_border=True) }}
 		{% else %}
 			<div class="no-image-r-item">
-				{{ frappe.utils.get_abbr(item.website_item_name) or "NA" }}
+				{{ nts.utils.get_abbr(item.website_item_name) or "NA" }}
 			</div>
 		{% endif %}
 	</div>

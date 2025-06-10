@@ -1,28 +1,28 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.query_reports["Stock Ledger"] = {
+nts.query_reports["Stock Ledger"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+			default: nts.datetime.add_months(nts.datetime.get_today(), -1),
 			reqd: 1,
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.get_today(),
+			default: nts.datetime.get_today(),
 			reqd: 1,
 		},
 		{
@@ -31,7 +31,7 @@ frappe.query_reports["Stock Ledger"] = {
 			fieldtype: "Link",
 			options: "Warehouse",
 			get_query: function () {
-				const company = frappe.query_report.get_filter_value("company");
+				const company = nts.query_report.get_filter_value("company");
 				return {
 					filters: { company: company },
 				};
@@ -60,11 +60,11 @@ frappe.query_reports["Stock Ledger"] = {
 			fieldtype: "Link",
 			options: "Batch",
 			on_change() {
-				const batch_no = frappe.query_report.get_filter_value("batch_no");
+				const batch_no = nts.query_report.get_filter_value("batch_no");
 				if (batch_no) {
-					frappe.query_report.set_filter_value("segregate_serial_batch_bundle", 1);
+					nts.query_report.set_filter_value("segregate_serial_batch_bundle", 1);
 				} else {
-					frappe.query_report.set_filter_value("segregate_serial_batch_bundle", 0);
+					nts.query_report.set_filter_value("segregate_serial_batch_bundle", 0);
 				}
 			},
 		},

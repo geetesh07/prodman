@@ -1,10 +1,10 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2020, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import add_days, getdate, today
+import nts 
+from nts .tests.utils import nts TestCase
+from nts .utils import add_days, getdate, today
 
 from prodman.accounts.doctype.process_statement_of_accounts.process_statement_of_accounts import (
 	get_statement_dict,
@@ -14,7 +14,7 @@ from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sal
 from prodman.accounts.test.accounts_mixin import AccountsTestMixin
 
 
-class TestProcessStatementOfAccounts(AccountsTestMixin, FrappeTestCase):
+class TestProcessStatementOfAccounts(AccountsTestMixin, nts TestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_customer()
@@ -63,7 +63,7 @@ class TestProcessStatementOfAccounts(AccountsTestMixin, FrappeTestCase):
 
 		# Checks the ageing summary for AR
 		ageing_summary = statement_dict["_Test Customer"][1][0]
-		expected_summary = frappe._dict(
+		expected_summary = nts ._dict(
 			range1=100,
 			range2=0,
 			range3=0,
@@ -85,14 +85,14 @@ class TestProcessStatementOfAccounts(AccountsTestMixin, FrappeTestCase):
 			self.assertEqual(expected_ageing[age_range], ageing.get(age_range))
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 
 def create_process_soa(**args):
-	args = frappe._dict(args)
-	frappe.delete_doc_if_exists("Process Statement Of Accounts", args.name)
-	process_soa = frappe.new_doc("Process Statement Of Accounts")
-	soa_dict = frappe._dict(
+	args = nts ._dict(args)
+	nts .delete_doc_if_exists("Process Statement Of Accounts", args.name)
+	process_soa = nts .new_doc("Process Statement Of Accounts")
+	soa_dict = nts ._dict(
 		name=args.name,
 		company=args.company or "_Test Company",
 		customers=args.customers or [{"customer": "_Test Customer"}],

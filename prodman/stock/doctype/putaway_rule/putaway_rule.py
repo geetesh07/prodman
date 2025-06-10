@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2020, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
@@ -6,10 +6,10 @@ import copy
 import json
 from collections import defaultdict
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import cint, cstr, floor, flt, nowdate
+import nts
+from nts import _
+from nts.model.document import Document
+from nts.utils import cint, cstr, floor, flt, nowdate
 
 from prodman.stock.utils import get_stock_balance
 
@@ -21,7 +21,7 @@ class PutawayRule(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		capacity: DF.Float
 		company: DF.Link
@@ -44,53 +44,53 @@ class PutawayRule(Document):
 		self.set_stock_capacity()
 
 	def validate_duplicate_rule(self):
-		existing_rule = frappe.db.exists(
+		existing_rule = nts.db.exists(
 			"Putaway Rule", {"item_code": self.item_code, "warehouse": self.warehouse}
 		)
 		if existing_rule and existing_rule != self.name:
-			frappe.throw(
+			nts.throw(
 				_("Putaway Rule already exists for Item {0} in Warehouse {1}.").format(
-					frappe.bold(self.item_code), frappe.bold(self.warehouse)
+					nts.bold(self.item_code), nts.bold(self.warehouse)
 				),
 				title=_("Duplicate"),
 			)
 
 	def validate_priority(self):
 		if self.priority < 1:
-			frappe.throw(_("Priority cannot be lesser than 1."), title=_("Invalid Priority"))
+			nts.throw(_("Priority cannot be lesser than 1."), title=_("Invalid Priority"))
 
 	def validate_warehouse_and_company(self):
-		company = frappe.db.get_value("Warehouse", self.warehouse, "company")
+		company = nts.db.get_value("Warehouse", self.warehouse, "company")
 		if company != self.company:
-			frappe.throw(
+			nts.throw(
 				_("Warehouse {0} does not belong to Company {1}.").format(
-					frappe.bold(self.warehouse), frappe.bold(self.company)
+					nts.bold(self.warehouse), nts.bold(self.company)
 				),
 				title=_("Invalid Warehouse"),
 			)
 
 	def validate_capacity(self):
-		stock_uom = frappe.db.get_value("Item", self.item_code, "stock_uom")
+		stock_uom = nts.db.get_value("Item", self.item_code, "stock_uom")
 		balance_qty = get_stock_balance(self.item_code, self.warehouse, nowdate())
 
 		if flt(self.stock_capacity) < flt(balance_qty):
-			frappe.throw(
+			nts.throw(
 				_(
 					"Warehouse Capacity for Item '{0}' must be greater than the existing stock level of {1} {2}."
-				).format(self.item_code, frappe.bold(balance_qty), stock_uom),
+				).format(self.item_code, nts.bold(balance_qty), stock_uom),
 				title=_("Insufficient Capacity"),
 			)
 
 		if not self.capacity:
-			frappe.throw(_("Capacity must be greater than 0"), title=_("Invalid"))
+			nts.throw(_("Capacity must be greater than 0"), title=_("Invalid"))
 
 	def set_stock_capacity(self):
 		self.stock_capacity = (flt(self.conversion_factor) or 1) * flt(self.capacity)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_available_putaway_capacity(rule):
-	stock_capacity, item_code, warehouse = frappe.db.get_value(
+	stock_capacity, item_code, warehouse = nts.db.get_value(
 		"Putaway Rule", rule, ["stock_capacity", "item_code", "warehouse"]
 	)
 	balance_qty = get_stock_balance(item_code, warehouse, nowdate())
@@ -98,7 +98,7 @@ def get_available_putaway_capacity(rule):
 	return free_space if free_space > 0 else 0
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def apply_putaway_rule(doctype, items, company, sync=None, purpose=None):
 	"""Applies Putaway Rule on line items.
 
@@ -116,13 +116,13 @@ def apply_putaway_rule(doctype, items, company, sync=None, purpose=None):
 
 	for item in items:
 		if isinstance(item, dict):
-			item = frappe._dict(item)
+			item = nts._dict(item)
 
 		source_warehouse = item.get("s_warehouse")
 		item.conversion_factor = flt(item.conversion_factor) or 1.0
 		pending_qty, item_code = flt(item.qty), item.item_code
 		pending_stock_qty = flt(item.transfer_qty) if doctype == "Stock Entry" else flt(item.stock_qty)
-		uom_must_be_whole_number = frappe.db.get_value("UOM", item.uom, "must_be_whole_number")
+		uom_must_be_whole_number = nts.db.get_value("UOM", item.uom, "must_be_whole_number")
 
 		if not pending_qty or not item_code:
 			updated_table = add_row(item, pending_qty, source_warehouse or item.warehouse, updated_table)
@@ -180,7 +180,7 @@ def apply_putaway_rule(doctype, items, company, sync=None, purpose=None):
 
 	if updated_table and _items_changed(items, updated_table, doctype):
 		items[:] = updated_table
-		frappe.msgprint(_("Applied putaway rules."), alert=True)
+		nts.msgprint(_("Applied putaway rules."), alert=True)
 
 	if sync and json.loads(sync):  # sync with client side
 		return items
@@ -194,7 +194,7 @@ def _items_changed(old, new, doctype: str) -> bool:
 	if len(old) != len(new):
 		return True
 
-	old = [frappe._dict(item) if isinstance(item, dict) else item for item in old]
+	old = [nts._dict(item) if isinstance(item, dict) else item for item in old]
 
 	if doctype == "Stock Entry":
 		compare_keys = ("item_code", "t_warehouse", "transfer_qty", "serial_no")
@@ -232,7 +232,7 @@ def get_ordered_putaway_rules(item_code, company, source_warehouse=None):
 	if source_warehouse:
 		filters.update({"warehouse": ["!=", source_warehouse]})
 
-	rules = frappe.get_all(
+	rules = nts.get_all(
 		"Putaway Rule",
 		fields=["name", "item_code", "stock_capacity", "priority", "warehouse"],
 		filters=filters,
@@ -289,10 +289,10 @@ def show_unassigned_items_message(items_not_accomodated):
 	formatted_item_rows = ""
 
 	for entry in items_not_accomodated:
-		item_link = frappe.utils.get_link_to_form("Item", entry[0])
+		item_link = nts.utils.get_link_to_form("Item", entry[0])
 		formatted_item_rows += f"""
 			<td>{item_link}</td>
-			<td>{frappe.bold(entry[1])}</td>
+			<td>{nts.bold(entry[1])}</td>
 		</tr>"""
 
 	msg += """
@@ -305,4 +305,4 @@ def show_unassigned_items_message(items_not_accomodated):
 		</table>
 	""".format(_("Item"), _("Unassigned Qty"), formatted_item_rows)
 
-	frappe.msgprint(msg, title=_("Insufficient Capacity"), is_minimizable=True, wide=True)
+	nts.msgprint(msg, title=_("Insufficient Capacity"), is_minimizable=True, wide=True)

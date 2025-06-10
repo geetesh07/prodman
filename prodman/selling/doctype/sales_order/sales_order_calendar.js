@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.views.calendar["Sales Order"] = {
+nts.views.calendar["Sales Order"] = {
 	field_map: {
 		start: "delivery_date",
 		end: "delivery_date",

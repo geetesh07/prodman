@@ -1,4 +1,4 @@
-frappe.listview_settings["Invoice Discounting"] = {
+nts .listview_settings["Invoice Discounting"] = {
 	add_fields: ["status"],
 	get_indicator: function (doc) {
 		if (doc.status == "Draft") {

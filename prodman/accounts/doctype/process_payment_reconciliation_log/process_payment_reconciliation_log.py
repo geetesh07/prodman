@@ -1,8 +1,8 @@
-# Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2023, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-# import frappe
-from frappe.model.document import Document
+# import nts 
+from nts .model.document import Document
 
 
 class ProcessPaymentReconciliationLog(Document):
@@ -12,7 +12,7 @@ class ProcessPaymentReconciliationLog(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.process_payment_reconciliation_log_allocations.process_payment_reconciliation_log_allocations import (
 			ProcessPaymentReconciliationLogAllocations,

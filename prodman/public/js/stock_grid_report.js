@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-prodman.StockGridReport = class StockGridReport extends frappe.views.TreeGridReport {
+prodman.StockGridReport = class StockGridReport extends nts.views.TreeGridReport {
 	get_item_warehouse(warehouse, item) {
 		if (!this.item_warehouse[item]) this.item_warehouse[item] = {};
 		if (!this.item_warehouse[item][warehouse])
@@ -110,8 +110,8 @@ prodman.StockGridReport = class StockGridReport extends frappe.views.TreeGridRep
 	get_serialized_buying_rates() {
 		var serialized_buying_rates = {};
 
-		if (frappe.report_dump.data["Serial No"]) {
-			$.each(frappe.report_dump.data["Serial No"], function (i, sn) {
+		if (nts.report_dump.data["Serial No"]) {
+			$.each(nts.report_dump.data["Serial No"], function (i, sn) {
 				serialized_buying_rates[sn.name.toLowerCase()] = flt(sn.incoming_rate);
 			});
 		}

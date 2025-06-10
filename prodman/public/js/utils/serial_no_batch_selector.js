@@ -22,7 +22,7 @@ prodman.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 
 		primary_label += " " + label;
 
-		this.dialog = new frappe.ui.Dialog({
+		this.dialog = new nts.ui.Dialog({
 			title: this.item?.title || primary_label,
 			size: "large",
 			fields: this.get_dialog_fields(),
@@ -57,10 +57,10 @@ prodman.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 					} else {
 						this.dialog.set_value("scan_serial_no", this.item.serial_no);
 					}
-					frappe.model.set_value(this.item.doctype, this.item.name, "serial_no", "");
+					nts.model.set_value(this.item.doctype, this.item.name, "serial_no", "");
 				} else if (this.item.batch_no && !this.item.serial_and_batch_bundle) {
 					this.dialog.set_value("scan_batch_no", this.item.batch_no);
-					frappe.model.set_value(this.item.doctype, this.item.name, "batch_no", "");
+					nts.model.set_value(this.item.doctype, this.item.name, "batch_no", "");
 				}
 
 				this.dialog.fields_dict.entries.grid.refresh();
@@ -305,10 +305,10 @@ prodman.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 		let { upload_serial_nos } = this.dialog.get_values();
 
 		if (!upload_serial_nos) {
-			frappe.throw(__("Please enter Serial Nos"));
+			nts.throw(__("Please enter Serial Nos"));
 		}
 
-		frappe.call({
+		nts.call({
 			method: "prodman.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle.create_serial_nos",
 			args: {
 				item_code: this.item.item_code,
@@ -336,16 +336,16 @@ prodman.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 		const method = `/api/method/prodman.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle.download_blank_csv_template?content=${encodeURIComponent(
 			JSON.stringify(csvFileData)
 		)}`;
-		const w = window.open(frappe.urllib.get_full_url(method));
+		const w = window.open(nts.urllib.get_full_url(method));
 		if (!w) {
-			frappe.msgprint(__("Please enable pop-ups"));
+			nts.msgprint(__("Please enable pop-ups"));
 		}
 	}
 
 	upload_csv_file() {
 		const file_path = this.dialog.get_value("attach_serial_batch_csv");
 
-		frappe.call({
+		nts.call({
 			method: "prodman.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle.upload_csv_file",
 			args: {
 				item_code: this.item.item_code,
@@ -392,7 +392,7 @@ prodman.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 
 	get_batch_qty(batch_no, callback) {
 		let warehouse = this.item.s_warehouse || this.item.t_warehouse || this.item.warehouse;
-		frappe.call({
+		nts.call({
 			method: "prodman.stock.doctype.batch.batch.get_batch_qty",
 			args: {
 				batch_no: batch_no,
@@ -531,7 +531,7 @@ prodman.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 		}
 
 		if (qty) {
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle.get_auto_data",
 				args: {
 					item_code: this.item.item_code,
@@ -559,7 +559,7 @@ prodman.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 		this.dialog.set_value("enter_manually", 0);
 
 		if (scan_serial_no || scan_batch_no) {
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle.is_serial_batch_no_exists",
 				args: {
 					item_code: this.item.item_code,
@@ -585,7 +585,7 @@ prodman.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 			});
 
 			if (existing_row?.length) {
-				frappe.throw(__("Serial No {0} already exists", [scan_serial_no]));
+				nts.throw(__("Serial No {0} already exists", [scan_serial_no]));
 			}
 
 			if (!this.item.has_batch_no) {
@@ -595,7 +595,7 @@ prodman.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 
 				this.dialog.fields_dict.scan_serial_no.set_value("");
 			} else {
-				frappe.call({
+				nts.call({
 					method: "prodman.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle.get_batch_no_from_serial_no",
 					args: {
 						serial_no: scan_serial_no,
@@ -644,18 +644,18 @@ prodman.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 		}
 
 		if ((entries && !entries.length) || !entries) {
-			frappe.throw(__("Please add atleast one Serial No / Batch No"));
+			nts.throw(__("Please add atleast one Serial No / Batch No"));
 		}
 
 		if (!warehouse) {
-			frappe.throw(__("Please select a Warehouse"));
+			nts.throw(__("Please select a Warehouse"));
 		}
 
 		if (this.item?.is_rejected && this.item.rejected_warehouse === this.item.warehouse) {
-			frappe.throw(__("Rejected Warehouse and Accepted Warehouse cannot be same."));
+			nts.throw(__("Rejected Warehouse and Accepted Warehouse cannot be same."));
 		}
 
-		frappe
+		nts
 			.call({
 				method: "prodman.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle.add_serial_batch_ledgers",
 				args: {
@@ -666,7 +666,7 @@ prodman.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 				},
 			})
 			.then((r) => {
-				frappe.run_serially([
+				nts.run_serially([
 					() => {
 						this.callback && this.callback(r.message);
 					},
@@ -679,7 +679,7 @@ prodman.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 	edit_full_form() {
 		let bundle_id = this.item.serial_and_batch_bundle;
 		if (!bundle_id) {
-			let _new = frappe.model.get_new_doc("Serial and Batch Bundle", null, null, true);
+			let _new = nts.model.get_new_doc("Serial and Batch Bundle", null, null, true);
 
 			_new.item_code = this.item.item_code;
 			_new.warehouse = this.get_warehouse();
@@ -691,7 +691,7 @@ prodman.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 			bundle_id = _new.name;
 		}
 
-		frappe.set_route("Form", "Serial and Batch Bundle", bundle_id);
+		nts.set_route("Form", "Serial and Batch Bundle", bundle_id);
 		this.dialog.hide();
 	}
 
@@ -707,7 +707,7 @@ prodman.SerialBatchPackageSelector = class SerialNoBatchBundleUpdate {
 
 	render_data() {
 		if (this.bundle || this.frm.doc.is_return) {
-			frappe
+			nts
 				.call({
 					method: "prodman.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle.get_serial_batch_ledgers",
 					args: {

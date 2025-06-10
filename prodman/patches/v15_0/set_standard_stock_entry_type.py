@@ -1,4 +1,4 @@
-import frappe
+import nts
 
 
 def execute():
@@ -13,5 +13,5 @@ def execute():
 		"Send to Subcontractor",
 		"Disassemble",
 	]:
-		if frappe.db.exists("Stock Entry Type", stock_entry_type):
-			frappe.db.set_value("Stock Entry Type", stock_entry_type, "is_standard", 1)
+		if nts.db.exists("Stock Entry Type", stock_entry_type):
+			nts.db.set_value("Stock Entry Type", stock_entry_type, "is_standard", 1)

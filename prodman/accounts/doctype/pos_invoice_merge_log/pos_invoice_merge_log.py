@@ -1,18 +1,18 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2020, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import hashlib
 import json
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.model.mapper import map_child_doc, map_doc
-from frappe.query_builder import DocType
-from frappe.utils import cint, flt, get_time, getdate, nowdate, nowtime
-from frappe.utils.background_jobs import enqueue, is_job_enqueued
-from frappe.utils.scheduler import is_scheduler_inactive
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .model.mapper import map_child_doc, map_doc
+from nts .query_builder import DocType
+from nts .utils import cint, flt, get_time, getdate, nowdate, nowtime
+from nts .utils.background_jobs import enqueue, is_job_enqueued
+from nts .utils.scheduler import is_scheduler_inactive
 
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_checks_for_pl_and_bs_accounts,
@@ -26,7 +26,7 @@ class POSInvoiceMergeLog(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.pos_invoice_reference.pos_invoice_reference import (
 			POSInvoiceReference,
@@ -58,11 +58,11 @@ class POSInvoiceMergeLog(Document):
 		for key, value in pos_occurences.items():
 			if len(value) > 1:
 				error_list.append(
-					_("{0} is added multiple times on rows: {1}").format(frappe.bold(key), frappe.bold(value))
+					_("{0} is added multiple times on rows: {1}").format(nts .bold(key), nts .bold(value))
 				)
 
 		if error_list:
-			frappe.throw(error_list, title=_("Duplicate POS Invoices found"), as_list=True)
+			nts .throw(error_list, title=_("Duplicate POS Invoices found"), as_list=True)
 
 	def validate_customer(self):
 		if self.merge_invoices_based_on == "Customer Group":
@@ -70,7 +70,7 @@ class POSInvoiceMergeLog(Document):
 
 		for d in self.pos_invoices:
 			if d.customer != self.customer:
-				frappe.throw(
+				nts .throw(
 					_("Row #{}: POS Invoice {} is not against customer {}").format(
 						d.idx, d.pos_invoice, self.customer
 					)
@@ -78,18 +78,18 @@ class POSInvoiceMergeLog(Document):
 
 	def validate_pos_invoice_status(self):
 		for d in self.pos_invoices:
-			status, docstatus, is_return, return_against = frappe.db.get_value(
+			status, docstatus, is_return, return_against = nts .db.get_value(
 				"POS Invoice", d.pos_invoice, ["status", "docstatus", "is_return", "return_against"]
 			)
 
-			bold_pos_invoice = frappe.bold(d.pos_invoice)
-			bold_status = frappe.bold(status)
+			bold_pos_invoice = nts .bold(d.pos_invoice)
+			bold_status = nts .bold(status)
 			if docstatus != 1:
-				frappe.throw(
+				nts .throw(
 					_("Row #{}: POS Invoice {} is not submitted yet").format(d.idx, bold_pos_invoice)
 				)
 			if status == "Consolidated":
-				frappe.throw(
+				nts .throw(
 					_("Row #{}: POS Invoice {} has been {}").format(d.idx, bold_pos_invoice, bold_status)
 				)
 			if (
@@ -97,8 +97,8 @@ class POSInvoiceMergeLog(Document):
 				and return_against
 				and return_against not in [d.pos_invoice for d in self.pos_invoices]
 			):
-				bold_return_against = frappe.bold(return_against)
-				return_against_status = frappe.db.get_value("POS Invoice", return_against, "status")
+				bold_return_against = nts .bold(return_against)
+				return_against_status = nts .db.get_value("POS Invoice", return_against, "status")
 				if return_against_status != "Consolidated":
 					# if return entry is not getting merged in the current pos closing and if it is not consolidated
 					msg = _(
@@ -112,10 +112,10 @@ class POSInvoiceMergeLog(Document):
 					msg += _("You can add the original invoice {} manually to proceed.").format(
 						bold_return_against
 					)
-					frappe.throw(msg)
+					nts .throw(msg)
 
 	def on_submit(self):
-		pos_invoice_docs = [frappe.get_cached_doc("POS Invoice", d.pos_invoice) for d in self.pos_invoices]
+		pos_invoice_docs = [nts .get_cached_doc("POS Invoice", d.pos_invoice) for d in self.pos_invoices]
 
 		returns = [d for d in pos_invoice_docs if d.get("is_return") == 1]
 		sales = [d for d in pos_invoice_docs if d.get("is_return") == 0]
@@ -134,7 +134,7 @@ class POSInvoiceMergeLog(Document):
 		self.update_pos_invoices(pos_invoice_docs, sales_invoice, credit_notes)
 
 	def on_cancel(self):
-		pos_invoice_docs = [frappe.get_cached_doc("POS Invoice", d.pos_invoice) for d in self.pos_invoices]
+		pos_invoice_docs = [nts .get_cached_doc("POS Invoice", d.pos_invoice) for d in self.pos_invoices]
 
 		self.update_pos_invoices(pos_invoice_docs)
 		self.serial_and_batch_bundle_reference_for_pos_invoice()
@@ -193,7 +193,7 @@ class POSInvoiceMergeLog(Document):
 		return_invoices[sales_invoice_doc.name if sales_invoice_doc else None] = []
 
 		for doc in data:
-			sales_invoices_of_return_against = frappe.db.get_value(
+			sales_invoices_of_return_against = nts .db.get_value(
 				"POS Invoice", doc.return_against, "consolidated_invoice"
 			)
 			if sales_invoices_of_return_against:
@@ -298,11 +298,11 @@ class POSInvoiceMergeLog(Document):
 		invoice.ignore_pricing_rule = 1
 		invoice.customer = self.customer
 		invoice.disable_rounded_total = cint(
-			frappe.db.get_value("POS Profile", invoice.pos_profile, "disable_rounded_total")
+			nts .db.get_value("POS Profile", invoice.pos_profile, "disable_rounded_total")
 		)
 		accounting_dimensions = get_checks_for_pl_and_bs_accounts()
 		accounting_dimensions_fields = [d.fieldname for d in accounting_dimensions]
-		dimension_values = frappe.db.get_value(
+		dimension_values = nts .db.get_value(
 			"POS Profile",
 			{"name": invoice.pos_profile},
 			[*accounting_dimensions_fields, "cost_center", "project"],
@@ -316,10 +316,10 @@ class POSInvoiceMergeLog(Document):
 			)
 
 			if not dimension_value and (dimension.mandatory_for_pl or dimension.mandatory_for_bs):
-				frappe.throw(
+				nts .throw(
 					_("Please set Accounting Dimension {} in {}").format(
-						frappe.bold(dimension.label),
-						frappe.get_desk_link("POS Profile", invoice.pos_profile),
+						nts .bold(dimension.label),
+						nts .get_desk_link("POS Profile", invoice.pos_profile),
 					)
 				)
 
@@ -340,7 +340,7 @@ class POSInvoiceMergeLog(Document):
 		return invoice
 
 	def get_new_sales_invoice(self):
-		sales_invoice = frappe.new_doc("Sales Invoice")
+		sales_invoice = nts .new_doc("Sales Invoice")
 		sales_invoice.customer = self.customer
 		sales_invoice.is_pos = 1
 		sales_invoice.posting_date = None
@@ -363,7 +363,7 @@ class POSInvoiceMergeLog(Document):
 
 	def serial_and_batch_bundle_reference_for_pos_invoice(self):
 		for d in self.pos_invoices:
-			pos_invoice = frappe.get_doc("POS Invoice", d.pos_invoice)
+			pos_invoice = nts .get_doc("POS Invoice", d.pos_invoice)
 			for table_name in ["items", "packed_items"]:
 				pos_invoice.set_serial_and_batch_bundle(table_name)
 
@@ -372,9 +372,9 @@ class POSInvoiceMergeLog(Document):
 		if not bundles:
 			return
 
-		sle_table = frappe.qb.DocType("Stock Ledger Entry")
+		sle_table = nts .qb.DocType("Stock Ledger Entry")
 		query = (
-			frappe.qb.update(sle_table)
+			nts .qb.update(sle_table)
 			.set(sle_table.serial_and_batch_bundle, None)
 			.where(sle_table.serial_and_batch_bundle.isin(bundles) & sle_table.is_cancelled == 1)
 		)
@@ -387,7 +387,7 @@ class POSInvoiceMergeLog(Document):
 			pos_invoices.append(d.pos_invoice)
 
 		if pos_invoices:
-			return frappe.get_all(
+			return nts .get_all(
 				"POS Invoice Item",
 				filters={
 					"docstatus": 1,
@@ -408,7 +408,7 @@ class POSInvoiceMergeLog(Document):
 		for si_name in invoices:
 			if not si_name:
 				continue
-			si = frappe.get_doc("Sales Invoice", si_name)
+			si = nts .get_doc("Sales Invoice", si_name)
 			si.flags.ignore_validate = True
 			si.cancel()
 
@@ -438,7 +438,7 @@ def get_all_unconsolidated_invoices():
 		"status": ["not in", ["Consolidated"]],
 		"docstatus": 1,
 	}
-	pos_invoices = frappe.db.get_all(
+	pos_invoices = nts .db.get_all(
 		"POS Invoice",
 		filters=filters,
 		fields=[
@@ -476,7 +476,7 @@ def split_invoices_by_accounting_dimension(pos_invoices):
 	pos_invoice_accounting_dimensions_map = {}
 	for invoice in pos_invoices:
 		dimension_fields = [d.fieldname for d in get_checks_for_pl_and_bs_accounts()]
-		accounting_dimensions = frappe.db.get_value(
+		accounting_dimensions = nts .db.get_value(
 			"POS Invoice", invoice.pos_invoice, [*dimension_fields, "cost_center", "project"], as_dict=1
 		)
 
@@ -492,7 +492,7 @@ def split_invoices_by_accounting_dimension(pos_invoices):
 
 def consolidate_pos_invoices(pos_invoices=None, closing_entry=None):
 	invoices = pos_invoices or (closing_entry and closing_entry.get("pos_transactions"))
-	if frappe.flags.in_test and not invoices:
+	if nts .flags.in_test and not invoices:
 		invoices = get_all_unconsolidated_invoices()
 
 	invoice_by_customer = get_invoice_customer_map(invoices)
@@ -505,7 +505,7 @@ def consolidate_pos_invoices(pos_invoices=None, closing_entry=None):
 
 
 def unconsolidate_pos_invoices(closing_entry):
-	merge_logs = frappe.get_all(
+	merge_logs = nts .get_all(
 		"POS Invoice Merge Log", filters={"pos_closing_entry": closing_entry.name}, pluck="name"
 	)
 
@@ -538,7 +538,7 @@ def split_invoices(invoices):
 	_invoices = []
 	special_invoices = []
 	pos_return_docs = [
-		frappe.get_cached_doc("POS Invoice", d.pos_invoice)
+		nts .get_cached_doc("POS Invoice", d.pos_invoice)
 		for d in invoices
 		if d.is_return and d.return_against
 	]
@@ -555,7 +555,7 @@ def split_invoices(invoices):
 				break
 
 			return_against_is_consolidated = (
-				frappe.db.get_value("POS Invoice", pos_invoice.return_against, "status", cache=True)
+				nts .db.get_value("POS Invoice", pos_invoice.return_against, "status", cache=True)
 				== "Consolidated"
 			)
 			if return_against_is_consolidated:
@@ -576,7 +576,7 @@ def create_merge_logs(invoice_by_customer, closing_entry=None):
 		for customer, invoices_acc_dim in invoice_by_customer.items():
 			for invoices in invoices_acc_dim.values():
 				for _invoices in split_invoices(invoices):
-					merge_log = frappe.new_doc("POS Invoice Merge Log")
+					merge_log = nts .new_doc("POS Invoice Merge Log")
 					merge_log.posting_date = (
 						getdate(closing_entry.get("posting_date")) if closing_entry else nowdate()
 					)
@@ -594,8 +594,8 @@ def create_merge_logs(invoice_by_customer, closing_entry=None):
 			closing_entry.update_opening_entry()
 
 	except Exception as e:
-		frappe.db.rollback()
-		message_log = frappe.message_log.pop() if frappe.message_log else str(e)
+		nts .db.rollback()
+		message_log = nts .message_log.pop() if nts .message_log else str(e)
 		error_message = get_error_message(message_log)
 
 		if closing_entry:
@@ -606,14 +606,14 @@ def create_merge_logs(invoice_by_customer, closing_entry=None):
 		raise
 
 	finally:
-		frappe.db.commit()
-		frappe.publish_realtime("closing_process_complete", user=frappe.session.user)
+		nts .db.commit()
+		nts .publish_realtime("closing_process_complete", user=nts .session.user)
 
 
 def cancel_merge_logs(merge_logs, closing_entry=None):
 	try:
 		for log in merge_logs:
-			merge_log = frappe.get_doc("POS Invoice Merge Log", log)
+			merge_log = nts .get_doc("POS Invoice Merge Log", log)
 			if merge_log.docstatus == 2:
 				continue
 
@@ -626,8 +626,8 @@ def cancel_merge_logs(merge_logs, closing_entry=None):
 			closing_entry.update_opening_entry(for_cancel=True)
 
 	except Exception as e:
-		frappe.db.rollback()
-		message_log = frappe.message_log.pop() if frappe.message_log else str(e)
+		nts .db.rollback()
+		message_log = nts .message_log.pop() if nts .message_log else str(e)
 		error_message = get_error_message(message_log)
 
 		if closing_entry:
@@ -636,8 +636,8 @@ def cancel_merge_logs(merge_logs, closing_entry=None):
 		raise
 
 	finally:
-		frappe.db.commit()
-		frappe.publish_realtime("closing_process_complete", user=frappe.session.user)
+		nts .db.commit()
+		nts .publish_realtime("closing_process_complete", user=nts .session.user)
 
 
 def enqueue_job(job, **kwargs):
@@ -654,7 +654,7 @@ def enqueue_job(job, **kwargs):
 			timeout=10000,
 			event="processing_merge_logs",
 			job_id=job_id,
-			now=frappe.conf.developer_mode or frappe.flags.in_test,
+			now=nts .conf.developer_mode or nts .flags.in_test,
 		)
 
 		if job == create_merge_logs:
@@ -662,12 +662,12 @@ def enqueue_job(job, **kwargs):
 		else:
 			msg = _("POS Invoices will be unconsolidated in a background process")
 
-		frappe.msgprint(msg, alert=1)
+		nts .msgprint(msg, alert=1)
 
 
 def check_scheduler_status():
-	if is_scheduler_inactive() and not frappe.flags.in_test:
-		frappe.throw(_("Scheduler is inactive. Cannot enqueue job."), title=_("Scheduler Inactive"))
+	if is_scheduler_inactive() and not nts .flags.in_test:
+		nts .throw(_("Scheduler is inactive. Cannot enqueue job."), title=_("Scheduler Inactive"))
 
 
 def get_error_message(message) -> str:
@@ -683,7 +683,7 @@ def get_sales_invoice_item(return_against_pos_invoice, pos_invoice_item):
 		SalesInvoiceItem = DocType("Sales Invoice Item")
 
 		query = (
-			frappe.qb.from_(SalesInvoice)
+			nts .qb.from_(SalesInvoice)
 			.from_(SalesInvoiceItem)
 			.select(SalesInvoiceItem.name)
 			.where(

@@ -35,7 +35,7 @@
                 <td >
                     {% const fieldname = report_columns[i].fieldname; %}
                     {% if (!is_null(row[fieldname])) { %}
-                        {%= frappe.format(row[fieldname], report_columns[i], {}, row) %}
+                        {%= nts.format(row[fieldname], report_columns[i], {}, row) %}
                     {% } %}
                 </td>
             {% } %}
@@ -66,7 +66,7 @@
                 <td >
                     {% const fieldname = report_columns[i].fieldname; %}
                     {% if (!is_null(row[fieldname])) { %}
-                        {%= frappe.format(row[fieldname], report_columns[i], {}, row) %}
+                        {%= nts.format(row[fieldname], report_columns[i], {}, row) %}
                     {% } %}
                 </td>
             {% } %}

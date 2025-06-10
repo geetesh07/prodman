@@ -1,5 +1,5 @@
-import frappe
-from frappe.utils import flt, getdate
+import nts
+from nts.utils import flt, getdate
 
 from prodman.accounts.doctype.sales_invoice.sales_invoice import (
 	get_total_in_party_account_currency,
@@ -13,7 +13,7 @@ def execute():
 	# This fix is not related to Party Specific Item,
 	# but it is needed for code introduced after Party Specific Item was
 	# If your DB doesn't have this doctype yet, you should be fine
-	if not frappe.db.exists("DocType", "Party Specific Item"):
+	if not nts.db.exists("DocType", "Party Specific Item"):
 		return
 
 	for doctype in ("Purchase Invoice", "Sales Invoice"):
@@ -31,7 +31,7 @@ def execute():
 		if doctype == "Sales Invoice":
 			fields.append("is_pos")
 
-		invoices_to_update = frappe.get_all(
+		invoices_to_update = nts.get_all(
 			doctype,
 			fields=fields,
 			filters={
@@ -50,7 +50,7 @@ def execute():
 
 		invoices_to_update = {invoice.name: invoice for invoice in invoices_to_update}
 
-		payment_schedule_items = frappe.get_all(
+		payment_schedule_items = nts.get_all(
 			"Payment Schedule",
 			fields=("due_date", "payment_amount", "base_payment_amount", "parent"),
 			filters={"parent": ("in", invoices_to_update)},
@@ -63,7 +63,7 @@ def execute():
 
 		for invoice in invoices_to_update.values():
 			invoice.doctype = doctype
-			doc = frappe.get_doc(invoice)
+			doc = nts.get_doc(invoice)
 			correct_status = get_correct_status(doc)
 			if not correct_status or doc.status == correct_status:
 				continue
@@ -71,7 +71,7 @@ def execute():
 			status_map.setdefault(correct_status, []).append(doc.name)
 
 		for status, docs in status_map.items():
-			frappe.db.set_value(doctype, {"name": ("in", docs)}, "status", status, update_modified=False)
+			nts.db.set_value(doctype, {"name": ("in", docs)}, "status", status, update_modified=False)
 
 
 def get_correct_status(doc):

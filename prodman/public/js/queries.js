@@ -1,11 +1,11 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
 // searches for enabled users
-frappe.provide("prodman.queries");
+nts.provide("prodman.queries");
 $.extend(prodman.queries, {
 	user: function () {
-		return { query: "frappe.core.doctype.user.user.user_query" };
+		return { query: "nts.core.doctype.user.user.user_query" };
 	},
 
 	lead: function () {
@@ -29,9 +29,9 @@ $.extend(prodman.queries, {
 	customer_filter: function (doc) {
 		if (!doc.customer) {
 			cur_frm.scroll_to_field("customer");
-			frappe.show_alert({
+			nts.show_alert({
 				message: __("Please set {0} first.", [
-					__(frappe.meta.get_label(doc.doctype, "customer", doc.name)),
+					__(nts.meta.get_label(doc.doctype, "customer", doc.name)),
 				]),
 				indicator: "orange",
 			});
@@ -41,22 +41,22 @@ $.extend(prodman.queries, {
 	},
 
 	contact_query: function (doc) {
-		if (frappe.dynamic_link) {
-			if (!doc[frappe.dynamic_link.fieldname]) {
-				cur_frm.scroll_to_field(frappe.dynamic_link.fieldname);
-				frappe.show_alert({
+		if (nts.dynamic_link) {
+			if (!doc[nts.dynamic_link.fieldname]) {
+				cur_frm.scroll_to_field(nts.dynamic_link.fieldname);
+				nts.show_alert({
 					message: __("Please set {0} first.", [
-						__(frappe.meta.get_label(doc.doctype, frappe.dynamic_link.fieldname, doc.name)),
+						__(nts.meta.get_label(doc.doctype, nts.dynamic_link.fieldname, doc.name)),
 					]),
 					indicator: "orange",
 				});
 			}
 
 			return {
-				query: "frappe.contacts.doctype.contact.contact.contact_query",
+				query: "nts.contacts.doctype.contact.contact.contact_query",
 				filters: {
-					link_doctype: frappe.dynamic_link.doctype,
-					link_name: doc[frappe.dynamic_link.fieldname],
+					link_doctype: nts.dynamic_link.doctype,
+					link_name: doc[nts.dynamic_link.fieldname],
 				},
 			};
 		}
@@ -64,32 +64,32 @@ $.extend(prodman.queries, {
 
 	company_contact_query: function (doc) {
 		if (!doc.company) {
-			frappe.throw(__("Please set {0}", [__(frappe.meta.get_label(doc.doctype, "company", doc.name))]));
+			nts.throw(__("Please set {0}", [__(nts.meta.get_label(doc.doctype, "company", doc.name))]));
 		}
 
 		return {
-			query: "frappe.contacts.doctype.contact.contact.contact_query",
+			query: "nts.contacts.doctype.contact.contact.contact_query",
 			filters: { link_doctype: "Company", link_name: doc.company },
 		};
 	},
 
 	address_query: function (doc) {
-		if (frappe.dynamic_link) {
-			if (!doc[frappe.dynamic_link.fieldname]) {
-				cur_frm.scroll_to_field(frappe.dynamic_link.fieldname);
-				frappe.show_alert({
+		if (nts.dynamic_link) {
+			if (!doc[nts.dynamic_link.fieldname]) {
+				cur_frm.scroll_to_field(nts.dynamic_link.fieldname);
+				nts.show_alert({
 					message: __("Please set {0} first.", [
-						__(frappe.meta.get_label(doc.doctype, frappe.dynamic_link.fieldname, doc.name)),
+						__(nts.meta.get_label(doc.doctype, nts.dynamic_link.fieldname, doc.name)),
 					]),
 					indicator: "orange",
 				});
 			}
 
 			return {
-				query: "frappe.contacts.doctype.address.address.address_query",
+				query: "nts.contacts.doctype.address.address.address_query",
 				filters: {
-					link_doctype: frappe.dynamic_link.doctype,
-					link_name: doc[frappe.dynamic_link.fieldname],
+					link_doctype: nts.dynamic_link.doctype,
+					link_name: doc[nts.dynamic_link.fieldname],
 				},
 			};
 		}
@@ -98,16 +98,16 @@ $.extend(prodman.queries, {
 	company_address_query: function (doc) {
 		if (!doc.company) {
 			cur_frm.scroll_to_field("company");
-			frappe.show_alert({
+			nts.show_alert({
 				message: __("Please set {0} first.", [
-					__(frappe.meta.get_label(doc.doctype, "company", doc.name)),
+					__(nts.meta.get_label(doc.doctype, "company", doc.name)),
 				]),
 				indicator: "orange",
 			});
 		}
 
 		return {
-			query: "frappe.contacts.doctype.address.address.address_query",
+			query: "nts.contacts.doctype.address.address.address_query",
 			filters: { link_doctype: "Company", link_name: doc.company },
 		};
 	},
@@ -117,7 +117,7 @@ $.extend(prodman.queries, {
 		var is_drop_ship = doc.items.some((item) => item.delivered_by_supplier);
 		if (is_drop_ship) filters = {};
 		return {
-			query: "frappe.contacts.doctype.address.address.address_query",
+			query: "nts.contacts.doctype.address.address.address_query",
 			filters: filters,
 		};
 	},
@@ -125,9 +125,9 @@ $.extend(prodman.queries, {
 	supplier_filter: function (doc) {
 		if (!doc.supplier) {
 			cur_frm.scroll_to_field("supplier");
-			frappe.show_alert({
+			nts.show_alert({
 				message: __("Please set {0} first.", [
-					__(frappe.meta.get_label(doc.doctype, "supplier", doc.name)),
+					__(nts.meta.get_label(doc.doctype, "supplier", doc.name)),
 				]),
 				indicator: "orange",
 			});
@@ -139,9 +139,9 @@ $.extend(prodman.queries, {
 	lead_filter: function (doc) {
 		if (!doc.lead) {
 			cur_frm.scroll_to_field("lead");
-			frappe.show_alert({
+			nts.show_alert({
 				message: __("Please specify a {0} first.", [
-					__(frappe.meta.get_label(doc.doctype, "lead", doc.name)),
+					__(nts.meta.get_label(doc.doctype, "lead", doc.name)),
 				]),
 				indicator: "orange",
 			});
@@ -190,7 +190,7 @@ $.extend(prodman.queries, {
 prodman.queries.setup_queries = function (frm, options, query_fn) {
 	var me = this;
 	var set_query = function (doctype, parentfield) {
-		var link_fields = frappe.meta.get_docfields(doctype, frm.doc.name, {
+		var link_fields = nts.meta.get_docfields(doctype, frm.doc.name, {
 			fieldtype: "Link",
 			options: options,
 		});
@@ -207,7 +207,7 @@ prodman.queries.setup_queries = function (frm, options, query_fn) {
 
 	// warehouse field in tables
 	$.each(
-		frappe.meta.get_docfields(frm.doc.doctype, frm.doc.name, { fieldtype: "Table" }),
+		nts.meta.get_docfields(frm.doc.doctype, frm.doc.name, { fieldtype: "Table" }),
 		function (i, df) {
 			set_query(df.options, df.fieldname);
 		}

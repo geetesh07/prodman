@@ -1,11 +1,11 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import json
 import unittest
 
-import frappe
-from frappe.utils.response import json_handler
+import nts
+from nts.utils.response import json_handler
 
 from prodman.prodman_integrations.doctype.plaid_settings.plaid_settings import (
 	add_account_subtype,
@@ -21,30 +21,30 @@ class TestPlaidSettings(unittest.TestCase):
 		pass
 
 	def tearDown(self):
-		for bt in frappe.get_all("Bank Transaction"):
-			doc = frappe.get_doc("Bank Transaction", bt.name)
+		for bt in nts.get_all("Bank Transaction"):
+			doc = nts.get_doc("Bank Transaction", bt.name)
 			doc.cancel()
 			doc.delete()
 
 		for doctype in ("Bank Account", "Bank Account Type", "Bank Account Subtype"):
-			for d in frappe.get_all(doctype):
-				frappe.delete_doc(doctype, d.name, force=True)
+			for d in nts.get_all(doctype):
+				nts.delete_doc(doctype, d.name, force=True)
 
 	def test_plaid_disabled(self):
-		frappe.db.set_single_value("Plaid Settings", "enabled", 0)
+		nts.db.set_single_value("Plaid Settings", "enabled", 0)
 		self.assertTrue(get_plaid_configuration() == "disabled")
 
 	def test_add_account_type(self):
 		add_account_type("brokerage")
-		self.assertEqual(frappe.get_doc("Bank Account Type", "brokerage").name, "brokerage")
+		self.assertEqual(nts.get_doc("Bank Account Type", "brokerage").name, "brokerage")
 
 	def test_add_account_subtype(self):
 		add_account_subtype("loan")
-		self.assertEqual(frappe.get_doc("Bank Account Subtype", "loan").name, "loan")
+		self.assertEqual(nts.get_doc("Bank Account Subtype", "loan").name, "loan")
 
 	def test_new_transaction(self):
-		if not frappe.db.exists("Bank", "Citi"):
-			frappe.get_doc({"doctype": "Bank", "bank_name": "Citi"}).insert()
+		if not nts.db.exists("Bank", "Citi"):
+			nts.get_doc({"doctype": "Bank", "bank_name": "Citi"}).insert()
 
 		bank_accounts = {
 			"account": {
@@ -68,8 +68,8 @@ class TestPlaidSettings(unittest.TestCase):
 			"institution": {"institution_id": "ins_6", "name": "Citi"},
 		}
 
-		bank = json.dumps(frappe.get_doc("Bank", "Citi").as_dict(), default=json_handler)
-		company = frappe.db.get_single_value("Global Defaults", "default_company")
+		bank = json.dumps(nts.get_doc("Bank", "Citi").as_dict(), default=json_handler)
+		company = nts.db.get_single_value("Global Defaults", "default_company")
 
 		add_bank_accounts(bank_accounts, bank, company)
 
@@ -112,4 +112,4 @@ class TestPlaidSettings(unittest.TestCase):
 
 		new_bank_transaction(transactions)
 
-		self.assertTrue(len(frappe.get_all("Bank Transaction")) == 1)
+		self.assertTrue(len(nts.get_all("Bank Transaction")) == 1)

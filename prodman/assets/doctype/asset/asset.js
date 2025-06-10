@@ -1,10 +1,10 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.provide("prodman.asset");
-frappe.provide("prodman.accounts.dimensions");
+nts .provide("prodman.asset");
+nts .provide("prodman.accounts.dimensions");
 
-frappe.ui.form.on("Asset", {
+nts .ui.form.on("Asset", {
 	onload: function (frm) {
 		frm.set_query("item_code", function () {
 			return {
@@ -44,7 +44,7 @@ frappe.ui.form.on("Asset", {
 
 		frm.make_methods = {
 			"Asset Movement": () => {
-				frappe.call({
+				nts .call({
 					method: "prodman.assets.doctype.asset.asset.make_asset_movement",
 					freeze: true,
 					args: {
@@ -52,8 +52,8 @@ frappe.ui.form.on("Asset", {
 					},
 					callback: function (r) {
 						if (r.message) {
-							var doc = frappe.model.sync(r.message)[0];
-							frappe.set_route("Form", doc.doctype, doc.name);
+							var doc = nts .model.sync(r.message)[0];
+							nts .set_route("Form", doc.doctype, doc.name);
 						}
 					},
 				});
@@ -75,7 +75,7 @@ frappe.ui.form.on("Asset", {
 	},
 
 	refresh: function (frm) {
-		frappe.ui.form.trigger("Asset", "is_existing_asset");
+		nts .ui.form.trigger("Asset", "is_existing_asset");
 		frm.toggle_display("next_depreciation_date", frm.doc.docstatus < 1);
 
 		if (frm.doc.docstatus == 1) {
@@ -163,13 +163,13 @@ frappe.ui.form.on("Asset", {
 				frm.add_custom_button(
 					__("View General Ledger"),
 					function () {
-						frappe.route_options = {
+						nts .route_options = {
 							voucher_no: frm.doc.name,
 							from_date: frm.doc.available_for_use_date,
 							to_date: frm.doc.available_for_use_date,
 							company: frm.doc.company,
 						};
-						frappe.set_route("query-report", "General Ledger");
+						nts .set_route("query-report", "General Ledger");
 					},
 					__("Manage")
 				);
@@ -188,7 +188,7 @@ frappe.ui.form.on("Asset", {
 			frm.toggle_reqd("finance_books", frm.doc.calculate_depreciation);
 
 			if (frm.doc.is_composite_asset) {
-				frappe.call({
+				nts .call({
 					method: "prodman.assets.doctype.asset.asset.has_active_capitalization",
 					args: {
 						asset: frm.doc.name,
@@ -245,15 +245,15 @@ frappe.ui.form.on("Asset", {
 	},
 
 	make_journal_entry: function (frm) {
-		frappe.call({
+		nts .call({
 			method: "prodman.assets.doctype.asset.asset.make_journal_entry",
 			args: {
 				asset_name: frm.doc.name,
 			},
 			callback: function (r) {
 				if (r.message) {
-					var doclist = frappe.model.sync(r.message);
-					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+					var doclist = nts .model.sync(r.message);
+					nts .set_route("Form", doclist[0].doctype, doclist[0].name);
 				}
 			},
 		});
@@ -267,9 +267,9 @@ frappe.ui.form.on("Asset", {
 		asset_depr_schedule_doc.depreciation_schedule.forEach((sch) => {
 			const row = [
 				sch["idx"],
-				frappe.format(sch["schedule_date"], { fieldtype: "Date" }),
-				frappe.format(sch["depreciation_amount"], { fieldtype: "Currency" }),
-				frappe.format(sch["accumulated_depreciation_amount"], { fieldtype: "Currency" }),
+				nts .format(sch["schedule_date"], { fieldtype: "Date" }),
+				nts .format(sch["depreciation_amount"], { fieldtype: "Currency" }),
+				nts .format(sch["accumulated_depreciation_amount"], { fieldtype: "Currency" }),
 				sch["journal_entry"] || "",
 			];
 
@@ -306,7 +306,7 @@ frappe.ui.form.on("Asset", {
 			});
 		}
 
-		let datatable = new frappe.DataTable(wrapper.get(0), {
+		let datatable = new nts .DataTable(wrapper.get(0), {
 			columns: columns,
 			data: data,
 			layout: "fluid",
@@ -337,16 +337,16 @@ frappe.ui.form.on("Asset", {
 			return;
 		}
 
-		var x_intervals = [frappe.format(frm.doc.purchase_date, { fieldtype: "Date" })];
+		var x_intervals = [nts .format(frm.doc.purchase_date, { fieldtype: "Date" })];
 		var asset_values = [frm.doc.gross_purchase_amount];
 
 		if (frm.doc.calculate_depreciation) {
 			if (frm.doc.opening_accumulated_depreciation) {
-				var depreciation_date = frappe.datetime.add_months(
+				var depreciation_date = nts .datetime.add_months(
 					frm.doc.finance_books[0].depreciation_start_date,
 					-1 * frm.doc.finance_books[0].frequency_of_depreciation
 				);
-				x_intervals.push(frappe.format(depreciation_date, { fieldtype: "Date" }));
+				x_intervals.push(nts .format(depreciation_date, { fieldtype: "Date" }));
 				asset_values.push(
 					flt(
 						frm.doc.gross_purchase_amount - frm.doc.opening_accumulated_depreciation,
@@ -356,7 +356,7 @@ frappe.ui.form.on("Asset", {
 			}
 
 			let asset_depr_schedule_doc = (
-				await frappe.call(
+				await nts .call(
 					"prodman.assets.doctype.asset_depreciation_schedule.asset_depreciation_schedule.get_asset_depr_schedule_doc",
 					{
 						asset_name: frm.doc.name,
@@ -367,7 +367,7 @@ frappe.ui.form.on("Asset", {
 			).message;
 
 			$.each(asset_depr_schedule_doc.depreciation_schedule || [], function (i, v) {
-				x_intervals.push(frappe.format(v.schedule_date, { fieldtype: "Date" }));
+				x_intervals.push(nts .format(v.schedule_date, { fieldtype: "Date" }));
 				var asset_value = flt(
 					frm.doc.gross_purchase_amount - v.accumulated_depreciation_amount,
 					precision("gross_purchase_amount")
@@ -387,7 +387,7 @@ frappe.ui.form.on("Asset", {
 			frm.events.render_depreciation_schedule_view(frm, asset_depr_schedule_doc);
 		} else {
 			if (frm.doc.opening_accumulated_depreciation) {
-				x_intervals.push(frappe.format(frm.doc.creation.split(" ")[0], { fieldtype: "Date" }));
+				x_intervals.push(nts .format(frm.doc.creation.split(" ")[0], { fieldtype: "Date" }));
 				asset_values.push(
 					flt(
 						frm.doc.gross_purchase_amount - frm.doc.opening_accumulated_depreciation,
@@ -397,21 +397,21 @@ frappe.ui.form.on("Asset", {
 			}
 
 			let depr_entries = (
-				await frappe.call({
+				await nts .call({
 					method: "get_manual_depreciation_entries",
 					doc: frm.doc,
 				})
 			).message;
 
 			$.each(depr_entries || [], function (i, v) {
-				x_intervals.push(frappe.format(v.posting_date, { fieldtype: "Date" }));
+				x_intervals.push(nts .format(v.posting_date, { fieldtype: "Date" }));
 				let last_asset_value = asset_values[asset_values.length - 1];
 				asset_values.push(flt(last_asset_value - v.value, precision("gross_purchase_amount")));
 			});
 		}
 
 		if (["Scrapped", "Sold"].includes(frm.doc.status)) {
-			x_intervals.push(frappe.format(frm.doc.disposal_date, { fieldtype: "Date" }));
+			x_intervals.push(nts .format(frm.doc.disposal_date, { fieldtype: "Date" }));
 			asset_values.push(0);
 		}
 
@@ -440,7 +440,7 @@ frappe.ui.form.on("Asset", {
 	},
 
 	set_finance_book: function (frm) {
-		frappe.call({
+		nts .call({
 			method: "prodman.assets.doctype.asset.asset.get_item_details",
 			args: {
 				item_code: frm.doc.item_code,
@@ -471,7 +471,7 @@ frappe.ui.form.on("Asset", {
 	},
 
 	make_sales_invoice: function (frm) {
-		frappe.call({
+		nts .call({
 			args: {
 				asset: frm.doc.name,
 				item_code: frm.doc.item_code,
@@ -480,14 +480,14 @@ frappe.ui.form.on("Asset", {
 			},
 			method: "prodman.assets.doctype.asset.asset.make_sales_invoice",
 			callback: function (r) {
-				var doclist = frappe.model.sync(r.message);
-				frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				var doclist = nts .model.sync(r.message);
+				nts .set_route("Form", doclist[0].doctype, doclist[0].name);
 			},
 		});
 	},
 
 	create_asset_maintenance: function (frm) {
-		frappe.call({
+		nts .call({
 			args: {
 				asset: frm.doc.name,
 				item_code: frm.doc.item_code,
@@ -497,14 +497,14 @@ frappe.ui.form.on("Asset", {
 			},
 			method: "prodman.assets.doctype.asset.asset.create_asset_maintenance",
 			callback: function (r) {
-				var doclist = frappe.model.sync(r.message);
-				frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				var doclist = nts .model.sync(r.message);
+				nts .set_route("Form", doclist[0].doctype, doclist[0].name);
 			},
 		});
 	},
 
 	create_asset_repair: function (frm) {
-		frappe.call({
+		nts .call({
 			args: {
 				company: frm.doc.company,
 				asset: frm.doc.name,
@@ -512,14 +512,14 @@ frappe.ui.form.on("Asset", {
 			},
 			method: "prodman.assets.doctype.asset.asset.create_asset_repair",
 			callback: function (r) {
-				var doclist = frappe.model.sync(r.message);
-				frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				var doclist = nts .model.sync(r.message);
+				nts .set_route("Form", doclist[0].doctype, doclist[0].name);
 			},
 		});
 	},
 
 	create_asset_capitalization: function (frm) {
-		frappe.call({
+		nts .call({
 			args: {
 				company: frm.doc.company,
 				asset: frm.doc.name,
@@ -528,8 +528,8 @@ frappe.ui.form.on("Asset", {
 			},
 			method: "prodman.assets.doctype.asset.asset.create_asset_capitalization",
 			callback: function (r) {
-				var doclist = frappe.model.sync(r.message);
-				frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				var doclist = nts .model.sync(r.message);
+				nts .set_route("Form", doclist[0].doctype, doclist[0].name);
 				$(".primary-action").prop("hidden", false);
 			},
 		});
@@ -547,22 +547,22 @@ frappe.ui.form.on("Asset", {
 			},
 		];
 
-		let dialog = new frappe.ui.Dialog({
+		let dialog = new nts .ui.Dialog({
 			title: title,
 			fields: fields,
 		});
 
 		dialog.set_primary_action(__("Split"), function () {
 			const dialog_data = dialog.get_values();
-			frappe.call({
+			nts .call({
 				args: {
 					asset_name: frm.doc.name,
 					split_qty: cint(dialog_data.split_qty),
 				},
 				method: "prodman.assets.doctype.asset.asset.split_asset",
 				callback: function (r) {
-					let doclist = frappe.model.sync(r.message);
-					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+					let doclist = nts .model.sync(r.message);
+					nts .set_route("Form", doclist[0].doctype, doclist[0].name);
 				},
 			});
 
@@ -573,7 +573,7 @@ frappe.ui.form.on("Asset", {
 	},
 
 	create_asset_value_adjustment: function (frm) {
-		frappe.call({
+		nts .call({
 			args: {
 				asset: frm.doc.name,
 				asset_category: frm.doc.asset_category,
@@ -582,8 +582,8 @@ frappe.ui.form.on("Asset", {
 			method: "prodman.assets.doctype.asset.asset.create_asset_value_adjustment",
 			freeze: 1,
 			callback: function (r) {
-				var doclist = frappe.model.sync(r.message);
-				frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+				var doclist = nts .model.sync(r.message);
+				nts .set_route("Form", doclist[0].doctype, doclist[0].name);
 			},
 		});
 	},
@@ -612,7 +612,7 @@ frappe.ui.form.on("Asset", {
 				frm.events.set_values_from_purchase_doc(frm, "Purchase Receipt");
 			} else {
 				frm.set_value("purchase_receipt", "");
-				frappe.msgprint({
+				nts .msgprint({
 					title: __("Not Allowed"),
 					message: __("Please select Item Code first"),
 				});
@@ -627,7 +627,7 @@ frappe.ui.form.on("Asset", {
 				frm.events.set_values_from_purchase_doc(frm, "Purchase Invoice");
 			} else {
 				frm.set_value("purchase_invoice", "");
-				frappe.msgprint({
+				nts .msgprint({
 					title: __("Not Allowed"),
 					message: __("Please select Item Code first"),
 				});
@@ -636,7 +636,7 @@ frappe.ui.form.on("Asset", {
 	},
 
 	set_values_from_purchase_doc: (frm, doctype) => {
-		frappe.call({
+		nts .call({
 			method: "prodman.assets.doctype.asset.asset.get_values_from_purchase_doc",
 			args: {
 				purchase_doc_name: frm.doc.purchase_receipt || frm.doc.purchase_invoice,
@@ -669,14 +669,14 @@ frappe.ui.form.on("Asset", {
 			row.frequency_of_depreciation &&
 			row.expected_value_after_useful_life
 		) {
-			frappe.call({
+			nts .call({
 				method: "get_depreciation_rate",
 				doc: frm.doc,
 				args: row,
 				callback: function (r) {
 					if (r.message) {
-						frappe.flags.dont_change_rate = true;
-						frappe.model.set_value(
+						nts .flags.dont_change_rate = true;
+						nts .model.set_value(
 							row.doctype,
 							row.name,
 							"rate_of_depreciation",
@@ -695,36 +695,36 @@ frappe.ui.form.on("Asset", {
 		expected_value_after_useful_life_changed
 	) {
 		if (expected_value_after_useful_life_changed) {
-			frappe.flags.from_set_salvage_value_percentage_or_expected_value_after_useful_life = true;
+			nts .flags.from_set_salvage_value_percentage_or_expected_value_after_useful_life = true;
 			const new_salvage_value_percentage = flt(
 				(row.expected_value_after_useful_life * 100) / frm.doc.gross_purchase_amount,
 				precision("salvage_value_percentage", row)
 			);
-			frappe.model.set_value(
+			nts .model.set_value(
 				row.doctype,
 				row.name,
 				"salvage_value_percentage",
 				new_salvage_value_percentage
 			);
-			frappe.flags.from_set_salvage_value_percentage_or_expected_value_after_useful_life = false;
+			nts .flags.from_set_salvage_value_percentage_or_expected_value_after_useful_life = false;
 		} else if (salvage_value_percentage_changed) {
-			frappe.flags.from_set_salvage_value_percentage_or_expected_value_after_useful_life = true;
+			nts .flags.from_set_salvage_value_percentage_or_expected_value_after_useful_life = true;
 			const new_expected_value_after_useful_life = flt(
 				frm.doc.gross_purchase_amount * (row.salvage_value_percentage / 100),
 				precision("gross_purchase_amount")
 			);
-			frappe.model.set_value(
+			nts .model.set_value(
 				row.doctype,
 				row.name,
 				"expected_value_after_useful_life",
 				new_expected_value_after_useful_life
 			);
-			frappe.flags.from_set_salvage_value_percentage_or_expected_value_after_useful_life = false;
+			nts .flags.from_set_salvage_value_percentage_or_expected_value_after_useful_life = false;
 		}
 	},
 });
 
-frappe.ui.form.on("Asset Finance Book", {
+nts .ui.form.on("Asset Finance Book", {
 	depreciation_method: function (frm, cdt, cdn) {
 		const row = locals[cdt][cdn];
 		frm.events.set_depreciation_rate(frm, row);
@@ -732,7 +732,7 @@ frappe.ui.form.on("Asset Finance Book", {
 
 	expected_value_after_useful_life: function (frm, cdt, cdn) {
 		const row = locals[cdt][cdn];
-		if (!frappe.flags.from_set_salvage_value_percentage_or_expected_value_after_useful_life) {
+		if (!nts .flags.from_set_salvage_value_percentage_or_expected_value_after_useful_life) {
 			frm.events.set_salvage_value_percentage_or_expected_value_after_useful_life(
 				frm,
 				row,
@@ -745,7 +745,7 @@ frappe.ui.form.on("Asset Finance Book", {
 
 	salvage_value_percentage: function (frm, cdt, cdn) {
 		const row = locals[cdt][cdn];
-		if (!frappe.flags.from_set_salvage_value_percentage_or_expected_value_after_useful_life) {
+		if (!nts .flags.from_set_salvage_value_percentage_or_expected_value_after_useful_life) {
 			frm.events.set_salvage_value_percentage_or_expected_value_after_useful_life(
 				frm,
 				row,
@@ -766,17 +766,17 @@ frappe.ui.form.on("Asset Finance Book", {
 	},
 
 	rate_of_depreciation: function (frm, cdt, cdn) {
-		if (!frappe.flags.dont_change_rate) {
-			frappe.model.set_value(cdt, cdn, "expected_value_after_useful_life", 0);
+		if (!nts .flags.dont_change_rate) {
+			nts .model.set_value(cdt, cdn, "expected_value_after_useful_life", 0);
 		}
 
-		frappe.flags.dont_change_rate = false;
+		nts .flags.dont_change_rate = false;
 	},
 
 	depreciation_start_date: function (frm, cdt, cdn) {
 		const book = locals[cdt][cdn];
 		if (frm.doc.available_for_use_date && book.depreciation_start_date < frm.doc.available_for_use_date) {
-			frappe.msgprint(__("Depreciation Posting Date cannot be before Available-for-use Date"));
+			nts .msgprint(__("Depreciation Posting Date cannot be before Available-for-use Date"));
 			book.depreciation_start_date = "";
 			frm.refresh_field("finance_books");
 		}
@@ -784,8 +784,8 @@ frappe.ui.form.on("Asset Finance Book", {
 });
 
 prodman.asset.scrap_asset = function (frm) {
-	frappe.confirm(__("Do you really want to scrap this asset?"), function () {
-		frappe.call({
+	nts .confirm(__("Do you really want to scrap this asset?"), function () {
+		nts .call({
 			args: {
 				asset_name: frm.doc.name,
 			},
@@ -798,8 +798,8 @@ prodman.asset.scrap_asset = function (frm) {
 };
 
 prodman.asset.restore_asset = function (frm) {
-	frappe.confirm(__("Do you really want to restore this scrapped asset?"), function () {
-		frappe.call({
+	nts .confirm(__("Do you really want to restore this scrapped asset?"), function () {
+		nts .call({
 			args: {
 				asset_name: frm.doc.name,
 			},
@@ -812,7 +812,7 @@ prodman.asset.restore_asset = function (frm) {
 };
 
 prodman.asset.transfer_asset = function () {
-	frappe.call({
+	nts .call({
 		method: "prodman.assets.doctype.asset.asset.make_asset_movement",
 		freeze: true,
 		args: {
@@ -821,8 +821,8 @@ prodman.asset.transfer_asset = function () {
 		},
 		callback: function (r) {
 			if (r.message) {
-				var doc = frappe.model.sync(r.message)[0];
-				frappe.set_route("Form", doc.doctype, doc.name);
+				var doc = nts .model.sync(r.message)[0];
+				nts .set_route("Form", doc.doctype, doc.name);
 			}
 		},
 	});

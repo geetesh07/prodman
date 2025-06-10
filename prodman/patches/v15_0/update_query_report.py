@@ -1,4 +1,4 @@
-import frappe
+import nts
 
 
 def execute():
@@ -11,7 +11,7 @@ def execute():
 		"Received Items To Be Billed",
 		"Supplier Ledger Summary",
 	]
-	frappe.db.set_value(
+	nts.db.set_value(
 		"Workspace Link",
 		{
 			"parent": "Payables",

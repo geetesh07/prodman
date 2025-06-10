@@ -1,12 +1,12 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 from collections import defaultdict
 
-import frappe
-from frappe import _
-from frappe.utils import cint, flt
+import nts
+from nts import _
+from nts.utils import cint, flt
 
 from prodman.setup.utils import get_exchange_rate
 
@@ -33,11 +33,11 @@ def validate_filters(filters):
 
 
 def get_data(filters):
-	sq = frappe.qb.DocType("Supplier Quotation")
-	sq_item = frappe.qb.DocType("Supplier Quotation Item")
+	sq = nts.qb.DocType("Supplier Quotation")
+	sq_item = nts.qb.DocType("Supplier Quotation Item")
 
 	query = (
-		frappe.qb.from_(sq_item)
+		nts.qb.from_(sq_item)
 		.from_(sq)
 		.select(
 			sq_item.parent,
@@ -93,7 +93,7 @@ def prepare_data(supplier_quotation_data, filters):
 	group_by_field = (
 		"supplier_name" if filters.get("categorize_by") == "Categorize by Supplier" else "item_code"
 	)
-	float_precision = cint(frappe.db.get_default("float_precision")) or 2
+	float_precision = cint(nts.db.get_default("float_precision")) or 2
 
 	for data in supplier_quotation_data:
 		group = data.get(group_by_field)  # get item or supplier value for this row
@@ -175,7 +175,7 @@ def prepare_chart_data(suppliers, qty_list, supplier_qty_price_map):
 				data_points_map[qty].append(None)
 
 	dataset = []
-	currency_symbol = frappe.db.get_value("Currency", frappe.db.get_default("currency"), "symbol")
+	currency_symbol = nts.db.get_value("Currency", nts.db.get_default("currency"), "symbol")
 	for qty in qty_list:
 		datapoints = {
 			"name": currency_symbol + " (Qty " + str(qty) + " )",
@@ -189,7 +189,7 @@ def prepare_chart_data(suppliers, qty_list, supplier_qty_price_map):
 
 
 def get_columns(filters):
-	currency = frappe.get_cached_value("Company", filters.get("company"), "default_currency")
+	currency = nts.get_cached_value("Company", filters.get("company"), "default_currency")
 
 	group_by_columns = [
 		{
@@ -296,9 +296,9 @@ def get_message():
 		</span>"""
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def set_default_supplier(item_code, supplier, company):
-	frappe.db.set_value(
+	nts.db.set_value(
 		"Item Default",
 		{"parent": item_code, "company": company},
 		"default_supplier",

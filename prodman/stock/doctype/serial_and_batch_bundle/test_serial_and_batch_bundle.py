@@ -1,11 +1,11 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import json
 
-import frappe
-from frappe.tests.utils import FrappeTestCase, change_settings
-from frappe.utils import flt, nowtime, today
+import nts
+from nts.tests.utils import ntsTestCase, change_settings
+from nts.utils import flt, nowtime, today
 
 from prodman.stock.doctype.item.test_item import make_item
 from prodman.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle import (
@@ -16,9 +16,9 @@ from prodman.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle impor
 from prodman.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
 
 
-class TestSerialandBatchBundle(FrappeTestCase):
+class TestSerialandBatchBundle(ntsTestCase):
 	def test_naming_for_sabb(self):
-		frappe.db.set_single_value(
+		nts.db.set_single_value(
 			"Stock Settings", "set_serial_and_batch_bundle_naming_based_on_naming_series", 1
 		)
 
@@ -33,8 +33,8 @@ class TestSerialandBatchBundle(FrappeTestCase):
 		)
 
 		for sn in ["TEST-A-SER-VAL-00001", "TEST-A-SER-VAL-00002"]:
-			if not frappe.db.exists("Serial No", sn):
-				frappe.get_doc(
+			if not nts.db.exists("Serial No", sn):
+				nts.get_doc(
 					{
 						"doctype": "Serial No",
 						"serial_no": sn,
@@ -58,7 +58,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 
 		self.assertTrue(bundle_doc.name.startswith("SABB-"))
 
-		frappe.db.set_single_value(
+		nts.db.set_single_value(
 			"Stock Settings", "set_serial_and_batch_bundle_naming_based_on_naming_series", 0
 		)
 
@@ -112,7 +112,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 			serial_no=[serial_no2],
 		)
 
-		stock_value_difference = frappe.db.get_value(
+		stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_no": dn.name, "is_cancelled": 0, "voucher_type": "Delivery Note"},
 			"stock_value_difference",
@@ -128,7 +128,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 			serial_no=[serial_no1],
 		)
 
-		stock_value_difference = frappe.db.get_value(
+		stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_no": dn.name, "is_cancelled": 0, "voucher_type": "Delivery Note"},
 			"stock_value_difference",
@@ -171,7 +171,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 			batch_no=batch_no2,
 		)
 
-		stock_value_difference = frappe.db.get_value(
+		stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_no": dn.name, "is_cancelled": 0, "voucher_type": "Delivery Note"},
 			"stock_value_difference",
@@ -187,7 +187,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 			batch_no=batch_no1,
 		)
 
-		stock_value_difference = frappe.db.get_value(
+		stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_no": dn.name, "is_cancelled": 0, "voucher_type": "Delivery Note"},
 			"stock_value_difference",
@@ -196,8 +196,8 @@ class TestSerialandBatchBundle(FrappeTestCase):
 		self.assertEqual(flt(stock_value_difference, 2), -5000)
 
 	def test_old_batch_valuation(self):
-		frappe.flags.ignore_serial_batch_bundle_validation = True
-		frappe.flags.use_serial_and_batch_fields = True
+		nts.flags.ignore_serial_batch_bundle_validation = True
+		nts.flags.use_serial_and_batch_fields = True
 		batch_item_code = "Old Batch Item Valuation 1"
 		make_item(
 			batch_item_code,
@@ -208,8 +208,8 @@ class TestSerialandBatchBundle(FrappeTestCase):
 		)
 
 		batch_id = "Old Batch 1"
-		if not frappe.db.exists("Batch", batch_id):
-			batch_doc = frappe.get_doc(
+		if not nts.db.exists("Batch", batch_id):
+			batch_doc = nts.get_doc(
 				{
 					"doctype": "Batch",
 					"batch_id": batch_id,
@@ -229,7 +229,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 			qty_after_transaction += qty
 			balance_value += qty * valuation
 
-			doc = frappe.get_doc(
+			doc = nts.get_doc(
 				{
 					"doctype": "Stock Ledger Entry",
 					"posting_date": today(),
@@ -264,7 +264,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 				"posting_date": today(),
 				"posting_time": nowtime(),
 				"qty": -10,
-				"batches": frappe._dict({batch_id: 10}),
+				"batches": nts._dict({batch_id: 10}),
 				"type_of_transaction": "Outward",
 				"do_not_submit": True,
 			}
@@ -288,7 +288,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 				"posting_date": today(),
 				"posting_time": nowtime(),
 				"qty": -20,
-				"batches": frappe._dict({batch_id: 20}),
+				"batches": nts._dict({batch_id: 20}),
 				"type_of_transaction": "Outward",
 				"do_not_submit": True,
 			}
@@ -304,8 +304,8 @@ class TestSerialandBatchBundle(FrappeTestCase):
 		bundle_doc.flags.ignore_validate = True
 		bundle_doc.submit()
 
-		frappe.flags.ignore_serial_batch_bundle_validation = False
-		frappe.flags.use_serial_and_batch_fields = False
+		nts.flags.ignore_serial_batch_bundle_validation = False
+		nts.flags.use_serial_and_batch_fields = False
 
 	def test_old_serial_no_valuation(self):
 		from prodman.stock.doctype.purchase_receipt.test_purchase_receipt import make_purchase_receipt
@@ -324,12 +324,12 @@ class TestSerialandBatchBundle(FrappeTestCase):
 			item_code=serial_no_item_code, warehouse="_Test Warehouse - _TC", qty=1, rate=500
 		)
 
-		frappe.flags.ignore_serial_batch_bundle_validation = True
-		frappe.flags.use_serial_and_batch_fields = True
+		nts.flags.ignore_serial_batch_bundle_validation = True
+		nts.flags.use_serial_and_batch_fields = True
 
 		serial_no_id = "Old Serial No 1"
-		if not frappe.db.exists("Serial No", serial_no_id):
-			sn_doc = frappe.get_doc(
+		if not nts.db.exists("Serial No", serial_no_id):
+			sn_doc = nts.get_doc(
 				{
 					"doctype": "Serial No",
 					"serial_no": serial_no_id,
@@ -345,7 +345,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 				}
 			)
 
-		doc = frappe.get_doc(
+		doc = nts.get_doc(
 			{
 				"doctype": "Stock Ledger Entry",
 				"posting_date": today(),
@@ -387,8 +387,8 @@ class TestSerialandBatchBundle(FrappeTestCase):
 		for row in bundle_doc.entries:
 			self.assertEqual(flt(row.stock_value_difference, 2), -100.00)
 
-		frappe.flags.ignore_serial_batch_bundle_validation = False
-		frappe.flags.use_serial_and_batch_fields = False
+		nts.flags.ignore_serial_batch_bundle_validation = False
+		nts.flags.use_serial_and_batch_fields = False
 
 	def test_batch_not_belong_to_serial_no(self):
 		from prodman.stock.doctype.purchase_receipt.test_purchase_receipt import make_purchase_receipt
@@ -418,7 +418,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 
 		batch_no = get_batch_from_bundle(pr.items[0].serial_and_batch_bundle)
 
-		doc = frappe.get_doc(
+		doc = nts.get_doc(
 			{
 				"doctype": "Serial and Batch Bundle",
 				"item_code": serial_and_batch_code,
@@ -441,7 +441,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 		)
 
 		# Batch does not belong to serial no
-		self.assertRaises(frappe.exceptions.ValidationError, doc.save)
+		self.assertRaises(nts.exceptions.ValidationError, doc.save)
 
 	def test_auto_delete_draft_serial_and_batch_bundle(self):
 		serial_and_batch_code = "New Serial No Auto Delete 1"
@@ -463,8 +463,8 @@ class TestSerialandBatchBundle(FrappeTestCase):
 		)
 
 		serial_no = "SN-TEST-AUTO-DEL"
-		if not frappe.db.exists("Serial No", serial_no):
-			frappe.get_doc(
+		if not nts.db.exists("Serial No", serial_no):
+			nts.get_doc(
 				{
 					"doctype": "Serial No",
 					"serial_no": serial_no,
@@ -493,7 +493,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 		ste.reload()
 
 		ste.delete()
-		self.assertFalse(frappe.db.exists("Serial and Batch Bundle", bundle_doc.name))
+		self.assertFalse(nts.db.exists("Serial and Batch Bundle", bundle_doc.name))
 
 	def test_serial_and_batch_bundle_company(self):
 		from prodman.stock.doctype.purchase_receipt.test_purchase_receipt import make_purchase_receipt
@@ -516,10 +516,10 @@ class TestSerialandBatchBundle(FrappeTestCase):
 
 		entries = []
 		for serial_no in ["TT-SER-VAL-00001", "TT-SER-VAL-00002", "TT-SER-VAL-00003"]:
-			entries.append(frappe._dict({"serial_no": serial_no, "qty": 1}))
+			entries.append(nts._dict({"serial_no": serial_no, "qty": 1}))
 
-			if not frappe.db.exists("Serial No", serial_no):
-				frappe.get_doc(
+			if not nts.db.exists("Serial No", serial_no):
+				nts.get_doc(
 					{
 						"doctype": "Serial No",
 						"serial_no": serial_no,
@@ -546,11 +546,11 @@ class TestSerialandBatchBundle(FrappeTestCase):
 		)
 
 		bundle = se.items[0].serial_and_batch_bundle
-		docstatus = frappe.db.get_value("Serial and Batch Bundle", bundle, "docstatus")
+		docstatus = nts.db.get_value("Serial and Batch Bundle", bundle, "docstatus")
 		self.assertEqual(docstatus, 1)
 
 		se.cancel()
-		docstatus = frappe.db.get_value("Serial and Batch Bundle", bundle, "docstatus")
+		docstatus = nts.db.get_value("Serial and Batch Bundle", bundle, "docstatus")
 		self.assertEqual(docstatus, 2)
 
 	def test_batch_duplicate_entry(self):
@@ -560,8 +560,8 @@ class TestSerialandBatchBundle(FrappeTestCase):
 		batch_nos = [{"batch_no": batch_id, "qty": 1}]
 
 		make_batch_nos(item_code, batch_nos)
-		self.assertTrue(frappe.db.exists("Batch", batch_id))
-		use_batchwise_valuation = frappe.db.get_value("Batch", batch_id, "use_batchwise_valuation")
+		self.assertTrue(nts.db.exists("Batch", batch_id))
+		use_batchwise_valuation = nts.db.get_value("Batch", batch_id, "use_batchwise_valuation")
 		self.assertEqual(use_batchwise_valuation, 1)
 
 		batch_id = "TEST-BATTCCH-VAL-00001"
@@ -569,7 +569,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 
 		# Shouldn't throw duplicate entry error
 		make_batch_nos(item_code, batch_nos)
-		self.assertTrue(frappe.db.exists("Batch", batch_id))
+		self.assertTrue(nts.db.exists("Batch", batch_id))
 
 	def test_serial_no_duplicate_entry(self):
 		item_code = make_item(properties={"has_serial_no": 1}).name
@@ -578,14 +578,14 @@ class TestSerialandBatchBundle(FrappeTestCase):
 		serial_nos = [{"serial_no": serial_no_id, "qty": 1}]
 
 		make_serial_nos(item_code, serial_nos)
-		self.assertTrue(frappe.db.exists("Serial No", serial_no_id))
+		self.assertTrue(nts.db.exists("Serial No", serial_no_id))
 
 		serial_no_id = "TEST-SNID-VAL-00001"
 		serial_nos = [{"batch_no": serial_no_id, "qty": 1}]
 
 		# Shouldn't throw duplicate entry error
 		make_serial_nos(item_code, serial_nos)
-		self.assertTrue(frappe.db.exists("Serial No", serial_no_id))
+		self.assertTrue(nts.db.exists("Serial No", serial_no_id))
 
 	@change_settings("Stock Settings", {"auto_create_serial_and_batch_bundle_for_outward": 1})
 	def test_duplicate_serial_and_batch_bundle(self):
@@ -603,7 +603,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 		pr1.reload()
 		pr2.items[0].serial_and_batch_bundle = pr1.items[0].serial_and_batch_bundle
 
-		self.assertRaises(frappe.exceptions.ValidationError, pr2.save)
+		self.assertRaises(nts.exceptions.ValidationError, pr2.save)
 
 	def test_serial_no_valuation_for_legacy_ledgers(self):
 		sn_item = make_item(
@@ -613,8 +613,8 @@ class TestSerialandBatchBundle(FrappeTestCase):
 
 		serial_nos = []
 		for serial_no in [f"{sn_item}-0001", f"{sn_item}-0002"]:
-			if not frappe.db.exists("Serial No", serial_no):
-				sn_doc = frappe.get_doc(
+			if not nts.db.exists("Serial No", serial_no):
+				sn_doc = nts.get_doc(
 					{
 						"doctype": "Serial No",
 						"serial_no": serial_no,
@@ -623,16 +623,16 @@ class TestSerialandBatchBundle(FrappeTestCase):
 				).insert(ignore_permissions=True)
 				serial_nos.append(serial_no)
 
-		frappe.flags.ignore_serial_batch_bundle_validation = True
+		nts.flags.ignore_serial_batch_bundle_validation = True
 
 		qty_after_transaction = 0.0
 		stock_value = 0.0
 		for row in [{"qty": 2, "rate": 100}, {"qty": -2, "rate": 100}, {"qty": 2, "rate": 200}]:
-			row = frappe._dict(row)
+			row = nts._dict(row)
 			qty_after_transaction += row.qty
 			stock_value += row.rate * row.qty
 
-			doc = frappe.get_doc(
+			doc = nts.get_doc(
 				{
 					"doctype": "Stock Ledger Entry",
 					"posting_date": today(),
@@ -657,13 +657,13 @@ class TestSerialandBatchBundle(FrappeTestCase):
 			doc.submit()
 
 			for sn in serial_nos:
-				sn_doc = frappe.get_doc("Serial No", sn)
+				sn_doc = nts.get_doc("Serial No", sn)
 				if row.qty > 0:
 					sn_doc.db_set("warehouse", "_Test Warehouse - _TC")
 				else:
 					sn_doc.db_set("warehouse", "")
 
-		frappe.flags.ignore_serial_batch_bundle_validation = False
+		nts.flags.ignore_serial_batch_bundle_validation = False
 
 		se = make_stock_entry(
 			item_code=sn_item,
@@ -677,7 +677,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 		se.save()
 		se.submit()
 
-		stock_value_difference = frappe.db.get_value(
+		stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_no": se.name, "is_cancelled": 0, "voucher_type": "Stock Entry"},
 			"stock_value_difference",
@@ -702,7 +702,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 			use_serial_batch_fields=True,
 		)
 
-		stock_value_difference = frappe.db.get_value(
+		stock_value_difference = nts.db.get_value(
 			"Stock Ledger Entry",
 			{"voucher_no": se.name, "is_cancelled": 0, "voucher_type": "Stock Entry"},
 			"stock_value_difference",
@@ -775,8 +775,8 @@ class TestSerialandBatchBundle(FrappeTestCase):
 			},
 		).name
 
-		if not frappe.db.exists("Batch", "ACSBBO-TACSB-00001"):
-			frappe.get_doc(
+		if not nts.db.exists("Batch", "ACSBBO-TACSB-00001"):
+			nts.get_doc(
 				{
 					"doctype": "Batch",
 					"batch_id": "ACSBBO-TACSB-00001",
@@ -802,17 +802,17 @@ class TestSerialandBatchBundle(FrappeTestCase):
 			do_not_submit=True,
 		)
 
-		original_value = frappe.db.get_single_value(
+		original_value = nts.db.get_single_value(
 			"Stock Settings", "auto_create_serial_and_batch_bundle_for_outward"
 		)
 
-		frappe.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 0)
-		self.assertRaises(frappe.ValidationError, dispatch.submit)
+		nts.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 0)
+		self.assertRaises(nts.ValidationError, dispatch.submit)
 
-		frappe.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 1)
+		nts.db.set_single_value("Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", 1)
 		dispatch.submit()
 
-		frappe.db.set_single_value(
+		nts.db.set_single_value(
 			"Stock Settings", "auto_create_serial_and_batch_bundle_for_outward", original_value
 		)
 
@@ -836,8 +836,8 @@ class TestSerialandBatchBundle(FrappeTestCase):
 			do_not_submit=True,
 		)
 
-		if not frappe.db.exists("Batch", "TST-ACSBBO-TACSB-00001"):
-			frappe.get_doc(
+		if not nts.db.exists("Batch", "TST-ACSBBO-TACSB-00001"):
+			nts.get_doc(
 				{
 					"doctype": "Batch",
 					"batch_id": "TST-ACSBBO-TACSB-00001",
@@ -854,7 +854,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 				"posting_date": today(),
 				"posting_time": nowtime(),
 				"qty": 10,
-				"batches": frappe._dict({"TST-ACSBBO-TACSB-00001": 10}),
+				"batches": nts._dict({"TST-ACSBBO-TACSB-00001": 10}),
 				"type_of_transaction": "Inward",
 				"do_not_submit": True,
 			}
@@ -878,7 +878,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 
 		se.save()
 
-		bundle_doc = frappe.get_doc("Serial and Batch Bundle", bundle_doc.name)
+		bundle_doc = nts.get_doc("Serial and Batch Bundle", bundle_doc.name)
 		self.assertEqual(bundle_doc.voucher_detail_no, se.items[1].name)
 
 		se.remove(se.items[1])
@@ -888,7 +888,7 @@ class TestSerialandBatchBundle(FrappeTestCase):
 
 		bundle_doc.reload()
 		self.assertTrue(bundle_doc.docstatus == 0)
-		self.assertRaises(frappe.ValidationError, bundle_doc.submit)
+		self.assertRaises(nts.ValidationError, bundle_doc.submit)
 
 
 def get_batch_from_bundle(bundle):
@@ -910,7 +910,7 @@ def make_serial_batch_bundle(kwargs):
 	from prodman.stock.serial_batch_bundle import SerialBatchCreation
 
 	if isinstance(kwargs, dict):
-		kwargs = frappe._dict(kwargs)
+		kwargs = nts._dict(kwargs)
 
 	type_of_transaction = "Inward" if kwargs.qty > 0 else "Outward"
 	if kwargs.get("type_of_transaction"):

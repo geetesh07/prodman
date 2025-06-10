@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
-from frappe.permissions import add_permission, update_permission_property
+import nts
+from nts.custom.doctype.custom_field.custom_field import create_custom_fields
+from nts.permissions import add_permission, update_permission_property
 
 
 def setup(company=None, patch=True):
@@ -246,11 +246,11 @@ def make_custom_fields():
 
 
 def add_print_formats():
-	frappe.reload_doc("regional", "print_format", "detailed_tax_invoice")
-	frappe.reload_doc("regional", "print_format", "simplified_tax_invoice")
-	frappe.reload_doc("regional", "print_format", "tax_invoice")
+	nts.reload_doc("regional", "print_format", "detailed_tax_invoice")
+	nts.reload_doc("regional", "print_format", "simplified_tax_invoice")
+	nts.reload_doc("regional", "print_format", "tax_invoice")
 
-	frappe.db.sql(
+	nts.db.sql(
 		""" update `tabPrint Format` set disabled = 0 where
 		name in('Simplified Tax Invoice', 'Detailed Tax Invoice', 'Tax Invoice') """
 	)
@@ -258,8 +258,8 @@ def add_print_formats():
 
 def add_custom_roles_for_reports():
 	"""Add Access Control to UAE VAT 201."""
-	if not frappe.db.get_value("Custom Role", dict(report="UAE VAT 201")):
-		frappe.get_doc(
+	if not nts.db.get_value("Custom Role", dict(report="UAE VAT 201")):
+		nts.get_doc(
 			dict(
 				doctype="Custom Role",
 				report="UAE VAT 201",

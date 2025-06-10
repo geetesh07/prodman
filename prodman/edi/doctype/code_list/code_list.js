@@ -1,7 +1,7 @@
-// Copyright (c) 2024, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2024, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Code List", {
+nts.ui.form.on("Code List", {
 	refresh: (frm) => {
 		if (!frm.doc.__islocal) {
 			frm.add_custom_button(__("Import Genericode File"), function () {
@@ -12,14 +12,14 @@ frappe.ui.form.on("Code List", {
 	setup: (frm) => {
 		frm.savetrash = () => {
 			frm.validate_form_action("Delete");
-			frappe.confirm(
+			nts.confirm(
 				__(
 					"Are you sure you want to delete {0}?<p>This action will also delete all associated Common Code documents.</p>",
 					[frm.docname.bold()]
 				),
 				function () {
-					return frappe.call({
-						method: "frappe.client.delete",
+					return nts.call({
+						method: "nts.client.delete",
 						args: {
 							doctype: frm.doctype,
 							name: frm.docname,
@@ -30,8 +30,8 @@ frappe.ui.form.on("Code List", {
 						]),
 						callback: function (r) {
 							if (!r.exc) {
-								frappe.utils.play_sound("delete");
-								frappe.model.clear_doc(frm.doctype, frm.docname);
+								nts.utils.play_sound("delete");
+								nts.model.clear_doc(frm.doctype, frm.docname);
 								window.history.back();
 							}
 						},

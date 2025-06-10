@@ -46,7 +46,7 @@ prodman.PointOfSale.PastOrderSummary = class {
 	}
 
 	init_email_print_dialog() {
-		const email_dialog = new frappe.ui.Dialog({
+		const email_dialog = new nts.ui.Dialog({
 			title: __("Email Receipt"),
 			fields: [
 				{ fieldname: "email_id", fieldtype: "Data", options: "Email", label: "Email ID", reqd: 1 },
@@ -59,7 +59,7 @@ prodman.PointOfSale.PastOrderSummary = class {
 		});
 		this.email_dialog = email_dialog;
 
-		const print_dialog = new frappe.ui.Dialog({
+		const print_dialog = new nts.ui.Dialog({
 			title: __("Print Receipt"),
 			fields: [{ fieldname: "print", fieldtype: "Data", label: "Print Preview" }],
 			primary_action: () => {
@@ -212,19 +212,19 @@ prodman.PointOfSale.PastOrderSummary = class {
 
 	print_receipt() {
 		const frm = this.events.get_frm();
-		frappe.utils.print(
+		nts.utils.print(
 			this.doc.doctype,
 			this.doc.name,
 			frm.pos_print_format,
 			this.doc.letter_head,
-			this.doc.language || frappe.boot.lang
+			this.doc.language || nts.boot.lang
 		);
 	}
 
 	attach_shortcuts() {
-		const ctrl_label = frappe.utils.is_mac() ? "⌘" : "Ctrl";
+		const ctrl_label = nts.utils.is_mac() ? "⌘" : "Ctrl";
 		this.$summary_container.find(".print-btn").attr("title", `${ctrl_label}+P`);
-		frappe.ui.keys.add_shortcut({
+		nts.ui.keys.add_shortcut({
 			shortcut: "ctrl+p",
 			action: () => this.$summary_container.find(".print-btn").click(),
 			condition: () =>
@@ -233,14 +233,14 @@ prodman.PointOfSale.PastOrderSummary = class {
 			page: cur_page.page.page,
 		});
 		this.$summary_container.find(".new-btn").attr("title", `${ctrl_label}+Enter`);
-		frappe.ui.keys.on("ctrl+enter", () => {
+		nts.ui.keys.on("ctrl+enter", () => {
 			const summary_is_visible = this.$component.is(":visible");
 			if (summary_is_visible && this.$summary_container.find(".new-btn").is(":visible")) {
 				this.$summary_container.find(".new-btn").click();
 			}
 		});
 		this.$summary_container.find(".edit-btn").attr("title", `${ctrl_label}+E`);
-		frappe.ui.keys.add_shortcut({
+		nts.ui.keys.add_shortcut({
 			shortcut: "ctrl+e",
 			action: () => this.$summary_container.find(".edit-btn").click(),
 			condition: () =>
@@ -257,8 +257,8 @@ prodman.PointOfSale.PastOrderSummary = class {
 		const doc = this.doc || frm.doc;
 		const print_format = frm.pos_print_format;
 
-		frappe.call({
-			method: "frappe.core.doctype.communication.email.make",
+		nts.call({
+			method: "nts.core.doctype.communication.email.make",
 			args: {
 				recipients: recipients,
 				subject: __(frm.meta.name) + ": " + doc.name,
@@ -267,27 +267,27 @@ prodman.PointOfSale.PastOrderSummary = class {
 				name: doc.name,
 				send_email: 1,
 				print_format,
-				sender_full_name: frappe.user.full_name(),
+				sender_full_name: nts.user.full_name(),
 				_lang: doc.language,
 			},
 			callback: (r) => {
 				if (!r.exc) {
-					frappe.utils.play_sound("email");
+					nts.utils.play_sound("email");
 					if (r.message["emails_not_sent_to"]) {
-						frappe.msgprint(
+						nts.msgprint(
 							__("Email not sent to {0} (unsubscribed / disabled)", [
-								frappe.utils.escape_html(r.message["emails_not_sent_to"]),
+								nts.utils.escape_html(r.message["emails_not_sent_to"]),
 							])
 						);
 					} else {
-						frappe.show_alert({
+						nts.show_alert({
 							message: __("Email sent successfully."),
 							indicator: "green",
 						});
 					}
 					this.email_dialog.hide();
 				} else {
-					frappe.msgprint(__("There were errors while sending email. Please try again."));
+					nts.msgprint(__("There were errors while sending email. Please try again."));
 				}
 			},
 		});
@@ -363,7 +363,7 @@ prodman.PointOfSale.PastOrderSummary = class {
 	}
 
 	attach_document_info(doc) {
-		frappe.db.get_value("Customer", this.doc.customer, "email_id").then(({ message }) => {
+		nts.db.get_value("Customer", this.doc.customer, "email_id").then(({ message }) => {
 			this.customer_email = message.email_id || "";
 			const upper_section_dom = this.get_upper_section_html(doc);
 			this.$upper_section.html(upper_section_dom);

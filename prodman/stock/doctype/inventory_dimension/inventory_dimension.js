@@ -1,14 +1,14 @@
-// Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Inventory Dimension", {
+nts.ui.form.on("Inventory Dimension", {
 	setup(frm) {
 		frm.trigger("set_query_on_fields");
 	},
 
 	set_query_on_fields(frm) {
 		frm.set_query("reference_document", () => {
-			let invalid_doctypes = frappe.model.core_doctypes_list;
+			let invalid_doctypes = nts.model.core_doctypes_list;
 			invalid_doctypes.push(
 				"Batch",
 				"Serial No",
@@ -77,7 +77,7 @@ frappe.ui.form.on("Inventory Dimension", {
 		if (frm.doc.apply_to_all_doctypes) {
 			frm.set_df_property("fetch_from_parent", "options", frm.doc.reference_document);
 		} else if (frm.doc.document_type && frm.doc.istable) {
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.doctype.inventory_dimension.inventory_dimension.get_parent_fields",
 				args: {
 					child_doctype: frm.doc.document_type,
@@ -100,14 +100,14 @@ frappe.ui.form.on("Inventory Dimension", {
 			<br> Do you want to delete {0} dimension?
 		`;
 
-		frappe.confirm(__(msg, [frm.doc.name.bold()]), () => {
-			frappe.call({
+		nts.confirm(__(msg, [frm.doc.name.bold()]), () => {
+			nts.call({
 				method: "prodman.stock.doctype.inventory_dimension.inventory_dimension.delete_dimension",
 				args: {
 					dimension: frm.doc.name,
 				},
 				callback: function () {
-					frappe.set_route("List", "Inventory Dimension");
+					nts.set_route("List", "Inventory Dimension");
 				},
 			});
 		});

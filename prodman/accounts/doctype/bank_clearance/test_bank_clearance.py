@@ -1,10 +1,10 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2020, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe.utils import add_months, getdate
+import nts 
+from nts .utils import add_months, getdate
 
 from prodman.accounts.doctype.cost_center.test_cost_center import create_cost_center
 from prodman.accounts.doctype.mode_of_payment.test_mode_of_payment import (
@@ -39,7 +39,7 @@ class TestBankClearance(unittest.TestCase):
 	# Detailed test can be added later
 	@if_lending_app_not_installed
 	def test_bank_clearance(self):
-		bank_clearance = frappe.get_doc("Bank Clearance")
+		bank_clearance = nts .get_doc("Bank Clearance")
 		bank_clearance.account = "_Test Bank Clearance - _TC"
 		bank_clearance.from_date = add_months(getdate(), -1)
 		bank_clearance.to_date = getdate()
@@ -92,7 +92,7 @@ class TestBankClearance(unittest.TestCase):
 		create_loan_masters()
 		make_loan()
 
-		bank_clearance = frappe.get_doc("Bank Clearance")
+		bank_clearance = nts .get_doc("Bank Clearance")
 		bank_clearance.account = "_Test Bank Clearance - _TC"
 		bank_clearance.from_date = add_months(getdate(), -1)
 		bank_clearance.to_date = getdate()
@@ -103,7 +103,7 @@ class TestBankClearance(unittest.TestCase):
 		sales_invoice = make_pos_sales_invoice()
 
 		date = getdate()
-		bank_clearance = frappe.get_doc("Bank Clearance")
+		bank_clearance = nts .get_doc("Bank Clearance")
 		bank_clearance.account = "_Test Bank Clearance - _TC"
 		bank_clearance.from_date = add_months(date, -1)
 		bank_clearance.to_date = date
@@ -117,7 +117,7 @@ class TestBankClearance(unittest.TestCase):
 
 		bank_clearance.update_clearance_date()
 
-		si_clearance_date = frappe.db.get_value(
+		si_clearance_date = nts .db.get_value(
 			"Sales Invoice Payment",
 			{"parent": sales_invoice.name, "account": bank_clearance.account},
 			"clearance_date",
@@ -127,11 +127,11 @@ class TestBankClearance(unittest.TestCase):
 
 
 def clear_payment_entries():
-	frappe.db.delete("Payment Entry")
+	nts .db.delete("Payment Entry")
 
 
 def clear_pos_sales_invoices():
-	frappe.db.delete("Sales Invoice", {"is_pos": 1})
+	nts .db.delete("Sales Invoice", {"is_pos": 1})
 
 
 @if_lending_app_installed
@@ -140,12 +140,12 @@ def clear_loan_transactions():
 		"Loan Disbursement",
 		"Loan Repayment",
 	]:
-		frappe.db.delete(dt)
+		nts .db.delete(dt)
 
 
 def make_bank_account():
-	if not frappe.db.get_value("Account", "_Test Bank Clearance - _TC"):
-		frappe.get_doc(
+	if not nts .db.get_value("Account", "_Test Bank Clearance - _TC"):
+		nts .get_doc(
 			{
 				"doctype": "Account",
 				"account_type": "Bank",
@@ -184,9 +184,9 @@ def make_pos_sales_invoice():
 		make_customer,
 	)
 
-	mode_of_payment = frappe.get_doc({"doctype": "Mode of Payment", "name": "Cash"})
+	mode_of_payment = nts .get_doc({"doctype": "Mode of Payment", "name": "Cash"})
 
-	if not frappe.db.get_value("Mode of Payment Account", {"company": "_Test Company", "parent": "Cash"}):
+	if not nts .db.get_value("Mode of Payment Account", {"company": "_Test Company", "parent": "Cash"}):
 		mode_of_payment.append(
 			"accounts", {"company": "_Test Company", "default_account": "_Test Bank Clearance - _TC"}
 		)
@@ -194,7 +194,7 @@ def make_pos_sales_invoice():
 
 	customer = make_customer(customer="_Test Customer")
 
-	mode_of_payment = frappe.get_doc("Mode of Payment", "Wire Transfer")
+	mode_of_payment = nts .get_doc("Mode of Payment", "Wire Transfer")
 
 	set_default_account_for_mode_of_payment(mode_of_payment, "_Test Company", "_Test Bank Clearance - _TC")
 

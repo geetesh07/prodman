@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Stock Settings", {
+nts.ui.form.on("Stock Settings", {
 	refresh: function (frm) {
 		let filters = function () {
 			return {
@@ -24,7 +24,7 @@ frappe.ui.form.on("Stock Settings", {
 	disable_serial_no_and_batch_selector(frm) {
 		if (!frm.doc.disable_serial_no_and_batch_selector && frm.doc.use_serial_batch_fields) {
 			frm.set_value("disable_serial_no_and_batch_selector", 1);
-			frappe.msgprint(
+			nts.msgprint(
 				__("Serial No and Batch Selector cannot be use when Use Serial / Batch Fields is enabled.")
 			);
 		}
@@ -43,7 +43,7 @@ frappe.ui.form.on("Stock Settings", {
 		msg += "<br>";
 		msg += __("Do you still want to enable negative inventory?");
 
-		frappe.confirm(
+		nts.confirm(
 			msg,
 			() => {},
 			() => {
@@ -56,15 +56,15 @@ frappe.ui.form.on("Stock Settings", {
 
 		frm.set_value(
 			"update_price_list_based_on",
-			cint(frappe.defaults.get_default("editable_price_list_rate")) ? "Price List Rate" : "Rate"
+			cint(nts.defaults.get_default("editable_price_list_rate")) ? "Price List Rate" : "Rate"
 		);
 	},
 	update_price_list_based_on(frm) {
 		if (
 			frm.doc.update_price_list_based_on === "Price List Rate" &&
-			!cint(frappe.defaults.get_default("editable_price_list_rate"))
+			!cint(nts.defaults.get_default("editable_price_list_rate"))
 		) {
-			const dialog = frappe.warn(
+			const dialog = nts.warn(
 				__("Incompatible Setting Detected"),
 				__(
 					"<p>Price List Rate has not been set as editable in Selling Settings. In this scenario, setting <strong>Update Price List Based On</strong> to <strong>Price List Rate</strong> will prevent auto-updation of Item Price.</p>Are you sure you want to continue?"

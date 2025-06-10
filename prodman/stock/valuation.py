@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from collections.abc import Callable
 from typing import NewType
 
-from frappe.utils import flt
+from nts.utils import flt
 
 StockBin = NewType("StockBin", list[float])  # [[qty, rate], ...]
 

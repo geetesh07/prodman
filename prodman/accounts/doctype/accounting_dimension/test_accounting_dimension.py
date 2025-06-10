@@ -1,9 +1,9 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2019, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts 
 
 from prodman.accounts.doctype.journal_entry.test_journal_entry import make_journal_entry
 from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
@@ -37,7 +37,7 @@ class TestAccountingDimension(unittest.TestCase):
 		si.save()
 		si.submit()
 
-		gle = frappe.get_doc("GL Entry", {"voucher_no": si.name, "account": "Sales - _TC"})
+		gle = nts .get_doc("GL Entry", {"voucher_no": si.name, "account": "Sales - _TC"})
 
 		self.assertEqual(gle.get("department"), "_Test Department - _TC")
 
@@ -52,8 +52,8 @@ class TestAccountingDimension(unittest.TestCase):
 		je.save()
 		je.submit()
 
-		gle = frappe.get_doc("GL Entry", {"voucher_no": je.name, "account": "Sales - _TC"})
-		gle1 = frappe.get_doc("GL Entry", {"voucher_no": je.name, "account": "Sales Expenses - _TC"})
+		gle = nts .get_doc("GL Entry", {"voucher_no": je.name, "account": "Sales - _TC"})
+		gle1 = nts .get_doc("GL Entry", {"voucher_no": je.name, "account": "Sales Expenses - _TC"})
 		self.assertEqual(gle.get("department"), "_Test Department - _TC")
 		self.assertEqual(gle1.get("department"), "_Test Department - _TC")
 
@@ -74,19 +74,19 @@ class TestAccountingDimension(unittest.TestCase):
 		)
 
 		si.save()
-		self.assertRaises(frappe.ValidationError, si.submit)
+		self.assertRaises(nts .ValidationError, si.submit)
 
 	def tearDown(self):
 		disable_dimension()
-		frappe.flags.accounting_dimensions_details = None
-		frappe.flags.dimension_filter_map = None
+		nts .flags.accounting_dimensions_details = None
+		nts .flags.dimension_filter_map = None
 
 
 def create_dimension():
-	frappe.set_user("Administrator")
+	nts .set_user("Administrator")
 
-	if not frappe.db.exists("Accounting Dimension", {"document_type": "Department"}):
-		dimension = frappe.get_doc(
+	if not nts .db.exists("Accounting Dimension", {"document_type": "Department"}):
+		dimension = nts .get_doc(
 			{
 				"doctype": "Accounting Dimension",
 				"document_type": "Department",
@@ -103,12 +103,12 @@ def create_dimension():
 		dimension.insert()
 		dimension.save()
 	else:
-		dimension = frappe.get_doc("Accounting Dimension", "Department")
+		dimension = nts .get_doc("Accounting Dimension", "Department")
 		dimension.disabled = 0
 		dimension.save()
 
-	if not frappe.db.exists("Accounting Dimension", {"document_type": "Location"}):
-		dimension1 = frappe.get_doc(
+	if not nts .db.exists("Accounting Dimension", {"document_type": "Location"}):
+		dimension1 = nts .get_doc(
 			{
 				"doctype": "Accounting Dimension",
 				"document_type": "Location",
@@ -128,16 +128,16 @@ def create_dimension():
 		dimension1.insert()
 		dimension1.save()
 	else:
-		dimension1 = frappe.get_doc("Accounting Dimension", "Location")
+		dimension1 = nts .get_doc("Accounting Dimension", "Location")
 		dimension1.disabled = 0
 		dimension1.save()
 
 
 def disable_dimension():
-	dimension1 = frappe.get_doc("Accounting Dimension", "Department")
+	dimension1 = nts .get_doc("Accounting Dimension", "Department")
 	dimension1.disabled = 1
 	dimension1.save()
 
-	dimension2 = frappe.get_doc("Accounting Dimension", "Location")
+	dimension2 = nts .get_doc("Accounting Dimension", "Location")
 	dimension2.disabled = 1
 	dimension2.save()

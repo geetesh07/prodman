@@ -1,4 +1,4 @@
-frappe.listview_settings["Supplier Quotation"] = {
+nts.listview_settings["Supplier Quotation"] = {
 	add_fields: ["supplier", "base_grand_total", "status", "company", "currency"],
 	get_indicator: function (doc) {
 		if (doc.status === "Ordered") {
@@ -11,13 +11,13 @@ frappe.listview_settings["Supplier Quotation"] = {
 	},
 
 	onload: function (listview) {
-		if (frappe.model.can_create("Purchase Order")) {
+		if (nts.model.can_create("Purchase Order")) {
 			listview.page.add_action_item(__("Purchase Order"), () => {
 				prodman.bulk_transaction_processing.create(listview, "Supplier Quotation", "Purchase Order");
 			});
 		}
 
-		if (frappe.model.can_create("Purchase Invoice")) {
+		if (nts.model.can_create("Purchase Invoice")) {
 			listview.page.add_action_item(__("Purchase Invoice"), () => {
 				prodman.bulk_transaction_processing.create(
 					listview,

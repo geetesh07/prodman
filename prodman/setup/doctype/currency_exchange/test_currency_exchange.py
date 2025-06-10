@@ -1,15 +1,15 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 import unittest
 from unittest import mock
 
-import frappe
-from frappe.utils import cint, flt
+import nts
+from nts.utils import cint, flt
 
 from prodman.setup.utils import get_exchange_rate
 
-test_records = frappe.get_test_records("Currency Exchange")
+test_records = nts.get_test_records("Currency Exchange")
 
 
 def save_new_records(test_records):
@@ -35,9 +35,9 @@ def save_new_records(test_records):
 		)
 
 		try:
-			frappe.set_value(**kwargs)
-		except frappe.DoesNotExistError:
-			curr_exchange = frappe.new_doc(record.get("doctype"))
+			nts.set_value(**kwargs)
+		except nts.DoesNotExistError:
+			curr_exchange = nts.new_doc(record.get("doctype"))
 			curr_exchange.date = record["date"]
 			curr_exchange.from_currency = record["from_currency"]
 			curr_exchange.to_currency = record["to_currency"]
@@ -59,7 +59,7 @@ def patched_requests_get(*args, **kwargs):
 
 		def raise_for_status(self):
 			if self.status_code != 200:
-				raise frappe.DoesNotExistError
+				raise nts.DoesNotExistError
 
 		def json(self):
 			return self.json_data
@@ -82,19 +82,19 @@ def patched_requests_get(*args, **kwargs):
 @mock.patch("requests.get", side_effect=patched_requests_get)
 class TestCurrencyExchange(unittest.TestCase):
 	def clear_cache(self):
-		cache = frappe.cache()
+		cache = nts.cache()
 		for date in test_exchange_values.keys():
 			key = "currency_exchange_rate_{}:{}:{}".format(date, "USD", "INR")
 			cache.delete(key)
 
 	def tearDown(self):
-		frappe.db.set_single_value("Accounts Settings", "allow_stale", 1)
+		nts.db.set_single_value("Accounts Settings", "allow_stale", 1)
 		self.clear_cache()
 
 	def test_exchange_rate(self, mock_get):
 		save_new_records(test_records)
 
-		frappe.db.set_single_value("Accounts Settings", "allow_stale", 1)
+		nts.db.set_single_value("Accounts Settings", "allow_stale", 1)
 
 		# Start with allow_stale is True
 		exchange_rate = get_exchange_rate("USD", "INR", "2016-01-01", "for_buying")
@@ -120,13 +120,13 @@ class TestCurrencyExchange(unittest.TestCase):
 		save_new_records(test_records)
 
 		# Update Currency Exchange Rate
-		settings = frappe.get_single("Currency Exchange Settings")
+		settings = nts.get_single("Currency Exchange Settings")
 		settings.service_provider = "exchangerate.host"
 		settings.access_key = "12345667890"
 		settings.save()
 
 		# Update exchange
-		frappe.db.set_single_value("Accounts Settings", "allow_stale", 1)
+		nts.db.set_single_value("Accounts Settings", "allow_stale", 1)
 
 		# Start with allow_stale is True
 		exchange_rate = get_exchange_rate("USD", "INR", "2016-01-01", "for_buying")
@@ -148,14 +148,14 @@ class TestCurrencyExchange(unittest.TestCase):
 		self.assertFalse(exchange_rate == 60)
 		self.assertEqual(flt(exchange_rate, 3), 65.1)
 
-		settings = frappe.get_single("Currency Exchange Settings")
+		settings = nts.get_single("Currency Exchange Settings")
 		settings.service_provider = "frankfurter.app"
 		settings.save()
 
 	def test_exchange_rate_strict(self, mock_get):
 		# strict currency settings
-		frappe.db.set_single_value("Accounts Settings", "allow_stale", 0)
-		frappe.db.set_single_value("Accounts Settings", "stale_days", 1)
+		nts.db.set_single_value("Accounts Settings", "allow_stale", 0)
+		nts.db.set_single_value("Accounts Settings", "stale_days", 1)
 
 		exchange_rate = get_exchange_rate("USD", "INR", "2016-01-01", "for_buying")
 		self.assertEqual(exchange_rate, 60.0)
@@ -177,8 +177,8 @@ class TestCurrencyExchange(unittest.TestCase):
 		exchange_rate = get_exchange_rate("USD", "INR", "2016-01-15", "for_buying")
 		self.assertEqual(exchange_rate, 65.1)
 
-		frappe.db.set_single_value("Accounts Settings", "allow_stale", 0)
-		frappe.db.set_single_value("Accounts Settings", "stale_days", 1)
+		nts.db.set_single_value("Accounts Settings", "allow_stale", 0)
+		nts.db.set_single_value("Accounts Settings", "stale_days", 1)
 
 		self.clear_cache()
 		exchange_rate = get_exchange_rate("USD", "INR", "2016-01-30", "for_buying")

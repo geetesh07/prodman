@@ -1,13 +1,13 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _, qb, scrub
-from frappe.query_builder import Criterion, Tuple
-from frappe.query_builder.functions import IfNull
-from frappe.utils import getdate, nowdate
-from frappe.utils.nestedset import get_descendants_of
+import nts 
+from nts  import _, qb, scrub
+from nts .query_builder import Criterion, Tuple
+from nts .query_builder.functions import IfNull
+from nts .utils import getdate, nowdate
+from nts .utils.nestedset import get_descendants_of
 from pypika.terms import LiteralValue
 
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
@@ -22,7 +22,7 @@ TREE_DOCTYPES = frozenset(
 
 class PartyLedgerSummaryReport:
 	def __init__(self, filters=None):
-		self.filters = frappe._dict(filters or {})
+		self.filters = nts ._dict(filters or {})
 		self.filters.from_date = getdate(self.filters.from_date or nowdate())
 		self.filters.to_date = getdate(self.filters.to_date or nowdate())
 
@@ -39,7 +39,7 @@ class PartyLedgerSummaryReport:
 		self.get_return_invoices()
 		self.get_party_adjustment_amounts()
 
-		self.party_naming_by = frappe.db.get_single_value(args.get("naming_by")[0], args.get("naming_by")[1])
+		self.party_naming_by = nts .db.get_single_value(args.get("naming_by")[0], args.get("naming_by")[1])
 		columns = self.get_columns()
 		data = self.get_data()
 
@@ -47,10 +47,10 @@ class PartyLedgerSummaryReport:
 
 	def validate_filters(self):
 		if not self.filters.get("company"):
-			frappe.throw(_("{0} is mandatory").format(_("Company")))
+			nts .throw(_("{0} is mandatory").format(_("Company")))
 
 		if self.filters.from_date > self.filters.to_date:
-			frappe.throw(_("From Date must be before To Date"))
+			nts .throw(_("From Date must be before To Date"))
 
 		self.update_hierarchical_filters()
 
@@ -65,7 +65,7 @@ class PartyLedgerSummaryReport:
 		Additional Columns for 'User Permission' based access control
 		"""
 		self.parties = []
-		self.party_details = frappe._dict()
+		self.party_details = nts ._dict()
 		party_type = self.filters.party_type
 
 		doctype = qb.DocType(party_type)
@@ -76,7 +76,7 @@ class PartyLedgerSummaryReport:
 			.where(Criterion.all(conditions))
 		)
 
-		from frappe.desk.reportview import build_match_conditions
+		from nts .desk.reportview import build_match_conditions
 
 		match_conditions = build_match_conditions(party_type)
 
@@ -245,17 +245,17 @@ class PartyLedgerSummaryReport:
 		return columns
 
 	def get_data(self):
-		company_currency = frappe.get_cached_value("Company", self.filters.get("company"), "default_currency")
+		company_currency = nts .get_cached_value("Company", self.filters.get("company"), "default_currency")
 		invoice_dr_or_cr = "debit" if self.filters.party_type == "Customer" else "credit"
 		reverse_dr_or_cr = "credit" if self.filters.party_type == "Customer" else "debit"
 
-		self.party_data = frappe._dict({})
+		self.party_data = nts ._dict({})
 		for gle in self.gl_entries:
 			party_details = self.party_details.get(gle.party)
 			party_name = party_details.get(f"{scrub(self.filters.party_type)}_name", "")
 			self.party_data.setdefault(
 				gle.party,
-				frappe._dict(
+				nts ._dict(
 					{
 						**party_details,
 						"party_name": party_name,
@@ -350,7 +350,7 @@ class PartyLedgerSummaryReport:
 		if accounting_dimensions:
 			for dimension in accounting_dimensions:
 				if self.filters.get(dimension.fieldname):
-					if frappe.get_cached_value("DocType", dimension.document_type, "is_tree"):
+					if nts .get_cached_value("DocType", dimension.document_type, "is_tree"):
 						self.filters[dimension.fieldname] = get_dimension_with_children(
 							dimension.document_type, self.filters.get(dimension.fieldname)
 						)
@@ -375,14 +375,14 @@ class PartyLedgerSummaryReport:
 			},
 		)
 
-		self.return_invoices = frappe.get_all(doctype, filters=filters, pluck="name")
+		self.return_invoices = nts .get_all(doctype, filters=filters, pluck="name")
 
 	def get_party_adjustment_amounts(self):
 		account_type = "Expense Account" if self.filters.party_type == "Customer" else "Income Account"
 
 		invoice_dr_or_cr = "debit" if self.filters.party_type == "Customer" else "credit"
 		reverse_dr_or_cr = "credit" if self.filters.party_type == "Customer" else "debit"
-		round_off_account = frappe.get_cached_value("Company", self.filters.company, "round_off_account")
+		round_off_account = nts .get_cached_value("Company", self.filters.company, "round_off_account")
 
 		current_period_vouchers = set()
 		adjustment_voucher_entries = {}
@@ -434,7 +434,7 @@ class PartyLedgerSummaryReport:
 				elif gle.party:
 					parties.setdefault(gle.party, 0)
 					parties[gle.party] += gle.get(reverse_dr_or_cr) - gle.get(invoice_dr_or_cr)
-				elif frappe.get_cached_value("Account", gle.account, "account_type") == account_type:
+				elif nts .get_cached_value("Account", gle.account, "account_type") == account_type:
 					accounts.setdefault(gle.account, 0)
 					accounts[gle.account] += gle.get(invoice_dr_or_cr) - gle.get(reverse_dr_or_cr)
 				else:

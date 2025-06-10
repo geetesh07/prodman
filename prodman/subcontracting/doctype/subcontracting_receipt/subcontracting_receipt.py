@@ -1,10 +1,10 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.model.mapper import get_mapped_doc
-from frappe.utils import cint, flt, get_link_to_form, getdate, nowdate
+import nts
+from nts import _
+from nts.model.mapper import get_mapped_doc
+from nts.utils import cint, flt, get_link_to_form, getdate, nowdate
 
 import prodman
 from prodman.accounts.utils import get_account_currency
@@ -24,7 +24,7 @@ class SubcontractingReceipt(SubcontractingController):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.stock.doctype.landed_cost_taxes_and_charges.landed_cost_taxes_and_charges import (
 			LandedCostTaxesandCharges,
@@ -108,7 +108,7 @@ class SubcontractingReceipt(SubcontractingController):
 	def onload(self):
 		self.set_onload(
 			"backflush_based_on",
-			frappe.db.get_single_value("Buying Settings", "backflush_raw_materials_of_subcontract_based_on"),
+			nts.db.get_single_value("Buying Settings", "backflush_raw_materials_of_subcontract_based_on"),
 		)
 
 	def before_validate(self):
@@ -126,11 +126,11 @@ class SubcontractingReceipt(SubcontractingController):
 			self.validate_inspection()
 
 		if getdate(self.posting_date) > getdate(nowdate()):
-			frappe.throw(_("Posting Date cannot be future date"))
+			nts.throw(_("Posting Date cannot be future date"))
 
 		super().validate()
 
-		if self.is_new() and self.get("_action") == "save" and not frappe.flags.in_test:
+		if self.is_new() and self.get("_action") == "save" and not nts.flags.in_test:
 			self.get_scrap_items()
 
 		self.set_missing_values()
@@ -186,7 +186,7 @@ class SubcontractingReceipt(SubcontractingController):
 		self.update_status()
 		self.delete_auto_created_batches()
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def reset_raw_materials(self):
 		self.supplied_items = []
 		self.create_raw_materials_supplied()
@@ -199,7 +199,7 @@ class SubcontractingReceipt(SubcontractingController):
 	def validate_items_qty(self):
 		for item in self.items:
 			if not (item.qty or item.rejected_qty):
-				frappe.throw(
+				nts.throw(
 					_("Row {0}: Accepted Qty and Rejected Qty can't be zero at the same time.").format(
 						item.idx
 					)
@@ -209,7 +209,7 @@ class SubcontractingReceipt(SubcontractingController):
 		if self.is_return:
 			for item in self.items:
 				if not item.bom:
-					item.bom = frappe.db.get_value(
+					item.bom = nts.db.get_value(
 						"Subcontracting Receipt Item",
 						{"name": item.subcontracting_receipt_item, "parent": self.return_against},
 						"bom",
@@ -217,7 +217,7 @@ class SubcontractingReceipt(SubcontractingController):
 		else:
 			for item in self.items:
 				if not item.bom:
-					item.bom = frappe.db.get_value(
+					item.bom = nts.db.get_value(
 						"Subcontracting Order Item",
 						{"name": item.subcontracting_order_item, "parent": item.subcontracting_order},
 						"bom",
@@ -225,7 +225,7 @@ class SubcontractingReceipt(SubcontractingController):
 
 	def set_items_cost_center(self):
 		if self.company:
-			cost_center = frappe.get_cached_value("Company", self.company, "cost_center")
+			cost_center = nts.get_cached_value("Company", self.company, "cost_center")
 
 			for item in self.items:
 				if not item.cost_center:
@@ -254,7 +254,7 @@ class SubcontractingReceipt(SubcontractingController):
 		for item in self.supplied_items:
 			if not item.expense_account:
 				item.expense_account = get_default_expense_account(
-					frappe._dict(
+					nts._dict(
 						{
 							"expense_account": self.get_company_default(
 								"default_expense_account", ignore_validation=True
@@ -268,7 +268,7 @@ class SubcontractingReceipt(SubcontractingController):
 
 	def reset_supplied_items(self):
 		if (
-			frappe.db.get_single_value("Buying Settings", "backflush_raw_materials_of_subcontract_based_on")
+			nts.db.get_single_value("Buying Settings", "backflush_raw_materials_of_subcontract_based_on")
 			== "BOM"
 			and self.supplied_items
 		):
@@ -280,13 +280,13 @@ class SubcontractingReceipt(SubcontractingController):
 			else:
 				self.update_rate_for_supplied_items()
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_scrap_items(self, recalculate_rate=False):
 		self.remove_scrap_items()
 
 		for item in list(self.items):
 			if item.bom:
-				bom = frappe.get_doc("BOM", item.bom)
+				bom = nts.get_doc("BOM", item.bom)
 				for scrap_item in bom.scrap_items:
 					qty = flt(item.qty) * (flt(scrap_item.stock_qty) / flt(bom.quantity))
 					rate = (
@@ -334,7 +334,7 @@ class SubcontractingReceipt(SubcontractingController):
 		if recalculate_rate:
 			self.calculate_items_qty_and_amount()
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def set_missing_values(self):
 		self.set_available_qty_for_consumption()
 		self.calculate_additional_costs()
@@ -343,10 +343,10 @@ class SubcontractingReceipt(SubcontractingController):
 	def set_available_qty_for_consumption(self):
 		supplied_items_details = {}
 
-		sco_supplied_item = frappe.qb.DocType("Subcontracting Order Supplied Item")
+		sco_supplied_item = nts.qb.DocType("Subcontracting Order Supplied Item")
 		for item in self.get("items"):
 			supplied_items = (
-				frappe.qb.from_(sco_supplied_item)
+				nts.qb.from_(sco_supplied_item)
 				.select(
 					sco_supplied_item.rm_item_code,
 					sco_supplied_item.reference_name,
@@ -432,21 +432,21 @@ class SubcontractingReceipt(SubcontractingController):
 		for item in self.items:
 			if item.is_scrap_item:
 				if not item.qty:
-					frappe.throw(
+					nts.throw(
 						_("Row #{0}: Scrap Item Qty cannot be zero").format(item.idx),
 					)
 
 				if item.rejected_qty:
-					frappe.throw(
+					nts.throw(
 						_("Row #{0}: Rejected Qty cannot be set for Scrap Item {1}.").format(
-							item.idx, frappe.bold(item.item_code)
+							item.idx, nts.bold(item.item_code)
 						),
 					)
 
 				if not item.reference_name:
-					frappe.throw(
+					nts.throw(
 						_("Row #{0}: Finished Good reference is mandatory for Scrap Item {1}.").format(
-							item.idx, frappe.bold(item.item_code)
+							item.idx, nts.bold(item.item_code)
 						),
 					)
 
@@ -456,20 +456,20 @@ class SubcontractingReceipt(SubcontractingController):
 				if self.set_warehouse:
 					item.warehouse = self.set_warehouse
 				else:
-					frappe.throw(
+					nts.throw(
 						_("Row #{0}: Accepted Warehouse is mandatory for the accepted Item {1}").format(
 							item.idx, item.item_code
 						)
 					)
 
 			if item.get("warehouse") and (item.get("warehouse") == item.get("rejected_warehouse")):
-				frappe.throw(
+				nts.throw(
 					_("Row #{0}: Accepted Warehouse and Rejected Warehouse cannot be same").format(item.idx)
 				)
 
 	def validate_available_qty_for_consumption(self):
 		if (
-			frappe.db.get_single_value("Buying Settings", "backflush_raw_materials_of_subcontract_based_on")
+			nts.db.get_single_value("Buying Settings", "backflush_raw_materials_of_subcontract_based_on")
 			== "BOM"
 		):
 			return
@@ -485,7 +485,7 @@ class SubcontractingReceipt(SubcontractingController):
 					{flt(item.available_qty_for_consumption, precision)}
 					in Consumed Items Table."""
 
-				frappe.throw(_(msg))
+				nts.throw(_(msg))
 
 	def update_status_updater_args(self):
 		if cint(self.is_return):
@@ -530,12 +530,12 @@ class SubcontractingReceipt(SubcontractingController):
 				status = "Cancelled"
 
 			if self.is_return:
-				frappe.get_doc("Subcontracting Receipt", self.return_against).update_status(
+				nts.get_doc("Subcontracting Receipt", self.return_against).update_status(
 					update_modified=update_modified
 				)
 
 		if status:
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Subcontracting Receipt", self.name, "status", status, update_modified=update_modified
 			)
 
@@ -553,10 +553,10 @@ class SubcontractingReceipt(SubcontractingController):
 	def make_item_gl_entries(self, gl_entries, warehouse_account=None):
 		warehouse_with_no_account = []
 
-		supplied_items_details = frappe._dict()
+		supplied_items_details = nts._dict()
 		for item in self.supplied_items:
 			supplied_items_details.setdefault(item.reference_name, []).append(
-				frappe._dict(
+				nts._dict(
 					{
 						"amount": item.amount,
 						"expense_account": item.expense_account,
@@ -568,7 +568,7 @@ class SubcontractingReceipt(SubcontractingController):
 		for item in self.items:
 			if flt(item.rate) and flt(item.qty):
 				if warehouse_account.get(item.warehouse):
-					stock_value_diff = frappe.db.get_value(
+					stock_value_diff = nts.db.get_value(
 						"Stock Ledger Entry",
 						{
 							"voucher_type": "Subcontracting Receipt",
@@ -712,28 +712,28 @@ class SubcontractingReceipt(SubcontractingController):
 			)
 
 		if warehouse_with_no_account:
-			frappe.msgprint(
+			nts.msgprint(
 				_("No accounting entries for the following warehouses")
 				+ ": \n"
 				+ "\n".join(warehouse_with_no_account)
 			)
 
 	def auto_create_purchase_receipt(self):
-		if frappe.db.get_single_value("Buying Settings", "auto_create_purchase_receipt"):
+		if nts.db.get_single_value("Buying Settings", "auto_create_purchase_receipt"):
 			make_purchase_receipt(self, save=True, notify=True)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_subcontract_return(source_name, target_doc=None):
 	from prodman.controllers.sales_and_purchase_return import make_return_doc
 
 	return make_return_doc("Subcontracting Receipt", source_name, target_doc)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_purchase_receipt(source_name, target_doc=None, save=False, submit=False, notify=False):
 	if isinstance(source_name, str):
-		source_doc = frappe.get_doc("Subcontracting Receipt", source_name)
+		source_doc = nts.get_doc("Subcontracting Receipt", source_name)
 	else:
 		source_doc = source_name
 
@@ -758,7 +758,7 @@ def make_purchase_receipt(source_name, target_doc=None, save=False, submit=False
 		}
 
 	if not po_name:
-		frappe.throw(
+		nts.throw(
 			_("Purchase Order Item reference is missing in Subcontracting Receipt {0}").format(
 				source_doc.name
 			)
@@ -788,7 +788,7 @@ def make_purchase_receipt(source_name, target_doc=None, save=False, submit=False
 				"supplier_warehouse": source_doc.supplier_warehouse,
 				"is_subcontracted": 1,
 				"is_old_subcontracting_flow": 0,
-				"currency": frappe.get_cached_value("Company", target.company, "default_currency"),
+				"currency": nts.get_cached_value("Company", target.company, "default_currency"),
 			}
 		)
 
@@ -825,17 +825,17 @@ def make_purchase_receipt(source_name, target_doc=None, save=False, submit=False
 	if not target_doc.get("items"):
 		add_po_items_to_pr(source_doc, target_doc)
 
-	if (save or submit) and frappe.has_permission(target_doc.doctype, "create"):
+	if (save or submit) and nts.has_permission(target_doc.doctype, "create"):
 		target_doc.save()
 
-		if submit and frappe.has_permission(target_doc.doctype, "submit", target_doc):
+		if submit and nts.has_permission(target_doc.doctype, "submit", target_doc):
 			try:
 				target_doc.submit()
 			except Exception as e:
 				target_doc.add_comment("Comment", _("Submit Action Failed") + "<br><br>" + str(e))
 
 		if notify:
-			frappe.msgprint(
+			nts.msgprint(
 				_("Purchase Receipt {0} created.").format(
 					get_link_to_form(target_doc.doctype, target_doc.name)
 				),
@@ -850,7 +850,7 @@ def add_po_items_to_pr(scr_doc, target_doc):
 	fg_items = {(item.item_code, item.purchase_order): item.qty for item in scr_doc.items}
 
 	for (item_code, po_name), fg_qty in fg_items.items():
-		po_doc = frappe.get_doc("Purchase Order", po_name)
+		po_doc = nts.get_doc("Purchase Order", po_name)
 		for item in po_doc.items:
 			if item.fg_item != item_code:
 				continue

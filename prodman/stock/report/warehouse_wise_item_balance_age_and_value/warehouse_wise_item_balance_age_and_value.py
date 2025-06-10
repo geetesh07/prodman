@@ -1,14 +1,14 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 # Copyright (c) 2013, Tristar Enterprises and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.query_builder.functions import Count
-from frappe.utils import cint, flt, getdate
+import nts
+from nts import _
+from nts.query_builder.functions import Count
+from nts.utils import cint, flt, getdate
 
 from prodman.stock.report.stock_ageing.stock_ageing import FIFOSlots, get_average_age
 from prodman.stock.report.stock_analytics.stock_analytics import (
@@ -56,7 +56,7 @@ def execute(filters=None):
 		item_value.setdefault((item, item_map[item]["item_group"]), [])
 		item_value[(item, item_map[item]["item_group"])].append(total_stock_value)
 
-	itemwise_brand = frappe._dict(get_itemwise_brand(items))
+	itemwise_brand = nts._dict(get_itemwise_brand(items))
 	# sum bal_qty by item
 	for (item, item_group), wh_balance in item_balance.items():
 		if not item_ageing.get(item):
@@ -87,7 +87,7 @@ def execute(filters=None):
 
 
 def get_itemwise_brand(items):
-	return frappe.get_all("Item", filters={"name": ("in", items)}, fields=["name", "brand"], as_list=1)
+	return nts.get_all("Item", filters={"name": ("in", items)}, fields=["name", "brand"], as_list=1)
 
 
 def get_columns(filters):
@@ -106,25 +106,25 @@ def get_columns(filters):
 
 def validate_filters(filters):
 	if not (filters.get("item_code") or filters.get("warehouse")):
-		sle_count = flt(frappe.qb.from_("Stock Ledger Entry").select(Count("name")).run()[0][0])
+		sle_count = flt(nts.qb.from_("Stock Ledger Entry").select(Count("name")).run()[0][0])
 		if sle_count > 500000:
-			frappe.throw(_("Please set filter based on Item or Warehouse"))
+			nts.throw(_("Please set filter based on Item or Warehouse"))
 
 
 def get_warehouse_list(filters):
 	if not filters.get("warehouse"):
-		return frappe.get_all(
+		return nts.get_all(
 			"Warehouse",
 			filters={"company": filters.get("company"), "is_group": 0},
 			fields=["name"],
 			order_by="name",
 		)
 
-	warehouse = frappe.qb.DocType("Warehouse")
-	lft, rgt = frappe.db.get_value("Warehouse", filters.get("warehouse"), ["lft", "rgt"])
+	warehouse = nts.qb.DocType("Warehouse")
+	lft, rgt = nts.db.get_value("Warehouse", filters.get("warehouse"), ["lft", "rgt"])
 
 	return (
-		frappe.qb.from_(warehouse)
+		nts.qb.from_(warehouse)
 		.select("name")
 		.where((warehouse.lft >= lft) & (warehouse.rgt <= rgt))
 		.run(as_dict=True)
@@ -143,12 +143,12 @@ def get_item_warehouse_map(filters, sle):
 	iwb_map = {}
 	from_date = getdate(filters.get("from_date"))
 	to_date = getdate(filters.get("to_date"))
-	float_precision = cint(frappe.db.get_default("float_precision")) or 3
+	float_precision = cint(nts.db.get_default("float_precision")) or 3
 
 	for d in sle:
 		group_by_key = get_group_by_key(d)
 		if group_by_key not in iwb_map:
-			iwb_map[group_by_key] = frappe._dict(
+			iwb_map[group_by_key] = nts._dict(
 				{
 					"opening_qty": 0.0,
 					"opening_val": 0.0,

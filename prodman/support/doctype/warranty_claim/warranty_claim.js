@@ -1,9 +1,9 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman.support");
+nts.provide("prodman.support");
 
-frappe.ui.form.on("Warranty Claim", {
+nts.ui.form.on("Warranty Claim", {
 	setup: (frm) => {
 		frm.set_query("contact_person", prodman.queries.contact_query);
 		frm.set_query("customer_address", prodman.queries.address_query);
@@ -37,7 +37,7 @@ frappe.ui.form.on("Warranty Claim", {
 	},
 
 	refresh: (frm) => {
-		frappe.dynamic_link = {
+		nts.dynamic_link = {
 			doc: frm.doc,
 			fieldname: "customer",
 			doctype: "Customer",
@@ -45,7 +45,7 @@ frappe.ui.form.on("Warranty Claim", {
 
 		if (!frm.doc.__islocal && ["Open", "Work In Progress"].includes(frm.doc.status)) {
 			frm.add_custom_button(__("Maintenance Visit"), () => {
-				frappe.model.open_mapped_doc({
+				nts.model.open_mapped_doc({
 					method: "prodman.support.doctype.warranty_claim.warranty_claim.make_maintenance_visit",
 					frm: frm,
 				});

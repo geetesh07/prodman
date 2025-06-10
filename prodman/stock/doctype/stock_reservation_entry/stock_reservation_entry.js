@@ -1,7 +1,7 @@
-// Copyright (c) 2023, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2023, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Stock Reservation Entry", {
+nts.ui.form.on("Stock Reservation Entry", {
 	refresh(frm) {
 		frm.trigger("set_queries");
 		frm.trigger("toggle_read_only_fields");
@@ -21,7 +21,7 @@ frappe.ui.form.on("Stock Reservation Entry", {
 	warehouse(frm) {
 		if (frm.doc.warehouse) {
 			frm.doc.sb_entries.forEach((row) => {
-				frappe.model.set_value(row.doctype, row.name, "warehouse", frm.doc.warehouse);
+				nts.model.set_value(row.doctype, row.name, "warehouse", frm.doc.warehouse);
 			});
 		}
 	},
@@ -74,7 +74,7 @@ frappe.ui.form.on("Stock Reservation Entry", {
 		if (frm.doc.has_serial_no) {
 			frm.doc.sb_entries.forEach((row) => {
 				if (row.qty !== 1) {
-					frappe.model.set_value(row.doctype, row.name, "qty", 1);
+					nts.model.set_value(row.doctype, row.name, "qty", 1);
 				}
 			});
 		}
@@ -121,10 +121,10 @@ frappe.ui.form.on("Stock Reservation Entry", {
 	},
 });
 
-frappe.ui.form.on("Serial and Batch Entry", {
+nts.ui.form.on("Serial and Batch Entry", {
 	sb_entries_add(frm, cdt, cdn) {
 		if (frm.doc.warehouse) {
-			frappe.model.set_value(cdt, cdn, "warehouse", frm.doc.warehouse);
+			nts.model.set_value(cdt, cdn, "warehouse", frm.doc.warehouse);
 		}
 	},
 });

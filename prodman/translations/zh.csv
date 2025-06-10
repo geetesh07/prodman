@@ -5617,7 +5617,7 @@ Enable Shopify,启用Shopify,
 App Type,应用类型,
 Last Sync Datetime,上次同步日期时间,
 Shop URL,商店网址,
-eg: frappe.myshopify.com,例如：frappe.myshopify.com,
+eg: nts.myshopify.com,例如：nts.myshopify.com,
 Shared secret,共享秘密,
 Webhooks Details,Webhooks详细信息,
 Webhooks,网络挂接,
@@ -8859,7 +8859,7 @@ You can use <a href=""https://jinja.palletsprojects.com/en/2.11.x/"" target=""_b
 <p>举例说明：如果您的端点是 exchange.com/2021-08-01，则必须输入 exchange.com/{transaction_date}。 </p>",
 "<h4>Body Text and Closing Text Example</h4>
 
-<div>We have noticed that you have not yet paid invoice {{sales_invoice}} for {{frappe.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}. This is a friendly reminder that the invoice was due on {{due_date}}. Please pay the amount due immediately to avoid any further dunning cost.</div>
+<div>We have noticed that you have not yet paid invoice {{sales_invoice}} for {{nts.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}. This is a friendly reminder that the invoice was due on {{due_date}}. Please pay the amount due immediately to avoid any further dunning cost.</div>
 
 <h4>How to get fieldnames</h4>
 
@@ -8869,7 +8869,7 @@ You can use <a href=""https://jinja.palletsprojects.com/en/2.11.x/"" target=""_b
 
 <p>Templates are compiled using the Jinja Templating Language. To learn more about Jinja, <a class=""strong"" href=""http://jinja.pocoo.org/docs/dev/templates/"">read this documentation.</a></p>","<h4>正文和结尾文本示例</h4>
 
-<div>我们注意到您尚未支付 {{sales_invoice}} 的发票 {{frappe.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}。特此友情提醒，发票到期日为 {{due_date}}。请立即支付应付金额，以免产生更多扣款费用。</div>
+<div>我们注意到您尚未支付 {{sales_invoice}} 的发票 {{nts.db.get_value(""Currency"", currency, ""symbol"")}} {{outstanding_amount}}。特此友情提醒，发票到期日为 {{due_date}}。请立即支付应付金额，以免产生更多扣款费用。</div>
 
 <h4>如何获取字段名</h4>
 

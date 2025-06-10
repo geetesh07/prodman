@@ -1,13 +1,13 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 from math import ceil
 
-import frappe
-from frappe import _
-from frappe.utils import add_days, cint, flt, nowdate
+import nts
+from nts import _
+from nts.utils import add_days, cint, flt, nowdate
 
 import prodman
 
@@ -15,23 +15,23 @@ import prodman
 def reorder_item():
 	"""Reorder item if stock reaches reorder level"""
 	# if initial setup not completed, return
-	if not (frappe.db.a_row_exists("Company") and frappe.db.a_row_exists("Fiscal Year")):
+	if not (nts.db.a_row_exists("Company") and nts.db.a_row_exists("Fiscal Year")):
 		return
 
-	if cint(frappe.db.get_value("Stock Settings", None, "auto_indent")):
+	if cint(nts.db.get_value("Stock Settings", None, "auto_indent")):
 		return _reorder_item()
 
 
 def _reorder_item():
 	material_requests = {"Purchase": {}, "Transfer": {}, "Material Issue": {}, "Manufacture": {}}
-	warehouse_company = frappe._dict(
-		frappe.db.sql(
+	warehouse_company = nts._dict(
+		nts.db.sql(
 			"""select name, company from `tabWarehouse`
 		where disabled=0"""
 		)
 	)
 	default_company = (
-		prodman.get_default_company() or frappe.db.sql("""select name from tabCompany limit 1""")[0][0]
+		prodman.get_default_company() or nts.db.sql("""select name from tabCompany limit 1""")[0][0]
 	)
 
 	items_to_consider = get_items_for_reorder()
@@ -43,7 +43,7 @@ def _reorder_item():
 
 	def add_to_material_request(**kwargs):
 		if isinstance(kwargs, dict):
-			kwargs = frappe._dict(kwargs)
+			kwargs = nts._dict(kwargs)
 
 		if kwargs.warehouse not in warehouse_company:
 			# a disabled warehouse
@@ -88,7 +88,7 @@ def _reorder_item():
 				reorder_qty=d.warehouse_reorder_qty,
 				material_request_type=d.material_request_type,
 				warehouse_group=d.warehouse_group,
-				item_details=frappe._dict(
+				item_details=nts._dict(
 					{
 						"item_code": item_code,
 						"name": item_code,
@@ -108,11 +108,11 @@ def _reorder_item():
 
 
 def get_items_for_reorder() -> dict[str, list]:
-	reorder_table = frappe.qb.DocType("Item Reorder")
-	item_table = frappe.qb.DocType("Item")
+	reorder_table = nts.qb.DocType("Item Reorder")
+	item_table = nts.qb.DocType("Item")
 
 	query = (
-		frappe.qb.from_(reorder_table)
+		nts.qb.from_(reorder_table)
 		.inner_join(item_table)
 		.on(reorder_table.parent == item_table.name)
 		.select(
@@ -144,7 +144,7 @@ def get_items_for_reorder() -> dict[str, list]:
 	)
 
 	data = query.run(as_dict=True)
-	itemwise_reorder = frappe._dict({})
+	itemwise_reorder = nts._dict({})
 	for d in data:
 		itemwise_reorder.setdefault(d.name, []).append(d)
 
@@ -154,10 +154,10 @@ def get_items_for_reorder() -> dict[str, list]:
 
 
 def get_reorder_levels_for_variants(itemwise_reorder):
-	item_table = frappe.qb.DocType("Item")
+	item_table = nts.qb.DocType("Item")
 
 	query = (
-		frappe.qb.from_(item_table)
+		nts.qb.from_(item_table)
 		.select(
 			item_table.name,
 			item_table.variant_of,
@@ -186,7 +186,7 @@ def get_item_warehouse_projected_qty(items_to_consider):
 	item_warehouse_projected_qty = {}
 	items_to_consider = list(items_to_consider.keys())
 
-	for item_code, warehouse, projected_qty in frappe.db.sql(
+	for item_code, warehouse, projected_qty in nts.db.sql(
 		"""select item_code, warehouse, projected_qty
 		from tabBin where item_code in ({})
 			and (warehouse != '' and warehouse is not null)""".format(
@@ -200,7 +200,7 @@ def get_item_warehouse_projected_qty(items_to_consider):
 		if warehouse not in item_warehouse_projected_qty.get(item_code):
 			item_warehouse_projected_qty[item_code][warehouse] = flt(projected_qty)
 
-		warehouse_doc = frappe.get_doc("Warehouse", warehouse)
+		warehouse_doc = nts.get_doc("Warehouse", warehouse)
 
 		while warehouse_doc.parent_warehouse:
 			if not item_warehouse_projected_qty.get(item_code, {}).get(warehouse_doc.parent_warehouse):
@@ -209,7 +209,7 @@ def get_item_warehouse_projected_qty(items_to_consider):
 				)
 			else:
 				item_warehouse_projected_qty[item_code][warehouse_doc.parent_warehouse] += flt(projected_qty)
-			warehouse_doc = frappe.get_doc("Warehouse", warehouse_doc.parent_warehouse)
+			warehouse_doc = nts.get_doc("Warehouse", warehouse_doc.parent_warehouse)
 
 	return item_warehouse_projected_qty
 
@@ -220,15 +220,15 @@ def create_material_request(material_requests):
 	exceptions_list = []
 
 	def _log_exception(mr):
-		if frappe.local.message_log:
-			exceptions_list.extend(frappe.local.message_log)
-			frappe.local.message_log = []
+		if nts.local.message_log:
+			exceptions_list.extend(nts.local.message_log)
+			nts.local.message_log = []
 		else:
-			exceptions_list.append(frappe.get_traceback(with_context=True))
+			exceptions_list.append(nts.get_traceback(with_context=True))
 
 		mr.log_error("Unable to create material request")
 
-	company_wise_mr = frappe._dict({})
+	company_wise_mr = nts._dict({})
 	for request_type in material_requests:
 		for company in material_requests[request_type]:
 			try:
@@ -236,7 +236,7 @@ def create_material_request(material_requests):
 				if not items:
 					continue
 
-				mr = frappe.new_doc("Material Request")
+				mr = nts.new_doc("Material Request")
 				mr.update(
 					{
 						"company": company,
@@ -248,7 +248,7 @@ def create_material_request(material_requests):
 				)
 
 				for d in items:
-					d = frappe._dict(d)
+					d = nts._dict(d)
 					item = d.get("item_details")
 					uom = item.stock_uom
 					conversion_factor = 1.0
@@ -257,7 +257,7 @@ def create_material_request(material_requests):
 						uom = item.purchase_uom or item.stock_uom
 						if uom != item.stock_uom:
 							conversion_factor = (
-								frappe.db.get_value(
+								nts.db.get_value(
 									"UOM Conversion Detail",
 									{"parent": item.name, "uom": uom},
 									"conversion_factor",
@@ -265,7 +265,7 @@ def create_material_request(material_requests):
 								or 1.0
 							)
 
-					must_be_whole_number = frappe.db.get_value("UOM", uom, "must_be_whole_number", cache=True)
+					must_be_whole_number = nts.db.get_value("UOM", uom, "must_be_whole_number", cache=True)
 					qty = d.reorder_qty / conversion_factor
 					if must_be_whole_number:
 						qty = ceil(qty)
@@ -301,12 +301,12 @@ def create_material_request(material_requests):
 				_log_exception(mr)
 
 	if company_wise_mr:
-		if getattr(frappe.local, "reorder_email_notify", None) is None:
-			frappe.local.reorder_email_notify = cint(
-				frappe.db.get_value("Stock Settings", None, "reorder_email_notify")
+		if getattr(nts.local, "reorder_email_notify", None) is None:
+			nts.local.reorder_email_notify = cint(
+				nts.db.get_value("Stock Settings", None, "reorder_email_notify")
 			)
 
-		if frappe.local.reorder_email_notify:
+		if nts.local.reorder_email_notify:
 			send_email_notification(company_wise_mr)
 
 	if exceptions_list:
@@ -324,18 +324,18 @@ def send_email_notification(company_wise_mr):
 		if not email_list:
 			continue
 
-		msg = frappe.render_template("templates/emails/reorder_item.html", {"mr_list": mr_list})
+		msg = nts.render_template("templates/emails/reorder_item.html", {"mr_list": mr_list})
 
-		frappe.sendmail(recipients=email_list, subject=_("Auto Material Requests Generated"), message=msg)
+		nts.sendmail(recipients=email_list, subject=_("Auto Material Requests Generated"), message=msg)
 
 
 def get_email_list(company):
 	users = get_comapny_wise_users(company)
-	user_table = frappe.qb.DocType("User")
-	role_table = frappe.qb.DocType("Has Role")
+	user_table = nts.qb.DocType("User")
+	role_table = nts.qb.DocType("Has Role")
 
 	query = (
-		frappe.qb.from_(user_table)
+		nts.qb.from_(user_table)
 		.inner_join(role_table)
 		.on(user_table.name == role_table.parent)
 		.select(user_table.email)
@@ -358,10 +358,10 @@ def get_email_list(company):
 def get_comapny_wise_users(company):
 	companies = [company]
 
-	if parent_company := frappe.db.get_value("Company", company, "parent_company"):
+	if parent_company := nts.db.get_value("Company", company, "parent_company"):
 		companies.append(parent_company)
 
-	users = frappe.get_all(
+	users = nts.get_all(
 		"User Permission",
 		filters={"allow": "Company", "for_value": ("in", companies), "apply_to_all_doctypes": 1},
 		fields=["user"],
@@ -393,6 +393,6 @@ def notify_errors(exceptions_list):
 
 	content += _("Regards,") + "<br>" + _("Administrator")
 
-	from frappe.email import sendmail_to_system_managers
+	from nts.email import sendmail_to_system_managers
 
 	sendmail_to_system_managers(subject, content)

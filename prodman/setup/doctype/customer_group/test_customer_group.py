@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 test_ignore = ["Price List"]
 
 
-import frappe
+import nts
 
-test_records = frappe.get_test_records("Customer Group")
+test_records = nts.get_test_records("Customer Group")

@@ -1,14 +1,14 @@
-import frappe
-from frappe.utils import getdate
+import nts
+from nts.utils import getdate
 
 from prodman.setup.utils import get_exchange_rate
 
 
 def execute():
-	frappe.reload_doc("manufacturing", "doctype", "bom")
-	frappe.reload_doc("manufacturing", "doctype", "bom_item")
+	nts.reload_doc("manufacturing", "doctype", "bom")
+	nts.reload_doc("manufacturing", "doctype", "bom_item")
 
-	frappe.db.sql(
+	nts.db.sql(
 		""" UPDATE `tabBOM`, `tabPrice List`
 		SET
 			`tabBOM`.price_list_currency = `tabPrice List`.currency,
@@ -19,7 +19,7 @@ def execute():
 	"""
 	)
 
-	for d in frappe.db.sql(
+	for d in nts.db.sql(
 		"""
 		SELECT
 			bom.creation, bom.name, bom.price_list_currency as currency,
@@ -35,4 +35,4 @@ def execute():
 			d.currency, d.company_currency, getdate(d.creation), "for_buying"
 		)
 
-		frappe.db.set_value("BOM", d.name, "plc_conversion_rate", plc_conversion_rate)
+		nts.db.set_value("BOM", d.name, "plc_conversion_rate", plc_conversion_rate)

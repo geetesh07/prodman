@@ -1,4 +1,4 @@
-from frappe import qb
+from nts import qb
 
 
 def execute():

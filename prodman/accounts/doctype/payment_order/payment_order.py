@@ -1,11 +1,11 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import nowdate
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .utils import nowdate
 
 from prodman.accounts.party import get_party_account
 
@@ -17,7 +17,7 @@ class PaymentOrder(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.payment_order_reference.payment_order_reference import (
 			PaymentOrderReference,
@@ -48,19 +48,19 @@ class PaymentOrder(Document):
 
 		if self.payment_order_type == "Payment Request":
 			ref_field = "status"
-			ref_doc_field = frappe.scrub(self.payment_order_type)
+			ref_doc_field = nts .scrub(self.payment_order_type)
 		else:
 			ref_field = "payment_order_status"
 			ref_doc_field = "reference_name"
 
 		for d in self.references:
-			frappe.db.set_value(self.payment_order_type, d.get(ref_doc_field), ref_field, status)
+			nts .db.set_value(self.payment_order_type, d.get(ref_doc_field), ref_field, status)
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts .whitelist()
+@nts .validate_and_sanitize_search_inputs
 def get_mop_query(doctype, txt, searchfield, start, page_len, filters):
-	return frappe.db.sql(
+	return nts .db.sql(
 		""" select mode_of_payment from `tabPayment Order Reference`
 		where parent = %(parent)s and mode_of_payment like %(txt)s
 		limit %(page_len)s offset %(start)s""",
@@ -68,10 +68,10 @@ def get_mop_query(doctype, txt, searchfield, start, page_len, filters):
 	)
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts .whitelist()
+@nts .validate_and_sanitize_search_inputs
 def get_supplier_query(doctype, txt, searchfield, start, page_len, filters):
-	return frappe.db.sql(
+	return nts .db.sql(
 		""" select supplier from `tabPayment Order Reference`
 		where parent = %(parent)s and supplier like %(txt)s and
 		(payment_reference is null or payment_reference='')
@@ -80,17 +80,17 @@ def get_supplier_query(doctype, txt, searchfield, start, page_len, filters):
 	)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def make_payment_records(name, supplier, mode_of_payment=None):
-	doc = frappe.get_doc("Payment Order", name)
+	doc = nts .get_doc("Payment Order", name)
 	make_journal_entry(doc, supplier, mode_of_payment)
 
 
 def make_journal_entry(doc, supplier, mode_of_payment=None):
-	je = frappe.new_doc("Journal Entry")
+	je = nts .new_doc("Journal Entry")
 	je.payment_order = doc.name
 	je.posting_date = nowdate()
-	mode_of_payment_type = frappe._dict(frappe.get_all("Mode of Payment", fields=["name", "type"], as_list=1))
+	mode_of_payment_type = nts ._dict(nts .get_all("Mode of Payment", fields=["name", "type"], as_list=1))
 
 	je.voucher_type = "Bank Entry"
 	if mode_of_payment and mode_of_payment_type.get(mode_of_payment) == "Cash":
@@ -118,4 +118,4 @@ def make_journal_entry(doc, supplier, mode_of_payment=None):
 
 	je.flags.ignore_mandatory = True
 	je.save()
-	frappe.msgprint(_("{0} {1} created").format(je.doctype, je.name))
+	nts .msgprint(_("{0} {1} created").format(je.doctype, je.name))

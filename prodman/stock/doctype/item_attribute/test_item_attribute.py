@@ -1,24 +1,24 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors and Contributors
 # See license.txt
 
 
-import frappe
+import nts
 
-test_records = frappe.get_test_records("Item Attribute")
+test_records = nts.get_test_records("Item Attribute")
 
-from frappe.tests.utils import FrappeTestCase
+from nts.tests.utils import ntsTestCase
 
 from prodman.stock.doctype.item_attribute.item_attribute import ItemAttributeIncrementError
 
 
-class TestItemAttribute(FrappeTestCase):
+class TestItemAttribute(ntsTestCase):
 	def setUp(self):
 		super().setUp()
-		if frappe.db.exists("Item Attribute", "_Test_Length"):
-			frappe.delete_doc("Item Attribute", "_Test_Length")
+		if nts.db.exists("Item Attribute", "_Test_Length"):
+			nts.delete_doc("Item Attribute", "_Test_Length")
 
 	def test_numeric_item_attribute(self):
-		item_attribute = frappe.get_doc(
+		item_attribute = nts.get_doc(
 			{
 				"doctype": "Item Attribute",
 				"attribute_name": "_Test_Length",

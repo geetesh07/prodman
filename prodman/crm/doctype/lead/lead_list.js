@@ -1,15 +1,15 @@
-frappe.listview_settings["Lead"] = {
+nts.listview_settings["Lead"] = {
 	get_indicator: function (doc) {
-		var indicator = [__(doc.status), frappe.utils.guess_colour(doc.status), "status,=," + doc.status];
+		var indicator = [__(doc.status), nts.utils.guess_colour(doc.status), "status,=," + doc.status];
 		return indicator;
 	},
 	onload: function (listview) {
-		if (frappe.boot.user.can_create.includes("Prospect")) {
+		if (nts.boot.user.can_create.includes("Prospect")) {
 			listview.page.add_action_item(__("Create Prospect"), function () {
-				frappe.model.with_doctype("Prospect", function () {
-					let prospect = frappe.model.get_new_doc("Prospect");
+				nts.model.with_doctype("Prospect", function () {
+					let prospect = nts.model.get_new_doc("Prospect");
 					let leads = listview.get_checked_items();
-					frappe.db.get_value(
+					nts.db.get_value(
 						"Lead",
 						leads[0].name,
 						[
@@ -33,10 +33,10 @@ frappe.listview_settings["Lead"] = {
 							prospect.prospect_owner = r.lead_owner;
 
 							leads.forEach(function (lead) {
-								let lead_prospect_row = frappe.model.add_child(prospect, "leads");
+								let lead_prospect_row = nts.model.add_child(prospect, "leads");
 								lead_prospect_row.lead = lead.name;
 							});
-							frappe.set_route("Form", "Prospect", prospect.name);
+							nts.set_route("Form", "Prospect", prospect.name);
 						}
 					);
 				});

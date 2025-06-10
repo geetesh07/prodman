@@ -7,10 +7,10 @@ QUnit.test("test: Workstation", function (assert) {
 	// number of asserts
 	assert.expect(1);
 
-	frappe.run_serially("Workstation", [
+	nts.run_serially("Workstation", [
 		// insert a new Workstation
 		() =>
-			frappe.tests.make([
+			nts.tests.make([
 				// values to be set
 				{ key: "value" },
 			]),

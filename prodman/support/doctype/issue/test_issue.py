@@ -1,12 +1,12 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe import _
-from frappe.core.doctype.user_permission.test_user_permission import create_user
-from frappe.utils import flt, get_datetime
+import nts
+from nts import _
+from nts.core.doctype.user_permission.test_user_permission import create_user
+from nts.utils import flt, get_datetime
 
 from prodman.support.doctype.service_level_agreement.test_service_level_agreement import (
 	create_service_level_agreements_for_issues,
@@ -15,12 +15,12 @@ from prodman.support.doctype.service_level_agreement.test_service_level_agreemen
 
 class TestSetUp(unittest.TestCase):
 	def setUp(self):
-		frappe.db.sql("delete from `tabService Level Agreement`")
-		frappe.db.sql("delete from `tabService Level Priority`")
-		frappe.db.sql("delete from `tabSLA Fulfilled On Status`")
-		frappe.db.sql("delete from `tabPause SLA On Status`")
-		frappe.db.sql("delete from `tabService Day`")
-		frappe.db.set_single_value("Support Settings", "track_service_level_agreement", 1)
+		nts.db.sql("delete from `tabService Level Agreement`")
+		nts.db.sql("delete from `tabService Level Priority`")
+		nts.db.sql("delete from `tabSLA Fulfilled On Status`")
+		nts.db.sql("delete from `tabPause SLA On Status`")
+		nts.db.sql("delete from `tabService Day`")
+		nts.db.set_single_value("Support Settings", "track_service_level_agreement", 1)
 		create_service_level_agreements_for_issues()
 
 
@@ -76,7 +76,7 @@ class TestIssue(TestSetUp):
 		self.assertEqual(issue.response_by, get_datetime("2019-03-04 18:00"))
 		self.assertEqual(issue.sla_resolution_by, get_datetime("2019-03-06 12:00"))
 
-		frappe.flags.current_time = get_datetime("2019-03-04 15:00")
+		nts.flags.current_time = get_datetime("2019-03-04 15:00")
 		issue.reload()
 		issue.status = "Closed"
 		issue.save()
@@ -92,16 +92,16 @@ class TestIssue(TestSetUp):
 		creation = get_datetime("2020-03-04 4:15")
 		create_communication(issue.name, "test@admin.com", "Sent", creation)
 
-		frappe.flags.current_time = get_datetime("2020-03-04 4:15")
+		nts.flags.current_time = get_datetime("2020-03-04 4:15")
 		issue.reload()
 		issue.status = "Replied"
 		issue.save()
 
-		self.assertEqual(issue.on_hold_since, frappe.flags.current_time)
+		self.assertEqual(issue.on_hold_since, nts.flags.current_time)
 		self.assertFalse(issue.sla_resolution_by)
 
 		creation = get_datetime("2020-03-04 5:00")
-		frappe.flags.current_time = get_datetime("2020-03-04 5:00")
+		nts.flags.current_time = get_datetime("2020-03-04 5:00")
 		create_communication(issue.name, "test@example.com", "Received", creation)
 
 		issue.reload()
@@ -111,7 +111,7 @@ class TestIssue(TestSetUp):
 		creation = get_datetime("2020-03-04 5:05")
 		create_communication(issue.name, "test@admin.com", "Sent", creation)
 
-		frappe.flags.current_time = get_datetime("2020-03-04 5:05")
+		nts.flags.current_time = get_datetime("2020-03-04 5:05")
 		issue.reload()
 		issue.status = "Closed"
 		issue.save()
@@ -120,23 +120,23 @@ class TestIssue(TestSetUp):
 		self.assertEqual(flt(issue.total_hold_time, 2), 2700)
 
 	def test_issue_close_after_on_hold(self):
-		frappe.flags.current_time = get_datetime("2021-11-01 19:00")
+		nts.flags.current_time = get_datetime("2021-11-01 19:00")
 
-		issue = make_issue(frappe.flags.current_time, index=1)
-		create_communication(issue.name, "test@example.com", "Received", frappe.flags.current_time)
+		issue = make_issue(nts.flags.current_time, index=1)
+		create_communication(issue.name, "test@example.com", "Received", nts.flags.current_time)
 
 		# send a reply within SLA
-		frappe.flags.current_time = get_datetime("2021-11-02 11:00")
-		create_communication(issue.name, "test@admin.com", "Sent", frappe.flags.current_time)
+		nts.flags.current_time = get_datetime("2021-11-02 11:00")
+		create_communication(issue.name, "test@admin.com", "Sent", nts.flags.current_time)
 
 		issue.reload()
 		issue.status = "Replied"
 		issue.save()
 
-		self.assertEqual(issue.on_hold_since, frappe.flags.current_time)
+		self.assertEqual(issue.on_hold_since, nts.flags.current_time)
 
 		# close the issue after being on hold for 20 days
-		frappe.flags.current_time = get_datetime("2021-11-22 01:00")
+		nts.flags.current_time = get_datetime("2021-11-22 01:00")
 		issue.status = "Closed"
 		issue.save()
 
@@ -146,28 +146,28 @@ class TestIssue(TestSetUp):
 
 	def test_issue_open_after_closed(self):
 		# Created on -> 1 pm, Response Time -> 4 hrs, Resolution Time -> 6 hrs
-		frappe.flags.current_time = get_datetime("2021-11-01 13:00")
+		nts.flags.current_time = get_datetime("2021-11-01 13:00")
 		issue = make_issue(
-			frappe.flags.current_time, index=1, issue_type="Critical"
+			nts.flags.current_time, index=1, issue_type="Critical"
 		)  # Applies 24hr working time SLA
-		create_communication(issue.name, "test@example.com", "Received", frappe.flags.current_time)
+		create_communication(issue.name, "test@example.com", "Received", nts.flags.current_time)
 		self.assertEqual(issue.agreement_status, "First Response Due")
 		self.assertEqual(issue.response_by, get_datetime("2021-11-01 17:00"))
 		self.assertEqual(issue.sla_resolution_by, get_datetime("2021-11-01 19:00"))
 
 		# Replied on → 2 pm
-		frappe.flags.current_time = get_datetime("2021-11-01 14:00")
-		create_communication(issue.name, "test@admin.com", "Sent", frappe.flags.current_time)
+		nts.flags.current_time = get_datetime("2021-11-01 14:00")
+		create_communication(issue.name, "test@admin.com", "Sent", nts.flags.current_time)
 		issue.reload()
 		issue.status = "Replied"
 		issue.save()
 		self.assertEqual(issue.agreement_status, "Resolution Due")
-		self.assertEqual(issue.on_hold_since, frappe.flags.current_time)
-		self.assertEqual(issue.first_responded_on, frappe.flags.current_time)
+		self.assertEqual(issue.on_hold_since, nts.flags.current_time)
+		self.assertEqual(issue.first_responded_on, nts.flags.current_time)
 
 		# Customer Replied → 3 pm
-		frappe.flags.current_time = get_datetime("2021-11-01 15:00")
-		create_communication(issue.name, "test@example.com", "Received", frappe.flags.current_time)
+		nts.flags.current_time = get_datetime("2021-11-01 15:00")
+		create_communication(issue.name, "test@example.com", "Received", nts.flags.current_time)
 		issue.reload()
 		self.assertEqual(issue.status, "Open")
 		# Hold Time + 1 Hrs
@@ -176,15 +176,15 @@ class TestIssue(TestSetUp):
 		self.assertEqual(issue.sla_resolution_by, get_datetime("2021-11-01 20:00"))
 
 		# Replied on → 4 pm, Open → 1 hr, Resolution Due → 8 pm
-		frappe.flags.current_time = get_datetime("2021-11-01 16:00")
-		create_communication(issue.name, "test@admin.com", "Sent", frappe.flags.current_time)
+		nts.flags.current_time = get_datetime("2021-11-01 16:00")
+		create_communication(issue.name, "test@admin.com", "Sent", nts.flags.current_time)
 		issue.reload()
 		issue.status = "Replied"
 		issue.save()
 		self.assertEqual(issue.agreement_status, "Resolution Due")
 
 		# Customer Closed → 10 pm
-		frappe.flags.current_time = get_datetime("2021-11-01 22:00")
+		nts.flags.current_time = get_datetime("2021-11-01 22:00")
 		issue.status = "Closed"
 		issue.save()
 		# Hold Time + 6 Hrs
@@ -192,11 +192,11 @@ class TestIssue(TestSetUp):
 		# Resolution By should increase by 6 hrs
 		self.assertEqual(issue.sla_resolution_by, get_datetime("2021-11-02 02:00"))
 		self.assertEqual(issue.agreement_status, "Fulfilled")
-		self.assertEqual(issue.sla_resolution_date, frappe.flags.current_time)
+		self.assertEqual(issue.sla_resolution_date, nts.flags.current_time)
 
 		# Customer Open → 3 am i.e after resolution by is crossed
-		frappe.flags.current_time = get_datetime("2021-11-02 03:00")
-		create_communication(issue.name, "test@example.com", "Received", frappe.flags.current_time)
+		nts.flags.current_time = get_datetime("2021-11-02 03:00")
+		create_communication(issue.name, "test@example.com", "Received", nts.flags.current_time)
 		issue.reload()
 		# Since issue was Resolved, Resolution By should be increased by 5 hrs (3am - 10pm)
 		self.assertEqual(issue.total_hold_time, 3600 + 21600 + 18000)
@@ -206,30 +206,30 @@ class TestIssue(TestSetUp):
 		self.assertFalse(issue.sla_resolution_date)
 
 		# We Closed → 4 am, SLA should be Fulfilled
-		frappe.flags.current_time = get_datetime("2021-11-02 04:00")
+		nts.flags.current_time = get_datetime("2021-11-02 04:00")
 		issue.status = "Closed"
 		issue.save()
 		self.assertEqual(issue.sla_resolution_by, get_datetime("2021-11-02 07:00"))
 		self.assertEqual(issue.agreement_status, "Fulfilled")
-		self.assertEqual(issue.sla_resolution_date, frappe.flags.current_time)
+		self.assertEqual(issue.sla_resolution_date, nts.flags.current_time)
 
 	def test_recording_of_assignment_on_first_reponse_failure(self):
-		from frappe.desk.form.assign_to import add as add_assignment
+		from nts.desk.form.assign_to import add as add_assignment
 
-		frappe.flags.current_time = get_datetime("2021-11-01 19:00")
+		nts.flags.current_time = get_datetime("2021-11-01 19:00")
 
-		issue = make_issue(frappe.flags.current_time, index=1)
-		create_communication(issue.name, "test@example.com", "Received", frappe.flags.current_time)
+		issue = make_issue(nts.flags.current_time, index=1)
+		create_communication(issue.name, "test@example.com", "Received", nts.flags.current_time)
 		add_assignment({"doctype": issue.doctype, "name": issue.name, "assign_to": ["test@admin.com"]})
 		issue.reload()
 
 		# send a reply failing response SLA
-		frappe.flags.current_time = get_datetime("2021-11-02 15:00")
-		create_communication(issue.name, "test@admin.com", "Sent", frappe.flags.current_time)
+		nts.flags.current_time = get_datetime("2021-11-02 15:00")
+		create_communication(issue.name, "test@admin.com", "Sent", nts.flags.current_time)
 
 		# assert if a new timeline item has been added
 		# to record the assignment
-		comment = frappe.db.exists(
+		comment = nts.db.exists(
 			"Comment",
 			{
 				"reference_doctype": "Issue",
@@ -241,18 +241,18 @@ class TestIssue(TestSetUp):
 		self.assertTrue(comment)
 
 	def test_agreement_status_on_response(self):
-		frappe.flags.current_time = get_datetime("2021-11-01 19:00")
+		nts.flags.current_time = get_datetime("2021-11-01 19:00")
 
-		issue = make_issue(frappe.flags.current_time, index=1)
-		create_communication(issue.name, "test@example.com", "Received", frappe.flags.current_time)
+		issue = make_issue(nts.flags.current_time, index=1)
+		create_communication(issue.name, "test@example.com", "Received", nts.flags.current_time)
 		self.assertTrue(issue.status == "Open")
 
 		# send a reply within response SLA
-		frappe.flags.current_time = get_datetime("2021-11-02 11:00")
-		create_communication(issue.name, "test@admin.com", "Sent", frappe.flags.current_time)
+		nts.flags.current_time = get_datetime("2021-11-02 11:00")
+		create_communication(issue.name, "test@admin.com", "Sent", nts.flags.current_time)
 
 		issue.reload()
-		self.assertEqual(issue.first_responded_on, frappe.flags.current_time)
+		self.assertEqual(issue.first_responded_on, nts.flags.current_time)
 		self.assertEqual(issue.agreement_status, "Resolution Due")
 
 
@@ -528,7 +528,7 @@ class TestFirstResponseTime(TestSetUp):
 def create_issue_and_communication(issue_creation, first_responded_on):
 	issue = make_issue(issue_creation, index=1)
 	sender = create_user("test@admin.com")
-	frappe.flags.current_time = first_responded_on
+	nts.flags.current_time = first_responded_on
 	create_communication(issue.name, sender.email, "Sent", first_responded_on)
 	issue.reload()
 
@@ -536,12 +536,12 @@ def create_issue_and_communication(issue_creation, first_responded_on):
 
 
 def make_issue(creation=None, customer=None, index=0, priority=None, issue_type=None):
-	if issue_type and not frappe.db.exists("Issue Type", issue_type):
-		doc = frappe.new_doc("Issue Type")
+	if issue_type and not nts.db.exists("Issue Type", issue_type):
+		doc = nts.new_doc("Issue Type")
 		doc.name = issue_type
 		doc.insert()
 
-	issue = frappe.get_doc(
+	issue = nts.get_doc(
 		{
 			"doctype": "Issue",
 			"subject": f"Service Level Agreement Issue {index}",
@@ -564,8 +564,8 @@ def create_customer(name, customer_group, territory):
 	create_customer_group(customer_group)
 	create_territory(territory)
 
-	if not frappe.db.exists("Customer", {"customer_name": name}):
-		frappe.get_doc(
+	if not nts.db.exists("Customer", {"customer_name": name}):
+		nts.get_doc(
 			{
 				"doctype": "Customer",
 				"customer_name": name,
@@ -576,15 +576,15 @@ def create_customer(name, customer_group, territory):
 
 
 def create_customer_group(customer_group):
-	if not frappe.db.exists("Customer Group", {"customer_group_name": customer_group}):
-		frappe.get_doc({"doctype": "Customer Group", "customer_group_name": customer_group}).insert(
+	if not nts.db.exists("Customer Group", {"customer_group_name": customer_group}):
+		nts.get_doc({"doctype": "Customer Group", "customer_group_name": customer_group}).insert(
 			ignore_permissions=True
 		)
 
 
 def create_territory(territory):
-	if not frappe.db.exists("Territory", {"territory_name": territory}):
-		frappe.get_doc(
+	if not nts.db.exists("Territory", {"territory_name": territory}):
+		nts.get_doc(
 			{
 				"doctype": "Territory",
 				"territory_name": territory,
@@ -593,7 +593,7 @@ def create_territory(territory):
 
 
 def create_communication(reference_name, sender, sent_or_received, creation):
-	communication = frappe.get_doc(
+	communication = nts.get_doc(
 		{
 			"doctype": "Communication",
 			"communication_type": "Communication",

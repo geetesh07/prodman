@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 # For license information, please see license.txt
 
 
-import frappe
-from frappe.model.document import Document
+import nts
+from nts.model.document import Document
 
 
 class BuyingSettings(Document):
@@ -15,7 +15,7 @@ class BuyingSettings(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		allow_multiple_items: DF.Check
 		allow_zero_qty_in_purchase_order: DF.Check
@@ -47,7 +47,7 @@ class BuyingSettings(Document):
 
 	def validate(self):
 		for key in ["supplier_group", "supp_master_name", "maintain_same_rate", "buying_price_list"]:
-			frappe.db.set_default(key, self.get(key, ""))
+			nts.db.set_default(key, self.get(key, ""))
 
 		from prodman.utilities.naming import set_by_naming_series
 

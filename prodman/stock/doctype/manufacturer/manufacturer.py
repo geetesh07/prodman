@@ -1,9 +1,9 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-from frappe.contacts.address_and_contact import load_address_and_contact
-from frappe.model.document import Document
+from nts.contacts.address_and_contact import load_address_and_contact
+from nts.model.document import Document
 
 
 class Manufacturer(Document):
@@ -13,7 +13,7 @@ class Manufacturer(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		country: DF.Link | None
 		full_name: DF.Data | None

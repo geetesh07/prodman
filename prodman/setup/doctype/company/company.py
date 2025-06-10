@@ -1,18 +1,18 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 
-import frappe
-import frappe.defaults
-from frappe import _
-from frappe.cache_manager import clear_defaults_cache
-from frappe.contacts.address_and_contact import load_address_and_contact
-from frappe.custom.doctype.property_setter.property_setter import make_property_setter
-from frappe.desk.page.setup_wizard.setup_wizard import make_records
-from frappe.utils import cint, formatdate, get_link_to_form, get_timestamp, today
-from frappe.utils.nestedset import NestedSet, rebuild_tree
+import nts
+import nts.defaults
+from nts import _
+from nts.cache_manager import clear_defaults_cache
+from nts.contacts.address_and_contact import load_address_and_contact
+from nts.custom.doctype.property_setter.property_setter import make_property_setter
+from nts.desk.page.setup_wizard.setup_wizard import make_records
+from nts.utils import cint, formatdate, get_link_to_form, get_timestamp, today
+from nts.utils.nestedset import NestedSet, rebuild_tree
 
 from prodman.accounts.doctype.account.account import get_account_currency
 from prodman.setup.setup_wizard.operations.taxes_setup import setup_taxes_and_charges
@@ -25,7 +25,7 @@ class Company(NestedSet):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		abbr: DF.Data
 		accumulated_depreciation_account: DF.Link | None
@@ -114,7 +114,7 @@ class Company(NestedSet):
 	def onload(self):
 		load_address_and_contact(self, "company")
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def check_if_transactions_exist(self):
 		exists = False
 		for doctype in [
@@ -127,7 +127,7 @@ class Company(NestedSet):
 			"Purchase Order",
 			"Supplier Quotation",
 		]:
-			if frappe.db.sql(
+			if nts.db.sql(
 				"""select name from `tab{}` where company={} and docstatus=1
 					limit 1""".format(doctype, "%s"),
 				self.name,
@@ -161,12 +161,12 @@ class Company(NestedSet):
 		self.abbr = self.abbr.strip()
 
 		if not self.abbr.strip():
-			frappe.throw(_("Abbreviation is mandatory"))
+			nts.throw(_("Abbreviation is mandatory"))
 
-		if frappe.db.sql("select abbr from tabCompany where name!=%s and abbr=%s", (self.name, self.abbr)):
-			frappe.throw(_("Abbreviation already used for another company"))
+		if nts.db.sql("select abbr from tabCompany where name!=%s and abbr=%s", (self.name, self.abbr)):
+			nts.throw(_("Abbreviation already used for another company"))
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def create_default_tax_template(self):
 		setup_taxes_and_charges(self.name, self.country)
 
@@ -185,9 +185,9 @@ class Company(NestedSet):
 
 		for account in accounts:
 			if self.get(account[1]):
-				for_company = frappe.db.get_value("Account", self.get(account[1]), "company")
+				for_company = nts.db.get_value("Account", self.get(account[1]), "company")
 				if for_company != self.name:
-					frappe.throw(
+					nts.throw(
 						_("Account {0} does not belong to company: {1}").format(
 							self.get(account[1]), self.name
 						)
@@ -196,43 +196,43 @@ class Company(NestedSet):
 				if get_account_currency(self.get(account[1])) != self.default_currency:
 					error_message = _(
 						"{0} currency must be same as company's default currency. Please select another account."
-					).format(frappe.bold(account[0]))
-					frappe.throw(error_message)
+					).format(nts.bold(account[0]))
+					nts.throw(error_message)
 
 	def validate_advance_account_currency(self):
 		if (
 			self.default_advance_received_account
-			and frappe.get_cached_value("Account", self.default_advance_received_account, "account_currency")
+			and nts.get_cached_value("Account", self.default_advance_received_account, "account_currency")
 			!= self.default_currency
 		):
-			frappe.throw(
+			nts.throw(
 				_("'{0}' should be in company currency {1}.").format(
-					frappe.bold(_("Default Advance Received Account")), frappe.bold(self.default_currency)
+					nts.bold(_("Default Advance Received Account")), nts.bold(self.default_currency)
 				)
 			)
 
 		if (
 			self.default_advance_paid_account
-			and frappe.get_cached_value("Account", self.default_advance_paid_account, "account_currency")
+			and nts.get_cached_value("Account", self.default_advance_paid_account, "account_currency")
 			!= self.default_currency
 		):
-			frappe.throw(
+			nts.throw(
 				_("'{0}' should be in company currency {1}.").format(
-					frappe.bold(_("Default Advance Paid Account")), frappe.bold(self.default_currency)
+					nts.bold(_("Default Advance Paid Account")), nts.bold(self.default_currency)
 				)
 			)
 
 	def validate_currency(self):
 		if self.is_new():
 			return
-		self.previous_default_currency = frappe.get_cached_value("Company", self.name, "default_currency")
+		self.previous_default_currency = nts.get_cached_value("Company", self.name, "default_currency")
 		if (
 			self.default_currency
 			and self.previous_default_currency
 			and self.default_currency != self.previous_default_currency
 			and self.check_if_transactions_exist()
 		):
-			frappe.throw(
+			nts.throw(
 				_(
 					"Cannot change company's default currency, because there are existing transactions. Transactions must be cancelled to change the default currency."
 				)
@@ -240,46 +240,46 @@ class Company(NestedSet):
 
 	def on_update(self):
 		NestedSet.on_update(self)
-		if not frappe.db.sql(
+		if not nts.db.sql(
 			"""select name from tabAccount
 				where company=%s and docstatus<2 limit 1""",
 			self.name,
 		):
-			if not frappe.local.flags.ignore_chart_of_accounts:
-				frappe.flags.country_change = True
+			if not nts.local.flags.ignore_chart_of_accounts:
+				nts.flags.country_change = True
 				self.create_default_accounts()
 				self.create_default_warehouses()
 
-		if not frappe.db.get_value("Cost Center", {"is_group": 0, "company": self.name}):
+		if not nts.db.get_value("Cost Center", {"is_group": 0, "company": self.name}):
 			self.create_default_cost_center()
 
-		if frappe.flags.country_change:
+		if nts.flags.country_change:
 			install_country_fixtures(self.name, self.country)
 			self.create_default_tax_template()
 
-		if not frappe.db.get_value("Department", {"company": self.name}):
+		if not nts.db.get_value("Department", {"company": self.name}):
 			self.create_default_departments()
 
-		if not frappe.local.flags.ignore_chart_of_accounts:
+		if not nts.local.flags.ignore_chart_of_accounts:
 			self.set_default_accounts()
 			if self.default_cash_account:
 				self.set_mode_of_payment_account()
 
 		if self.default_currency:
-			frappe.db.set_value("Currency", self.default_currency, "enabled", 1)
+			nts.db.set_value("Currency", self.default_currency, "enabled", 1)
 
 		if (
-			hasattr(frappe.local, "enable_perpetual_inventory")
-			and self.name in frappe.local.enable_perpetual_inventory
+			hasattr(nts.local, "enable_perpetual_inventory")
+			and self.name in nts.local.enable_perpetual_inventory
 		):
-			frappe.local.enable_perpetual_inventory[self.name] = self.enable_perpetual_inventory
+			nts.local.enable_perpetual_inventory[self.name] = self.enable_perpetual_inventory
 
-		if frappe.flags.parent_company_changed:
-			from frappe.utils.nestedset import rebuild_tree
+		if nts.flags.parent_company_changed:
+			from nts.utils.nestedset import rebuild_tree
 
 			rebuild_tree("Company", "parent_company")
 
-		frappe.clear_cache()
+		nts.clear_cache()
 
 	def create_default_warehouses(self):
 		parent_warehouse = None
@@ -290,7 +290,7 @@ class Company(NestedSet):
 			{"warehouse_name": _("Finished Goods"), "is_group": 0},
 			{"warehouse_name": _("Goods In Transit"), "is_group": 0, "warehouse_type": "Transit"},
 		]:
-			if frappe.db.exists(
+			if nts.db.exists(
 				"Warehouse",
 				{
 					"warehouse_name": wh_detail["warehouse_name"],
@@ -299,7 +299,7 @@ class Company(NestedSet):
 			):
 				continue
 
-			warehouse = frappe.get_doc(
+			warehouse = nts.get_doc(
 				{
 					"doctype": "Warehouse",
 					"warehouse_name": wh_detail["warehouse_name"],
@@ -319,19 +319,19 @@ class Company(NestedSet):
 	def create_default_accounts(self):
 		from prodman.accounts.doctype.account.chart_of_accounts.chart_of_accounts import create_charts
 
-		frappe.local.flags.ignore_root_company_validation = True
+		nts.local.flags.ignore_root_company_validation = True
 		create_charts(self.name, self.chart_of_accounts, self.existing_company)
 
 		self.db_set(
 			"default_receivable_account",
-			frappe.db.get_value(
+			nts.db.get_value(
 				"Account", {"company": self.name, "account_type": "Receivable", "is_group": 0}
 			),
 		)
 
 		self.db_set(
 			"default_payable_account",
-			frappe.db.get_value("Account", {"company": self.name, "account_type": "Payable", "is_group": 0}),
+			nts.db.get_value("Account", {"company": self.name, "account_type": "Payable", "is_group": 0}),
 		)
 
 	def create_default_departments(self):
@@ -342,7 +342,7 @@ class Company(NestedSet):
 				"department_name": _("All Departments"),
 				"is_group": 1,
 				"parent_department": "",
-				"__condition": lambda: not frappe.db.exists("Department", _("All Departments")),
+				"__condition": lambda: not nts.db.exists("Department", _("All Departments")),
 			},
 			{
 				"doctype": "Department",
@@ -427,16 +427,16 @@ class Company(NestedSet):
 		# Make root department with NSM updation
 		make_records(records[:1])
 
-		frappe.local.flags.ignore_update_nsm = True
+		nts.local.flags.ignore_update_nsm = True
 		make_records(records)
-		frappe.local.flags.ignore_update_nsm = False
+		nts.local.flags.ignore_update_nsm = False
 		rebuild_tree("Department", "parent_department")
 
 	def validate_coa_input(self):
 		if self.create_chart_of_accounts_based_on == "Existing Company":
 			self.chart_of_accounts = None
 			if not self.existing_company:
-				frappe.throw(_("Please select Existing Company for creating Chart of Accounts"))
+				nts.throw(_("Please select Existing Company for creating Chart of Accounts"))
 
 		else:
 			self.existing_company = None
@@ -447,7 +447,7 @@ class Company(NestedSet):
 	def validate_perpetual_inventory(self):
 		if not self.get("__islocal"):
 			if cint(self.enable_perpetual_inventory) == 1 and not self.default_inventory_account:
-				frappe.msgprint(
+				nts.msgprint(
 					_("Set default inventory account for perpetual inventory"), alert=True, indicator="orange"
 				)
 
@@ -457,9 +457,9 @@ class Company(NestedSet):
 				cint(self.enable_provisional_accounting_for_non_stock_items) == 1
 				and not self.default_provisional_account
 			):
-				frappe.throw(
+				nts.throw(
 					_("Set default {0} account for non stock items").format(
-						frappe.bold(_("Provisional Account"))
+						nts.bold(_("Provisional Account"))
 					)
 				)
 
@@ -473,10 +473,10 @@ class Company(NestedSet):
 			)
 
 	def check_country_change(self):
-		frappe.flags.country_change = False
+		nts.flags.country_change = False
 
-		if not self.is_new() and self.country != frappe.get_cached_value("Company", self.name, "country"):
-			frappe.flags.country_change = True
+		if not self.is_new() and self.country != nts.get_cached_value("Company", self.name, "country"):
+			nts.flags.country_change = True
 
 	def set_chart_of_accounts(self):
 		"""If parent company is set, chart of accounts will be based on that company"""
@@ -486,10 +486,10 @@ class Company(NestedSet):
 
 	def validate_parent_company(self):
 		if self.parent_company:
-			is_group = frappe.get_value("Company", self.parent_company, "is_group")
+			is_group = nts.get_value("Company", self.parent_company, "is_group")
 
 			if not is_group:
-				frappe.throw(_("Parent Company must be a group company"))
+				nts.throw(_("Parent Company must be a group company"))
 
 	def set_default_accounts(self):
 		default_accounts = {
@@ -519,7 +519,7 @@ class Company(NestedSet):
 				self._set_default_account(default_account, default_accounts.get(default_account))
 
 		if not self.default_income_account:
-			income_account = frappe.db.get_all(
+			income_account = nts.db.get_all(
 				"Account",
 				filters={"company": self.name, "is_group": 0},
 				or_filters={
@@ -540,21 +540,21 @@ class Company(NestedSet):
 			self.db_set("default_payable_account", self.default_payable_account)
 
 		if not self.write_off_account:
-			write_off_acct = frappe.db.get_value(
+			write_off_acct = nts.db.get_value(
 				"Account", {"account_name": _("Write Off"), "company": self.name, "is_group": 0}
 			)
 
 			self.db_set("write_off_account", write_off_acct)
 
 		if not self.exchange_gain_loss_account:
-			exchange_gain_loss_acct = frappe.db.get_value(
+			exchange_gain_loss_acct = nts.db.get_value(
 				"Account", {"account_name": _("Exchange Gain/Loss"), "company": self.name, "is_group": 0}
 			)
 
 			self.db_set("exchange_gain_loss_account", exchange_gain_loss_acct)
 
 		if not self.disposal_account:
-			disposal_acct = frappe.db.get_value(
+			disposal_acct = nts.db.get_value(
 				"Account",
 				{"account_name": _("Gain/Loss on Asset Disposal"), "company": self.name, "is_group": 0},
 			)
@@ -565,7 +565,7 @@ class Company(NestedSet):
 		if self.get(fieldname):
 			return
 
-		account = frappe.db.get_value(
+		account = nts.db.get_value(
 			"Account", {"account_type": account_type, "is_group": 0, "company": self.name}
 		)
 
@@ -573,13 +573,13 @@ class Company(NestedSet):
 			self.db_set(fieldname, account)
 
 	def set_mode_of_payment_account(self):
-		cash = frappe.db.get_value("Mode of Payment", {"type": "Cash"}, "name")
+		cash = nts.db.get_value("Mode of Payment", {"type": "Cash"}, "name")
 		if (
 			cash
 			and self.default_cash_account
-			and not frappe.db.get_value("Mode of Payment Account", {"company": self.name, "parent": cash})
+			and not nts.db.get_value("Mode of Payment Account", {"company": self.name, "parent": cash})
 		):
-			mode_of_payment = frappe.get_doc("Mode of Payment", cash, for_update=True)
+			mode_of_payment = nts.get_doc("Mode of Payment", cash, for_update=True)
 			mode_of_payment.append(
 				"accounts", {"company": self.name, "default_account": self.default_cash_account}
 			)
@@ -602,7 +602,7 @@ class Company(NestedSet):
 		]
 		for cc in cc_list:
 			cc.update({"doctype": "Cost Center"})
-			cc_doc = frappe.get_doc(cc)
+			cc_doc = nts.get_doc(cc)
 			cc_doc.flags.ignore_permissions = True
 
 			if cc.get("cost_center_name") == self.name:
@@ -616,7 +616,7 @@ class Company(NestedSet):
 	def after_rename(self, olddn, newdn, merge=False):
 		self.db_set("company_name", newdn)
 
-		frappe.db.sql(
+		nts.db.sql(
 			"""update `tabDefaultValue` set defvalue=%s
 			where defkey='Company' and defvalue=%s""",
 			(newdn, olddn),
@@ -632,11 +632,11 @@ class Company(NestedSet):
 		Trash accounts and cost centers for this company if no gl entry exists
 		"""
 		NestedSet.validate_if_child_exists(self)
-		frappe.utils.nestedset.update_nsm(self)
+		nts.utils.nestedset.update_nsm(self)
 
-		rec = frappe.db.sql("SELECT name from `tabGL Entry` where company = %s", self.name)
+		rec = nts.db.sql("SELECT name from `tabGL Entry` where company = %s", self.name)
 		if not rec:
-			frappe.db.sql(
+			nts.db.sql(
 				"""delete from `tabBudget Account`
 				where exists(select name from tabBudget
 					where name=`tabBudget Account`.parent and company = %s)""",
@@ -644,26 +644,26 @@ class Company(NestedSet):
 			)
 
 			for doctype in ["Account", "Cost Center", "Budget", "Party Account"]:
-				frappe.db.sql(f"delete from `tab{doctype}` where company = %s", self.name)
+				nts.db.sql(f"delete from `tab{doctype}` where company = %s", self.name)
 
-		if not frappe.db.get_value("Stock Ledger Entry", {"company": self.name}):
-			frappe.db.sql("""delete from `tabWarehouse` where company=%s""", self.name)
+		if not nts.db.get_value("Stock Ledger Entry", {"company": self.name}):
+			nts.db.sql("""delete from `tabWarehouse` where company=%s""", self.name)
 
-		frappe.defaults.clear_default("company", value=self.name)
+		nts.defaults.clear_default("company", value=self.name)
 		for doctype in ["Mode of Payment Account", "Item Default"]:
-			frappe.db.sql(f"delete from `tab{doctype}` where company = %s", self.name)
+			nts.db.sql(f"delete from `tab{doctype}` where company = %s", self.name)
 
 		# clear default accounts, warehouses from item
-		warehouses = frappe.db.sql_list("select name from tabWarehouse where company=%s", self.name)
+		warehouses = nts.db.sql_list("select name from tabWarehouse where company=%s", self.name)
 		if warehouses:
-			frappe.db.sql(
+			nts.db.sql(
 				"""delete from `tabItem Reorder` where warehouse in (%s)"""
 				% ", ".join(["%s"] * len(warehouses)),
 				tuple(warehouses),
 			)
 
 		# reset default company
-		frappe.db.sql(
+		nts.db.sql(
 			"""update `tabSingles` set value=''
 			where doctype='Global Defaults' and field='default_company'
 			and value=%s""",
@@ -671,7 +671,7 @@ class Company(NestedSet):
 		)
 
 		# reset default company
-		frappe.db.sql(
+		nts.db.sql(
 			"""update `tabSingles` set value=''
 			where doctype='Chart of Accounts Importer' and field='company'
 			and value=%s""",
@@ -679,40 +679,40 @@ class Company(NestedSet):
 		)
 
 		# delete BOMs
-		boms = frappe.db.sql_list("select name from tabBOM where company=%s", self.name)
+		boms = nts.db.sql_list("select name from tabBOM where company=%s", self.name)
 		if boms:
-			frappe.db.sql("delete from tabBOM where company=%s", self.name)
+			nts.db.sql("delete from tabBOM where company=%s", self.name)
 			for dt in ("BOM Operation", "BOM Item", "BOM Scrap Item", "BOM Explosion Item"):
-				frappe.db.sql(
+				nts.db.sql(
 					"delete from `tab{}` where parent in ({})" "".format(dt, ", ".join(["%s"] * len(boms))),
 					tuple(boms),
 				)
 
-		frappe.db.sql("delete from tabEmployee where company=%s", self.name)
-		frappe.db.sql("delete from tabDepartment where company=%s", self.name)
-		frappe.db.sql("delete from `tabTax Withholding Account` where company=%s", self.name)
-		frappe.db.sql("delete from `tabTransaction Deletion Record` where company=%s", self.name)
+		nts.db.sql("delete from tabEmployee where company=%s", self.name)
+		nts.db.sql("delete from tabDepartment where company=%s", self.name)
+		nts.db.sql("delete from `tabTax Withholding Account` where company=%s", self.name)
+		nts.db.sql("delete from `tabTransaction Deletion Record` where company=%s", self.name)
 
 		# delete tax templates
-		frappe.db.sql("delete from `tabSales Taxes and Charges Template` where company=%s", self.name)
-		frappe.db.sql("delete from `tabPurchase Taxes and Charges Template` where company=%s", self.name)
-		frappe.db.sql("delete from `tabItem Tax Template` where company=%s", self.name)
+		nts.db.sql("delete from `tabSales Taxes and Charges Template` where company=%s", self.name)
+		nts.db.sql("delete from `tabPurchase Taxes and Charges Template` where company=%s", self.name)
+		nts.db.sql("delete from `tabItem Tax Template` where company=%s", self.name)
 
 		# delete Process Deferred Accounts if no GL Entry found
-		if not frappe.db.get_value("GL Entry", {"company": self.name}):
-			frappe.db.sql("delete from `tabProcess Deferred Accounting` where company=%s", self.name)
+		if not nts.db.get_value("GL Entry", {"company": self.name}):
+			nts.db.sql("delete from `tabProcess Deferred Accounting` where company=%s", self.name)
 
 	def check_parent_changed(self):
-		frappe.flags.parent_company_changed = False
+		nts.flags.parent_company_changed = False
 
-		if not self.is_new() and self.parent_company != frappe.db.get_value(
+		if not self.is_new() and self.parent_company != nts.db.get_value(
 			"Company", self.name, "parent_company"
 		):
-			frappe.flags.parent_company_changed = True
+			nts.flags.parent_company_changed = True
 
 
 def get_name_with_abbr(name, company):
-	company_abbr = frappe.get_cached_value("Company", company, "abbr")
+	company_abbr = nts.get_cached_value("Company", company, "abbr")
 	parts = name.split(" - ")
 
 	if parts[-1].lower() != company_abbr.lower():
@@ -723,15 +723,15 @@ def get_name_with_abbr(name, company):
 
 def install_country_fixtures(company, country):
 	try:
-		module_name = f"prodman.regional.{frappe.scrub(country)}.setup.setup"
-		frappe.get_attr(module_name)(company, False)
+		module_name = f"prodman.regional.{nts.scrub(country)}.setup.setup"
+		nts.get_attr(module_name)(company, False)
 	except ImportError:
 		pass
 	except Exception:
-		frappe.log_error("Unable to set country fixtures")
-		frappe.throw(
+		nts.log_error("Unable to set country fixtures")
+		nts.throw(
 			_("Failed to setup defaults for country {0}. Please contact support.").format(
-				frappe.bold(country)
+				nts.bold(country)
 			)
 		)
 
@@ -739,7 +739,7 @@ def install_country_fixtures(company, country):
 def update_company_current_month_sales(company):
 	current_month_year = formatdate(today(), "MM-yyyy")
 
-	results = frappe.db.sql(
+	results = nts.db.sql(
 		f"""
 		SELECT
 			SUM(base_grand_total) AS total,
@@ -749,7 +749,7 @@ def update_company_current_month_sales(company):
 		WHERE
 			DATE_FORMAT(`posting_date`, '%m-%Y') = '{current_month_year}'
 			AND docstatus = 1
-			AND company = {frappe.db.escape(company)}
+			AND company = {nts.db.escape(company)}
 		GROUP BY
 			month_year
 	""",
@@ -758,45 +758,45 @@ def update_company_current_month_sales(company):
 
 	monthly_total = results[0]["total"] if len(results) > 0 else 0
 
-	frappe.db.set_value("Company", company, "total_monthly_sales", monthly_total)
+	nts.db.set_value("Company", company, "total_monthly_sales", monthly_total)
 
 
 def update_company_monthly_sales(company):
 	"""Cache past year monthly sales of every company based on sales invoices"""
 	import json
 
-	from frappe.utils.goal import get_monthly_results
+	from nts.utils.goal import get_monthly_results
 
-	filter_str = f"company = {frappe.db.escape(company)} and status != 'Draft' and docstatus=1"
+	filter_str = f"company = {nts.db.escape(company)} and status != 'Draft' and docstatus=1"
 	month_to_value_dict = get_monthly_results(
 		"Sales Invoice", "base_grand_total", "posting_date", filter_str, "sum"
 	)
 
-	frappe.db.set_value("Company", company, "sales_monthly_history", json.dumps(month_to_value_dict))
+	nts.db.set_value("Company", company, "sales_monthly_history", json.dumps(month_to_value_dict))
 
 
 def update_transactions_annual_history(company, commit=False):
 	transactions_history = get_all_transactions_annual_history(company)
-	frappe.db.set_value("Company", company, "transactions_annual_history", json.dumps(transactions_history))
+	nts.db.set_value("Company", company, "transactions_annual_history", json.dumps(transactions_history))
 
 	if commit:
-		frappe.db.commit()
+		nts.db.commit()
 
 
 def cache_companies_monthly_sales_history():
-	companies = [d["name"] for d in frappe.get_list("Company")]
+	companies = [d["name"] for d in nts.get_list("Company")]
 	for company in companies:
 		update_company_monthly_sales(company)
 		update_transactions_annual_history(company)
-	frappe.db.commit()
+	nts.db.commit()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_children(doctype, parent=None, company=None, is_root=False):
 	if parent is None or parent == "All Companies":
 		parent = ""
 
-	return frappe.db.sql(
+	return nts.db.sql(
 		f"""
 		select
 			name as value,
@@ -804,29 +804,29 @@ def get_children(doctype, parent=None, company=None, is_root=False):
 		from
 			`tabCompany` comp
 		where
-			ifnull(parent_company, "")={frappe.db.escape(parent)}
+			ifnull(parent_company, "")={nts.db.escape(parent)}
 		""",
 		as_dict=1,
 	)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def add_node():
-	from frappe.desk.treeview import make_tree_args
+	from nts.desk.treeview import make_tree_args
 
-	args = frappe.form_dict
+	args = nts.form_dict
 	args = make_tree_args(**args)
 
 	if args.parent_company == "All Companies":
 		args.parent_company = None
 
-	frappe.get_doc(args).insert()
+	nts.get_doc(args).insert()
 
 
 def get_all_transactions_annual_history(company):
 	out = {}
 
-	items = frappe.db.sql(
+	items = nts.db.sql(
 		"""
 		select transaction_date, count(*) as count
 
@@ -883,7 +883,7 @@ def get_timeline_data(doctype, name):
 	"""returns timeline data based on linked records in dashboard"""
 	date_to_value_dict = {}
 
-	history = frappe.get_cached_value("Company", name, "transactions_annual_history")
+	history = nts.get_cached_value("Company", name, "transactions_annual_history")
 
 	try:
 		date_to_value_dict = json.loads(history) if history and "{" in history else None
@@ -892,18 +892,18 @@ def get_timeline_data(doctype, name):
 
 	if date_to_value_dict is None:
 		update_transactions_annual_history(name, True)
-		history = frappe.get_cached_value("Company", name, "transactions_annual_history")
+		history = nts.get_cached_value("Company", name, "transactions_annual_history")
 		return json.loads(history) if history and "{" in history else {}
 
 	return date_to_value_dict
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_default_company_address(name, sort_key="is_primary_address", existing_address=None):
 	if sort_key not in ["is_shipping_address", "is_primary_address"]:
 		return None
 
-	out = frappe.db.sql(
+	out = nts.db.sql(
 		""" SELECT
 			addr.name, addr.{}
 		FROM
@@ -925,7 +925,7 @@ def get_default_company_address(name, sort_key="is_primary_address", existing_ad
 		return None
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_billing_shipping_address(name, billing_address=None, shipping_address=None):
 	primary_address = get_default_company_address(name, "is_primary_address", billing_address)
 	shipping_address = get_default_company_address(name, "is_shipping_address", shipping_address)
@@ -933,7 +933,7 @@ def get_billing_shipping_address(name, billing_address=None, shipping_address=No
 	return {"primary_address": primary_address, "shipping_address": shipping_address}
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def create_transaction_deletion_request(company):
 	from prodman.setup.doctype.transaction_deletion_record.transaction_deletion_record import (
 		is_deletion_doc_running,
@@ -941,13 +941,13 @@ def create_transaction_deletion_request(company):
 
 	is_deletion_doc_running(company)
 
-	tdr = frappe.get_doc({"doctype": "Transaction Deletion Record", "company": company})
+	tdr = nts.get_doc({"doctype": "Transaction Deletion Record", "company": company})
 	tdr.submit()
 	tdr.start_deletion_tasks()
 
-	frappe.msgprint(
+	nts.msgprint(
 		_("A Transaction Deletion Document: {0} is triggered for {0}").format(
 			get_link_to_form("Transaction Deletion Record", tdr.name)
 		),
-		frappe.bold(company),
+		nts.bold(company),
 	)

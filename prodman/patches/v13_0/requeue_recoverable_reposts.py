@@ -1,10 +1,10 @@
-import frappe
+import nts
 
 
 def execute():
 	recoverable = ("QueryDeadlockError", "QueryTimeoutError", "JobTimeoutException")
 
-	failed_reposts = frappe.get_all(
+	failed_reposts = nts.get_all(
 		"Repost Item Valuation",
 		fields=["name", "error_log"],
 		filters={
@@ -17,5 +17,5 @@ def execute():
 	for riv in failed_reposts:
 		for exc in recoverable:
 			if exc in riv.error_log:
-				frappe.db.set_value("Repost Item Valuation", riv.name, "status", "Queued")
+				nts.db.set_value("Repost Item Valuation", riv.name, "status", "Queued")
 				break

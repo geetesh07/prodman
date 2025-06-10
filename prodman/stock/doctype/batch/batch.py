@@ -1,20 +1,20 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 from collections import OrderedDict, defaultdict
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.model.naming import make_autoname, revert_series_if_last
-from frappe.query_builder.functions import CurDate, Sum
-from frappe.utils import cint, flt, get_link_to_form
-from frappe.utils.data import add_days
-from frappe.utils.jinja import render_template
+import nts
+from nts import _
+from nts.model.document import Document
+from nts.model.naming import make_autoname, revert_series_if_last
+from nts.query_builder.functions import CurDate, Sum
+from nts.utils import cint, flt, get_link_to_form
+from nts.utils.data import add_days
+from nts.utils.jinja import render_template
 
 
-class UnableToSelectBatchError(frappe.ValidationError):
+class UnableToSelectBatchError(nts.ValidationError):
 	pass
 
 
@@ -25,8 +25,8 @@ def get_name_from_hash():
 	"""
 	temp = None
 	while not temp:
-		temp = frappe.generate_hash()[:7].upper()
-		if frappe.db.exists("Batch", temp):
+		temp = nts.generate_hash()[:7].upper()
+		if nts.db.exists("Batch", temp):
 			temp = None
 
 	return temp
@@ -37,7 +37,7 @@ def batch_uses_naming_series():
 	Verify if the Batch is to be named using a naming series
 	:return: bool
 	"""
-	use_naming_series = cint(frappe.db.get_single_value("Stock Settings", "use_naming_series"))
+	use_naming_series = cint(nts.db.get_single_value("Stock Settings", "use_naming_series"))
 	return bool(use_naming_series)
 
 
@@ -49,7 +49,7 @@ def _get_batch_prefix():
 	is set to use naming series.
 	:return: The naming series.
 	"""
-	naming_series_prefix = frappe.db.get_single_value("Stock Settings", "naming_series_prefix")
+	naming_series_prefix = nts.db.get_single_value("Stock Settings", "naming_series_prefix")
 	if not naming_series_prefix:
 		naming_series_prefix = "BATCH-"
 
@@ -93,7 +93,7 @@ class Batch(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		batch_id: DF.Data
 		batch_qty: DF.Float
@@ -121,12 +121,12 @@ class Batch(Document):
 			self.name = self.batch_id
 			return
 
-		create_new_batch, batch_number_series = frappe.db.get_value(
+		create_new_batch, batch_number_series = nts.db.get_value(
 			"Item", self.item, ["create_new_batch", "batch_number_series"]
 		)
 
 		if not create_new_batch:
-			frappe.throw(_("Batch ID is mandatory"), frappe.MandatoryError)
+			nts.throw(_("Batch ID is mandatory"), nts.MandatoryError)
 
 		while not self.batch_id:
 			if batch_number_series:
@@ -137,13 +137,13 @@ class Batch(Document):
 				self.batch_id = get_name_from_hash()
 
 			# User might have manually created a batch with next number
-			if frappe.db.exists("Batch", self.batch_id):
+			if nts.db.exists("Batch", self.batch_id):
 				self.batch_id = None
 
 		self.name = self.batch_id
 
 	def onload(self):
-		self.image = frappe.db.get_value("Item", self.item, "image")
+		self.image = nts.db.get_value("Item", self.item, "image")
 
 	def after_delete(self):
 		revert_series_if_last(get_batch_naming_series(), self.name)
@@ -153,14 +153,14 @@ class Batch(Document):
 		self.set_batchwise_valuation()
 
 	def item_has_batch_enabled(self):
-		if frappe.db.get_value("Item", self.item, "has_batch_no") == 0:
-			frappe.throw(_("The selected item cannot have Batch"))
+		if nts.db.get_value("Item", self.item, "has_batch_no") == 0:
+			nts.throw(_("The selected item cannot have Batch"))
 
 	def set_batchwise_valuation(self):
 		from prodman.stock.utils import get_valuation_method
 
 		if self.is_new():
-			if get_valuation_method(self.item) == "Moving Average" and frappe.db.get_single_value(
+			if get_valuation_method(self.item) == "Moving Average" and nts.db.get_single_value(
 				"Stock Settings", "do_not_use_batchwise_valuation"
 			):
 				self.use_batchwise_valuation = 0
@@ -172,7 +172,7 @@ class Batch(Document):
 		self.set_expiry_date()
 
 	def set_expiry_date(self):
-		has_expiry_date, shelf_life_in_days = frappe.db.get_value(
+		has_expiry_date, shelf_life_in_days = nts.db.get_value(
 			"Item", self.item, ["has_expiry_date", "shelf_life_in_days"]
 		)
 
@@ -182,7 +182,7 @@ class Batch(Document):
 				and self.reference_doctype in ["Stock Entry", "Purchase Receipt", "Purchase Invoice"]
 				and self.reference_name
 			):
-				self.manufacturing_date = frappe.db.get_value(
+				self.manufacturing_date = nts.db.get_value(
 					self.reference_doctype, self.reference_name, "posting_date"
 				)
 
@@ -190,11 +190,11 @@ class Batch(Document):
 				self.expiry_date = add_days(self.manufacturing_date, shelf_life_in_days)
 
 		if has_expiry_date and not self.expiry_date:
-			frappe.throw(
+			nts.throw(
 				msg=_("Please set {0} for Batched Item {1}, which is used to set {2} on Submit.").format(
-					frappe.bold(_("Shelf Life in Days")),
+					nts.bold(_("Shelf Life in Days")),
 					get_link_to_form("Item", self.item),
-					frappe.bold(_("Batch Expiry Date")),
+					nts.bold(_("Batch Expiry Date")),
 				),
 				title=_("Expiry Date Mandatory"),
 			)
@@ -213,7 +213,7 @@ class Batch(Document):
 		return name
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_batch_qty(
 	batch_no=None,
 	warehouse=None,
@@ -240,7 +240,7 @@ def get_batch_qty(
 	)
 
 	batchwise_qty = defaultdict(float)
-	kwargs = frappe._dict(
+	kwargs = nts._dict(
 		{
 			"item_code": item_code,
 			"warehouse": warehouse,
@@ -265,27 +265,27 @@ def get_batch_qty(
 	return batchwise_qty[batch_no]
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_batches_by_oldest(item_code, warehouse):
 	"""Returns the oldest batch and qty for the given item_code and warehouse"""
 	batches = get_batch_qty(item_code=item_code, warehouse=warehouse)
-	batches_dates = [[batch, frappe.get_value("Batch", batch.batch_no, "expiry_date")] for batch in batches]
+	batches_dates = [[batch, nts.get_value("Batch", batch.batch_no, "expiry_date")] for batch in batches]
 	batches_dates.sort(key=lambda tup: tup[1])
 	return batches_dates
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def split_batch(batch_no: str, item_code: str, warehouse: str, qty: float, new_batch_id: str | None = None):
 	"""Split the batch into a new batch"""
-	batch = frappe.get_doc(dict(doctype="Batch", item=item_code, batch_id=new_batch_id)).insert()
+	batch = nts.get_doc(dict(doctype="Batch", item=item_code, batch_id=new_batch_id)).insert()
 	qty = flt(qty)
 
-	company = frappe.db.get_value("Warehouse", warehouse, "company")
+	company = nts.db.get_value("Warehouse", warehouse, "company")
 
 	from_bundle_id = make_batch_bundle(
 		item_code=item_code,
 		warehouse=warehouse,
-		batches=frappe._dict({batch_no: qty}),
+		batches=nts._dict({batch_no: qty}),
 		company=company,
 		type_of_transaction="Outward",
 		qty=qty,
@@ -294,13 +294,13 @@ def split_batch(batch_no: str, item_code: str, warehouse: str, qty: float, new_b
 	to_bundle_id = make_batch_bundle(
 		item_code=item_code,
 		warehouse=warehouse,
-		batches=frappe._dict({batch.name: qty}),
+		batches=nts._dict({batch.name: qty}),
 		company=company,
 		type_of_transaction="Inward",
 		qty=qty,
 	)
 
-	stock_entry = frappe.get_doc(
+	stock_entry = nts.get_doc(
 		dict(
 			doctype="Stock Entry",
 			purpose="Repack",
@@ -333,7 +333,7 @@ def make_batch_bundle(
 	type_of_transaction: str,
 	qty: float,
 ):
-	from frappe.utils import nowtime, today
+	from nts.utils import nowtime, today
 
 	from prodman.stock.serial_batch_bundle import SerialBatchCreation
 
@@ -360,11 +360,11 @@ def make_batch_bundle(
 def get_batches(item_code, warehouse, qty=1, throw=False, serial_no=None):
 	from prodman.stock.doctype.serial_no.serial_no import get_serial_nos
 
-	batch = frappe.qb.DocType("Batch")
-	sle = frappe.qb.DocType("Stock Ledger Entry")
+	batch = nts.qb.DocType("Batch")
+	sle = nts.qb.DocType("Stock Ledger Entry")
 
 	query = (
-		frappe.qb.from_(batch)
+		nts.qb.from_(batch)
 		.join(sle)
 		.on(batch.batch_id == sle.batch_no)
 		.select(
@@ -381,9 +381,9 @@ def get_batches(item_code, warehouse, qty=1, throw=False, serial_no=None):
 		.orderby(batch.expiry_date, batch.creation)
 	)
 
-	if serial_no and frappe.get_cached_value("Item", item_code, "has_batch_no"):
+	if serial_no and nts.get_cached_value("Item", item_code, "has_batch_no"):
 		serial_nos = get_serial_nos(serial_no)
-		batches = frappe.get_all(
+		batches = nts.get_all(
 			"Serial No",
 			fields=["distinct batch_no"],
 			filters={"item_code": item_code, "warehouse": warehouse, "name": ("in", serial_nos)},
@@ -401,8 +401,8 @@ def get_batches(item_code, warehouse, qty=1, throw=False, serial_no=None):
 
 
 def validate_serial_no_with_batch(serial_nos, item_code):
-	if frappe.get_cached_value("Serial No", serial_nos[0], "item_code") != item_code:
-		frappe.throw(
+	if nts.get_cached_value("Serial No", serial_nos[0], "item_code") != item_code:
+		nts.throw(
 			_("The serial no {0} does not belong to item {1}").format(
 				get_link_to_form("Serial No", serial_nos[0]), get_link_to_form("Item", item_code)
 			)
@@ -411,28 +411,28 @@ def validate_serial_no_with_batch(serial_nos, item_code):
 	serial_no_link = ",".join(get_link_to_form("Serial No", sn) for sn in serial_nos)
 
 	message = "Serial Nos" if len(serial_nos) > 1 else "Serial No"
-	frappe.throw(_("There is no batch found against the {0}: {1}").format(message, serial_no_link))
+	nts.throw(_("There is no batch found against the {0}: {1}").format(message, serial_no_link))
 
 
 def make_batch(kwargs):
-	if frappe.db.get_value("Item", kwargs.item, "has_batch_no"):
+	if nts.db.get_value("Item", kwargs.item, "has_batch_no"):
 		kwargs.doctype = "Batch"
-		return frappe.get_doc(kwargs).insert().name
+		return nts.get_doc(kwargs).insert().name
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_pos_reserved_batch_qty(filters):
 	import json
 
 	if isinstance(filters, str):
 		filters = json.loads(filters)
 
-	p = frappe.qb.DocType("POS Invoice").as_("p")
-	item = frappe.qb.DocType("POS Invoice Item").as_("item")
-	sum_qty = frappe.query_builder.functions.Sum(item.stock_qty).as_("qty")
+	p = nts.qb.DocType("POS Invoice").as_("p")
+	item = nts.qb.DocType("POS Invoice Item").as_("item")
+	sum_qty = nts.query_builder.functions.Sum(item.stock_qty).as_("qty")
 
 	reserved_batch_qty = (
-		frappe.qb.from_(p)
+		nts.qb.from_(p)
 		.from_(item)
 		.select(sum_qty)
 		.where(

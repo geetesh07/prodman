@@ -1,7 +1,7 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Item Shortage Report"] = {
+nts.query_reports["Item Shortage Report"] = {
 	filters: [
 		{
 			fieldname: "company",
@@ -10,7 +10,7 @@ frappe.query_reports["Item Shortage Report"] = {
 			width: "80",
 			options: "Company",
 			reqd: 1,
-			default: frappe.defaults.get_default("company"),
+			default: nts.defaults.get_default("company"),
 		},
 		{
 			fieldname: "warehouse",
@@ -19,7 +19,7 @@ frappe.query_reports["Item Shortage Report"] = {
 			options: "Warehouse",
 			width: "100",
 			get_data: function (txt) {
-				return frappe.db.get_link_options("Warehouse", txt);
+				return nts.db.get_link_options("Warehouse", txt);
 			},
 		},
 	],

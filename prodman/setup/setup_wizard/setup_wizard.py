@@ -1,16 +1,16 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
+import nts
+from nts import _
 
 from prodman.setup.demo import setup_demo_data
 from prodman.setup.setup_wizard.operations import install_fixtures as fixtures
 
 
 def get_setup_stages(args=None):
-	if frappe.db.sql("select name from tabCompany"):
+	if nts.db.sql("select name from tabCompany"):
 		stages = [
 			{
 				"status": _("Wrapping up"),
@@ -56,22 +56,22 @@ def setup_company(args):
 
 
 def setup_defaults(args):
-	fixtures.install_defaults(frappe._dict(args))
+	fixtures.install_defaults(nts._dict(args))
 
 
 def fin(args):
-	frappe.local.message_log = []
+	nts.local.message_log = []
 	login_as_first_user(args)
 
 
 def setup_demo(args):
 	if args.get("setup_demo"):
-		frappe.enqueue(setup_demo_data, enqueue_after_commit=True, at_front=True)
+		nts.enqueue(setup_demo_data, enqueue_after_commit=True, at_front=True)
 
 
 def login_as_first_user(args):
-	if args.get("email") and hasattr(frappe.local, "login_manager"):
-		frappe.local.login_manager.login_as(args.get("email"))
+	if args.get("email") and hasattr(nts.local, "login_manager"):
+		nts.local.login_manager.login_as(args.get("email"))
 
 
 # Only for programmatical use

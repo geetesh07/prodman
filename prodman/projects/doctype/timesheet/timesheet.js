@@ -1,9 +1,9 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.ui.form.on("Timesheet", {
+nts.ui.form.on("Timesheet", {
 	setup: function (frm) {
-		frappe.require("/assets/prodman/js/projects/timer.js");
+		nts.require("/assets/prodman/js/projects/timer.js");
 
 		frm.ignore_doctypes_on_cancel_all = ["Sales Invoice"];
 
@@ -60,7 +60,7 @@ frappe.ui.form.on("Timesheet", {
 		if (frm.doc.docstatus < 1) {
 			let button = __("Start Timer");
 			$.each(frm.doc.time_logs || [], function (i, row) {
-				if (row.from_time <= frappe.datetime.now_datetime() && !row.completed) {
+				if (row.from_time <= nts.datetime.now_datetime() && !row.completed) {
 					button = __("Resume Timer");
 				}
 			});
@@ -71,14 +71,14 @@ frappe.ui.form.on("Timesheet", {
 					// Fetch the row for which from_time is not present
 					if (flag && row.activity_type && !row.from_time) {
 						prodman.timesheet.timer(frm, row);
-						row.from_time = frappe.datetime.now_datetime();
+						row.from_time = nts.datetime.now_datetime();
 						frm.refresh_fields("time_logs");
 						frm.save();
 						flag = false;
 					}
 					// Fetch the row for timer where activity is not completed and from_time is before now_time
-					if (flag && row.from_time <= frappe.datetime.now_datetime() && !row.completed) {
-						let timestamp = moment(frappe.datetime.now_datetime()).diff(
+					if (flag && row.from_time <= nts.datetime.now_datetime() && !row.completed) {
+						let timestamp = moment(nts.datetime.now_datetime()).diff(
 							moment(row.from_time),
 							"seconds"
 						);
@@ -128,9 +128,9 @@ frappe.ui.form.on("Timesheet", {
 	},
 
 	currency: function (frm) {
-		let base_currency = frappe.defaults.get_global_default("currency");
+		let base_currency = nts.defaults.get_global_default("currency");
 		if (frm.doc.currency && base_currency != frm.doc.currency) {
-			frappe.call({
+			nts.call({
 				method: "prodman.setup.utils.get_exchange_rate",
 				args: {
 					from_currency: frm.doc.currency,
@@ -159,7 +159,7 @@ frappe.ui.form.on("Timesheet", {
 	},
 
 	set_dynamic_field_label: function (frm) {
-		let base_currency = frappe.defaults.get_global_default("currency");
+		let base_currency = nts.defaults.get_global_default("currency");
 		frm.set_currency_labels(
 			["base_total_costing_amount", "base_total_billable_amount", "base_total_billed_amount"],
 			base_currency
@@ -190,7 +190,7 @@ frappe.ui.form.on("Timesheet", {
 			$.each(
 				["base_billing_rate", "base_billing_amount", "base_costing_rate", "base_costing_amount"],
 				function (i, d) {
-					if (frappe.meta.get_docfield(time_logs_grid.doctype, d))
+					if (nts.meta.get_docfield(time_logs_grid.doctype, d))
 						time_logs_grid.set_column_disp(d, frm.doc.currency != base_currency);
 				}
 			);
@@ -226,7 +226,7 @@ frappe.ui.form.on("Timesheet", {
 			});
 		}
 
-		let dialog = new frappe.ui.Dialog({
+		let dialog = new nts.ui.Dialog({
 			title: __("Create Sales Invoice"),
 			fields: fields,
 		});
@@ -235,7 +235,7 @@ frappe.ui.form.on("Timesheet", {
 			var args = dialog.get_values();
 			if (!args) return;
 			dialog.hide();
-			return frappe.call({
+			return nts.call({
 				type: "GET",
 				method: "prodman.projects.doctype.timesheet.timesheet.make_sales_invoice",
 				args: {
@@ -247,8 +247,8 @@ frappe.ui.form.on("Timesheet", {
 				freeze: true,
 				callback: function (r) {
 					if (!r.exc) {
-						frappe.model.sync(r.message);
-						frappe.set_route("Form", r.message.doctype, r.message.name);
+						nts.model.sync(r.message);
+						nts.set_route("Form", r.message.doctype, r.message.name);
 					}
 				},
 			});
@@ -261,7 +261,7 @@ frappe.ui.form.on("Timesheet", {
 	},
 });
 
-frappe.ui.form.on("Timesheet Detail", {
+nts.ui.form.on("Timesheet Detail", {
 	time_logs_remove: function (frm) {
 		calculate_time_and_amount(frm);
 	},
@@ -269,8 +269,8 @@ frappe.ui.form.on("Timesheet Detail", {
 	task: (frm, cdt, cdn) => {
 		let row = frm.selected_doc;
 		if (row.task) {
-			frappe.db.get_value("Task", row.task, "project", (r) => {
-				frappe.model.set_value(cdt, cdn, "project", r.project);
+			nts.db.get_value("Task", row.task, "project", (r) => {
+				nts.model.set_value(cdt, cdn, "project", r.project);
 			});
 		}
 	},
@@ -285,12 +285,12 @@ frappe.ui.form.on("Timesheet Detail", {
 		if (frm._setting_hours) return;
 
 		var hours = moment(child.to_time).diff(moment(child.from_time), "seconds") / 3600;
-		frappe.model.set_value(cdt, cdn, "hours", hours);
+		nts.model.set_value(cdt, cdn, "hours", hours);
 	},
 
 	time_logs_add: function (frm, cdt, cdn) {
 		if (frm.doc.parent_project) {
-			frappe.model.set_value(cdt, cdn, "project", frm.doc.parent_project);
+			nts.model.set_value(cdt, cdn, "project", frm.doc.parent_project);
 		}
 	},
 
@@ -324,9 +324,9 @@ frappe.ui.form.on("Timesheet Detail", {
 	},
 
 	activity_type: function (frm, cdt, cdn) {
-		if (!frappe.get_doc(cdt, cdn).activity_type) return;
+		if (!nts.get_doc(cdt, cdn).activity_type) return;
 
-		frappe.call({
+		nts.call({
 			method: "prodman.projects.doctype.timesheet.timesheet.get_activity_cost",
 			args: {
 				employee: frm.doc.employee,
@@ -335,8 +335,8 @@ frappe.ui.form.on("Timesheet Detail", {
 			},
 			callback: function (r) {
 				if (r.message) {
-					frappe.model.set_value(cdt, cdn, "billing_rate", r.message["billing_rate"]);
-					frappe.model.set_value(cdt, cdn, "costing_rate", r.message["costing_rate"]);
+					nts.model.set_value(cdt, cdn, "billing_rate", r.message["billing_rate"]);
+					nts.model.set_value(cdt, cdn, "costing_rate", r.message["costing_rate"]);
 					calculate_billing_costing_amount(frm, cdt, cdn);
 				}
 			},
@@ -349,52 +349,52 @@ var calculate_end_time = function (frm, cdt, cdn) {
 
 	if (!child.from_time) {
 		// if from_time value is not available then set the current datetime
-		frappe.model.set_value(cdt, cdn, "from_time", frappe.datetime.get_datetime_as_string());
+		nts.model.set_value(cdt, cdn, "from_time", nts.datetime.get_datetime_as_string());
 	}
 
 	let d = moment(child.from_time);
 	if (child.hours) {
 		d.add(child.hours, "hours");
 		frm._setting_hours = true;
-		frappe.model.set_value(cdt, cdn, "to_time", d.format(frappe.defaultDatetimeFormat)).then(() => {
+		nts.model.set_value(cdt, cdn, "to_time", d.format(nts.defaultDatetimeFormat)).then(() => {
 			frm._setting_hours = false;
 		});
 	}
 };
 
 var update_billing_hours = function (frm, cdt, cdn) {
-	let child = frappe.get_doc(cdt, cdn);
+	let child = nts.get_doc(cdt, cdn);
 	if (!child.is_billable) {
-		frappe.model.set_value(cdt, cdn, "billing_hours", 0.0);
+		nts.model.set_value(cdt, cdn, "billing_hours", 0.0);
 	} else {
 		// bill all hours by default
-		frappe.model.set_value(cdt, cdn, "billing_hours", child.hours);
+		nts.model.set_value(cdt, cdn, "billing_hours", child.hours);
 	}
 };
 
 var update_time_rates = function (frm, cdt, cdn) {
-	let child = frappe.get_doc(cdt, cdn);
+	let child = nts.get_doc(cdt, cdn);
 	if (!child.is_billable) {
-		frappe.model.set_value(cdt, cdn, "billing_rate", 0.0);
+		nts.model.set_value(cdt, cdn, "billing_rate", 0.0);
 	}
 };
 
 var calculate_billing_costing_amount = function (frm, cdt, cdn) {
-	let row = frappe.get_doc(cdt, cdn);
+	let row = nts.get_doc(cdt, cdn);
 	let billing_amount = 0.0;
 	let base_billing_amount = 0.0;
 	let exchange_rate = flt(frm.doc.exchange_rate);
-	frappe.model.set_value(cdt, cdn, "base_billing_rate", flt(row.billing_rate) * exchange_rate);
-	frappe.model.set_value(cdt, cdn, "base_costing_rate", flt(row.costing_rate) * exchange_rate);
+	nts.model.set_value(cdt, cdn, "base_billing_rate", flt(row.billing_rate) * exchange_rate);
+	nts.model.set_value(cdt, cdn, "base_costing_rate", flt(row.costing_rate) * exchange_rate);
 	if (row.billing_hours && row.is_billable) {
 		base_billing_amount = flt(row.billing_hours) * flt(row.base_billing_rate);
 		billing_amount = flt(row.billing_hours) * flt(row.billing_rate);
 	}
 
-	frappe.model.set_value(cdt, cdn, "base_billing_amount", base_billing_amount);
-	frappe.model.set_value(cdt, cdn, "base_costing_amount", flt(row.base_costing_rate) * flt(row.hours));
-	frappe.model.set_value(cdt, cdn, "billing_amount", billing_amount);
-	frappe.model.set_value(cdt, cdn, "costing_amount", flt(row.costing_rate) * flt(row.hours));
+	nts.model.set_value(cdt, cdn, "base_billing_amount", base_billing_amount);
+	nts.model.set_value(cdt, cdn, "base_costing_amount", flt(row.base_costing_rate) * flt(row.hours));
+	nts.model.set_value(cdt, cdn, "billing_amount", billing_amount);
+	nts.model.set_value(cdt, cdn, "costing_amount", flt(row.costing_rate) * flt(row.hours));
 };
 
 var calculate_time_and_amount = function (frm) {
@@ -423,9 +423,9 @@ var calculate_time_and_amount = function (frm) {
 
 // set employee (and company) to the one that's currently logged in
 const set_employee_and_company = function (frm) {
-	const options = { user_id: frappe.session.user };
+	const options = { user_id: nts.session.user };
 	const fields = ["name", "company"];
-	frappe.db.get_value("Employee", options, fields).then(({ message }) => {
+	nts.db.get_value("Employee", options, fields).then(({ message }) => {
 		if (message) {
 			// there is an employee with the currently logged in user_id
 			frm.set_value("employee", message.name);
@@ -437,7 +437,7 @@ const set_employee_and_company = function (frm) {
 function set_project_in_timelog(frm) {
 	if (frm.doc.parent_project) {
 		$.each(frm.doc.time_logs || [], function (i, item) {
-			frappe.model.set_value(item.doctype, item.name, "project", frm.doc.parent_project);
+			nts.model.set_value(item.doctype, item.name, "project", frm.doc.parent_project);
 		});
 	}
 }

@@ -1,17 +1,17 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 from prodman.selling.doctype.sales_order.test_sales_order import make_sales_order
 from prodman.selling.report.sales_analytics.sales_analytics import execute
 
 
-class TestAnalytics(FrappeTestCase):
+class TestAnalytics(ntsTestCase):
 	def test_sales_analytics(self):
-		frappe.db.sql("delete from `tabSales Order` where company='_Test Company 2'")
+		nts.db.sql("delete from `tabSales Order` where company='_Test Company 2'")
 
 		create_sales_orders()
 
@@ -191,7 +191,7 @@ class TestAnalytics(FrappeTestCase):
 
 
 def create_sales_orders():
-	frappe.set_user("Administrator")
+	nts.set_user("Administrator")
 
 	make_sales_order(
 		company="_Test Company 2",

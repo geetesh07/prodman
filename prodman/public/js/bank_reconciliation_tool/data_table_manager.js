@@ -1,4 +1,4 @@
-frappe.provide("prodman.accounts.bank_reconciliation");
+nts.provide("prodman.accounts.bank_reconciliation");
 
 prodman.accounts.bank_reconciliation.DataTableManager = class DataTableManager {
 	constructor(opts) {
@@ -17,7 +17,7 @@ prodman.accounts.bank_reconciliation.DataTableManager = class DataTableManager {
 
 	make_dt() {
 		const me = this;
-		frappe.call({
+		nts.call({
 			method: "prodman.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool.get_bank_transactions",
 			args: {
 				bank_account: this.bank_account,
@@ -39,7 +39,7 @@ prodman.accounts.bank_reconciliation.DataTableManager = class DataTableManager {
 				name: __("Date"),
 				editable: false,
 				width: 100,
-				format: frappe.form.formatters.Date,
+				format: nts.form.formatters.Date,
 			},
 			{
 				name: __("Party Type"),
@@ -112,7 +112,7 @@ prodman.accounts.bank_reconciliation.DataTableManager = class DataTableManager {
 		return [
 			row["date"],
 			row["party_type"],
-			frappe.form.formatters.Link(row["party"], { options: row["party_type"] }),
+			nts.form.formatters.Link(row["party"], { options: row["party_type"] }),
 			row["description"],
 			row["deposit"],
 			row["withdrawal"],
@@ -132,7 +132,7 @@ prodman.accounts.bank_reconciliation.DataTableManager = class DataTableManager {
 			checkboxColumn: false,
 			inlineFilters: true,
 		};
-		this.datatable = new frappe.DataTable(this.$reconciliation_tool_dt.get(0), datatable_options);
+		this.datatable = new nts.DataTable(this.$reconciliation_tool_dt.get(0), datatable_options);
 		$(`.${this.datatable.style.scopeClass} .dt-scrollable`).css("max-height", "calc(100vh - 400px)");
 
 		if (this.transactions.length > 0) {
@@ -188,7 +188,7 @@ prodman.accounts.bank_reconciliation.DataTableManager = class DataTableManager {
 
 	get_cleared_balance() {
 		if (this.bank_account && this.bank_statement_to_date) {
-			return frappe.call({
+			return nts.call({
 				method: "prodman.accounts.doctype.bank_reconciliation_tool.bank_reconciliation_tool.get_account_balance",
 				args: {
 					bank_account: this.bank_account,

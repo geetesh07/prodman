@@ -1,28 +1,28 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts 
 
 from prodman.accounts.doctype.tax_rule.tax_rule import ConflictingTaxRule, get_tax_template
 from prodman.crm.doctype.opportunity.opportunity import make_quotation
 from prodman.crm.doctype.opportunity.test_opportunity import make_opportunity
 
-test_records = frappe.get_test_records("Tax Rule")
+test_records = nts .get_test_records("Tax Rule")
 
 
 class TestTaxRule(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
-		frappe.db.set_single_value("Shopping Cart Settings", "enabled", 0)
+		nts .db.set_single_value("Shopping Cart Settings", "enabled", 0)
 
 	@classmethod
 	def tearDownClass(cls):
-		frappe.db.sql("delete from `tabTax Rule`")
+		nts .db.sql("delete from `tabTax Rule`")
 
 	def setUp(self):
-		frappe.db.sql("delete from `tabTax Rule`")
+		nts .db.sql("delete from `tabTax Rule`")
 
 	def test_conflict(self):
 		tax_rule1 = make_tax_rule(
@@ -291,9 +291,9 @@ class TestTaxRule(unittest.TestCase):
 
 
 def make_tax_rule(**args):
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 
-	tax_rule = frappe.new_doc("Tax Rule")
+	tax_rule = nts .new_doc("Tax Rule")
 
 	for key, val in args.items():
 		if key != "save":

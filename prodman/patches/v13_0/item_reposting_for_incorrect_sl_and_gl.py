@@ -1,5 +1,5 @@
-import frappe
-from frappe.utils import get_time, getdate, today
+import nts
+from nts.utils import get_time, getdate, today
 
 from prodman.accounts.utils import update_gl_entries_after
 from prodman.stock.stock_ledger import update_entries_after
@@ -21,7 +21,7 @@ def execute():
 	]
 
 	for module, doctype in doctypes_to_reload:
-		frappe.reload_doc(module, "doctype", doctype)
+		nts.reload_doc(module, "doctype", doctype)
 
 	reposting_project_deployed_on = get_creation_time()
 	posting_date = getdate(reposting_project_deployed_on)
@@ -30,12 +30,12 @@ def execute():
 	if posting_date == today():
 		return
 
-	frappe.clear_cache()
-	frappe.flags.warehouse_account_map = {}
+	nts.clear_cache()
+	nts.flags.warehouse_account_map = {}
 
 	company_list = []
 
-	data = frappe.db.sql(
+	data = nts.db.sql(
 		"""
 		SELECT
 			name, item_code, warehouse, voucher_type, voucher_no, posting_date, posting_time, company, creation
@@ -50,7 +50,7 @@ def execute():
 		as_dict=1,
 	)
 
-	frappe.db.auto_commit_on_many_writes = 1
+	nts.db.auto_commit_on_many_writes = 1
 	print("Reposting Stock Ledger Entries...")
 	total_sle = len(data)
 	i = 0
@@ -79,15 +79,15 @@ def execute():
 	print("Reposting General Ledger Entries...")
 
 	if data:
-		for row in frappe.get_all("Company", filters={"enable_perpetual_inventory": 1}):
+		for row in nts.get_all("Company", filters={"enable_perpetual_inventory": 1}):
 			if row.name in company_list:
 				update_gl_entries_after(posting_date, posting_time, company=row.name)
 
-	frappe.db.auto_commit_on_many_writes = 0
+	nts.db.auto_commit_on_many_writes = 0
 
 
 def get_creation_time():
-	return frappe.db.sql(
+	return nts.db.sql(
 		""" SELECT create_time FROM
 		INFORMATION_SCHEMA.TABLES where TABLE_NAME = "tabRepost Item Valuation" """,
 		as_list=1,

@@ -1,30 +1,30 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import copy
 import json
 
-import frappe
-from frappe import _
-from frappe.utils import cstr, flt
+import nts
+from nts import _
+from nts.utils import cstr, flt
 
 from prodman.utilities.product import get_item_codes_by_attributes
 
 
-class ItemVariantExistsError(frappe.ValidationError):
+class ItemVariantExistsError(nts.ValidationError):
 	pass
 
 
-class InvalidItemAttributeValueError(frappe.ValidationError):
+class InvalidItemAttributeValueError(nts.ValidationError):
 	pass
 
 
-class ItemTemplateCannotHaveStock(frappe.ValidationError):
+class ItemTemplateCannotHaveStock(nts.ValidationError):
 	pass
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_variant(template, args=None, variant=None, manufacturer=None, manufacturer_part_no=None):
 	"""
 	Validates Attributes and their Values, then looks for an exactly
@@ -33,7 +33,7 @@ def get_variant(template, args=None, variant=None, manufacturer=None, manufactur
 	:param item: Template Item
 	:param args: A dictionary with "Attribute" as key and "Attribute Value" as value
 	"""
-	item_template = frappe.get_doc("Item", template)
+	item_template = nts.get_doc("Item", template)
 
 	if item_template.variant_based_on == "Manufacturer" and manufacturer:
 		return make_variant_based_on_manufacturer(item_template, manufacturer, manufacturer_part_no)
@@ -43,7 +43,7 @@ def get_variant(template, args=None, variant=None, manufacturer=None, manufactur
 
 	attribute_args = {k: v for k, v in args.items() if k != "use_template_image"}
 	if not attribute_args:
-		frappe.throw(_("Please specify at least one attribute in the Attributes table"))
+		nts.throw(_("Please specify at least one attribute in the Attributes table"))
 
 	return find_variant(template, args, variant)
 
@@ -51,9 +51,9 @@ def get_variant(template, args=None, variant=None, manufacturer=None, manufactur
 def make_variant_based_on_manufacturer(template, manufacturer, manufacturer_part_no):
 	"""Make and return a new variant based on manufacturer and
 	manufacturer part no"""
-	from frappe.model.naming import append_number_if_name_exists
+	from nts.model.naming import append_number_if_name_exists
 
-	variant = frappe.new_doc("Item")
+	variant = nts.new_doc("Item")
 
 	copy_attributes_to_variant(template, variant)
 
@@ -65,8 +65,8 @@ def make_variant_based_on_manufacturer(template, manufacturer, manufacturer_part
 	variant.flags.ignore_mandatory = True
 	variant.save()
 
-	if not frappe.db.exists("Item Manufacturer", {"item_code": variant.name, "manufacturer": manufacturer}):
-		manufacturer_doc = frappe.new_doc("Item Manufacturer")
+	if not nts.db.exists("Item Manufacturer", {"item_code": variant.name, "manufacturer": manufacturer}):
+		manufacturer_doc = nts.new_doc("Item Manufacturer")
 		manufacturer_doc.update(
 			{
 				"item_code": variant.name,
@@ -83,7 +83,7 @@ def make_variant_based_on_manufacturer(template, manufacturer, manufacturer_part
 
 def validate_item_variant_attributes(item, args=None):
 	if isinstance(item, str):
-		item = frappe.get_doc("Item", item)
+		item = nts.get_doc("Item", item)
 
 	if not args:
 		args = {d.attribute.lower(): d.attribute_value for d in item.attributes}
@@ -110,7 +110,7 @@ def validate_is_incremental(numeric_attribute, attribute, value, item):
 
 	if increment == 0:
 		# defensive validation to prevent ZeroDivisionError
-		frappe.throw(_("Increment for Attribute {0} cannot be 0").format(attribute))
+		nts.throw(_("Increment for Attribute {0} cannot be 0").format(attribute))
 
 	is_in_range = from_range <= flt(value) <= to_range
 	precision = max(len(cstr(v).split(".")[-1].rstrip("0")) for v in (value, increment))
@@ -120,7 +120,7 @@ def validate_is_incremental(numeric_attribute, attribute, value, item):
 	is_incremental = remainder == 0 or remainder == increment
 
 	if not (is_in_range and is_incremental):
-		frappe.throw(
+		nts.throw(
 			_(
 				"Value for Attribute {0} must be within the range of {1} to {2} in the increments of {3} for Item {4}"
 			).format(attribute, from_range, to_range, increment, item),
@@ -130,56 +130,56 @@ def validate_is_incremental(numeric_attribute, attribute, value, item):
 
 
 def validate_item_attribute_value(attributes_list, attribute, attribute_value, item, from_variant=True):
-	allow_rename_attribute_value = frappe.db.get_single_value(
+	allow_rename_attribute_value = nts.db.get_single_value(
 		"Item Variant Settings", "allow_rename_attribute_value"
 	)
 	if allow_rename_attribute_value:
 		pass
 	elif attribute_value not in attributes_list:
 		if from_variant:
-			frappe.throw(
+			nts.throw(
 				_("{0} is not a valid Value for Attribute {1} of Item {2}.").format(
-					frappe.bold(attribute_value), frappe.bold(attribute), frappe.bold(item)
+					nts.bold(attribute_value), nts.bold(attribute), nts.bold(item)
 				),
 				InvalidItemAttributeValueError,
 				title=_("Invalid Value"),
 			)
 		else:
 			msg = _("The value {0} is already assigned to an existing Item {1}.").format(
-				frappe.bold(attribute_value), frappe.bold(item)
+				nts.bold(attribute_value), nts.bold(item)
 			)
 			msg += "<br>" + _(
 				"To still proceed with editing this Attribute Value, enable {0} in Item Variant Settings."
-			).format(frappe.bold(_("Allow Rename Attribute Value")))
+			).format(nts.bold(_("Allow Rename Attribute Value")))
 
-			frappe.throw(msg, InvalidItemAttributeValueError, title=_("Edit Not Allowed"))
+			nts.throw(msg, InvalidItemAttributeValueError, title=_("Edit Not Allowed"))
 
 
 def get_attribute_values(item):
-	if not frappe.flags.attribute_values:
+	if not nts.flags.attribute_values:
 		attribute_values = {}
 		numeric_values = {}
-		for t in frappe.get_all("Item Attribute Value", fields=["parent", "attribute_value"]):
+		for t in nts.get_all("Item Attribute Value", fields=["parent", "attribute_value"]):
 			attribute_values.setdefault(t.parent.lower(), []).append(t.attribute_value)
 
-		for t in frappe.get_all(
+		for t in nts.get_all(
 			"Item Variant Attribute",
 			fields=["attribute", "from_range", "to_range", "increment"],
 			filters={"numeric_values": 1, "parent": item.variant_of},
 		):
 			numeric_values[t.attribute.lower()] = t
 
-		frappe.flags.attribute_values = attribute_values
-		frappe.flags.numeric_values = numeric_values
+		nts.flags.attribute_values = attribute_values
+		nts.flags.numeric_values = numeric_values
 
-	return frappe.flags.attribute_values, frappe.flags.numeric_values
+	return nts.flags.attribute_values, nts.flags.numeric_values
 
 
 def find_variant(template, args, variant_item_code=None):
 	possible_variants = [i for i in get_item_codes_by_attributes(args, template) if i != variant_item_code]
 
 	for variant in possible_variants:
-		variant = frappe.get_doc("Item", variant)
+		variant = nts.get_doc("Item", variant)
 
 		if len(args.keys()) == len(variant.get("attributes")):
 			# has the same number of attributes and values
@@ -197,14 +197,14 @@ def find_variant(template, args, variant_item_code=None):
 				return variant.name
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def create_variant(item, args, use_template_image=False):
-	use_template_image = frappe.parse_json(use_template_image)
+	use_template_image = nts.parse_json(use_template_image)
 	if isinstance(args, str):
 		args = json.loads(args)
 
-	template = frappe.get_doc("Item", item)
-	variant = frappe.new_doc("Item")
+	template = nts.get_doc("Item", item)
+	variant = nts.new_doc("Item")
 	variant.variant_based_on = "Item Attribute"
 	variant_attributes = []
 
@@ -222,9 +222,9 @@ def create_variant(item, args, use_template_image=False):
 	return variant
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def enqueue_multiple_variant_creation(item, args, use_template_image=False):
-	use_template_image = frappe.parse_json(use_template_image)
+	use_template_image = nts.parse_json(use_template_image)
 	# There can be innumerable attribute combinations, enqueue
 	if isinstance(args, str):
 		variants = json.loads(args)
@@ -232,17 +232,17 @@ def enqueue_multiple_variant_creation(item, args, use_template_image=False):
 	for key in variants:
 		total_variants *= len(variants[key])
 	if total_variants >= 600:
-		frappe.throw(_("Please do not create more than 500 items at a time"))
+		nts.throw(_("Please do not create more than 500 items at a time"))
 		return
 	if total_variants < 10:
 		return create_multiple_variants(item, args, use_template_image)
 	else:
-		frappe.enqueue(
+		nts.enqueue(
 			"prodman.controllers.item_variant.create_multiple_variants",
 			item=item,
 			args=args,
 			use_template_image=use_template_image,
-			now=frappe.flags.in_test,
+			now=nts.flags.in_test,
 		)
 		return "queued"
 
@@ -252,7 +252,7 @@ def create_multiple_variants(item, args, use_template_image=False):
 	if isinstance(args, str):
 		args = json.loads(args)
 
-	template_item = frappe.get_doc("Item", item)
+	template_item = nts.get_doc("Item", item)
 	args_set = generate_keyed_value_combinations(args)
 
 	for attribute_values in args_set:
@@ -335,7 +335,7 @@ def copy_attributes_to_variant(item, variant):
 		# don't copy manufacturer values if based on part no
 		exclude_fields += ["manufacturer", "manufacturer_part_no"]
 
-	allow_fields = [d.field_name for d in frappe.get_all("Variant Field", fields=["field_name"])]
+	allow_fields = [d.field_name for d in nts.get_all("Variant Field", fields=["field_name"])]
 	if "variant_based_on" not in allow_fields:
 		allow_fields.append("variant_based_on")
 	for field in item.meta.fields:
@@ -377,7 +377,7 @@ def make_variant_item_code(template_item_code, template_item_name, variant):
 
 	abbreviations = []
 	for attr in variant.attributes:
-		item_attribute = frappe.db.sql(
+		item_attribute = nts.db.sql(
 			"""select i.numeric_values, v.abbr
 			from `tabItem Attribute` i left join `tabItem Attribute Value` v
 				on (i.name=v.parent)
@@ -388,8 +388,8 @@ def make_variant_item_code(template_item_code, template_item_name, variant):
 
 		if not item_attribute:
 			continue
-			# frappe.throw(_('Invalid attribute {0} {1}').format(frappe.bold(attr.attribute),
-			# 	frappe.bold(attr.attribute_value)), title=_('Invalid Attribute'),
+			# nts.throw(_('Invalid attribute {0} {1}').format(nts.bold(attr.attribute),
+			# 	nts.bold(attr.attribute_value)), title=_('Invalid Attribute'),
 			# 	exc=InvalidItemAttributeValueError)
 
 		abbr_or_value = (
@@ -402,9 +402,9 @@ def make_variant_item_code(template_item_code, template_item_name, variant):
 		variant.item_name = "{}-{}".format(template_item_name, "-".join(abbreviations))
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def create_variant_doc_for_quick_entry(template, args):
-	variant_based_on = frappe.db.get_value("Item", template, "variant_based_on")
+	variant_based_on = nts.db.get_value("Item", template, "variant_based_on")
 	args = json.loads(args)
 	if variant_based_on == "Manufacturer":
 		variant = get_variant(template, **args)

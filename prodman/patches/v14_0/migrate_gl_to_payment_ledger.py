@@ -1,9 +1,9 @@
-import frappe
-from frappe import qb
-from frappe.query_builder import CustomFunction
-from frappe.query_builder.custom import ConstantColumn
-from frappe.query_builder.functions import Count, IfNull
-from frappe.utils import flt
+import nts
+from nts import qb
+from nts.query_builder import CustomFunction
+from nts.query_builder.custom import ConstantColumn
+from nts.query_builder.functions import Count, IfNull
+from nts.utils import flt
 
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_dimensions,
@@ -61,7 +61,7 @@ def get_columns():
 		"finance_book",
 	]
 
-	if frappe.db.has_column("Payment Ledger Entry", "remarks"):
+	if nts.db.has_column("Payment Ledger Entry", "remarks"):
 		columns.append("remarks")
 
 	dimensions_and_defaults = get_dimensions()
@@ -105,7 +105,7 @@ def execute():
 	Note: Post successful migration to V14, re-running is NOT-SAFE and SHOULD NOT be attempted.
 	"""
 
-	if frappe.reload_doc("accounts", "doctype", "payment_ledger_entry"):
+	if nts.reload_doc("accounts", "doctype", "payment_ledger_entry"):
 		# create accounting dimension fields in Payment Ledger
 		create_accounting_dimension_fields()
 
@@ -174,7 +174,7 @@ def execute():
 					try:
 						insert_query = build_insert_query()
 						insert_chunk_into_payment_ledger(insert_query, gl_entries)
-						frappe.db.commit()
+						nts.db.commit()
 
 						processed += len(gl_entries)
 

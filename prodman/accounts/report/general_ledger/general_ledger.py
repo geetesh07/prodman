@@ -1,14 +1,14 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import copy
 from collections import OrderedDict
 
-import frappe
-from frappe import _, _dict
-from frappe.query_builder import Criterion
-from frappe.utils import cstr, getdate
+import nts 
+from nts  import _, _dict
+from nts .query_builder import Criterion
+from nts .utils import cstr, getdate
 
 from prodman import get_company_currency, get_default_company
 from prodman.accounts.doctype.accounting_dimension.accounting_dimension import (
@@ -27,13 +27,13 @@ def execute(filters=None):
 	account_details = {}
 
 	if filters and filters.get("print_in_account_currency") and not filters.get("account"):
-		frappe.throw(_("Select an account to print in account currency"))
+		nts .throw(_("Select an account to print in account currency"))
 
-	for acc in frappe.db.sql("""select name, is_group from tabAccount""", as_dict=1):
+	for acc in nts .db.sql("""select name, is_group from tabAccount""", as_dict=1):
 		account_details.setdefault(acc.name, acc)
 
 	if filters.get("party"):
-		filters.party = frappe.parse_json(filters.get("party"))
+		filters.party = nts .parse_json(filters.get("party"))
 
 	validate_filters(filters, account_details)
 
@@ -50,40 +50,40 @@ def execute(filters=None):
 
 def validate_filters(filters, account_details):
 	if not filters.get("company"):
-		frappe.throw(_("{0} is mandatory").format(_("Company")))
+		nts .throw(_("{0} is mandatory").format(_("Company")))
 
 	if not filters.get("from_date") and not filters.get("to_date"):
-		frappe.throw(
-			_("{0} and {1} are mandatory").format(frappe.bold(_("From Date")), frappe.bold(_("To Date")))
+		nts .throw(
+			_("{0} and {1} are mandatory").format(nts .bold(_("From Date")), nts .bold(_("To Date")))
 		)
 
 	if filters.get("account"):
-		filters.account = frappe.parse_json(filters.get("account"))
+		filters.account = nts .parse_json(filters.get("account"))
 		for account in filters.account:
 			if not account_details.get(account):
-				frappe.throw(_("Account {0} does not exists").format(account))
+				nts .throw(_("Account {0} does not exists").format(account))
 
 	if not filters.get("categorize_by") and filters.get("group_by"):
 		filters["categorize_by"] = filters["group_by"]
 		filters["categorize_by"] = filters["categorize_by"].replace("Group by", "Categorize by")
 
 	if filters.get("account") and filters.get("categorize_by") == "Categorize by Account":
-		filters.account = frappe.parse_json(filters.get("account"))
+		filters.account = nts .parse_json(filters.get("account"))
 		for account in filters.account:
 			if account_details[account].is_group == 0:
-				frappe.throw(_("Can not filter based on Child Account, if grouped by Account"))
+				nts .throw(_("Can not filter based on Child Account, if grouped by Account"))
 
 	if filters.get("voucher_no") and filters.get("categorize_by") in ["Categorize by Voucher"]:
-		frappe.throw(_("Can not filter based on Voucher No, if grouped by Voucher"))
+		nts .throw(_("Can not filter based on Voucher No, if grouped by Voucher"))
 
 	if filters.from_date > filters.to_date:
-		frappe.throw(_("From Date must be before To Date"))
+		nts .throw(_("From Date must be before To Date"))
 
 	if filters.get("project"):
-		filters.project = frappe.parse_json(filters.get("project"))
+		filters.project = nts .parse_json(filters.get("project"))
 
 	if filters.get("cost_center"):
-		filters.cost_center = frappe.parse_json(filters.get("cost_center"))
+		filters.cost_center = nts .parse_json(filters.get("cost_center"))
 
 
 def validate_party(filters):
@@ -91,13 +91,13 @@ def validate_party(filters):
 
 	if party and party_type:
 		for d in party:
-			if not frappe.db.exists(party_type, d):
-				frappe.throw(_("Invalid {0}: {1}").format(party_type, d))
+			if not nts .db.exists(party_type, d):
+				nts .throw(_("Invalid {0}: {1}").format(party_type, d))
 
 
 def set_account_currency(filters):
 	if filters.get("account") or (filters.get("party") and len(filters.party) == 1):
-		filters["company_currency"] = frappe.get_cached_value("Company", filters.company, "default_currency")
+		filters["company_currency"] = nts .get_cached_value("Company", filters.company, "default_currency")
 		account_currency = None
 
 		if filters.get("account"):
@@ -115,7 +115,7 @@ def set_account_currency(filters):
 					account_currency = currency
 
 		elif filters.get("party") and filters.get("party_type"):
-			gle_currency = frappe.db.get_value(
+			gle_currency = nts .db.get_value(
 				"GL Entry",
 				{"party_type": filters.party_type, "party": filters.party[0], "company": filters.company},
 				"account_currency",
@@ -127,7 +127,7 @@ def set_account_currency(filters):
 				account_currency = (
 					None
 					if filters.party_type in ["Employee", "Shareholder", "Member"]
-					else frappe.get_cached_value(filters.party_type, filters.party[0], "default_currency")
+					else nts .get_cached_value(filters.party_type, filters.party[0], "default_currency")
 				)
 
 		filters["account_currency"] = account_currency or filters.company_currency
@@ -157,7 +157,7 @@ def get_gl_entries(filters, accounting_dimensions):
 		credit_in_account_currency """
 
 	if filters.get("show_remarks"):
-		if remarks_length := frappe.db.get_single_value("Accounts Settings", "general_ledger_remarks_length"):
+		if remarks_length := nts .db.get_single_value("Accounts Settings", "general_ledger_remarks_length"):
 			select_fields += f",substr(remarks, 1, {remarks_length}) as 'remarks'"
 		else:
 			select_fields += """,remarks"""
@@ -173,7 +173,7 @@ def get_gl_entries(filters, accounting_dimensions):
 		order_by_statement = "order by account, posting_date, creation"
 
 	if filters.get("include_default_book_entries"):
-		filters["company_fb"] = frappe.get_cached_value(
+		filters["company_fb"] = nts .get_cached_value(
 			"Company", filters.get("company"), "default_finance_book"
 		)
 
@@ -187,7 +187,7 @@ def get_gl_entries(filters, accounting_dimensions):
 			"debit_in_transaction_currency, credit_in_transaction_currency, transaction_currency,"
 		)
 
-	gl_entries = frappe.db.sql(
+	gl_entries = nts .db.sql(
 		f"""
 		select
 			name as gl_entry, posting_date, account, party_type, party,
@@ -212,7 +212,7 @@ def get_gl_entries(filters, accounting_dimensions):
 def get_conditions(filters):
 	conditions = []
 
-	ignore_is_opening = frappe.db.get_single_value(
+	ignore_is_opening = nts .db.get_single_value(
 		"Accounts Settings", "ignore_is_opening_check_for_reporting"
 	)
 
@@ -232,7 +232,7 @@ def get_conditions(filters):
 		conditions.append("against_voucher=%(against_voucher_no)s")
 
 	if filters.get("ignore_err"):
-		err_journals = frappe.db.get_all(
+		err_journals = nts .db.get_all(
 			"Journal Entry",
 			filters={
 				"company": filters.get("company"),
@@ -245,7 +245,7 @@ def get_conditions(filters):
 			filters.update({"voucher_no_not_in": [x[0] for x in err_journals]})
 
 	if filters.get("ignore_cr_dr_notes"):
-		system_generated_cr_dr_journals = frappe.db.get_all(
+		system_generated_cr_dr_journals = nts .db.get_all(
 			"Journal Entry",
 			filters={
 				"company": filters.get("company"),
@@ -296,7 +296,7 @@ def get_conditions(filters):
 			if filters.get("company_fb") and cstr(filters.get("finance_book")) != cstr(
 				filters.get("company_fb")
 			):
-				frappe.throw(
+				nts .throw(
 					_("To use a different finance book, please uncheck 'Include Default FB Entries'")
 				)
 			else:
@@ -312,7 +312,7 @@ def get_conditions(filters):
 	if not filters.get("show_cancelled_entries"):
 		conditions.append("is_cancelled = 0")
 
-	from frappe.desk.reportview import build_match_conditions
+	from nts .desk.reportview import build_match_conditions
 
 	match_conditions = build_match_conditions("GL Entry")
 
@@ -326,7 +326,7 @@ def get_conditions(filters):
 			# Ignore 'Finance Book' set up as dimension in below logic, as it is already handled in above section
 			if not dimension.disabled and dimension.document_type != "Finance Book":
 				if filters.get(dimension.fieldname):
-					if frappe.get_cached_value("DocType", dimension.document_type, "is_tree"):
+					if nts .get_cached_value("DocType", dimension.document_type, "is_tree"):
 						filters[dimension.fieldname] = get_dimension_with_children(
 							dimension.document_type, filters.get(dimension.fieldname)
 						)
@@ -344,9 +344,9 @@ def get_accounts_with_children(accounts):
 	if not accounts:
 		return
 
-	doctype = frappe.qb.DocType("Account")
+	doctype = nts .qb.DocType("Account")
 	accounts_data = (
-		frappe.qb.from_(doctype)
+		nts .qb.from_(doctype)
 		.select(doctype.lft, doctype.rgt)
 		.where(doctype.name.isin(accounts))
 		.run(as_dict=True)
@@ -356,7 +356,7 @@ def get_accounts_with_children(accounts):
 	for account in accounts_data:
 		conditions.append((doctype.lft >= account.lft) & (doctype.rgt <= account.rgt))
 
-	return frappe.qb.from_(doctype).select(doctype.name).where(Criterion.any(conditions)).run(pluck=True)
+	return nts .qb.from_(doctype).select(doctype.name).where(Criterion.any(conditions)).run(pluck=True)
 
 
 def set_bill_no(gl_entries):
@@ -460,7 +460,7 @@ def get_accountwise_gle(filters, accounting_dimensions, gl_entries, gle_map, tot
 	if filters.get("show_net_values_in_party_account"):
 		account_type_map = get_account_type_map(filters.get("company"))
 
-	immutable_ledger = frappe.db.get_single_value("Accounts Settings", "enable_immutable_ledger")
+	immutable_ledger = nts .db.get_single_value("Accounts Settings", "enable_immutable_ledger")
 
 	def update_value_in_dict(data, key, gle):
 		data[key].debit += gle.debit
@@ -555,8 +555,8 @@ def get_accountwise_gle(filters, accounting_dimensions, gl_entries, gle_map, tot
 
 
 def get_account_type_map(company):
-	account_type_map = frappe._dict(
-		frappe.get_all("Account", fields=["name", "account_type"], filters={"company": company}, as_list=1)
+	account_type_map = nts ._dict(
+		nts .get_all("Account", fields=["name", "account_type"], filters={"company": company}, as_list=1)
 	)
 
 	return account_type_map
@@ -582,7 +582,7 @@ def get_result_as_list(data, filters):
 
 def get_supplier_invoice_details():
 	inv_details = {}
-	for d in frappe.db.sql(
+	for d in nts .db.sql(
 		""" select name, bill_no from `tabPurchase Invoice`
 		where docstatus = 1 and bill_no is not null and bill_no != '' """,
 		as_dict=1,

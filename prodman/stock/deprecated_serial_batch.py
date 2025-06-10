@@ -1,10 +1,10 @@
 import datetime
 from collections import defaultdict
 
-import frappe
-from frappe.query_builder.functions import CombineDatetime, Sum
-from frappe.utils import flt, nowtime
-from frappe.utils.deprecations import deprecated
+import nts
+from nts.query_builder.functions import CombineDatetime, Sum
+from nts.utils import flt, nowtime
+from nts.utils.deprecations import deprecated
 from pypika import Order
 
 
@@ -42,15 +42,15 @@ class DeprecatedSerialNoValuation:
 		# get rate from serial nos within same company
 		incoming_values = 0.0
 		for serial_no in serial_nos:
-			sn_details = frappe.db.get_value("Serial No", serial_no, ["purchase_rate", "company"], as_dict=1)
+			sn_details = nts.db.get_value("Serial No", serial_no, ["purchase_rate", "company"], as_dict=1)
 			if sn_details and sn_details.purchase_rate and sn_details.company == self.sle.company:
 				self.serial_no_incoming_rate[serial_no] += flt(sn_details.purchase_rate)
 				incoming_values += self.serial_no_incoming_rate[serial_no]
 				continue
 
-			table = frappe.qb.DocType("Stock Ledger Entry")
+			table = nts.qb.DocType("Stock Ledger Entry")
 			stock_ledgers = (
-				frappe.qb.from_(table)
+				nts.qb.from_(table)
 				.select(table.incoming_rate, table.actual_qty, table.stock_value_difference)
 				.where(
 					(
@@ -80,9 +80,9 @@ class DeprecatedSerialNoValuation:
 		return incoming_values
 
 
-@frappe.request_cache
+@nts.request_cache
 def has_sle_for_serial_nos(item_code):
-	serial_nos = frappe.db.get_all(
+	serial_nos = nts.db.get_all(
 		"Stock Ledger Entry",
 		fields=["name"],
 		filters={"serial_no": ("is", "set"), "is_cancelled": 0, "item_code": item_code},
@@ -109,7 +109,7 @@ class DeprecatedBatchNoValuation:
 		if not self.batchwise_valuation_batches:
 			return []
 
-		sle = frappe.qb.DocType("Stock Ledger Entry")
+		sle = nts.qb.DocType("Stock Ledger Entry")
 
 		timestamp_condition = None
 		if self.sle.posting_date:
@@ -128,7 +128,7 @@ class DeprecatedBatchNoValuation:
 				)
 
 		query = (
-			frappe.qb.from_(sle)
+			nts.qb.from_(sle)
 			.select(
 				sle.batch_no,
 				Sum(sle.stock_value_difference).as_("batch_value"),
@@ -184,7 +184,7 @@ class DeprecatedBatchNoValuation:
 			self.non_batchwise_balance_value[batch_no] -= stock_value_change
 			self.non_batchwise_balance_qty[batch_no] -= ledger.qty
 
-			frappe.db.set_value(
+			nts.db.set_value(
 				"Serial and Batch Entry",
 				ledger.name,
 				{
@@ -203,8 +203,8 @@ class DeprecatedBatchNoValuation:
 	def set_balance_value_from_sl_entries(self) -> None:
 		from prodman.stock.utils import get_combine_datetime
 
-		sle = frappe.qb.DocType("Stock Ledger Entry")
-		batch = frappe.qb.DocType("Batch")
+		sle = nts.qb.DocType("Stock Ledger Entry")
+		batch = nts.qb.DocType("Batch")
 
 		posting_datetime = get_combine_datetime(self.sle.posting_date, self.sle.posting_time)
 		if not self.sle.creation:
@@ -218,7 +218,7 @@ class DeprecatedBatchNoValuation:
 			)
 
 		query = (
-			frappe.qb.from_(sle)
+			nts.qb.from_(sle)
 			.inner_join(batch)
 			.on(sle.batch_no == batch.name)
 			.select(
@@ -251,7 +251,7 @@ class DeprecatedBatchNoValuation:
 	def get_last_sle_for_non_batch(self):
 		from prodman.stock.utils import get_combine_datetime
 
-		sle = frappe.qb.DocType("Stock Ledger Entry")
+		sle = nts.qb.DocType("Stock Ledger Entry")
 
 		posting_datetime = get_combine_datetime(self.sle.posting_date, self.sle.posting_time)
 		if not self.sle.creation:
@@ -265,7 +265,7 @@ class DeprecatedBatchNoValuation:
 			)
 
 		query = (
-			frappe.qb.from_(sle)
+			nts.qb.from_(sle)
 			.select(
 				sle.stock_value,
 				sle.qty_after_transaction,
@@ -286,13 +286,13 @@ class DeprecatedBatchNoValuation:
 
 		data = query.run(as_dict=True)
 
-		return data[0] if data else frappe._dict()
+		return data[0] if data else nts._dict()
 
 	@deprecated
 	def set_balance_value_from_bundle(self) -> None:
-		bundle = frappe.qb.DocType("Serial and Batch Bundle")
-		bundle_child = frappe.qb.DocType("Serial and Batch Entry")
-		batch = frappe.qb.DocType("Batch")
+		bundle = nts.qb.DocType("Serial and Batch Bundle")
+		bundle_child = nts.qb.DocType("Serial and Batch Entry")
+		batch = nts.qb.DocType("Batch")
 
 		timestamp_condition = CombineDatetime(bundle.posting_date, bundle.posting_time) < CombineDatetime(
 			self.sle.posting_date, self.sle.posting_time
@@ -305,7 +305,7 @@ class DeprecatedBatchNoValuation:
 			) & (bundle.creation < self.sle.creation)
 
 		query = (
-			frappe.qb.from_(bundle)
+			nts.qb.from_(bundle)
 			.inner_join(bundle_child)
 			.on(bundle.name == bundle_child.parent)
 			.inner_join(batch)

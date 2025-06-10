@@ -1,10 +1,10 @@
 import json
 
-import frappe
+import nts
 
 
 def execute():
-	custom_reports = frappe.get_all(
+	custom_reports = nts.get_all(
 		"Report",
 		filters={
 			"report_type": "Custom Report",
@@ -21,4 +21,4 @@ def execute():
 				report_json["filters"].pop("group_by").replace("Group", "Categorize")
 			)
 
-			frappe.db.set_value("Report", report.name, "json", json.dumps(report_json))
+			nts.db.set_value("Report", report.name, "json", json.dumps(report_json))

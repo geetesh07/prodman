@@ -1,10 +1,10 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2017, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
-from frappe.utils import flt, nowdate, nowtime, today
+import nts 
+from nts .utils import flt, nowdate, nowtime, today
 
 from prodman.assets.doctype.asset.asset import (
 	get_asset_account,
@@ -31,7 +31,7 @@ class TestAssetRepair(unittest.TestCase):
 		set_depreciation_settings_in_company()
 		create_asset_data()
 		create_item("_Test Stock Item")
-		frappe.db.sql("delete from `tabTax Rule`")
+		nts .db.sql("delete from `tabTax Rule`")
 
 	def test_update_status(self):
 		asset = create_asset(submit=1)
@@ -44,7 +44,7 @@ class TestAssetRepair(unittest.TestCase):
 
 		asset_repair.repair_status = "Completed"
 		asset_repair.save()
-		asset_status = frappe.db.get_value("Asset", asset_repair.asset, "status")
+		asset_status = nts .db.get_value("Asset", asset_repair.asset, "status")
 		self.assertEqual(asset_status, initial_status)
 
 	def test_stock_item_total_value(self):
@@ -80,7 +80,7 @@ class TestAssetRepair(unittest.TestCase):
 
 	def test_decrease_stock_quantity(self):
 		asset_repair = create_asset_repair(stock_consumption=1, submit=1)
-		stock_entry = frappe.get_last_doc("Stock Entry")
+		stock_entry = nts .get_last_doc("Stock Entry")
 
 		self.assertEqual(stock_entry.stock_entry_type, "Material Issue")
 		self.assertEqual(stock_entry.items[0].s_warehouse, asset_repair.stock_items[0].warehouse)
@@ -112,7 +112,7 @@ class TestAssetRepair(unittest.TestCase):
 		)
 
 		asset_repair.repair_status = "Completed"
-		self.assertRaises(frappe.ValidationError, asset_repair.submit)
+		self.assertRaises(nts .ValidationError, asset_repair.submit)
 
 	def test_no_increase_in_asset_value_when_not_capitalized(self):
 		asset = create_asset(calculate_depreciation=1, submit=1)
@@ -139,7 +139,7 @@ class TestAssetRepair(unittest.TestCase):
 	def test_gl_entries_with_perpetual_inventory(self):
 		set_depreciation_settings_in_company(company="_Test Company with perpetual inventory")
 
-		asset_category = frappe.get_doc("Asset Category", "Computers")
+		asset_category = nts .get_doc("Asset Category", "Computers")
 		asset_category.append(
 			"accounts",
 			{
@@ -159,7 +159,7 @@ class TestAssetRepair(unittest.TestCase):
 			submit=1,
 		)
 
-		gl_entries = frappe.db.sql(
+		gl_entries = nts .db.sql(
 			"""
 			select
 				account,
@@ -182,10 +182,10 @@ class TestAssetRepair(unittest.TestCase):
 			"fixed_asset_account", asset=asset_repair.asset, company=asset_repair.company
 		)
 		pi_expense_account = (
-			frappe.get_doc("Purchase Invoice", asset_repair.purchase_invoice).items[0].expense_account
+			nts .get_doc("Purchase Invoice", asset_repair.purchase_invoice).items[0].expense_account
 		)
 		stock_entry_expense_account = (
-			frappe.get_doc("Stock Entry", {"asset_repair": asset_repair.name}).get("items")[0].expense_account
+			nts .get_doc("Stock Entry", {"asset_repair": asset_repair.name}).get("items")[0].expense_account
 		)
 
 		expected_values = {
@@ -199,14 +199,14 @@ class TestAssetRepair(unittest.TestCase):
 			self.assertEqual(expected_values[d.account][1], d.credit)
 
 	def test_gl_entries_with_periodical_inventory(self):
-		frappe.db.set_value("Company", "_Test Company", "default_expense_account", "Cost of Goods Sold - _TC")
+		nts .db.set_value("Company", "_Test Company", "default_expense_account", "Cost of Goods Sold - _TC")
 		asset_repair = create_asset_repair(
 			capitalize_repair_cost=1,
 			stock_consumption=1,
 			submit=1,
 		)
 
-		gl_entries = frappe.db.sql(
+		gl_entries = nts .db.sql(
 			"""
 			select
 				account,
@@ -228,7 +228,7 @@ class TestAssetRepair(unittest.TestCase):
 		fixed_asset_account = get_asset_account(
 			"fixed_asset_account", asset=asset_repair.asset, company=asset_repair.company
 		)
-		default_expense_account = frappe.get_cached_value(
+		default_expense_account = nts .get_cached_value(
 			"Company", asset_repair.company, "default_expense_account"
 		)
 
@@ -263,7 +263,7 @@ class TestAssetRepair(unittest.TestCase):
 	def test_asset_repiar_link_in_stock_entry(self):
 		asset = create_asset(calculate_depreciation=1, submit=1)
 		asset_repair = create_asset_repair(asset=asset, stock_consumption=1, submit=1)
-		stock_entry = frappe.get_last_doc("Stock Entry")
+		stock_entry = nts .get_last_doc("Stock Entry")
 		self.assertEqual(stock_entry.asset_repair, asset_repair.name)
 
 
@@ -275,13 +275,13 @@ def create_asset_repair(**args):
 	from prodman.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
 	from prodman.stock.doctype.warehouse.test_warehouse import create_warehouse
 
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 
 	if args.asset:
 		asset = args.asset
 	else:
 		asset = create_asset(is_existing_asset=1, submit=1, company=args.company)
-	asset_repair = frappe.new_doc("Asset Repair")
+	asset_repair = nts .new_doc("Asset Repair")
 	asset_repair.update(
 		{
 			"asset": asset.name,
@@ -300,11 +300,11 @@ def create_asset_repair(**args):
 		bundle = None
 		if args.serial_no:
 			bundle = make_serial_batch_bundle(
-				frappe._dict(
+				nts ._dict(
 					{
 						"item_code": args.item_code,
 						"warehouse": warehouse,
-						"company": frappe.get_cached_value("Warehouse", warehouse, "company"),
+						"company": nts .get_cached_value("Warehouse", warehouse, "company"),
 						"qty": (flt(args.stock_qty) or 1) * -1,
 						"voucher_type": "Asset Repair",
 						"type_of_transaction": "Asset Repair",
@@ -331,10 +331,10 @@ def create_asset_repair(**args):
 
 	if args.submit:
 		asset_repair.repair_status = "Completed"
-		asset_repair.cost_center = frappe.db.get_value("Company", asset.company, "cost_center")
+		asset_repair.cost_center = nts .db.get_value("Company", asset.company, "cost_center")
 
 		if args.stock_consumption:
-			stock_entry = frappe.get_doc(
+			stock_entry = nts .get_doc(
 				{"doctype": "Stock Entry", "stock_entry_type": "Material Receipt", "company": asset.company}
 			)
 			stock_entry.append(
@@ -356,7 +356,7 @@ def create_asset_repair(**args):
 				asset_repair.increase_in_asset_life = 12
 			pi = make_purchase_invoice(
 				company=asset.company,
-				expense_account=frappe.db.get_value("Company", asset.company, "default_expense_account"),
+				expense_account=nts .db.get_value("Company", asset.company, "default_expense_account"),
 				cost_center=asset_repair.cost_center,
 				warehouse=args.warehouse or create_warehouse("Test Warehouse", company=asset.company),
 			)

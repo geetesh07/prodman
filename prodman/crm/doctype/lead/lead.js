@@ -1,10 +1,10 @@
-// Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2019, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.provide("prodman");
+nts.provide("prodman");
 cur_frm.email_field = "email_id";
 
-prodman.LeadController = class LeadController extends frappe.ui.form.Controller {
+prodman.LeadController = class LeadController extends nts.ui.form.Controller {
 	setup() {
 		this.frm.make_methods = {
 			Customer: this.make_customer.bind(this),
@@ -18,7 +18,7 @@ prodman.LeadController = class LeadController extends frappe.ui.form.Controller 
 
 	onload() {
 		this.frm.set_query("lead_owner", function (doc, cdt, cdn) {
-			return { query: "frappe.core.doctype.user.user.user_query" };
+			return { query: "nts.core.doctype.user.user.user_query" };
 		});
 	}
 
@@ -44,9 +44,9 @@ prodman.LeadController = class LeadController extends frappe.ui.form.Controller 
 		}
 
 		if (!this.frm.is_new()) {
-			frappe.contacts.render_address_and_contact(this.frm);
+			nts.contacts.render_address_and_contact(this.frm);
 		} else {
-			frappe.contacts.clear_address_and_contact(this.frm);
+			nts.contacts.clear_address_and_contact(this.frm);
 		}
 
 		this.show_notes();
@@ -54,7 +54,7 @@ prodman.LeadController = class LeadController extends frappe.ui.form.Controller 
 	}
 
 	add_lead_to_prospect(frm) {
-		frappe.prompt(
+		nts.prompt(
 			[
 				{
 					fieldname: "prospect",
@@ -65,7 +65,7 @@ prodman.LeadController = class LeadController extends frappe.ui.form.Controller 
 				},
 			],
 			function (data) {
-				frappe.call({
+				nts.call({
 					method: "prodman.crm.doctype.lead.lead.add_lead_to_prospect",
 					args: {
 						lead: frm.doc.name,
@@ -86,14 +86,14 @@ prodman.LeadController = class LeadController extends frappe.ui.form.Controller 
 	}
 
 	make_customer() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.crm.doctype.lead.lead.make_customer",
 			frm: this.frm,
 		});
 	}
 
 	make_quotation() {
-		frappe.model.open_mapped_doc({
+		nts.model.open_mapped_doc({
 			method: "prodman.crm.doctype.lead.lead.make_quotation",
 			frm: this.frm,
 		});
@@ -102,7 +102,7 @@ prodman.LeadController = class LeadController extends frappe.ui.form.Controller 
 	async make_opportunity() {
 		const frm = this.frm;
 		let existing_prospect = (
-			await frappe.db.get_value(
+			await nts.db.get_value(
 				"Prospect Lead",
 				{
 					lead: frm.doc.name,
@@ -136,7 +136,7 @@ prodman.LeadController = class LeadController extends frappe.ui.form.Controller 
 		await frm.reload_doc();
 
 		let existing_contact = (
-			await frappe.db.get_value(
+			await nts.db.get_value(
 				"Contact",
 				{
 					first_name: frm.doc.first_name || frm.doc.lead_name,
@@ -156,11 +156,11 @@ prodman.LeadController = class LeadController extends frappe.ui.form.Controller 
 		}
 
 		if (fields.length) {
-			const d = new frappe.ui.Dialog({
+			const d = new nts.ui.Dialog({
 				title: __("Create Opportunity"),
 				fields: fields,
 				primary_action: function (data) {
-					frappe.call({
+					nts.call({
 						method: "create_prospect_and_contact",
 						doc: frm.doc,
 						args: {
@@ -169,7 +169,7 @@ prodman.LeadController = class LeadController extends frappe.ui.form.Controller 
 						freeze: true,
 						callback: function (r) {
 							if (!r.exc) {
-								frappe.model.open_mapped_doc({
+								nts.model.open_mapped_doc({
 									method: "prodman.crm.doctype.lead.lead.make_opportunity",
 									frm: frm,
 								});
@@ -182,7 +182,7 @@ prodman.LeadController = class LeadController extends frappe.ui.form.Controller 
 			});
 			d.show();
 		} else {
-			frappe.model.open_mapped_doc({
+			nts.model.open_mapped_doc({
 				method: "prodman.crm.doctype.lead.lead.make_opportunity",
 				frm: frm,
 			});
@@ -191,8 +191,8 @@ prodman.LeadController = class LeadController extends frappe.ui.form.Controller 
 
 	make_prospect() {
 		const me = this;
-		frappe.model.with_doctype("Prospect", function () {
-			let prospect = frappe.model.get_new_doc("Prospect");
+		nts.model.with_doctype("Prospect", function () {
+			let prospect = nts.model.get_new_doc("Prospect");
 			prospect.company_name = me.frm.doc.company_name;
 			prospect.no_of_employees = me.frm.doc.no_of_employees;
 			prospect.industry = me.frm.doc.industry;
@@ -203,10 +203,10 @@ prodman.LeadController = class LeadController extends frappe.ui.form.Controller 
 			prospect.prospect_owner = me.frm.doc.lead_owner;
 			prospect.notes = me.frm.doc.notes;
 
-			let leads_row = frappe.model.add_child(prospect, "leads");
+			let leads_row = nts.model.add_child(prospect, "leads");
 			leads_row.lead = me.frm.doc.name;
 
-			frappe.set_route("Form", "Prospect", prospect.name);
+			nts.set_route("Form", "Prospect", prospect.name);
 		});
 	}
 

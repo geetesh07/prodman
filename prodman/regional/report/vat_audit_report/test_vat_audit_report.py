@@ -1,11 +1,11 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 from unittest import TestCase
 
-import frappe
-from frappe.utils import today
+import nts
+from nts.utils import today
 
 from prodman.accounts.doctype.account.test_account import create_account
 from prodman.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
@@ -15,7 +15,7 @@ from prodman.regional.report.vat_audit_report.vat_audit_report import execute
 
 class TestVATAuditReport(TestCase):
 	def setUp(self):
-		frappe.set_user("Administrator")
+		nts.set_user("Administrator")
 		make_company("_Test Company SA VAT", "_TCSV")
 
 		create_account(
@@ -42,8 +42,8 @@ class TestVATAuditReport(TestCase):
 		create_purchase_invoices()
 
 	def tearDown(self):
-		frappe.db.sql("delete from `tabSales Invoice` where company='_Test Company SA VAT'")
-		frappe.db.sql("delete from `tabPurchase Invoice` where company='_Test Company SA VAT'")
+		nts.db.sql("delete from `tabSales Invoice` where company='_Test Company SA VAT'")
+		nts.db.sql("delete from `tabPurchase Invoice` where company='_Test Company SA VAT'")
 
 	def test_vat_audit_report(self):
 		filters = {"company": "_Test Company SA VAT", "from_date": today(), "to_date": today()}
@@ -62,8 +62,8 @@ class TestVATAuditReport(TestCase):
 
 
 def make_company(company_name, abbr):
-	if not frappe.db.exists("Company", company_name):
-		company = frappe.get_doc(
+	if not nts.db.exists("Company", company_name):
+		company = nts.get_doc(
 			{
 				"doctype": "Company",
 				"company_name": company_name,
@@ -75,11 +75,11 @@ def make_company(company_name, abbr):
 		)
 		company.insert()
 	else:
-		company = frappe.get_doc("Company", company_name)
+		company = nts.get_doc("Company", company_name)
 
 	company.create_default_warehouses()
 
-	if not frappe.db.get_value("Cost Center", {"is_group": 0, "company": company.name}):
+	if not nts.db.get_value("Cost Center", {"is_group": 0, "company": company.name}):
 		company.create_default_cost_center()
 
 	company.save()
@@ -88,8 +88,8 @@ def make_company(company_name, abbr):
 
 
 def set_sa_vat_accounts():
-	if not frappe.db.exists("South Africa VAT Settings", "_Test Company SA VAT"):
-		vat_accounts = frappe.get_all(
+	if not nts.db.exists("South Africa VAT Settings", "_Test Company SA VAT"):
+		vat_accounts = nts.get_all(
 			"Account",
 			fields=["name"],
 			filters={"company": "_Test Company SA VAT", "is_group": 0, "account_type": "Tax"},
@@ -99,7 +99,7 @@ def set_sa_vat_accounts():
 		for account in vat_accounts:
 			sa_vat_accounts.append({"doctype": "South Africa VAT Account", "account": account.name})
 
-		frappe.get_doc(
+		nts.get_doc(
 			{
 				"company": "_Test Company SA VAT",
 				"vat_accounts": sa_vat_accounts,
@@ -109,8 +109,8 @@ def set_sa_vat_accounts():
 
 
 def make_customer():
-	if not frappe.db.exists("Customer", "_Test SA Customer"):
-		frappe.get_doc(
+	if not nts.db.exists("Customer", "_Test SA Customer"):
+		nts.get_doc(
 			{
 				"doctype": "Customer",
 				"customer_name": "_Test SA Customer",
@@ -120,8 +120,8 @@ def make_customer():
 
 
 def make_supplier():
-	if not frappe.db.exists("Supplier", "_Test SA Supplier"):
-		frappe.get_doc(
+	if not nts.db.exists("Supplier", "_Test SA Supplier"):
+		nts.get_doc(
 			{
 				"doctype": "Supplier",
 				"supplier_name": "_Test SA Supplier",
@@ -132,8 +132,8 @@ def make_supplier():
 
 
 def make_item(item_code, properties=None):
-	if not frappe.db.exists("Item", item_code):
-		item = frappe.get_doc(
+	if not nts.db.exists("Item", item_code):
+		item = nts.get_doc(
 			{
 				"doctype": "Item",
 				"item_code": item_code,

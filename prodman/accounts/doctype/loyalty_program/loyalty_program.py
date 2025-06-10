@@ -1,11 +1,11 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2018, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import flt, today
+import nts 
+from nts  import _
+from nts .model.document import Document
+from nts .utils import flt, today
 
 
 class LoyaltyProgram(Document):
@@ -15,7 +15,7 @@ class LoyaltyProgram(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.loyalty_program_collection.loyalty_program_collection import (
 			LoyaltyProgramCollection,
@@ -47,11 +47,11 @@ def get_loyalty_details(
 
 	condition = ""
 	if company:
-		condition = " and company=%s " % frappe.db.escape(company)
+		condition = " and company=%s " % nts .db.escape(company)
 	if not include_expired_entry:
 		condition += " and expiry_date>='%s' " % expiry_date
 
-	loyalty_point_details = frappe.db.sql(
+	loyalty_point_details = nts .db.sql(
 		f"""select sum(loyalty_points) as loyalty_points,
 		sum(purchase_amount) as total_spent from `tabLoyalty Point Entry`
 		where customer=%s and loyalty_program=%s and posting_date <= %s
@@ -67,7 +67,7 @@ def get_loyalty_details(
 		return {"loyalty_points": 0, "total_spent": 0}
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_loyalty_program_details_with_points(
 	customer,
 	loyalty_program=None,
@@ -78,7 +78,7 @@ def get_loyalty_program_details_with_points(
 	current_transaction_amount=0,
 ):
 	lp_details = get_loyalty_program_details(customer, loyalty_program, company=company, silent=silent)
-	loyalty_program = frappe.get_doc("Loyalty Program", loyalty_program)
+	loyalty_program = nts .get_doc("Loyalty Program", loyalty_program)
 	lp_details.update(
 		get_loyalty_details(customer, loyalty_program.name, expiry_date, company, include_expired_entry)
 	)
@@ -98,7 +98,7 @@ def get_loyalty_program_details_with_points(
 	return lp_details
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_loyalty_program_details(
 	customer,
 	loyalty_program=None,
@@ -107,35 +107,35 @@ def get_loyalty_program_details(
 	silent=False,
 	include_expired_entry=False,
 ):
-	lp_details = frappe._dict()
+	lp_details = nts ._dict()
 
 	if not loyalty_program:
-		loyalty_program = frappe.db.get_value("Customer", customer, "loyalty_program")
+		loyalty_program = nts .db.get_value("Customer", customer, "loyalty_program")
 
 		if not loyalty_program and not silent:
-			frappe.throw(_("Customer isn't enrolled in any Loyalty Program"))
+			nts .throw(_("Customer isn't enrolled in any Loyalty Program"))
 		elif silent and not loyalty_program:
-			return frappe._dict({"loyalty_programs": None})
+			return nts ._dict({"loyalty_programs": None})
 
 	if not company:
-		company = frappe.db.get_default("company") or frappe.get_all("Company")[0].name
+		company = nts .db.get_default("company") or nts .get_all("Company")[0].name
 
-	loyalty_program = frappe.get_doc("Loyalty Program", loyalty_program)
+	loyalty_program = nts .get_doc("Loyalty Program", loyalty_program)
 	lp_details.update({"loyalty_program": loyalty_program.name})
 	lp_details.update(loyalty_program.as_dict())
 	return lp_details
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_redeemption_factor(loyalty_program=None, customer=None):
 	customer_loyalty_program = None
 	if not loyalty_program:
-		customer_loyalty_program = frappe.db.get_value("Customer", customer, "loyalty_program")
+		customer_loyalty_program = nts .db.get_value("Customer", customer, "loyalty_program")
 		loyalty_program = customer_loyalty_program
 	if loyalty_program:
-		return frappe.db.get_value("Loyalty Program", loyalty_program, "conversion_factor")
+		return nts .db.get_value("Loyalty Program", loyalty_program, "conversion_factor")
 	else:
-		frappe.throw(_("Customer isn't enrolled in any Loyalty Program"))
+		nts .throw(_("Customer isn't enrolled in any Loyalty Program"))
 
 
 def validate_loyalty_points(ref_doc, points_to_redeem):
@@ -150,13 +150,13 @@ def validate_loyalty_points(ref_doc, points_to_redeem):
 	if hasattr(ref_doc, "loyalty_program") and ref_doc.loyalty_program:
 		loyalty_program = ref_doc.loyalty_program
 	else:
-		loyalty_program = frappe.db.get_value("Customer", ref_doc.customer, ["loyalty_program"])
+		loyalty_program = nts .db.get_value("Customer", ref_doc.customer, ["loyalty_program"])
 
 	if (
 		loyalty_program
-		and frappe.db.get_value("Loyalty Program", loyalty_program, ["company"]) != ref_doc.company
+		and nts .db.get_value("Loyalty Program", loyalty_program, ["company"]) != ref_doc.company
 	):
-		frappe.throw(_("The Loyalty Program isn't valid for the selected company"))
+		nts .throw(_("The Loyalty Program isn't valid for the selected company"))
 
 	if loyalty_program and points_to_redeem:
 		loyalty_program_details = get_loyalty_program_details_with_points(
@@ -164,13 +164,13 @@ def validate_loyalty_points(ref_doc, points_to_redeem):
 		)
 
 		if points_to_redeem > loyalty_program_details.loyalty_points:
-			frappe.throw(_("You don't have enough Loyalty Points to redeem"))
+			nts .throw(_("You don't have enough Loyalty Points to redeem"))
 
 		loyalty_amount = flt(points_to_redeem * loyalty_program_details.conversion_factor)
 
 		total_amount = ref_doc.grand_total if ref_doc.is_rounded_total_disabled() else ref_doc.rounded_total
 		if loyalty_amount > total_amount:
-			frappe.throw(_("You can't redeem Loyalty Points having more value than the Total Amount."))
+			nts .throw(_("You can't redeem Loyalty Points having more value than the Total Amount."))
 
 		if not ref_doc.loyalty_amount and ref_doc.loyalty_amount != loyalty_amount:
 			ref_doc.loyalty_amount = loyalty_amount

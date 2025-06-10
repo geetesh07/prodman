@@ -1,9 +1,9 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2017, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 import unittest
 
-import frappe
+import nts 
 
 from prodman.accounts.doctype.share_transfer.share_transfer import ShareDontExists
 
@@ -12,8 +12,8 @@ test_dependencies = ["Share Type", "Shareholder"]
 
 class TestShareTransfer(unittest.TestCase):
 	def setUp(self):
-		frappe.db.sql("delete from `tabShare Transfer`")
-		frappe.db.sql("delete from `tabShare Balance`")
+		nts .db.sql("delete from `tabShare Transfer`")
+		nts .db.sql("delete from `tabShare Balance`")
 		share_transfers = [
 			{
 				"doctype": "Share Transfer",
@@ -87,11 +87,11 @@ class TestShareTransfer(unittest.TestCase):
 			},
 		]
 		for d in share_transfers:
-			st = frappe.get_doc(d)
+			st = nts .get_doc(d)
 			st.submit()
 
 	def test_invalid_share_transfer(self):
-		doc = frappe.get_doc(
+		doc = nts .get_doc(
 			{
 				"doctype": "Share Transfer",
 				"transfer_type": "Transfer",
@@ -109,7 +109,7 @@ class TestShareTransfer(unittest.TestCase):
 		)
 		self.assertRaises(ShareDontExists, doc.insert)
 
-		doc = frappe.get_doc(
+		doc = nts .get_doc(
 			{
 				"doctype": "Share Transfer",
 				"transfer_type": "Purchase",

@@ -1,13 +1,13 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2019, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import datetime
 import typing
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
+import nts
+from nts import _
+from nts.model.document import Document
 
 
 class AppointmentBookingSettings(Document):
@@ -17,10 +17,10 @@ class AppointmentBookingSettings(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.automation.doctype.assignment_rule_user.assignment_rule_user import (
+		from nts.automation.doctype.assignment_rule_user.assignment_rule_user import (
 			AssignmentRuleUser,
 		)
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.crm.doctype.appointment_booking_slots.appointment_booking_slots import (
 			AppointmentBookingSlots,
@@ -61,9 +61,9 @@ class AppointmentBookingSettings(Document):
 			err_msg = _("<b>From Time</b> cannot be later than <b>To Time</b> for {0}").format(
 				record.day_of_week
 			)
-			frappe.throw(_(err_msg))
+			nts.throw(_(err_msg))
 
 	def duration_is_divisible(self, from_time, to_time):
 		timedelta = to_time - from_time
 		if timedelta.total_seconds() % (self.appointment_duration * 60):
-			frappe.throw(_("The difference between from time and To Time must be a multiple of Appointment"))
+			nts.throw(_("The difference between from time and To Time must be a multiple of Appointment"))

@@ -1,6 +1,6 @@
-import frappe
-from frappe.test_runner import make_test_records
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.test_runner import make_test_records
+from nts.tests.utils import ntsTestCase
 
 from prodman.stock.get_item_details import get_item_details
 
@@ -8,13 +8,13 @@ test_ignore = ["BOM"]
 test_dependencies = ["Customer", "Supplier", "Item", "Price List", "Item Price"]
 
 
-class TestGetItemDetail(FrappeTestCase):
+class TestGetItemDetail(ntsTestCase):
 	def setUp(self):
 		make_test_records("Price List")
 		super().setUp()
 
 	def test_get_item_detail_purchase_order(self):
-		args = frappe._dict(
+		args = nts._dict(
 			{
 				"item_code": "_Test Item",
 				"company": "_Test Company",
@@ -38,7 +38,7 @@ class TestGetItemDetail(FrappeTestCase):
 	# making this test in get_item_details test file as feat/fix is present in that method
 	def test_fetch_price_from_list_rate_on_doc_save(self):
 		# create item
-		item = frappe.get_doc(
+		item = nts.get_doc(
 			{
 				"doctype": "Item",
 				"item_code": "Test Item with Batch",
@@ -50,7 +50,7 @@ class TestGetItemDetail(FrappeTestCase):
 		).insert()
 
 		# create batch
-		frappe.get_doc(
+		nts.get_doc(
 			{
 				"doctype": "Batch",
 				"batch_id": "BATCH01",
@@ -59,7 +59,7 @@ class TestGetItemDetail(FrappeTestCase):
 		).insert()
 
 		# create item price
-		frappe.get_doc(
+		nts.get_doc(
 			{
 				"doctype": "Item Price",
 				"price_list": "Standard Selling",

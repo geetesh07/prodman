@@ -1,16 +1,16 @@
-# Copyright (c) 2024, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2024, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.utils import flt
-from frappe.utils.nestedset import get_descendants_of
+import nts
+from nts import _
+from nts.utils import flt
+from nts.utils.nestedset import get_descendants_of
 
 
 def execute(filters=None):
-	filters = frappe._dict(filters or {})
+	filters = nts._dict(filters or {})
 	if filters.from_date > filters.to_date:
-		frappe.throw(_("From Date cannot be greater than To Date"))
+		nts.throw(_("From Date cannot be greater than To Date"))
 
 	columns = get_columns(filters)
 	data = get_data(filters)
@@ -177,37 +177,37 @@ def get_data(filters):
 			"billed_amt": flt(record.get("billed_amt")),
 			"company": record.get("company"),
 		}
-		row["currency"] = frappe.get_cached_value("Company", row["company"], "default_currency")
+		row["currency"] = nts.get_cached_value("Company", row["company"], "default_currency")
 		data.append(row)
 
 	return data
 
 
 def get_supplier_details():
-	details = frappe.get_all("Supplier", fields=["name", "supplier_name", "supplier_group"])
+	details = nts.get_all("Supplier", fields=["name", "supplier_name", "supplier_group"])
 	supplier_details = {}
 	for d in details:
 		supplier_details.setdefault(
 			d.name,
-			frappe._dict({"supplier_name": d.supplier_name, "supplier_group": d.supplier_group}),
+			nts._dict({"supplier_name": d.supplier_name, "supplier_group": d.supplier_group}),
 		)
 	return supplier_details
 
 
 def get_item_details():
-	details = frappe.db.get_all("Item", fields=["name", "item_name", "item_group"])
+	details = nts.db.get_all("Item", fields=["name", "item_name", "item_group"])
 	item_details = {}
 	for d in details:
-		item_details.setdefault(d.name, frappe._dict({"item_name": d.item_name, "item_group": d.item_group}))
+		item_details.setdefault(d.name, nts._dict({"item_name": d.item_name, "item_group": d.item_group}))
 	return item_details
 
 
 def get_purchase_order_details(company_list, filters):
-	db_po = frappe.qb.DocType("Purchase Order")
-	db_po_item = frappe.qb.DocType("Purchase Order Item")
+	db_po = nts.qb.DocType("Purchase Order")
+	db_po_item = nts.qb.DocType("Purchase Order Item")
 
 	query = (
-		frappe.qb.from_(db_po)
+		nts.qb.from_(db_po)
 		.inner_join(db_po_item)
 		.on(db_po_item.parent == db_po.name)
 		.select(

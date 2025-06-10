@@ -1,6 +1,6 @@
-import frappe
+import nts
 
 
 def execute():
-	if frappe.db.exists("Page", "point-of-sale"):
-		frappe.rename_doc("Page", "pos", "point-of-sale", 1, 1)
+	if nts.db.exists("Page", "point-of-sale"):
+		nts.rename_doc("Page", "pos", "point-of-sale", 1, 1)

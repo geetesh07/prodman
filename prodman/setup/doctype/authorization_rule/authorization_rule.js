@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.ui.form.on("Authorization Rule", {
+nts.ui.form.on("Authorization Rule", {
 	refresh: function (frm) {
 		frm.events.set_master_type(frm);
 	},
@@ -46,11 +46,11 @@ cur_frm.cscript.refresh = function (doc, cdt, cdn) {
 };
 
 cur_frm.fields_dict.system_user.get_query = function (doc, cdt, cdn) {
-	return { query: "frappe.core.doctype.user.user.user_query" };
+	return { query: "nts.core.doctype.user.user.user_query" };
 };
 
 cur_frm.fields_dict.approving_user.get_query = function (doc, cdt, cdn) {
-	return { query: "frappe.core.doctype.user.user.user_query" };
+	return { query: "nts.core.doctype.user.user.user_query" };
 };
 
 cur_frm.fields_dict["approving_role"].get_query = cur_frm.fields_dict["system_role"].get_query;

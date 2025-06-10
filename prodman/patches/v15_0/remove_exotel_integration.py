@@ -1,30 +1,30 @@
 import click
-import frappe
-from frappe import _
-from frappe.desk.doctype.notification_log.notification_log import make_notification_logs
-from frappe.utils.user import get_system_managers
+import nts
+from nts import _
+from nts.desk.doctype.notification_log.notification_log import make_notification_logs
+from nts.utils.user import get_system_managers
 
 SETTINGS_DOCTYPE = "Exotel Settings"
 
 
 def execute():
-	if "exotel_integration" in frappe.get_installed_apps():
+	if "exotel_integration" in nts.get_installed_apps():
 		return
 
 	try:
-		exotel = frappe.get_doc(SETTINGS_DOCTYPE)
+		exotel = nts.get_doc(SETTINGS_DOCTYPE)
 		if exotel.enabled:
 			notify_existing_users()
 
-		frappe.delete_doc("DocType", SETTINGS_DOCTYPE)
+		nts.delete_doc("DocType", SETTINGS_DOCTYPE)
 	except Exception:
-		frappe.log_error("Failed to remove Exotel Integration.")
+		nts.log_error("Failed to remove Exotel Integration.")
 
 
 def notify_existing_users():
 	click.secho(
 		"Exotel integration is moved to a separate app and will be removed from prodman in version-15.\n"
-		"Please install the app to continue using the integration: https://github.com/frappe/exotel_integration",
+		"Please install the app to continue using the integration: https://github.com/nts/exotel_integration",
 		fg="yellow",
 	)
 

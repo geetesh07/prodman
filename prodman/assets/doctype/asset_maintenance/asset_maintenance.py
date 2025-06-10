@@ -1,12 +1,12 @@
-# Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2017, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _, throw
-from frappe.desk.form import assign_to
-from frappe.model.document import Document
-from frappe.utils import add_days, add_months, add_years, getdate, nowdate
+import nts 
+from nts  import _, throw
+from nts .desk.form import assign_to
+from nts .model.document import Document
+from nts .utils import add_days, add_months, add_years, getdate, nowdate
 
 
 class AssetMaintenance(Document):
@@ -16,7 +16,7 @@ class AssetMaintenance(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.assets.doctype.asset_maintenance_task.asset_maintenance_task import AssetMaintenanceTask
 
@@ -46,7 +46,7 @@ class AssetMaintenance(Document):
 		self.sync_maintenance_tasks()
 
 	def after_delete(self):
-		asset = frappe.get_doc("Asset", self.asset_name)
+		asset = nts .get_doc("Asset", self.asset_name)
 		if asset.status == "In Maintenance":
 			asset.set_status()
 
@@ -57,19 +57,19 @@ class AssetMaintenance(Document):
 			update_maintenance_log(
 				asset_maintenance=self.name, item_code=self.item_code, item_name=self.item_name, task=task
 			)
-		asset_maintenance_logs = frappe.get_all(
+		asset_maintenance_logs = nts .get_all(
 			"Asset Maintenance Log",
 			fields=["name"],
 			filters={"asset_maintenance": self.name, "task": ("not in", tasks_names)},
 		)
 		if asset_maintenance_logs:
 			for asset_maintenance_log in asset_maintenance_logs:
-				maintenance_log = frappe.get_doc("Asset Maintenance Log", asset_maintenance_log.name)
+				maintenance_log = nts .get_doc("Asset Maintenance Log", asset_maintenance_log.name)
 				maintenance_log.db_set("maintenance_status", "Cancelled")
 
 
 def assign_tasks(asset_maintenance_name, assign_to_member, maintenance_task, next_due_date):
-	team_member = frappe.db.get_value("User", assign_to_member, "email")
+	team_member = nts .db.get_value("User", assign_to_member, "email")
 	args = {
 		"doctype": "Asset Maintenance",
 		"assign_to": team_member,
@@ -77,7 +77,7 @@ def assign_tasks(asset_maintenance_name, assign_to_member, maintenance_task, nex
 		"description": maintenance_task,
 		"date": next_due_date,
 	}
-	if not frappe.db.sql(
+	if not nts .db.sql(
 		"""select owner from `tabToDo`
 		where reference_type=%(doctype)s and reference_name=%(name)s and status='Open'
 		and owner=%(assign_to)s""",
@@ -88,12 +88,12 @@ def assign_tasks(asset_maintenance_name, assign_to_member, maintenance_task, nex
 		assign_to.add(args)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def calculate_next_due_date(
 	periodicity, start_date=None, end_date=None, last_completion_date=None, next_due_date=None
 ):
 	if not start_date and not last_completion_date:
-		start_date = frappe.utils.now()
+		start_date = nts .utils.now()
 
 	if last_completion_date and ((start_date and last_completion_date > start_date) or not start_date):
 		start_date = last_completion_date
@@ -123,7 +123,7 @@ def calculate_next_due_date(
 
 
 def update_maintenance_log(asset_maintenance, item_code, item_name, task):
-	asset_maintenance_log = frappe.get_value(
+	asset_maintenance_log = nts .get_value(
 		"Asset Maintenance Log",
 		{
 			"asset_maintenance": asset_maintenance,
@@ -133,7 +133,7 @@ def update_maintenance_log(asset_maintenance, item_code, item_name, task):
 	)
 
 	if not asset_maintenance_log:
-		asset_maintenance_log = frappe.get_doc(
+		asset_maintenance_log = nts .get_doc(
 			{
 				"doctype": "Asset Maintenance Log",
 				"asset_maintenance": asset_maintenance,
@@ -152,7 +152,7 @@ def update_maintenance_log(asset_maintenance, item_code, item_name, task):
 		)
 		asset_maintenance_log.insert()
 	else:
-		maintenance_log = frappe.get_doc("Asset Maintenance Log", asset_maintenance_log)
+		maintenance_log = nts .get_doc("Asset Maintenance Log", asset_maintenance_log)
 		maintenance_log.assign_to_name = task.assign_to_name
 		maintenance_log.has_certificate = task.certificate_required
 		maintenance_log.description = task.description
@@ -162,17 +162,17 @@ def update_maintenance_log(asset_maintenance, item_code, item_name, task):
 		maintenance_log.save()
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts .whitelist()
+@nts .validate_and_sanitize_search_inputs
 def get_team_members(doctype, txt, searchfield, start, page_len, filters):
-	return frappe.db.get_values(
+	return nts .db.get_values(
 		"Maintenance Team Member", {"parent": filters.get("maintenance_team")}, "team_member"
 	)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_maintenance_log(asset_name):
-	return frappe.db.sql(
+	return nts .db.sql(
 		"""
         select maintenance_status, count(asset_name) as count, asset_name
         from `tabAsset Maintenance Log`

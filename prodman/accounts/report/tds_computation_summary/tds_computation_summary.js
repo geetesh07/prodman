@@ -1,14 +1,14 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["TDS Computation Summary"] = {
+nts .query_reports["TDS Computation Summary"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_default("company"),
+			default: nts .defaults.get_default("company"),
 		},
 		{
 			fieldname: "party_type",
@@ -18,7 +18,7 @@ frappe.query_reports["TDS Computation Summary"] = {
 			reqd: 1,
 			default: "Supplier",
 			on_change: function () {
-				frappe.query_report.set_filter_value("party", "");
+				nts .query_report.set_filter_value("party", "");
 			},
 		},
 		{
@@ -26,10 +26,10 @@ frappe.query_reports["TDS Computation Summary"] = {
 			label: __("Party"),
 			fieldtype: "Dynamic Link",
 			get_options: function () {
-				var party_type = frappe.query_report.get_filter_value("party_type");
-				var party = frappe.query_report.get_filter_value("party");
+				var party_type = nts .query_report.get_filter_value("party_type");
+				var party = nts .query_report.get_filter_value("party");
 				if (party && !party_type) {
-					frappe.throw(__("Please select Party Type first"));
+					nts .throw(__("Please select Party Type first"));
 				}
 				return party_type;
 			},
@@ -45,7 +45,7 @@ frappe.query_reports["TDS Computation Summary"] = {
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+			default: nts .datetime.add_months(nts .datetime.get_today(), -1),
 			reqd: 1,
 			width: "60px",
 		},
@@ -53,7 +53,7 @@ frappe.query_reports["TDS Computation Summary"] = {
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: frappe.datetime.get_today(),
+			default: nts .datetime.get_today(),
 			reqd: 1,
 			width: "60px",
 		},

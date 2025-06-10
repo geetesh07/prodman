@@ -1,28 +1,28 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.query_reports["Gross Profit"] = {
+nts .query_reports["Gross Profit"] = {
 	filters: [
 		{
 			fieldname: "company",
 			label: __("Company"),
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts .defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
 			fieldname: "from_date",
 			label: __("From Date"),
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[1],
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today(), true)[1],
 			reqd: 1,
 		},
 		{
 			fieldname: "to_date",
 			label: __("To Date"),
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[2],
+			default: prodman.utils.get_fiscal_year(nts .datetime.get_today(), true)[2],
 			reqd: 1,
 		},
 		{
@@ -57,7 +57,7 @@ frappe.query_reports["Gross Profit"] = {
 			fieldtype: "Link",
 			options: "Warehouse",
 			get_query: function () {
-				var company = frappe.query_report.get_filter_value("company");
+				var company = nts .query_report.get_filter_value("company");
 				return {
 					filters: [["Warehouse", "company", "=", company]],
 				};
@@ -69,8 +69,8 @@ frappe.query_reports["Gross Profit"] = {
 			fieldtype: "MultiSelectList",
 			options: "Cost Center",
 			get_data: function (txt) {
-				return frappe.db.get_link_options("Cost Center", txt, {
-					company: frappe.query_report.get_filter_value("company"),
+				return nts .db.get_link_options("Cost Center", txt, {
+					company: nts .query_report.get_filter_value("company"),
 				});
 			},
 		},
@@ -80,8 +80,8 @@ frappe.query_reports["Gross Profit"] = {
 			fieldtype: "MultiSelectList",
 			options: "Project",
 			get_data: function (txt) {
-				return frappe.db.get_link_options("Project", txt, {
-					company: frappe.query_report.get_filter_value("company"),
+				return nts .db.get_link_options("Project", txt, {
+					company: nts .query_report.get_filter_value("company"),
 				});
 			},
 		},

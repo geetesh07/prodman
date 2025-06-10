@@ -1,14 +1,14 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2020, nts Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("accounts", "doctype", "Payment Schedule")
-	if frappe.db.count("Payment Schedule"):
-		frappe.db.sql(
+	nts.reload_doc("accounts", "doctype", "Payment Schedule")
+	if nts.db.count("Payment Schedule"):
+		nts.db.sql(
 			"""
 			UPDATE
 				`tabPayment Schedule` ps

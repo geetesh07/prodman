@@ -1,14 +1,14 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.query_reports["Job Card Summary"] = {
+nts.query_reports["Job Card Summary"] = {
 	filters: [
 		{
 			label: __("Company"),
 			fieldname: "company",
 			fieldtype: "Link",
 			options: "Company",
-			default: frappe.defaults.get_user_default("Company"),
+			default: nts.defaults.get_user_default("Company"),
 			reqd: 1,
 		},
 		{
@@ -16,16 +16,16 @@ frappe.query_reports["Job Card Summary"] = {
 			label: __("Fiscal Year"),
 			fieldtype: "Link",
 			options: "Fiscal Year",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today()),
+			default: prodman.utils.get_fiscal_year(nts.datetime.get_today()),
 			reqd: 1,
 			on_change: function (query_report) {
 				var fiscal_year = query_report.get_values().fiscal_year;
 				if (!fiscal_year) {
 					return;
 				}
-				frappe.model.with_doc("Fiscal Year", fiscal_year, function (r) {
-					var fy = frappe.model.get_doc("Fiscal Year", fiscal_year);
-					frappe.query_report.set_filter_value({
+				nts.model.with_doc("Fiscal Year", fiscal_year, function (r) {
+					var fy = nts.model.get_doc("Fiscal Year", fiscal_year);
+					nts.query_report.set_filter_value({
 						from_date: fy.year_start_date,
 						to_date: fy.year_end_date,
 					});
@@ -36,14 +36,14 @@ frappe.query_reports["Job Card Summary"] = {
 			label: __("From Posting Date"),
 			fieldname: "from_date",
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[1],
+			default: prodman.utils.get_fiscal_year(nts.datetime.get_today(), true)[1],
 			reqd: 1,
 		},
 		{
 			label: __("To Posting Date"),
 			fieldname: "to_date",
 			fieldtype: "Date",
-			default: prodman.utils.get_fiscal_year(frappe.datetime.get_today(), true)[2],
+			default: prodman.utils.get_fiscal_year(nts.datetime.get_today(), true)[2],
 			reqd: 1,
 		},
 		{
@@ -58,7 +58,7 @@ frappe.query_reports["Job Card Summary"] = {
 			fieldtype: "MultiSelectList",
 			options: "Work Order",
 			get_data: function (txt) {
-				return frappe.db.get_link_options("Work Order", txt);
+				return nts.db.get_link_options("Work Order", txt);
 			},
 		},
 		{
@@ -67,7 +67,7 @@ frappe.query_reports["Job Card Summary"] = {
 			fieldtype: "MultiSelectList",
 			options: "Item",
 			get_data: function (txt) {
-				return frappe.db.get_link_options("Item", txt);
+				return nts.db.get_link_options("Item", txt);
 			},
 		},
 		{

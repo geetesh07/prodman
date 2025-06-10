@@ -1,7 +1,7 @@
-import frappe
+import nts
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_last_interaction(contact=None, lead=None):
 	if not contact and not lead:
 		return
@@ -11,7 +11,7 @@ def get_last_interaction(contact=None, lead=None):
 	if contact:
 		query_condition = ""
 		values = []
-		contact = frappe.get_doc("Contact", contact)
+		contact = nts.get_doc("Contact", contact)
 		for link in contact.links:
 			if link.link_doctype == "Customer":
 				last_issue = get_last_issue_from_customer(link.link_name)
@@ -21,7 +21,7 @@ def get_last_interaction(contact=None, lead=None):
 		if query_condition:
 			# remove extra appended 'OR'
 			query_condition = query_condition[:-2]
-			last_communication = frappe.db.sql(
+			last_communication = nts.db.sql(
 				f"""
 				SELECT `name`, `content`
 				FROM `tabCommunication`
@@ -35,7 +35,7 @@ def get_last_interaction(contact=None, lead=None):
 			)  # nosec
 
 	if lead:
-		last_communication = frappe.get_all(
+		last_communication = nts.get_all(
 			"Communication",
 			filters={"reference_doctype": "Lead", "reference_name": lead, "sent_or_received": "Received"},
 			fields=["name", "content"],
@@ -49,7 +49,7 @@ def get_last_interaction(contact=None, lead=None):
 
 
 def get_last_issue_from_customer(customer_name):
-	issues = frappe.get_all(
+	issues = nts.get_all(
 		"Issue",
 		{"customer": customer_name},
 		["name", "subject", "customer"],
@@ -64,10 +64,10 @@ def get_scheduled_employees_for_popup(communication_medium):
 	if not communication_medium:
 		return []
 
-	now_time = frappe.utils.nowtime()
-	weekday = frappe.utils.get_weekday()
+	now_time = nts.utils.nowtime()
+	weekday = nts.utils.get_weekday()
 
-	available_employee_groups = frappe.get_all(
+	available_employee_groups = nts.get_all(
 		"Communication Medium Timeslot",
 		filters={
 			"day_of_week": weekday,
@@ -80,7 +80,7 @@ def get_scheduled_employees_for_popup(communication_medium):
 
 	available_employee_groups = tuple([emp.employee_group for emp in available_employee_groups])
 
-	employees = frappe.get_all(
+	employees = nts.get_all(
 		"Employee Group Table", filters={"parent": ["in", available_employee_groups]}, fields=["user_id"]
 	)
 

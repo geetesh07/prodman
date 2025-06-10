@@ -1,10 +1,10 @@
 # Python bytecode 2.7 (62211)
-# Embedded file name: /Users/anuragmishra/frappe-develop/apps/prodman/prodman/buying/report/subcontracted_raw_materials_to_be_transferred/test_subcontracted_raw_materials_to_be_transferred.py
+# Embedded file name: /Users/anuragmishra/nts-develop/apps/prodman/prodman/buying/report/subcontracted_raw_materials_to_be_transferred/test_subcontracted_raw_materials_to_be_transferred.py
 # Compiled at: 2019-05-06 10:24:35
 # Decompiled by https://python-decompiler.com
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 from prodman.buying.report.subcontracted_raw_materials_to_be_transferred.subcontracted_raw_materials_to_be_transferred import (
 	execute,
@@ -17,7 +17,7 @@ from prodman.controllers.tests.test_subcontracting_controller import (
 from prodman.stock.doctype.stock_entry.test_stock_entry import make_stock_entry
 
 
-class TestSubcontractedItemToBeTransferred(FrappeTestCase):
+class TestSubcontractedItemToBeTransferred(ntsTestCase):
 	def test_pending_and_transferred_qty(self):
 		make_service_item("Subcontracted Service Item 1")
 		service_items = [
@@ -41,15 +41,15 @@ class TestSubcontractedItemToBeTransferred(FrappeTestCase):
 		transfer_subcontracted_raw_materials(sco)
 
 		col, data = execute(
-			filters=frappe._dict(
+			filters=nts._dict(
 				{
 					"order_type": "Subcontracting Order",
 					"supplier": sco.supplier,
-					"from_date": frappe.utils.get_datetime(
-						frappe.utils.add_to_date(sco.transaction_date, days=-10)
+					"from_date": nts.utils.get_datetime(
+						nts.utils.add_to_date(sco.transaction_date, days=-10)
 					),
-					"to_date": frappe.utils.get_datetime(
-						frappe.utils.add_to_date(sco.transaction_date, days=10)
+					"to_date": nts.utils.get_datetime(
+						nts.utils.add_to_date(sco.transaction_date, days=10)
 					),
 				}
 			)
@@ -103,7 +103,7 @@ def transfer_subcontracted_raw_materials(sco):
 			"stock_uom": "Nos",
 		},
 	]
-	se = frappe.get_doc(make_rm_stock_entry(sco.name, rm_items))
+	se = nts.get_doc(make_rm_stock_entry(sco.name, rm_items))
 	se.from_warehouse = "_Test Warehouse - _TC"
 	se.to_warehouse = "_Test Warehouse - _TC"
 	se.stock_entry_type = "Send to Subcontractor"

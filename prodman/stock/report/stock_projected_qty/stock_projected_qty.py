@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import flt, today
+import nts
+from nts import _
+from nts.utils import flt, today
 from pypika.terms import ExistsCriterion
 
 from prodman.accounts.doctype.pos_invoice.pos_invoice import get_pos_reserved_qty
@@ -16,7 +16,7 @@ from prodman.stock.utils import (
 
 def execute(filters=None):
 	is_reposting_item_valuation_in_progress()
-	filters = frappe._dict(filters or {})
+	filters = nts._dict(filters or {})
 	include_uom = filters.get("include_uom")
 	columns = get_columns()
 	bin_list = get_bin_list(filters)
@@ -34,7 +34,7 @@ def execute(filters=None):
 
 		# item = item_map.setdefault(bin.item_code, get_item(bin.item_code))
 		company = warehouse_company.setdefault(
-			bin.warehouse, frappe.db.get_value("Warehouse", bin.warehouse, "company")
+			bin.warehouse, nts.db.get_value("Warehouse", bin.warehouse, "company")
 		)
 
 		if filters.brand and filters.brand != item.brand:
@@ -227,9 +227,9 @@ def get_columns():
 
 
 def get_bin_list(filters):
-	bin = frappe.qb.DocType("Bin")
+	bin = nts.qb.DocType("Bin")
 	query = (
-		frappe.qb.from_(bin)
+		nts.qb.from_(bin)
 		.select(
 			bin.item_code,
 			bin.warehouse,
@@ -250,13 +250,13 @@ def get_bin_list(filters):
 		query = query.where(bin.item_code == filters.item_code)
 
 	if filters.warehouse:
-		warehouse_details = frappe.db.get_value("Warehouse", filters.warehouse, ["lft", "rgt"], as_dict=1)
+		warehouse_details = nts.db.get_value("Warehouse", filters.warehouse, ["lft", "rgt"], as_dict=1)
 
 		if warehouse_details:
-			wh = frappe.qb.DocType("Warehouse")
+			wh = nts.qb.DocType("Warehouse")
 			query = query.where(
 				ExistsCriterion(
-					frappe.qb.from_(wh)
+					nts.qb.from_(wh)
 					.select(wh.name)
 					.where(
 						(wh.lft >= warehouse_details.lft)
@@ -274,11 +274,11 @@ def get_bin_list(filters):
 def get_item_map(item_code, include_uom):
 	"""Optimization: get only the item doc and re_order_levels table"""
 
-	bin = frappe.qb.DocType("Bin")
-	item = frappe.qb.DocType("Item")
+	bin = nts.qb.DocType("Bin")
+	item = nts.qb.DocType("Item")
 
 	query = (
-		frappe.qb.from_(item)
+		nts.qb.from_(item)
 		.select(item.name, item.item_name, item.description, item.item_group, item.brand, item.stock_uom)
 		.where(
 			(item.is_stock_item == 1)
@@ -288,7 +288,7 @@ def get_item_map(item_code, include_uom):
 				| (item.end_of_life.isnull())
 				| (item.end_of_life == "0000-00-00")
 			)
-			& (ExistsCriterion(frappe.qb.from_(bin).select(bin.name).where(bin.item_code == item.name)))
+			& (ExistsCriterion(nts.qb.from_(bin).select(bin.name).where(bin.item_code == item.name)))
 		)
 	)
 
@@ -296,26 +296,26 @@ def get_item_map(item_code, include_uom):
 		query = query.where(item.item_code == item_code)
 
 	if include_uom:
-		ucd = frappe.qb.DocType("UOM Conversion Detail")
+		ucd = nts.qb.DocType("UOM Conversion Detail")
 		query = query.select(ucd.conversion_factor)
 		query = query.left_join(ucd).on((ucd.parent == item.name) & (ucd.uom == include_uom))
 
 	items = query.run(as_dict=True)
 
-	ir = frappe.qb.DocType("Item Reorder")
-	query = frappe.qb.from_(ir).select("*")
+	ir = nts.qb.DocType("Item Reorder")
+	query = nts.qb.from_(ir).select("*")
 
 	if item_code:
 		query = query.where(ir.parent == item_code)
 
-	reorder_levels = frappe._dict()
+	reorder_levels = nts._dict()
 	for d in query.run(as_dict=True):
 		if d.parent not in reorder_levels:
 			reorder_levels[d.parent] = []
 
 		reorder_levels[d.parent].append(d)
 
-	item_map = frappe._dict()
+	item_map = nts._dict()
 	for item in items:
 		item["reorder_levels"] = reorder_levels.get(item.name) or []
 		item_map[item.name] = item

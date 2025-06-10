@@ -1,12 +1,12 @@
-# Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2021, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe.contacts.address_and_contact import (
+import nts
+from nts.contacts.address_and_contact import (
 	delete_contact_and_address,
 	load_address_and_contact,
 )
-from frappe.model.mapper import get_mapped_doc
+from nts.model.mapper import get_mapped_doc
 
 from prodman.crm.utils import CRMNote, copy_comments, link_communications, link_open_events
 
@@ -18,7 +18,7 @@ class Prospect(CRMNote):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.crm.doctype.crm_note.crm_note import CRMNote
 		from prodman.crm.doctype.prospect_lead.prospect_lead import ProspectLead
@@ -50,7 +50,7 @@ class Prospect(CRMNote):
 		delete_contact_and_address(self.doctype, self.name)
 
 	def after_insert(self):
-		carry_forward_communication_and_comments = frappe.db.get_single_value(
+		carry_forward_communication_and_comments = nts.db.get_single_value(
 			"CRM Settings", "carry_forward_communication_and_comments"
 		)
 
@@ -68,13 +68,13 @@ class Prospect(CRMNote):
 
 	def link_with_lead_contact_and_address(self):
 		for row in self.leads:
-			links = frappe.get_all(
+			links = nts.get_all(
 				"Dynamic Link",
 				filters={"link_doctype": "Lead", "link_name": row.lead},
 				fields=["parent", "parenttype"],
 			)
 			for link in links:
-				linked_doc = frappe.get_doc(link["parenttype"], link["parent"])
+				linked_doc = nts.get_doc(link["parenttype"], link["parent"])
 				exists = False
 
 				for d in linked_doc.get("links"):
@@ -86,12 +86,12 @@ class Prospect(CRMNote):
 					linked_doc.save(ignore_permissions=True)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_customer(source_name, target_doc=None):
 	def set_missing_values(source, target):
 		target.customer_type = "Company"
 		target.company_name = source.name
-		target.customer_group = source.customer_group or frappe.db.get_default("Customer Group")
+		target.customer_group = source.customer_group or nts.db.get_default("Customer Group")
 
 	doclist = get_mapped_doc(
 		"Prospect",
@@ -110,12 +110,12 @@ def make_customer(source_name, target_doc=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_opportunity(source_name, target_doc=None):
 	def set_missing_values(source, target):
 		target.opportunity_from = "Prospect"
 		target.customer_name = source.company_name
-		target.customer_group = source.customer_group or frappe.db.get_default("Customer Group")
+		target.customer_group = source.customer_group or nts.db.get_default("Customer Group")
 
 	doclist = get_mapped_doc(
 		"Prospect",
@@ -134,9 +134,9 @@ def make_opportunity(source_name, target_doc=None):
 	return doclist
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_opportunities(prospect):
-	return frappe.get_all(
+	return nts.get_all(
 		"Opportunity",
 		filters={"opportunity_from": "Prospect", "party_name": prospect},
 		fields=[

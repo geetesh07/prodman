@@ -1,12 +1,12 @@
-# Copyright (c) 2024, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2024, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 import hashlib
 
-import frappe
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils.data import get_link_to_form
+import nts
+from nts import _
+from nts.model.document import Document
+from nts.utils.data import get_link_to_form
 from lxml import etree
 
 
@@ -17,8 +17,8 @@ class CommonCode(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.core.doctype.dynamic_link.dynamic_link import DynamicLink
-		from frappe.types import DF
+		from nts.core.doctype.dynamic_link.dynamic_link import DynamicLink
+		from nts.types import DF
 
 		additional_data: DF.Code | None
 		applies_to: DF.Table[DynamicLink]
@@ -34,7 +34,7 @@ class CommonCode(Document):
 	def validate_distinct_references(self):
 		"""Ensure no two Common Codes of the same Code List are linked to the same document."""
 		for link in self.applies_to:
-			existing_links = frappe.get_all(
+			existing_links = nts.get_all(
 				"Common Code",
 				filters=[
 					["name", "!=", self.name],
@@ -47,7 +47,7 @@ class CommonCode(Document):
 
 			if existing_links:
 				existing_link = existing_links[0]
-				frappe.throw(
+				nts.throw(
 					_("{0} {1} is already linked to Common Code {2}.").format(
 						link.link_doctype,
 						link.link_name,
@@ -85,7 +85,7 @@ def simple_hash(input_string, length=6):
 
 def import_genericode(code_list: str, file_name: str, column_map: dict, filters: dict | None = None):
 	"""Import genericode file and create Common Code entries"""
-	file_path = frappe.utils.file_manager.get_file_path(file_name)
+	file_path = nts.utils.file_manager.get_file_path(file_name)
 	parser = etree.XMLParser(remove_blank_text=True)
 	tree = etree.parse(file_path, parser=parser)
 	root = tree.getroot()
@@ -101,14 +101,14 @@ def import_genericode(code_list: str, file_name: str, column_map: dict, filters:
 	elements = root.xpath(xpath_expr)
 	total_elements = len(elements)
 	for i, xml_element in enumerate(elements, start=1):
-		common_code: "CommonCode" = frappe.new_doc("Common Code")
+		common_code: "CommonCode" = nts.new_doc("Common Code")
 		common_code.code_list = code_list
 		common_code.from_genericode(column_map, xml_element)
 		common_code.save()
-		frappe.publish_progress(i / total_elements * 100, title=_("Importing Common Codes"))
+		nts.publish_progress(i / total_elements * 100, title=_("Importing Common Codes"))
 
 	return total_elements
 
 
 def on_doctype_update():
-	frappe.db.add_index("Common Code", ["code_list", "common_code"])
+	nts.db.add_index("Common Code", ["code_list", "common_code"])

@@ -1,7 +1,7 @@
-// Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+// Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 // License: GNU General Public License v3. See license.txt
 
-frappe.ui.form.on("Item Group", {
+nts.ui.form.on("Item Group", {
 	onload: function (frm) {
 		frm.list_route = "Tree/Item Group";
 
@@ -80,12 +80,12 @@ frappe.ui.form.on("Item Group", {
 	refresh: function (frm) {
 		frm.trigger("set_root_readonly");
 		frm.add_custom_button(__("Item Group Tree"), function () {
-			frappe.set_route("Tree", "Item Group");
+			nts.set_route("Tree", "Item Group");
 		});
 
 		if (!frm.is_new()) {
 			frm.add_custom_button(__("Items"), function () {
-				frappe.set_route("List", "Item", { item_group: frm.doc.name });
+				nts.set_route("List", "Item", { item_group: frm.doc.name });
 			});
 		}
 	},
@@ -99,5 +99,5 @@ frappe.ui.form.on("Item Group", {
 		}
 	},
 
-	page_name: frappe.utils.warn_page_name_change,
+	page_name: nts.utils.warn_page_name_change,
 });

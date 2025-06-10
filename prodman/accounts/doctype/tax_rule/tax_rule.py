@@ -1,28 +1,28 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import functools
 
-import frappe
-from frappe import _
-from frappe.contacts.doctype.address.address import get_default_address
-from frappe.model.document import Document
-from frappe.utils import cstr
-from frappe.utils.nestedset import get_root_of
+import nts 
+from nts  import _
+from nts .contacts.doctype.address.address import get_default_address
+from nts .model.document import Document
+from nts .utils import cstr
+from nts .utils.nestedset import get_root_of
 
 from prodman.setup.doctype.customer_group.customer_group import get_parent_customer_groups
 
 
-class IncorrectCustomerGroup(frappe.ValidationError):
+class IncorrectCustomerGroup(nts .ValidationError):
 	pass
 
 
-class IncorrectSupplierType(frappe.ValidationError):
+class IncorrectSupplierType(nts .ValidationError):
 	pass
 
 
-class ConflictingTaxRule(frappe.ValidationError):
+class ConflictingTaxRule(nts .ValidationError):
 	pass
 
 
@@ -33,7 +33,7 @@ class TaxRule(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		billing_city: DF.Data | None
 		billing_country: DF.Link | None
@@ -83,7 +83,7 @@ class TaxRule(Document):
 				self.supplier_group = None
 
 		if not (self.sales_tax_template or self.purchase_tax_template):
-			frappe.throw(_("Tax Template is mandatory."))
+			nts .throw(_("Tax Template is mandatory."))
 
 	def validate_filters(self):
 		filters = {
@@ -112,7 +112,7 @@ class TaxRule(Document):
 		for d in filters:
 			if conds:
 				conds += " and "
-			conds += f"""ifnull({d}, '') = {frappe.db.escape(cstr(filters[d]))}"""
+			conds += f"""ifnull({d}, '') = {nts .db.escape(cstr(filters[d]))}"""
 
 		if self.from_date and self.to_date:
 			conds += f""" and ((from_date > '{self.from_date}' and from_date < '{self.to_date}') or
@@ -126,7 +126,7 @@ class TaxRule(Document):
 		elif self.to_date and not self.from_date:
 			conds += f""" and from_date < '{self.to_date}'"""
 
-		tax_rule = frappe.db.sql(
+		tax_rule = nts .db.sql(
 			f"select name, priority \
 			from `tabTax Rule` where {conds} and name != '{self.name}'",
 			as_dict=1,
@@ -134,25 +134,25 @@ class TaxRule(Document):
 
 		if tax_rule:
 			if tax_rule[0].priority == self.priority:
-				frappe.throw(_("Tax Rule Conflicts with {0}").format(tax_rule[0].name), ConflictingTaxRule)
+				nts .throw(_("Tax Rule Conflicts with {0}").format(tax_rule[0].name), ConflictingTaxRule)
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_party_details(party, party_type, args=None):
 	out = {}
 	billing_address, shipping_address = None, None
 	if args:
 		if args.get("billing_address"):
-			billing_address = frappe.get_doc("Address", args.get("billing_address"))
+			billing_address = nts .get_doc("Address", args.get("billing_address"))
 		if args.get("shipping_address"):
-			shipping_address = frappe.get_doc("Address", args.get("shipping_address"))
+			shipping_address = nts .get_doc("Address", args.get("shipping_address"))
 	else:
 		billing_address_name = get_default_address(party_type, party)
 		shipping_address_name = get_default_address(party_type, party, "is_shipping_address")
 		if billing_address_name:
-			billing_address = frappe.get_doc("Address", billing_address_name)
+			billing_address = nts .get_doc("Address", billing_address_name)
 		if shipping_address_name:
-			shipping_address = frappe.get_doc("Address", shipping_address_name)
+			shipping_address = nts .get_doc("Address", shipping_address_name)
 
 	if billing_address:
 		out["billing_city"] = billing_address.city
@@ -173,7 +173,7 @@ def get_party_details(party, party_type, args=None):
 
 def get_tax_template(posting_date, args):
 	"""Get matching tax rule"""
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 	conditions = []
 
 	if posting_date:
@@ -185,7 +185,7 @@ def get_tax_template(posting_date, args):
 		conditions.append("(from_date is null) and (to_date is null)")
 
 	conditions.append(
-		"ifnull(tax_category, '') = {}".format(frappe.db.escape(cstr(args.get("tax_category")), False))
+		"ifnull(tax_category, '') = {}".format(nts .db.escape(cstr(args.get("tax_category")), False))
 	)
 	if "tax_category" in args.keys():
 		del args["tax_category"]
@@ -199,9 +199,9 @@ def get_tax_template(posting_date, args):
 			customer_group_condition = get_customer_group_condition(value)
 			conditions.append(f"ifnull({key}, '') in ('', {customer_group_condition})")
 		else:
-			conditions.append(f"ifnull({key}, '') in ('', {frappe.db.escape(cstr(value))})")
+			conditions.append(f"ifnull({key}, '') in ('', {nts .db.escape(cstr(value))})")
 
-	tax_rule = frappe.db.sql(
+	tax_rule = nts .db.sql(
 		"""select * from `tabTax Rule`
 		where {}""".format(" and ".join(conditions)),
 		as_dict=True,
@@ -230,7 +230,7 @@ def get_tax_template(posting_date, args):
 	tax_template = rule.sales_tax_template or rule.purchase_tax_template
 	doctype = f"{rule.tax_type} Taxes and Charges Template"
 
-	if frappe.db.get_value(doctype, tax_template, "disabled") == 1:
+	if nts .db.get_value(doctype, tax_template, "disabled") == 1:
 		return None
 
 	return tax_template
@@ -238,7 +238,7 @@ def get_tax_template(posting_date, args):
 
 def get_customer_group_condition(customer_group):
 	condition = ""
-	customer_groups = ["%s" % (frappe.db.escape(d.name)) for d in get_parent_customer_groups(customer_group)]
+	customer_groups = ["%s" % (nts .db.escape(d.name)) for d in get_parent_customer_groups(customer_group)]
 	if customer_groups:
 		condition = ",".join(["%s"] * len(customer_groups)) % (tuple(customer_groups))
 	return condition

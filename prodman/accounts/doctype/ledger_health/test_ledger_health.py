@@ -1,16 +1,16 @@
-# Copyright (c) 2024, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2024, nts  Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe import qb
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import nowdate
+import nts 
+from nts  import qb
+from nts .tests.utils import nts TestCase
+from nts .utils import nowdate
 
 from prodman.accounts.test.accounts_mixin import AccountsTestMixin
 from prodman.accounts.utils import run_ledger_health_checks
 
 
-class TestLedgerHealth(AccountsTestMixin, FrappeTestCase):
+class TestLedgerHealth(AccountsTestMixin, nts TestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_customer()
@@ -18,10 +18,10 @@ class TestLedgerHealth(AccountsTestMixin, FrappeTestCase):
 		self.clear_old_entries()
 
 	def tearDown(self):
-		frappe.db.rollback()
+		nts .db.rollback()
 
 	def configure_monitoring_tool(self):
-		monitor_settings = frappe.get_doc("Ledger Health Monitor")
+		monitor_settings = nts .get_doc("Ledger Health Monitor")
 		monitor_settings.enable_health_monitor = True
 		monitor_settings.enable_for_last_x_days = 60
 		monitor_settings.debit_credit_mismatch = True
@@ -37,7 +37,7 @@ class TestLedgerHealth(AccountsTestMixin, FrappeTestCase):
 		qb.from_(lh).delete().run()
 
 	def create_journal(self):
-		je = frappe.new_doc("Journal Entry")
+		je = nts .new_doc("Journal Entry")
 		je.company = self.company
 		je.voucher_type = "Journal Entry"
 		je.posting_date = nowdate()
@@ -58,10 +58,10 @@ class TestLedgerHealth(AccountsTestMixin, FrappeTestCase):
 		self.create_journal()
 
 		# manually cause debit-credit mismatch
-		gle = frappe.db.get_all(
+		gle = nts .db.get_all(
 			"GL Entry", filters={"voucher_no": self.je.name, "account": self.income_account}
 		)[0]
-		frappe.db.set_value("GL Entry", gle.name, "credit", 8000)
+		nts .db.set_value("GL Entry", gle.name, "credit", 8000)
 
 		run_ledger_health_checks()
 		expected = {
@@ -70,7 +70,7 @@ class TestLedgerHealth(AccountsTestMixin, FrappeTestCase):
 			"debit_credit_mismatch": True,
 			"general_and_payment_ledger_mismatch": False,
 		}
-		actual = frappe.db.get_all(
+		actual = nts .db.get_all(
 			"Ledger Health",
 			fields=[
 				"voucher_type",
@@ -86,8 +86,8 @@ class TestLedgerHealth(AccountsTestMixin, FrappeTestCase):
 		self.create_journal()
 
 		# manually cause GL and PL discrepancy
-		ple = frappe.db.get_all("Payment Ledger Entry", filters={"voucher_no": self.je.name})[0]
-		frappe.db.set_value("Payment Ledger Entry", ple.name, "amount", 11000)
+		ple = nts .db.get_all("Payment Ledger Entry", filters={"voucher_no": self.je.name})[0]
+		nts .db.set_value("Payment Ledger Entry", ple.name, "amount", 11000)
 
 		run_ledger_health_checks()
 		expected = {
@@ -96,7 +96,7 @@ class TestLedgerHealth(AccountsTestMixin, FrappeTestCase):
 			"debit_credit_mismatch": False,
 			"general_and_payment_ledger_mismatch": True,
 		}
-		actual = frappe.db.get_all(
+		actual = nts .db.get_all(
 			"Ledger Health",
 			fields=[
 				"voucher_type",

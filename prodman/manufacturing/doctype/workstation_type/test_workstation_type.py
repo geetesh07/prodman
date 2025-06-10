@@ -1,21 +1,21 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
+import nts
+from nts.tests.utils import ntsTestCase
 
 
-class TestWorkstationType(FrappeTestCase):
+class TestWorkstationType(ntsTestCase):
 	pass
 
 
 def create_workstation_type(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
-	if workstation_type := frappe.db.exists("Workstation Type", args.workstation_type):
-		return frappe.get_doc("Workstation Type", workstation_type)
+	if workstation_type := nts.db.exists("Workstation Type", args.workstation_type):
+		return nts.get_doc("Workstation Type", workstation_type)
 	else:
-		doc = frappe.new_doc("Workstation Type")
+		doc = nts.new_doc("Workstation Type")
 		doc.update(args)
 		doc.insert()
 		return doc

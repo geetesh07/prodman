@@ -1,4 +1,4 @@
-frappe.listview_settings["Putaway Rule"] = {
+nts.listview_settings["Putaway Rule"] = {
 	add_fields: ["disable"],
 	get_indicator: (doc) => {
 		if (doc.disable) {

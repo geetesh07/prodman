@@ -1,12 +1,12 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doctype("Pricing Rule")
+	nts.reload_doctype("Pricing Rule")
 
-	currency = frappe.db.get_default("currency")
-	for doc in frappe.get_all("Pricing Rule", fields=["company", "name"]):
+	currency = nts.db.get_default("currency")
+	for doc in nts.get_all("Pricing Rule", fields=["company", "name"]):
 		if doc.company:
-			currency = frappe.get_cached_value("Company", doc.company, "default_currency")
+			currency = nts.get_cached_value("Company", doc.company, "default_currency")
 
-		frappe.db.sql("""update `tabPricing Rule` set currency = %s where name = %s""", (currency, doc.name))
+		nts.db.sql("""update `tabPricing Rule` set currency = %s where name = %s""", (currency, doc.name))

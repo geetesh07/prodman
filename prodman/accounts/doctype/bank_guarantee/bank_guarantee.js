@@ -1,4 +1,4 @@
-// Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2016, nts  Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
 cur_frm.add_fetch("bank_account", "account", "account");
@@ -7,7 +7,7 @@ cur_frm.add_fetch("bank_account", "iban", "iban");
 cur_frm.add_fetch("bank_account", "branch_code", "branch_code");
 cur_frm.add_fetch("bank", "swift_number", "swift_number");
 
-frappe.ui.form.on("Bank Guarantee", {
+nts .ui.form.on("Bank Guarantee", {
 	setup: function (frm) {
 		frm.set_query("bank", function () {
 			return {
@@ -45,7 +45,7 @@ frappe.ui.form.on("Bank Guarantee", {
 		if (frm.doc.reference_docname && frm.doc.reference_doctype) {
 			let party_field = frm.doc.reference_doctype == "Sales Order" ? "customer" : "supplier";
 
-			frappe.call({
+			nts .call({
 				method: "prodman.accounts.doctype.bank_guarantee.bank_guarantee.get_voucher_details",
 				args: {
 					bank_guarantee_type: frm.doc.bg_type,
@@ -63,11 +63,11 @@ frappe.ui.form.on("Bank Guarantee", {
 	},
 
 	start_date: function (frm) {
-		var end_date = frappe.datetime.add_days(cur_frm.doc.start_date, cur_frm.doc.validity - 1);
+		var end_date = nts .datetime.add_days(cur_frm.doc.start_date, cur_frm.doc.validity - 1);
 		cur_frm.set_value("end_date", end_date);
 	},
 	validity: function (frm) {
-		var end_date = frappe.datetime.add_days(cur_frm.doc.start_date, cur_frm.doc.validity - 1);
+		var end_date = nts .datetime.add_days(cur_frm.doc.start_date, cur_frm.doc.validity - 1);
 		cur_frm.set_value("end_date", end_date);
 	},
 });

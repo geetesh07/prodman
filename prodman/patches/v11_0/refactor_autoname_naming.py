@@ -1,9 +1,9 @@
-# Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2018, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+import nts
+from nts.custom.doctype.property_setter.property_setter import make_property_setter
 
 doctype_series_map = {
 	"Activity Cost": "PROJ-ACC-.#####",
@@ -88,9 +88,9 @@ def execute():
 
 
 def set_series(doctype, value):
-	doc = frappe.db.exists("Property Setter", {"doc_type": doctype, "property": "autoname"})
+	doc = nts.db.exists("Property Setter", {"doc_type": doctype, "property": "autoname"})
 	if doc:
-		frappe.db.set_value("Property Setter", doc, "value", value)
+		nts.db.set_value("Property Setter", doc, "value", value)
 	else:
 		make_property_setter(doctype, "", "autoname", value, "", for_doctype=True)
 
@@ -99,10 +99,10 @@ def get_series():
 	series_to_set = {}
 
 	for doctype in doctype_series_map:
-		if not frappe.db.exists("DocType", doctype):
+		if not nts.db.exists("DocType", doctype):
 			continue
 
-		if not frappe.db.a_row_exists(doctype):
+		if not nts.db.a_row_exists(doctype):
 			continue
 
 		series_to_preserve = get_series_to_preserve(doctype)
@@ -117,5 +117,5 @@ def get_series():
 
 
 def get_series_to_preserve(doctype):
-	series_to_preserve = frappe.db.get_value("DocType", doctype, "autoname")
+	series_to_preserve = nts.db.get_value("DocType", doctype, "autoname")
 	return series_to_preserve

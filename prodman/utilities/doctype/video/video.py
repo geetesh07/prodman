@@ -1,16 +1,16 @@
-# Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2020, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 
 import re
 from datetime import datetime
 
-import frappe
+import nts
 import pytz
-from frappe import _
-from frappe.model.document import Document
-from frappe.utils import cint
-from frappe.utils.data import get_system_timezone
+from nts import _
+from nts.model.document import Document
+from nts.utils import cint
+from nts.utils.data import get_system_timezone
 from pyyoutube import Api
 
 
@@ -21,7 +21,7 @@ class Video(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		comment_count: DF.Float
 		description: DF.TextEditor
@@ -47,7 +47,7 @@ class Video(Document):
 			self.youtube_video_id = get_id_from_url(self.url)
 
 	def set_youtube_statistics(self):
-		api_key = frappe.db.get_single_value("Video Settings", "api_key")
+		api_key = nts.db.get_single_value("Video Settings", "api_key")
 		api = Api(api_key=api_key)
 
 		try:
@@ -64,7 +64,7 @@ class Video(Document):
 
 
 def is_tracking_enabled():
-	return frappe.db.get_single_value("Video Settings", "enable_youtube_tracking")
+	return nts.db.get_single_value("Video Settings", "enable_youtube_tracking")
 
 
 def get_frequency(value):
@@ -78,7 +78,7 @@ def get_frequency(value):
 
 def update_youtube_data():
 	# Called every 30 minutes via hooks
-	enable_youtube_tracking, frequency = frappe.db.get_value(
+	enable_youtube_tracking, frequency = nts.db.get_value(
 		"Video Settings", "Video Settings", ["enable_youtube_tracking", "frequency"]
 	)
 
@@ -106,31 +106,31 @@ def get_formatted_ids(video_list):
 	return ",".join(ids)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_id_from_url(url):
 	"""
 	Returns video id from url
 	:param youtube url: String URL
 	"""
 	if not isinstance(url, str):
-		frappe.throw(_("URL can only be a string"), title=_("Invalid URL"))
+		nts.throw(_("URL can only be a string"), title=_("Invalid URL"))
 
 	pattern = re.compile(r'[a-z\:\//\.]+(youtube|youtu)\.(com|be)/(watch\?v=|embed/|.+\?v=)?([^"&?\s]{11})?')
 	id = pattern.match(url)
 	return id.groups()[-1]
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def batch_update_youtube_data():
 	def get_youtube_statistics(video_ids):
-		api_key = frappe.db.get_single_value("Video Settings", "api_key")
+		api_key = nts.db.get_single_value("Video Settings", "api_key")
 		api = Api(api_key=api_key)
 		try:
 			video = api.get_video_by_id(video_id=video_ids)
 			video_stats = video.items
 			return video_stats
 		except Exception:
-			frappe.log_error("Unable to update YouTube statistics")
+			nts.log_error("Unable to update YouTube statistics")
 
 	def prepare_and_set_data(video_list):
 		video_ids = get_formatted_ids(video_list)
@@ -147,9 +147,9 @@ def batch_update_youtube_data():
 				"dislike_count": cint(video_stats.get("dislikeCount")),
 				"comment_count": cint(video_stats.get("commentCount")),
 			}
-			frappe.db.set_value("Video", video_id, stats)
+			nts.db.set_value("Video", video_id, stats)
 
-	video_list = frappe.get_all("Video", fields=["youtube_video_id"])
+	video_list = nts.get_all("Video", fields=["youtube_video_id"])
 	if len(video_list) > 50:
 		# Update in batches of 50
 		start, end = 0, 50

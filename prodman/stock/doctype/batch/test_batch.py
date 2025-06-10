@@ -1,13 +1,13 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 import json
 
-import frappe
-from frappe.exceptions import ValidationError
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import cint, flt
-from frappe.utils.data import add_to_date, getdate
+import nts
+from nts.exceptions import ValidationError
+from nts.tests.utils import ntsTestCase
+from nts.utils import cint, flt
+from nts.utils.data import add_to_date, getdate
 
 from prodman.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
 from prodman.stock.doctype.batch.batch import get_batch_qty
@@ -24,25 +24,25 @@ from prodman.stock.get_item_details import get_item_details
 from prodman.stock.serial_batch_bundle import SerialBatchCreation
 
 
-class TestBatch(FrappeTestCase):
+class TestBatch(ntsTestCase):
 	def test_item_has_batch_enabled(self):
 		self.assertRaises(
 			ValidationError,
-			frappe.get_doc({"doctype": "Batch", "name": "_test Batch", "item": "_Test Item"}).save,
+			nts.get_doc({"doctype": "Batch", "name": "_test Batch", "item": "_Test Item"}).save,
 		)
 
 	@classmethod
 	def make_batch_item(cls, item_name=None):
 		from prodman.stock.doctype.item.test_item import make_item
 
-		if not frappe.db.exists(item_name):
+		if not nts.db.exists(item_name):
 			return make_item(item_name, dict(has_batch_no=1, create_new_batch=1, is_stock_item=1))
 
 	def test_purchase_receipt(self, batch_qty=100):
 		"""Test automated batch creation from Purchase Receipt"""
 		self.make_batch_item("ITEM-BATCH-1")
 
-		receipt = frappe.get_doc(
+		receipt = nts.get_doc(
 			dict(
 				doctype="Purchase Receipt",
 				supplier="_Test Supplier",
@@ -63,7 +63,7 @@ class TestBatch(FrappeTestCase):
 		"""Test automated batch creation from Purchase Receipt"""
 		self.make_batch_item("ITEM-BATCH-1")
 
-		receipt = frappe.get_doc(
+		receipt = nts.get_doc(
 			dict(
 				doctype="Purchase Receipt",
 				supplier="_Test Supplier",
@@ -83,7 +83,7 @@ class TestBatch(FrappeTestCase):
 					"warehouse": "_Test Warehouse - _TC",
 					"actual_qty": 20,
 					"voucher_type": "Purchase Receipt",
-					"batches": frappe._dict({batch_no: 20}),
+					"batches": nts._dict({batch_no: 20}),
 					"type_of_transaction": "Inward",
 					"company": receipt.company,
 					"do_not_submit": 1,
@@ -93,7 +93,7 @@ class TestBatch(FrappeTestCase):
 			.name
 		)
 
-		receipt2 = frappe.get_doc(
+		receipt2 = nts.get_doc(
 			dict(
 				doctype="Purchase Receipt",
 				supplier="_Test Supplier",
@@ -117,7 +117,7 @@ class TestBatch(FrappeTestCase):
 		self.assertTrue(receipt.items[0].serial_and_batch_bundle)
 		self.assertTrue(receipt2.items[0].serial_and_batch_bundle)
 
-		batchwise_qty = frappe._dict({})
+		batchwise_qty = nts._dict({})
 		for r in [receipt, receipt2]:
 			batch_no = get_batch_from_bundle(r.items[0].serial_and_batch_bundle)
 			key = (batch_no, r.items[0].warehouse)
@@ -132,7 +132,7 @@ class TestBatch(FrappeTestCase):
 
 		self.make_batch_item("ITEM-BATCH-1")
 
-		stock_entry = frappe.get_doc(
+		stock_entry = nts.get_doc(
 			dict(
 				doctype="Stock Entry",
 				purpose="Material Receipt",
@@ -174,7 +174,7 @@ class TestBatch(FrappeTestCase):
 					"warehouse": receipt.items[0].warehouse,
 					"actual_qty": batch_qty,
 					"voucher_type": "Stock Entry",
-					"batches": frappe._dict({batch_no: batch_qty}),
+					"batches": nts._dict({batch_no: batch_qty}),
 					"type_of_transaction": "Outward",
 					"company": receipt.company,
 					"do_not_submit": 1,
@@ -184,7 +184,7 @@ class TestBatch(FrappeTestCase):
 			.name
 		)
 
-		delivery_note = frappe.get_doc(
+		delivery_note = nts.get_doc(
 			dict(
 				doctype="Delivery Note",
 				customer="_Test Customer",
@@ -224,7 +224,7 @@ class TestBatch(FrappeTestCase):
 				"voucher_type": "Delivery Note",
 				"qty": 5000,
 				"avg_rate": 10,
-				"batches": frappe._dict({batch_no: 5000}),
+				"batches": nts._dict({batch_no: 5000}),
 				"type_of_transaction": "Outward",
 				"company": receipt.company,
 			}
@@ -248,7 +248,7 @@ class TestBatch(FrappeTestCase):
 					"warehouse": receipt.items[0].warehouse,
 					"actual_qty": batch_qty,
 					"voucher_type": "Stock Entry",
-					"batches": frappe._dict({batch_no: batch_qty}),
+					"batches": nts._dict({batch_no: batch_qty}),
 					"type_of_transaction": "Outward",
 					"company": receipt.company,
 					"do_not_submit": 1,
@@ -258,7 +258,7 @@ class TestBatch(FrappeTestCase):
 			.name
 		)
 
-		stock_entry = frappe.get_doc(
+		stock_entry = nts.get_doc(
 			dict(
 				doctype="Stock Entry",
 				purpose="Material Issue",
@@ -314,22 +314,22 @@ class TestBatch(FrappeTestCase):
 
 	def test_total_batch_qty(self):
 		self.make_batch_item("ITEM-BATCH-3")
-		existing_batch_qty = flt(frappe.db.get_value("Batch", "B100", "batch_qty"))
+		existing_batch_qty = flt(nts.db.get_value("Batch", "B100", "batch_qty"))
 		stock_entry = self.make_new_batch_and_entry("ITEM-BATCH-3", "B100", "_Test Warehouse - _TC")
 
-		current_batch_qty = flt(frappe.db.get_value("Batch", "B100", "batch_qty"))
+		current_batch_qty = flt(nts.db.get_value("Batch", "B100", "batch_qty"))
 		self.assertEqual(current_batch_qty, existing_batch_qty + 90)
 
 		stock_entry.cancel()
-		current_batch_qty = flt(frappe.db.get_value("Batch", "B100", "batch_qty"))
+		current_batch_qty = flt(nts.db.get_value("Batch", "B100", "batch_qty"))
 		self.assertEqual(current_batch_qty, existing_batch_qty)
 
 	@classmethod
 	def make_new_batch_and_entry(cls, item_name, batch_name, warehouse):
 		"""Make a new stock entry for given target warehouse and batch name of item"""
 
-		if not frappe.db.exists("Batch", batch_name):
-			batch = frappe.get_doc(dict(doctype="Batch", item=item_name, batch_id=batch_name)).insert(
+		if not nts.db.exists("Batch", batch_name):
+			batch = nts.get_doc(dict(doctype="Batch", item=item_name, batch_id=batch_name)).insert(
 				ignore_permissions=True
 			)
 			batch.save()
@@ -341,14 +341,14 @@ class TestBatch(FrappeTestCase):
 				"voucher_type": "Stock Entry",
 				"qty": 90,
 				"avg_rate": 10,
-				"batches": frappe._dict({batch_name: 90}),
+				"batches": nts._dict({batch_name: 90}),
 				"type_of_transaction": "Inward",
 				"company": "_Test Company",
 				"do_not_submit": 1,
 			}
 		).make_serial_and_batch_bundle()
 
-		stock_entry = frappe.get_doc(
+		stock_entry = nts.get_doc(
 			dict(
 				doctype="Stock Entry",
 				purpose="Material Receipt",
@@ -374,11 +374,11 @@ class TestBatch(FrappeTestCase):
 		return stock_entry
 
 	def test_batch_name_with_naming_series(self):
-		stock_settings = frappe.get_single("Stock Settings")
+		stock_settings = nts.get_single("Stock Settings")
 		use_naming_series = cint(stock_settings.use_naming_series)
 
 		if not use_naming_series:
-			frappe.set_value("Stock Settings", "Stock Settings", "use_naming_series", 1)
+			nts.set_value("Stock Settings", "Stock Settings", "use_naming_series", 1)
 
 		batch = self.make_new_batch("_Test Stock Item For Batch Test1")
 		batch_name = batch.name
@@ -392,10 +392,10 @@ class TestBatch(FrappeTestCase):
 
 		# reset Stock Settings
 		if not use_naming_series:
-			frappe.set_value("Stock Settings", "Stock Settings", "use_naming_series", 0)
+			nts.set_value("Stock Settings", "Stock Settings", "use_naming_series", 0)
 
 	def make_new_batch(self, item_name=None, batch_id=None, do_not_insert=0):
-		batch = frappe.new_doc("Batch")
+		batch = nts.new_doc("Batch")
 		item = self.make_batch_item(item_name)
 		batch.item = item.name
 
@@ -408,8 +408,8 @@ class TestBatch(FrappeTestCase):
 		return batch
 
 	def test_batch_wise_item_price(self):
-		if not frappe.db.get_value("Item", "_Test Batch Price Item"):
-			frappe.get_doc(
+		if not nts.db.get_value("Item", "_Test Batch Price Item"):
+			nts.get_doc(
 				{
 					"doctype": "Item",
 					"is_stock_item": 1,
@@ -425,9 +425,9 @@ class TestBatch(FrappeTestCase):
 		batch3 = create_batch("_Test Batch Price Item", 400, 0)
 
 		company = "_Test Company with perpetual inventory"
-		currency = frappe.get_cached_value("Company", company, "default_currency")
+		currency = nts.get_cached_value("Company", company, "default_currency")
 
-		args = frappe._dict(
+		args = nts._dict(
 			{
 				"item_code": "_Test Batch Price Item",
 				"company": company,
@@ -487,7 +487,7 @@ class TestBatch(FrappeTestCase):
 			# consume out of order
 			se = make_stock_entry(item_code=item_code, source=warehouse, qty=qty, batch_no=batch)
 
-			sle = frappe.get_last_doc("Stock Ledger Entry", {"is_cancelled": 0, "voucher_no": se.name})
+			sle = nts.get_last_doc("Stock Ledger Entry", {"is_cancelled": 0, "voucher_no": se.name})
 
 			stock_value_difference = (
 				sle.actual_qty * batches[get_batch_from_bundle(sle.serial_and_batch_bundle)]
@@ -509,7 +509,7 @@ class TestBatch(FrappeTestCase):
 
 		se = make_stock_entry(item_code=item_code, qty=100, rate=10, target="_Test Warehouse - _TC")
 		batch_no = get_batch_from_bundle(se.items[0].serial_and_batch_bundle)
-		batch = frappe.get_doc("Batch", batch_no)
+		batch = nts.get_doc("Batch", batch_no)
 
 		expiry_date = add_to_date(batch.manufacturing_date, days=30)
 
@@ -558,7 +558,7 @@ def create_batch(item_code, rate, create_item_price_for_batch):
 		item_code=item_code,
 	)
 
-	batch = frappe.db.get_value("Batch", {"item": item_code, "reference_name": pi.name})
+	batch = nts.db.get_value("Batch", {"item": item_code, "reference_name": pi.name})
 
 	if not create_item_price_for_batch:
 		create_price_list_for_batch(item_code, None, rate)
@@ -569,7 +569,7 @@ def create_batch(item_code, rate, create_item_price_for_batch):
 
 
 def create_price_list_for_batch(item_code, batch, rate):
-	frappe.get_doc(
+	nts.get_doc(
 		{
 			"doctype": "Item Price",
 			"item_code": "_Test Batch Price Item",
@@ -581,12 +581,12 @@ def create_price_list_for_batch(item_code, batch, rate):
 
 
 def make_new_batch(**args):
-	args = frappe._dict(args)
+	args = nts._dict(args)
 
-	if frappe.db.exists("Batch", args.batch_id):
-		batch = frappe.get_doc("Batch", args.batch_id)
+	if nts.db.exists("Batch", args.batch_id):
+		batch = nts.get_doc("Batch", args.batch_id)
 	else:
-		batch = frappe.get_doc(
+		batch = nts.get_doc(
 			{
 				"doctype": "Batch",
 				"batch_id": args.batch_id,

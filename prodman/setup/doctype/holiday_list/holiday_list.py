@@ -1,17 +1,17 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 from datetime import date
 
-import frappe
-from frappe import _, throw
-from frappe.model.document import Document
-from frappe.utils import formatdate, getdate, today
+import nts
+from nts import _, throw
+from nts.model.document import Document
+from nts.utils import formatdate, getdate, today
 
 
-class OverlapError(frappe.ValidationError):
+class OverlapError(nts.ValidationError):
 	pass
 
 
@@ -22,7 +22,7 @@ class HolidayList(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.setup.doctype.holiday.holiday import Holiday
 
@@ -45,7 +45,7 @@ class HolidayList(Document):
 		self.validate_duplicate_date()
 		self.sort_holidays()
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_weekly_off_dates(self):
 		if not self.weekly_off:
 			throw(_("Please select weekly off day"))
@@ -58,7 +58,7 @@ class HolidayList(Document):
 
 			self.append("holidays", {"description": _(self.weekly_off), "holiday_date": d, "weekly_off": 1})
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_supported_countries(self):
 		from holidays.utils import list_supported_countries
 
@@ -72,7 +72,7 @@ class HolidayList(Document):
 			"subdivisions_by_country": subdivisions_by_country,
 		}
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_local_holidays(self):
 		from holidays import country_holidays
 
@@ -87,7 +87,7 @@ class HolidayList(Document):
 			self.country,
 			subdiv=self.subdivision,
 			years=list(range(from_date.year, to_date.year + 1)),
-			language=frappe.local.lang,
+			language=nts.local.lang,
 		).items():
 			if holiday_date in existing_holidays:
 				continue
@@ -113,7 +113,7 @@ class HolidayList(Document):
 
 		for day in self.get("holidays"):
 			if not (getdate(self.from_date) <= getdate(day.holiday_date) <= getdate(self.to_date)):
-				frappe.throw(
+				nts.throw(
 					_("The holiday on {0} is not between From Date and To Date").format(
 						formatdate(day.holiday_date)
 					)
@@ -141,7 +141,7 @@ class HolidayList(Document):
 
 		return date_list
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def clear_table(self):
 		self.set("holidays", [])
 
@@ -149,16 +149,16 @@ class HolidayList(Document):
 		unique_dates = []
 		for row in self.holidays:
 			if row.holiday_date in unique_dates:
-				frappe.throw(
+				nts.throw(
 					_("Holiday Date {0} added multiple times").format(
-						frappe.bold(formatdate(row.holiday_date))
+						nts.bold(formatdate(row.holiday_date))
 					)
 				)
 
 			unique_dates.append(row.holiday_date)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_events(start, end, filters=None):
 	"""Returns events for Gantt / Calendar view rendering.
 
@@ -176,7 +176,7 @@ def get_events(start, end, filters=None):
 	if end:
 		filters.append(["Holiday", "holiday_date", "<", getdate(end)])
 
-	return frappe.get_list(
+	return nts.get_list(
 		"Holiday List",
 		fields=[
 			"name",
@@ -194,7 +194,7 @@ def is_holiday(holiday_list, date=None):
 	if date is None:
 		date = today()
 	if holiday_list:
-		return bool(frappe.db.exists("Holiday", {"parent": holiday_list, "holiday_date": date}, cache=True))
+		return bool(nts.db.exists("Holiday", {"parent": holiday_list, "holiday_date": date}, cache=True))
 	else:
 		return False
 
@@ -203,4 +203,4 @@ def local_country_name(country_code: str) -> str:
 	"""Return the localized country name for the given country code."""
 	from babel import Locale
 
-	return Locale.parse(frappe.local.lang, sep="-").territories.get(country_code, country_code)
+	return Locale.parse(nts.local.lang, sep="-").territories.get(country_code, country_code)

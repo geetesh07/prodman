@@ -1,22 +1,22 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
 import json
 
-import frappe
-import frappe.defaults
-from frappe import _, msgprint, qb
-from frappe.contacts.address_and_contact import (
+import nts
+import nts.defaults
+from nts import _, msgprint, qb
+from nts.contacts.address_and_contact import (
 	delete_contact_and_address,
 	load_address_and_contact,
 )
-from frappe.model.mapper import get_mapped_doc
-from frappe.model.naming import set_name_by_naming_series, set_name_from_naming_options
-from frappe.model.utils.rename_doc import update_linked_doctypes
-from frappe.utils import cint, cstr, flt, get_formatted_email, today
-from frappe.utils.deprecations import deprecated
-from frappe.utils.user import get_users_with_role
+from nts.model.mapper import get_mapped_doc
+from nts.model.naming import set_name_by_naming_series, set_name_from_naming_options
+from nts.model.utils.rename_doc import update_linked_doctypes
+from nts.utils import cint, cstr, flt, get_formatted_email, today
+from nts.utils.deprecations import deprecated
+from nts.utils.user import get_users_with_role
 
 from prodman.accounts.party import get_dashboard_info, validate_party_accounts
 from prodman.controllers.website_list_for_contact import add_role_for_portal_user
@@ -30,7 +30,7 @@ class Customer(TransactionBase):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.accounts.doctype.allowed_to_transact_with.allowed_to_transact_with import (
 			AllowedToTransactWith,
@@ -99,17 +99,17 @@ class Customer(TransactionBase):
 		self.set_onload("dashboard_info", info)
 
 	def autoname(self):
-		cust_master_name = frappe.defaults.get_global_default("cust_master_name")
+		cust_master_name = nts.defaults.get_global_default("cust_master_name")
 		if cust_master_name == "Customer Name":
 			self.name = self.get_customer_name()
 		elif cust_master_name == "Naming Series":
 			set_name_by_naming_series(self)
 		else:
-			set_name_from_naming_options(frappe.get_meta(self.doctype).autoname, self)
+			set_name_from_naming_options(nts.get_meta(self.doctype).autoname, self)
 
 	def get_customer_name(self):
-		if frappe.db.get_value("Customer", self.customer_name) and not frappe.flags.in_import:
-			count = frappe.db.sql(
+		if nts.db.get_value("Customer", self.customer_name) and not nts.flags.in_import:
+			count = nts.db.sql(
 				"""select ifnull(MAX(CAST(SUBSTRING_INDEX(name, ' ', -1) AS UNSIGNED)), 0) from tabCustomer
 				 where name like %s""",
 				f"%{self.customer_name} - %",
@@ -148,18 +148,18 @@ class Customer(TransactionBase):
 		self.validate_currency_for_receivable_payable_and_advance_account()
 
 		# set loyalty program tier
-		if frappe.db.exists("Customer", self.name):
-			customer = frappe.get_doc("Customer", self.name)
+		if nts.db.exists("Customer", self.name):
+			customer = nts.get_doc("Customer", self.name)
 			if self.loyalty_program == customer.loyalty_program and not self.loyalty_program_tier:
 				self.loyalty_program_tier = customer.loyalty_program_tier
 
 		if self.sales_team:
 			if sum(member.allocated_percentage or 0 for member in self.sales_team) != 100:
-				frappe.throw(_("Total contribution percentage should be equal to 100"))
+				nts.throw(_("Total contribution percentage should be equal to 100"))
 
-	@frappe.whitelist()
+	@nts.whitelist()
 	def get_customer_group_details(self):
-		doc = frappe.get_doc("Customer Group", self.customer_group)
+		doc = nts.get_doc("Customer Group", self.customer_group)
 		self.accounts = []
 		self.credit_limits = []
 		self.payment_terms = self.default_price_list = ""
@@ -184,27 +184,27 @@ class Customer(TransactionBase):
 		self.save()
 
 	def check_customer_group_change(self):
-		frappe.flags.customer_group_changed = False
+		nts.flags.customer_group_changed = False
 
 		if not self.get("__islocal"):
-			if self.customer_group != frappe.db.get_value("Customer", self.name, "customer_group"):
-				frappe.flags.customer_group_changed = True
+			if self.customer_group != nts.db.get_value("Customer", self.name, "customer_group"):
+				nts.flags.customer_group_changed = True
 
 	def validate_default_bank_account(self):
 		if self.default_bank_account:
-			is_company_account = frappe.db.get_value(
+			is_company_account = nts.db.get_value(
 				"Bank Account", self.default_bank_account, "is_company_account"
 			)
 			if not is_company_account:
-				frappe.throw(
-					_("{0} is not a company bank account").format(frappe.bold(self.default_bank_account))
+				nts.throw(
+					_("{0} is not a company bank account").format(nts.bold(self.default_bank_account))
 				)
 
 	def validate_internal_customer(self):
 		if not self.is_internal_customer:
 			self.represents_company = ""
 
-		internal_customer = frappe.db.get_value(
+		internal_customer = nts.db.get_value(
 			"Customer",
 			{
 				"is_internal_customer": 1,
@@ -215,9 +215,9 @@ class Customer(TransactionBase):
 		)
 
 		if internal_customer:
-			frappe.throw(
+			nts.throw(
 				_("Internal Customer for company {0} already exists").format(
-					frappe.bold(self.represents_company)
+					nts.bold(self.represents_company)
 				)
 			)
 
@@ -241,7 +241,7 @@ class Customer(TransactionBase):
 
 	def update_customer_groups(self):
 		ignore_doctypes = ["Lead", "Opportunity", "POS Profile", "Tax Rule", "Pricing Rule"]
-		if frappe.flags.customer_group_changed:
+		if nts.flags.customer_group_changed:
 			update_linked_doctypes(
 				"Customer", self.name, "Customer Group", self.customer_group, ignore_doctypes
 			)
@@ -255,7 +255,7 @@ class Customer(TransactionBase):
 				self.db_set("email_id", self.email_id)
 
 	def create_primary_address(self):
-		from frappe.contacts.doctype.address.address import get_address_display
+		from nts.contacts.doctype.address.address import get_address_display
 
 		if self.flags.is_new_doc and self.get("address_line1"):
 			address = make_address(self)
@@ -268,12 +268,12 @@ class Customer(TransactionBase):
 		"""If Customer created from Lead, update lead status to "Converted"
 		update Customer link in Quotation, Opportunity"""
 		if self.lead_name:
-			frappe.db.set_value("Lead", self.lead_name, "status", "Converted")
+			nts.db.set_value("Lead", self.lead_name, "status", "Converted")
 
 	def link_lead_address_and_contact(self):
 		if self.lead_name:
 			# assign lead address and contact to customer (if already not set)
-			linked_contacts_and_addresses = frappe.get_all(
+			linked_contacts_and_addresses = nts.get_all(
 				"Dynamic Link",
 				filters=[
 					["parenttype", "in", ["Contact", "Address"]],
@@ -284,13 +284,13 @@ class Customer(TransactionBase):
 			)
 
 			for row in linked_contacts_and_addresses:
-				linked_doc = frappe.get_doc(row.doctype, row.name)
+				linked_doc = nts.get_doc(row.doctype, row.name)
 				if not linked_doc.has_link("Customer", self.name):
 					linked_doc.append("links", dict(link_doctype="Customer", link_name=self.name))
 					linked_doc.save(ignore_permissions=self.flags.ignore_permissions)
 
 	def copy_communication(self):
-		if not self.lead_name or not frappe.db.get_single_value(
+		if not self.lead_name or not nts.db.get_single_value(
 			"CRM Settings", "carry_forward_communication_and_comments"
 		):
 			return
@@ -301,12 +301,12 @@ class Customer(TransactionBase):
 		link_communications("Lead", self.lead_name, self)
 
 	def validate_name_with_customer_group(self):
-		if frappe.db.exists("Customer Group", self.name):
-			frappe.throw(
+		if nts.db.exists("Customer Group", self.name):
+			nts.throw(
 				_(
 					"A Customer Group exists with same name please change the Customer name or rename the Customer Group"
 				),
-				frappe.NameError,
+				nts.NameError,
 			)
 
 	def validate_credit_limit_on_change(self):
@@ -315,7 +315,7 @@ class Customer(TransactionBase):
 
 		past_credit_limits = [
 			d.credit_limit
-			for d in frappe.db.get_all(
+			for d in nts.db.get_all(
 				"Customer Credit Limit",
 				filters={"parent": self.name},
 				fields=["credit_limit"],
@@ -331,7 +331,7 @@ class Customer(TransactionBase):
 		company_record = []
 		for limit in self.credit_limits:
 			if limit.company in company_record:
-				frappe.throw(
+				nts.throw(
 					_("Credit limit is already defined for the Company {0}").format(limit.company, self.name)
 				)
 			else:
@@ -341,7 +341,7 @@ class Customer(TransactionBase):
 				self.name, limit.company, ignore_outstanding_sales_order=limit.bypass_credit_limit_check
 			)
 			if flt(limit.credit_limit) < outstanding_amt:
-				frappe.throw(
+				nts.throw(
 					_(
 						"""New credit limit is less than current outstanding amount for the customer. Credit limit has to be atleast {0}"""
 					).format(outstanding_amt)
@@ -355,10 +355,10 @@ class Customer(TransactionBase):
 
 		delete_contact_and_address("Customer", self.name)
 		if self.lead_name:
-			frappe.db.sql("update `tabLead` set status='Interested' where name=%s", self.lead_name)
+			nts.db.sql("update `tabLead` set status='Interested' where name=%s", self.lead_name)
 
 	def after_rename(self, olddn, newdn, merge=False):
-		if frappe.defaults.get_global_default("cust_master_name") == "Customer Name":
+		if nts.defaults.get_global_default("cust_master_name") == "Customer Name":
 			self.db_set("customer_name", newdn)
 
 	def set_loyalty_program(self):
@@ -372,9 +372,9 @@ class Customer(TransactionBase):
 		if len(loyalty_program) == 1:
 			self.loyalty_program = loyalty_program[0]
 		else:
-			frappe.msgprint(
+			nts.msgprint(
 				_("Multiple Loyalty Programs found for Customer {}. Please select manually.").format(
-					frappe.bold(self.customer_name)
+					nts.bold(self.customer_name)
 				)
 			)
 
@@ -383,7 +383,7 @@ class Customer(TransactionBase):
 def create_contact(contact, party_type, party, email):
 	"""Create contact based on given contact name"""
 	first, middle, last = parse_full_name(contact)
-	doc = frappe.get_doc(
+	doc = nts.get_doc(
 		{
 			"doctype": "Contact",
 			"first_name": first,
@@ -397,7 +397,7 @@ def create_contact(contact, party_type, party, email):
 	return doc.insert()
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_quotation(source_name, target_doc=None):
 	def set_missing_values(source, target):
 		_set_missing_values(source, target)
@@ -415,7 +415,7 @@ def make_quotation(source_name, target_doc=None):
 	target_doc.run_method("set_other_charges")
 	target_doc.run_method("calculate_taxes_and_totals")
 
-	price_list, currency = frappe.db.get_value(
+	price_list, currency = nts.db.get_value(
 		"Customer", {"name": source_name}, ["default_price_list", "default_currency"]
 	)
 	if price_list:
@@ -426,7 +426,7 @@ def make_quotation(source_name, target_doc=None):
 	return target_doc
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def make_opportunity(source_name, target_doc=None):
 	def set_missing_values(source, target):
 		_set_missing_values(source, target)
@@ -451,7 +451,7 @@ def make_opportunity(source_name, target_doc=None):
 
 
 def _set_missing_values(source, target):
-	address = frappe.get_all(
+	address = nts.get_all(
 		"Dynamic Link",
 		{
 			"link_doctype": source.doctype,
@@ -462,7 +462,7 @@ def _set_missing_values(source, target):
 		limit=1,
 	)
 
-	contact = frappe.get_all(
+	contact = nts.get_all(
 		"Dynamic Link",
 		{
 			"link_doctype": source.doctype,
@@ -480,12 +480,12 @@ def _set_missing_values(source, target):
 		target.contact_person = contact[0].parent
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def get_loyalty_programs(doc):
 	"""returns applicable loyalty programs for a customer"""
 
 	lp_details = []
-	loyalty_programs = frappe.get_all(
+	loyalty_programs = nts.get_all(
 		"Loyalty Program",
 		fields=["name", "customer_group", "customer_territory"],
 		filters={
@@ -513,7 +513,7 @@ def get_loyalty_programs(doc):
 
 
 def get_nested_links(link_doctype, link_name, ignore_permissions=False):
-	from frappe.desk.treeview import _get_children
+	from nts.desk.treeview import _get_children
 
 	links = [link_name]
 	for d in _get_children(link_doctype, link_name, ignore_permissions):
@@ -539,8 +539,8 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 		message += "<br><br>"
 
 		# If not authorized person raise exception
-		credit_controller_role = frappe.db.get_single_value("Accounts Settings", "credit_controller")
-		if not credit_controller_role or credit_controller_role not in frappe.get_roles():
+		credit_controller_role = nts.db.get_single_value("Accounts Settings", "credit_controller")
+		if not credit_controller_role or credit_controller_role not in nts.get_roles():
 			# form a list of emails for the credit controller users
 			credit_controller_users = get_users_with_role(credit_controller_role or "Sales Master Manager")
 
@@ -550,7 +550,7 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 				for user in credit_controller_users
 			]
 			if not credit_controller_users_formatted:
-				frappe.throw(
+				nts.throw(
 					_("Please contact your administrator to extend the credit limits for {0}.").format(
 						customer
 					)
@@ -564,7 +564,7 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 
 			# if the current user does not have permissions to override credit limit,
 			# prompt them to send out an email to the controller users
-			frappe.msgprint(
+			nts.msgprint(
 				message,
 				title=_("Credit Limit Crossed"),
 				raise_exception=1,
@@ -582,26 +582,26 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 			)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def send_emails(args):
 	args = json.loads(args)
 	subject = _("Credit limit reached for customer {0}").format(args.get("customer"))
 	message = _("Credit limit has been crossed for customer {0} ({1}/{2})").format(
 		args.get("customer"), args.get("customer_outstanding"), args.get("credit_limit")
 	)
-	frappe.sendmail(recipients=args.get("credit_controller_users_list"), subject=subject, message=message)
+	nts.sendmail(recipients=args.get("credit_controller_users_list"), subject=subject, message=message)
 
 
 def get_customer_outstanding(customer, company, ignore_outstanding_sales_order=False, cost_center=None):
 	# Outstanding based on GL Entries
 	cond = ""
 	if cost_center:
-		lft, rgt = frappe.get_cached_value("Cost Center", cost_center, ["lft", "rgt"])
+		lft, rgt = nts.get_cached_value("Cost Center", cost_center, ["lft", "rgt"])
 
 		cond = f""" and cost_center in (select name from `tabCost Center` where
 			lft >= {lft} and rgt <= {rgt})"""
 
-	outstanding_based_on_gle = frappe.db.sql(
+	outstanding_based_on_gle = nts.db.sql(
 		f"""
 		select sum(debit) - sum(credit)
 		from `tabGL Entry` where party_type = 'Customer'
@@ -618,7 +618,7 @@ def get_customer_outstanding(customer, company, ignore_outstanding_sales_order=F
 	# if credit limit check is bypassed at sales order level,
 	# we should not consider outstanding Sales Orders, when customer credit balance report is run
 	if not ignore_outstanding_sales_order:
-		outstanding_based_on_so = frappe.db.sql(
+		outstanding_based_on_so = nts.db.sql(
 			"""
 			select sum(base_grand_total*(100 - per_billed)/100)
 			from `tabSales Order`
@@ -632,7 +632,7 @@ def get_customer_outstanding(customer, company, ignore_outstanding_sales_order=F
 	# Outstanding based on Delivery Note, which are not created against Sales Order
 	outstanding_based_on_dn = 0
 
-	unmarked_delivery_note_items = frappe.db.sql(
+	unmarked_delivery_note_items = nts.db.sql(
 		"""select
 			dn_item.name, dn_item.amount, dn.base_net_total, dn.base_grand_total
 		from `tabDelivery Note` dn, `tabDelivery Note Item` dn_item
@@ -650,7 +650,7 @@ def get_customer_outstanding(customer, company, ignore_outstanding_sales_order=F
 	if not unmarked_delivery_note_items:
 		return outstanding_based_on_gle + outstanding_based_on_so
 
-	si_amounts = frappe.db.sql(
+	si_amounts = nts.db.sql(
 		"""
 		SELECT
 			dn_detail, sum(amount) from `tabSales Invoice Item`
@@ -658,7 +658,7 @@ def get_customer_outstanding(customer, company, ignore_outstanding_sales_order=F
 			docstatus = 1
 			and dn_detail in ({})
 		GROUP BY dn_detail""".format(
-			", ".join(frappe.db.escape(dn_item.name) for dn_item in unmarked_delivery_note_items)
+			", ".join(nts.db.escape(dn_item.name) for dn_item in unmarked_delivery_note_items)
 		)
 	)
 
@@ -680,16 +680,16 @@ def get_credit_limit(customer, company):
 	credit_limit = None
 
 	if customer:
-		credit_limit = frappe.db.get_value(
+		credit_limit = nts.db.get_value(
 			"Customer Credit Limit",
 			{"parent": customer, "parenttype": "Customer", "company": company},
 			"credit_limit",
 		)
 
 		if not credit_limit:
-			customer_group = frappe.get_cached_value("Customer", customer, "customer_group")
+			customer_group = nts.get_cached_value("Customer", customer, "customer_group")
 
-			result = frappe.db.get_values(
+			result = nts.db.get_values(
 				"Customer Credit Limit",
 				{"parent": customer_group, "parenttype": "Customer Group", "company": company},
 				fieldname=["credit_limit", "bypass_credit_limit_check"],
@@ -699,7 +699,7 @@ def get_credit_limit(customer, company):
 				credit_limit = result[0].credit_limit
 
 	if not credit_limit:
-		credit_limit = frappe.get_cached_value("Company", company, "credit_limit")
+		credit_limit = nts.get_cached_value("Company", company, "credit_limit")
 
 	return flt(credit_limit)
 
@@ -730,7 +730,7 @@ def make_contact(args, is_primary_contact=1):
 			}
 		)
 
-	contact = frappe.get_doc(values)
+	contact = nts.get_doc(values)
 
 	if args.get("email_id"):
 		contact.add_email(args.get("email_id"), is_primary=True)
@@ -753,14 +753,14 @@ def make_address(args, is_primary_address=1, is_shipping_address=1):
 
 	if reqd_fields:
 		msg = _("Following fields are mandatory to create address:")
-		frappe.throw(
+		nts.throw(
 			"{} <br><br> <ul>{}</ul>".format(msg, "\n".join(reqd_fields)),
 			title=_("Missing Values Required"),
 		)
 
 	party_name_key = "customer_name" if args.doctype == "Customer" else "supplier_name"
 
-	address = frappe.get_doc(
+	address = nts.get_doc(
 		{
 			"doctype": "Address",
 			"address_title": args.get(party_name_key),
@@ -784,8 +784,8 @@ def make_address(args, is_primary_address=1, is_shipping_address=1):
 	return address
 
 
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
+@nts.whitelist()
+@nts.validate_and_sanitize_search_inputs
 def get_customer_primary_contact(doctype, txt, searchfield, start, page_len, filters):
 	customer = filters.get("customer")
 

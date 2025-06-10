@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils import add_to_date, cint, flt, get_datetime, get_table_name, getdate
-from frappe.utils.deprecations import deprecated
+import nts
+from nts import _
+from nts.utils import add_to_date, cint, flt, get_datetime, get_table_name, getdate
+from nts.utils.deprecations import deprecated
 from pypika import functions as fn
 
 from prodman.stock.doctype.warehouse.warehouse import apply_warehouse_filter
@@ -17,7 +17,7 @@ def execute(filters=None):
 	if not filters:
 		filters = {}
 
-	sle_count = frappe.db.estimate_count("Stock Ledger Entry")
+	sle_count = nts.db.estimate_count("Stock Ledger Entry")
 
 	if (
 		sle_count > SLE_COUNT_LIMIT
@@ -25,14 +25,14 @@ def execute(filters=None):
 		and not filters.get("warehouse")
 		and not filters.get("warehouse_type")
 	):
-		frappe.throw(
+		nts.throw(
 			_("Please select either the Item or Warehouse or Warehouse Type filter to generate the report.")
 		)
 
 	if filters.from_date > filters.to_date:
-		frappe.throw(_("From Date must be before To Date"))
+		nts.throw(_("From Date must be before To Date"))
 
-	float_precision = cint(frappe.db.get_default("float_precision")) or 3
+	float_precision = cint(nts.db.get_default("float_precision")) or 3
 
 	columns = get_columns(filters)
 	item_map = get_item_details(filters)
@@ -92,15 +92,15 @@ def get_stock_ledger_entries(filters):
 @deprecated
 def get_stock_ledger_entries_for_batch_no(filters):
 	if not filters.get("from_date"):
-		frappe.throw(_("'From Date' is required"))
+		nts.throw(_("'From Date' is required"))
 	if not filters.get("to_date"):
-		frappe.throw(_("'To Date' is required"))
+		nts.throw(_("'To Date' is required"))
 
 	posting_datetime = get_datetime(add_to_date(filters["to_date"], days=1))
 
-	sle = frappe.qb.DocType("Stock Ledger Entry")
+	sle = nts.qb.DocType("Stock Ledger Entry")
 	query = (
-		frappe.qb.from_(sle)
+		nts.qb.from_(sle)
 		.select(
 			sle.item_code,
 			sle.warehouse,
@@ -119,7 +119,7 @@ def get_stock_ledger_entries_for_batch_no(filters):
 
 	query = apply_warehouse_filter(query, sle, filters)
 	if filters.warehouse_type and not filters.warehouse:
-		warehouses = frappe.get_all(
+		warehouses = nts.get_all(
 			"Warehouse",
 			filters={"warehouse_type": filters.warehouse_type, "is_group": 0},
 			pluck="name",
@@ -136,13 +136,13 @@ def get_stock_ledger_entries_for_batch_no(filters):
 
 
 def get_stock_ledger_entries_for_batch_bundle(filters):
-	sle = frappe.qb.DocType("Stock Ledger Entry")
-	batch_package = frappe.qb.DocType("Serial and Batch Entry")
+	sle = nts.qb.DocType("Stock Ledger Entry")
+	batch_package = nts.qb.DocType("Serial and Batch Entry")
 
 	to_date = get_datetime(filters.to_date + " 23:59:59")
 
 	query = (
-		frappe.qb.from_(sle)
+		nts.qb.from_(sle)
 		.inner_join(batch_package)
 		.on(batch_package.parent == sle.serial_and_batch_bundle)
 		.select(
@@ -163,7 +163,7 @@ def get_stock_ledger_entries_for_batch_bundle(filters):
 
 	query = apply_warehouse_filter(query, sle, filters)
 	if filters.warehouse_type and not filters.warehouse:
-		warehouses = frappe.get_all(
+		warehouses = nts.get_all(
 			"Warehouse",
 			filters={"warehouse_type": filters.warehouse_type, "is_group": 0},
 			pluck="name",
@@ -191,7 +191,7 @@ def get_item_warehouse_batch_map(filters, float_precision):
 
 	for d in sle:
 		iwb_map.setdefault(d.item_code, {}).setdefault(d.warehouse, {}).setdefault(
-			d.batch_no, frappe._dict({"opening_qty": 0.0, "in_qty": 0.0, "out_qty": 0.0, "bal_qty": 0.0})
+			d.batch_no, nts._dict({"opening_qty": 0.0, "in_qty": 0.0, "out_qty": 0.0, "bal_qty": 0.0})
 		)
 		qty_dict = iwb_map[d.item_code][d.warehouse][d.batch_no]
 		if d.posting_date < from_date:
@@ -213,7 +213,7 @@ def get_item_warehouse_batch_map(filters, float_precision):
 
 def get_item_details(filters):
 	item_map = {}
-	for d in (frappe.qb.from_("Item").select("name", "item_name", "description", "stock_uom")).run(as_dict=1):
+	for d in (nts.qb.from_("Item").select("name", "item_name", "description", "stock_uom")).run(as_dict=1):
 		item_map.setdefault(d.name, d)
 
 	return item_map

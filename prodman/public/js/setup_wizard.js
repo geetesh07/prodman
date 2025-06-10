@@ -1,14 +1,14 @@
-frappe.provide("prodman.setup");
+nts.provide("prodman.setup");
 
-frappe.pages["setup-wizard"].on_page_load = function (wrapper) {
-	if (frappe.sys_defaults.company) {
-		frappe.set_route("desk");
+nts.pages["setup-wizard"].on_page_load = function (wrapper) {
+	if (nts.sys_defaults.company) {
+		nts.set_route("desk");
 		return;
 	}
 };
 
-frappe.setup.on("before_load", function () {
-	prodman.setup.slides_settings.map(frappe.setup.add_slide);
+nts.setup.on("before_load", function () {
+	prodman.setup.slides_settings.map(nts.setup.add_slide);
 });
 
 prodman.setup.slides_settings = [
@@ -64,7 +64,7 @@ prodman.setup.slides_settings = [
 			}
 
 			if ((this.values.company_name || "").toLowerCase() == "company") {
-				frappe.msgprint(__("Company Name cannot be Company"));
+				nts.msgprint(__("Company Name cannot be Company"));
 				return false;
 			}
 			if (!this.values.company_abbr) {
@@ -84,7 +84,7 @@ prodman.setup.slides_settings = [
 			const start_greater_than_end = this.values.fy_start_date > this.values.fy_end_date;
 
 			if (invalid || start_greater_than_end) {
-				frappe.msgprint(__("Please enter valid Financial Year Start and End Dates"));
+				nts.msgprint(__("Please enter valid Financial Year Start and End Dates"));
 				return false;
 			}
 
@@ -92,7 +92,7 @@ prodman.setup.slides_settings = [
 		},
 
 		set_fy_dates: function (slide) {
-			var country = frappe.wizard.values.country;
+			var country = nts.wizard.values.country;
 
 			if (country) {
 				let fy = prodman.setup.fiscal_years[country];
@@ -104,7 +104,7 @@ prodman.setup.slides_settings = [
 				}
 
 				let year_start_date = current_year + "-" + fy[0];
-				if (year_start_date > frappe.datetime.get_today()) {
+				if (year_start_date > nts.datetime.get_today()) {
 					next_year = current_year;
 					current_year -= 1;
 				}
@@ -114,10 +114,10 @@ prodman.setup.slides_settings = [
 		},
 
 		load_chart_of_accounts: function (slide) {
-			let country = frappe.wizard.values.country;
+			let country = nts.wizard.values.country;
 
 			if (country) {
-				frappe.call({
+				nts.call({
 					method: "prodman.accounts.doctype.account.chart_of_accounts.chart_of_accounts.get_charts_for_country",
 					args: { country: country, with_standard: true },
 					callback: function (r) {
@@ -133,7 +133,7 @@ prodman.setup.slides_settings = [
 			let me = this;
 			slide.get_input("fy_start_date").on("change", function () {
 				var start_date = slide.form.fields_dict.fy_start_date.get_value();
-				var year_end_date = frappe.datetime.add_days(frappe.datetime.add_months(start_date, 12), -1);
+				var year_end_date = nts.datetime.add_days(nts.datetime.add_months(start_date, 12), -1);
 				slide.form.fields_dict.fy_end_date.set_value(year_end_date);
 			});
 
@@ -153,7 +153,7 @@ prodman.setup.slides_settings = [
 					}).join("");
 					slide.get_field("company_abbr").set_value(abbr.slice(0, 10).toUpperCase());
 				})
-				.val(frappe.boot.sysdefaults.company_name || "")
+				.val(nts.boot.sysdefaults.company_name || "")
 				.trigger("change");
 
 			slide
@@ -161,19 +161,19 @@ prodman.setup.slides_settings = [
 				.on("change", function () {
 					let abbr = slide.get_input("company_abbr").val();
 					if (abbr.length > 10) {
-						frappe.msgprint(__("Company Abbreviation cannot have more than 5 characters"));
+						nts.msgprint(__("Company Abbreviation cannot have more than 5 characters"));
 						abbr = abbr.slice(0, 10);
 					}
 					slide.get_field("company_abbr").set_value(abbr);
 				})
-				.val(frappe.boot.sysdefaults.company_abbr || "")
+				.val(nts.boot.sysdefaults.company_abbr || "")
 				.trigger("change");
 		},
 
 		charts_modal: function (slide, chart_template) {
 			let parent = __("All Accounts");
 
-			let dialog = new frappe.ui.Dialog({
+			let dialog = new nts.ui.Dialog({
 				title: chart_template,
 				fields: [
 					{
@@ -204,7 +204,7 @@ prodman.setup.slides_settings = [
 			});
 
 			// render tree structure in the dialog modal
-			let coa_tree = new frappe.ui.Tree({
+			let coa_tree = new nts.ui.Tree({
 				parent: $(dialog.body),
 				label: parent,
 				expandable: true,
@@ -221,7 +221,7 @@ prodman.setup.slides_settings = [
 
 			// add class to show buttons side by side
 			const form_container = $(dialog.body).find("form");
-			const buttons = $(form_container).find(".frappe-control");
+			const buttons = $(form_container).find(".nts-control");
 			form_container.addClass("flex");
 			buttons.map((index, button) => {
 				$(button).css({ "margin-right": "1em" });

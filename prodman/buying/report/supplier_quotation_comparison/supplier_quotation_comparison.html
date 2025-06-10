@@ -2,11 +2,11 @@
 <head>
 
 
-	<link href="/assets/frappe/css/c3.min.css" rel="stylesheet" type="text/css">
+	<link href="/assets/nts/css/c3.min.css" rel="stylesheet" type="text/css">
 
 
-	<script type="text/javascript" src="/assets/frappe/js/lib/d3.min.js"></script>
-	<script type="text/javascript" src="/assets/frappe/js/lib/c3.min.js"></script>
+	<script type="text/javascript" src="/assets/nts/js/lib/d3.min.js"></script>
+	<script type="text/javascript" src="/assets/nts/js/lib/c3.min.js"></script>
     <script type="text/javascript">
 
 		onReady("#chart_div", function() {
@@ -124,4 +124,4 @@
 <h4 class="text-center">{%= __("Analysis Chart") %}</h4>
 <div id="chart_div"></div>
 
-<p class="text-right text-muted">{%= __("Printed on {0}", [frappe.datetime.str_to_user(frappe.datetime.get_datetime_as_string())]) %}</p>
+<p class="text-right text-muted">{%= __("Printed on {0}", [nts.datetime.str_to_user(nts.datetime.get_datetime_as_string())]) %}</p>

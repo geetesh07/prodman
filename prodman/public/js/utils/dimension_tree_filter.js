@@ -1,4 +1,4 @@
-frappe.provide("prodman.accounts");
+nts.provide("prodman.accounts");
 
 prodman.accounts.dimensions = {
 	setup_dimension_filters(frm, doctype) {
@@ -9,7 +9,7 @@ prodman.accounts.dimensions = {
 
 	fetch_custom_dimensions(frm, doctype) {
 		let me = this;
-		frappe.call({
+		nts.call({
 			method: "prodman.accounts.doctype.accounting_dimension.accounting_dimension.get_dimensions",
 			args: {
 				with_cost_center_and_project: true,
@@ -33,16 +33,16 @@ prodman.accounts.dimensions = {
 
 		if (this.accounting_dimensions) {
 			this.accounting_dimensions.forEach((dimension) => {
-				frappe.model.with_doctype(dimension["document_type"], () => {
+				nts.model.with_doctype(dimension["document_type"], () => {
 					let parent_fields = [];
-					frappe.meta.get_docfields(doctype).forEach((df) => {
+					nts.meta.get_docfields(doctype).forEach((df) => {
 						if (df.fieldtype === "Link" && df.options === "Account") {
 							parent_fields.push(df.fieldname);
 						} else if (df.fieldtype === "Table") {
 							this.setup_child_filters(frm, df.options, df.fieldname, dimension["fieldname"]);
 						}
 
-						if (frappe.meta.has_field(doctype, dimension["fieldname"])) {
+						if (nts.meta.has_field(doctype, dimension["fieldname"])) {
 							this.setup_account_filters(frm, dimension["fieldname"], parent_fields);
 						}
 					});
@@ -54,9 +54,9 @@ prodman.accounts.dimensions = {
 	setup_child_filters(frm, doctype, parentfield, dimension) {
 		let fields = [];
 
-		if (frappe.meta.has_field(doctype, dimension)) {
-			frappe.model.with_doctype(doctype, () => {
-				frappe.meta.get_docfields(doctype).forEach((df) => {
+		if (nts.meta.has_field(doctype, dimension)) {
+			nts.model.with_doctype(doctype, () => {
+				nts.meta.get_docfields(doctype).forEach((df) => {
 					if (df.fieldtype === "Link" && df.options === "Account") {
 						fields.push(df.fieldname);
 					}
@@ -97,20 +97,20 @@ prodman.accounts.dimensions = {
 
 			if (!default_dimension) return;
 
-			if (frappe.meta.has_field(doctype, dimension["fieldname"])) {
+			if (nts.meta.has_field(doctype, dimension["fieldname"])) {
 				frm.set_value(dimension["fieldname"], default_dimension);
 			}
 
 			(frm.doc.items || frm.doc.accounts || []).forEach((row) => {
-				frappe.model.set_value(row.doctype, row.name, dimension["fieldname"], default_dimension);
+				nts.model.set_value(row.doctype, row.name, dimension["fieldname"], default_dimension);
 			});
 		});
 	},
 
 	copy_dimension_from_first_row(frm, cdt, cdn, fieldname) {
-		if (frappe.meta.has_field(frm.doctype, fieldname) && this.accounting_dimensions) {
+		if (nts.meta.has_field(frm.doctype, fieldname) && this.accounting_dimensions) {
 			this.accounting_dimensions.forEach((dimension) => {
-				let row = frappe.get_doc(cdt, cdn);
+				let row = nts.get_doc(cdt, cdn);
 				frm.script_manager.copy_from_first_row(fieldname, row, [dimension["fieldname"]]);
 			});
 		}

@@ -1,7 +1,7 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("BOM Update Tool", {
+nts.ui.form.on("BOM Update Tool", {
 	setup: function (frm) {
 		frm.set_query("current_bom", function () {
 			return {
@@ -23,7 +23,7 @@ frappe.ui.form.on("BOM Update Tool", {
 		frm.events.disable_button(frm, "replace");
 
 		frm.add_custom_button(__("View BOM Update Log"), () => {
-			frappe.set_route("List", "BOM Update Log");
+			nts.set_route("List", "BOM Update Log");
 		});
 	},
 
@@ -45,7 +45,7 @@ frappe.ui.form.on("BOM Update Tool", {
 
 	replace: (frm) => {
 		if (frm.doc.current_bom && frm.doc.new_bom) {
-			frappe.call({
+			nts.call({
 				method: "prodman.manufacturing.doctype.bom_update_tool.bom_update_tool.enqueue_replace_bom",
 				freeze: true,
 				args: {
@@ -64,7 +64,7 @@ frappe.ui.form.on("BOM Update Tool", {
 	},
 
 	update_latest_price_in_all_boms: (frm) => {
-		frappe.call({
+		nts.call({
 			method: "prodman.manufacturing.doctype.bom_update_tool.bom_update_tool.enqueue_update_cost",
 			freeze: true,
 			callback: (result) => {
@@ -76,8 +76,8 @@ frappe.ui.form.on("BOM Update Tool", {
 	},
 
 	confirm_job_start: (frm, log_data) => {
-		let log_link = frappe.utils.get_form_link("BOM Update Log", log_data.name, true);
-		frappe.msgprint({
+		let log_link = nts.utils.get_form_link("BOM Update Log", log_data.name, true);
+		nts.msgprint({
 			message: __("BOM Updation is queued and may take a few minutes. Check {0} for progress.", [
 				log_link,
 			]),

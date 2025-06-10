@@ -1,7 +1,7 @@
-// Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2018, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Blanket Order", {
+nts.ui.form.on("Blanket Order", {
 	onload: function (frm) {
 		frm.trigger("set_tc_name_filter");
 	},
@@ -19,11 +19,11 @@ frappe.ui.form.on("Blanket Order", {
 
 	refresh: function (frm) {
 		prodman.hide_company(frm);
-		if (frm.doc.customer && frm.doc.docstatus === 1 && frm.doc.to_date > frappe.datetime.get_today()) {
+		if (frm.doc.customer && frm.doc.docstatus === 1 && frm.doc.to_date > nts.datetime.get_today()) {
 			frm.add_custom_button(
 				__("Sales Order"),
 				function () {
-					frappe.model.open_mapped_doc({
+					nts.model.open_mapped_doc({
 						method: "prodman.manufacturing.doctype.blanket_order.blanket_order.make_order",
 						frm: frm,
 						args: {
@@ -37,7 +37,7 @@ frappe.ui.form.on("Blanket Order", {
 			frm.add_custom_button(
 				__("Quotation"),
 				function () {
-					frappe.model.open_mapped_doc({
+					nts.model.open_mapped_doc({
 						method: "prodman.manufacturing.doctype.blanket_order.blanket_order.make_order",
 						frm: frm,
 						args: {
@@ -53,7 +53,7 @@ frappe.ui.form.on("Blanket Order", {
 			frm.add_custom_button(
 				__("Purchase Order"),
 				function () {
-					frappe.model.open_mapped_doc({
+					nts.model.open_mapped_doc({
 						method: "prodman.manufacturing.doctype.blanket_order.blanket_order.make_order",
 						frm: frm,
 						args: {

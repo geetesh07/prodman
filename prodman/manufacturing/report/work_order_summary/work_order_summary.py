@@ -1,11 +1,11 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, nts Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 from collections import defaultdict
 
-import frappe
-from frappe import _
-from frappe.utils import date_diff, flt, getdate, today
+import nts
+from nts import _
+from nts.utils import date_diff, flt, getdate, today
 
 from prodman.stock.report.stock_analytics.stock_analytics import get_period, get_period_date_ranges
 
@@ -57,7 +57,7 @@ def get_data(filters):
 	else:
 		query_filters["creation"] = ("between", [filters.get("from_date"), filters.get("to_date")])
 
-	data = frappe.get_all(
+	data = nts.get_all(
 		"Work Order", fields=fields, filters=query_filters, order_by="planned_start_date asc"
 	)
 
@@ -85,7 +85,7 @@ def get_chart_data(data, filters):
 
 
 def get_chart_based_on_status(data):
-	labels = frappe.get_meta("Work Order").get_options("status").split("\n")
+	labels = nts.get_meta("Work Order").get_options("status").split("\n")
 	if "" in labels:
 		labels.remove("")
 

@@ -1,11 +1,11 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors and contributors
 # For license information, please see license.txt
 
 
-import frappe
+import nts
 from dateutil.relativedelta import relativedelta
-from frappe.model.document import Document
-from frappe.utils import cint
+from nts.model.document import Document
+from nts.utils import cint
 
 
 class ManufacturingSettings(Document):
@@ -15,7 +15,7 @@ class ManufacturingSettings(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		add_corrective_operation_cost_in_finished_good_valuation: DF.Check
 		allow_overtime: DF.Check
@@ -49,15 +49,15 @@ class ManufacturingSettings(Document):
 
 def get_mins_between_operations():
 	return relativedelta(
-		minutes=cint(frappe.db.get_single_value("Manufacturing Settings", "mins_between_operations")) or 10
+		minutes=cint(nts.db.get_single_value("Manufacturing Settings", "mins_between_operations")) or 10
 	)
 
 
-@frappe.whitelist()
+@nts.whitelist()
 def is_material_consumption_enabled():
-	if not hasattr(frappe.local, "material_consumption"):
-		frappe.local.material_consumption = cint(
-			frappe.db.get_single_value("Manufacturing Settings", "material_consumption")
+	if not hasattr(nts.local, "material_consumption"):
+		nts.local.material_consumption = cint(
+			nts.db.get_single_value("Manufacturing Settings", "material_consumption")
 		)
 
-	return frappe.local.material_consumption
+	return nts.local.material_consumption

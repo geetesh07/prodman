@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 import unittest
 
-import frappe
-from frappe.utils import add_days, getdate, nowdate
+import nts
+from nts.utils import add_days, getdate, nowdate
 
 from prodman.projects.doctype.task.task import CircularReferenceError
 
@@ -28,7 +28,7 @@ class TestTask(unittest.TestCase):
 		task3.append("depends_on", {"task": task4.name})
 
 	def test_reschedule_dependent_task(self):
-		project = frappe.get_value("Project", {"project_name": "_Test Project"})
+		project = nts.get_value("Project", {"project_name": "_Test Project"})
 
 		task1 = create_task("_Test Task 1", nowdate(), add_days(nowdate(), 10))
 
@@ -44,27 +44,27 @@ class TestTask(unittest.TestCase):
 		task1.save()
 
 		self.assertEqual(
-			frappe.db.get_value("Task", task2.name, "exp_start_date"), getdate(add_days(nowdate(), 21))
+			nts.db.get_value("Task", task2.name, "exp_start_date"), getdate(add_days(nowdate(), 21))
 		)
 		self.assertEqual(
-			frappe.db.get_value("Task", task2.name, "exp_end_date"), getdate(add_days(nowdate(), 25))
+			nts.db.get_value("Task", task2.name, "exp_end_date"), getdate(add_days(nowdate(), 25))
 		)
 
 		self.assertEqual(
-			frappe.db.get_value("Task", task3.name, "exp_start_date"), getdate(add_days(nowdate(), 26))
+			nts.db.get_value("Task", task3.name, "exp_start_date"), getdate(add_days(nowdate(), 26))
 		)
 		self.assertEqual(
-			frappe.db.get_value("Task", task3.name, "exp_end_date"), getdate(add_days(nowdate(), 30))
+			nts.db.get_value("Task", task3.name, "exp_end_date"), getdate(add_days(nowdate(), 30))
 		)
 
 	def test_close_assignment(self):
-		if not frappe.db.exists("Task", "Test Close Assignment"):
-			task = frappe.new_doc("Task")
+		if not nts.db.exists("Task", "Test Close Assignment"):
+			task = nts.new_doc("Task")
 			task.subject = "Test Close Assignment"
 			task.insert()
 
 		def assign():
-			from frappe.desk.form import assign_to
+			from nts.desk.form import assign_to
 
 			assign_to.add(
 				{
@@ -76,7 +76,7 @@ class TestTask(unittest.TestCase):
 			)
 
 		def get_owner_and_status():
-			return frappe.db.get_value(
+			return nts.db.get_value(
 				"ToDo",
 				filters={
 					"reference_type": task.doctype,
@@ -107,7 +107,7 @@ class TestTask(unittest.TestCase):
 
 		set_tasks_as_overdue()
 
-		self.assertEqual(frappe.db.get_value("Task", task.name, "status"), "Overdue")
+		self.assertEqual(nts.db.get_value("Task", task.name, "status"), "Overdue")
 
 
 def create_task(
@@ -124,14 +124,14 @@ def create_task(
 	save=True,
 	priority=None,
 ):
-	if not frappe.db.exists("Task", subject):
-		task = frappe.new_doc("Task")
+	if not nts.db.exists("Task", subject):
+		task = nts.new_doc("Task")
 		task.status = "Open"
 		task.subject = subject
 		task.exp_start_date = start or nowdate()
 		task.exp_end_date = end or nowdate()
 		task.project = (
-			project or None if is_template else frappe.get_value("Project", {"project_name": "_Test Project"})
+			project or None if is_template else nts.get_value("Project", {"project_name": "_Test Project"})
 		)
 		task.is_template = is_template
 		task.start = begin
@@ -142,7 +142,7 @@ def create_task(
 		if save:
 			task.save()
 	else:
-		task = frappe.get_doc("Task", subject)
+		task = nts.get_doc("Task", subject)
 
 	if depends_on:
 		task.append("depends_on", {"task": depends_on})

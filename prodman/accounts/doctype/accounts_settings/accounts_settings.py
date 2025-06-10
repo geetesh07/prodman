@@ -1,14 +1,14 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts  Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 # For license information, please see license.txt
 
 
-import frappe
-from frappe import _
-from frappe.custom.doctype.property_setter.property_setter import make_property_setter
-from frappe.model.document import Document
-from frappe.utils import cint
+import nts 
+from nts  import _
+from nts .custom.doctype.property_setter.property_setter import make_property_setter
+from nts .model.document import Document
+from nts .utils import cint
 
 from prodman.accounts.utils import sync_auto_reconcile_config
 from prodman.stock.utils import check_pending_reposting
@@ -21,7 +21,7 @@ class AccountsSettings(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		acc_frozen_upto: DF.Date | None
 		add_taxes_from_item_tax_template: DF.Check
@@ -74,13 +74,13 @@ class AccountsSettings(Document):
 		clear_cache = False
 
 		if old_doc.add_taxes_from_item_tax_template != self.add_taxes_from_item_tax_template:
-			frappe.db.set_default(
+			nts .db.set_default(
 				"add_taxes_from_item_tax_template", self.get("add_taxes_from_item_tax_template", 0)
 			)
 			clear_cache = True
 
 		if old_doc.enable_common_party_accounting != self.enable_common_party_accounting:
-			frappe.db.set_default(
+			nts .db.set_default(
 				"enable_common_party_accounting", self.get("enable_common_party_accounting", 0)
 			)
 			clear_cache = True
@@ -94,13 +94,13 @@ class AccountsSettings(Document):
 			self.validate_pending_reposts()
 
 		if clear_cache:
-			frappe.clear_cache()
+			nts .clear_cache()
 
 		self.validate_and_sync_auto_reconcile_config()
 
 	def validate_stale_days(self):
 		if not self.allow_stale and cint(self.stale_days) <= 0:
-			frappe.msgprint(
+			nts .msgprint(
 				_("Stale Days should start from 1."), title="Error", indicator="red", raise_exception=1
 			)
 
@@ -131,8 +131,8 @@ class AccountsSettings(Document):
 			):
 				sync_auto_reconcile_config(self.auto_reconciliation_job_trigger)
 			else:
-				frappe.throw(_("Cron Interval should be between 1 and 59 Min"))
+				nts .throw(_("Cron Interval should be between 1 and 59 Min"))
 
 		if self.has_value_changed("reconciliation_queue_size"):
 			if cint(self.reconciliation_queue_size) < 5 or cint(self.reconciliation_queue_size) > 100:
-				frappe.throw(_("Queue Size should be between 5 and 100"))
+				nts .throw(_("Queue Size should be between 5 and 100"))

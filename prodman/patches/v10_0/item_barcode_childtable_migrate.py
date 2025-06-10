@@ -1,26 +1,26 @@
-# Copyright (c) 2017, Frappe and Contributors
+# Copyright (c) 2017, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("stock", "doctype", "item_barcode")
-	if frappe.get_all("Item Barcode", limit=1):
+	nts.reload_doc("stock", "doctype", "item_barcode")
+	if nts.get_all("Item Barcode", limit=1):
 		return
-	if "barcode" not in frappe.db.get_table_columns("Item"):
+	if "barcode" not in nts.db.get_table_columns("Item"):
 		return
 
-	items_barcode = frappe.db.sql("select name, barcode from tabItem where barcode is not null", as_dict=True)
-	frappe.reload_doc("stock", "doctype", "item")
+	items_barcode = nts.db.sql("select name, barcode from tabItem where barcode is not null", as_dict=True)
+	nts.reload_doc("stock", "doctype", "item")
 
 	for item in items_barcode:
 		barcode = item.barcode.strip()
 
 		if barcode and "<" not in barcode:
 			try:
-				frappe.get_doc(
+				nts.get_doc(
 					{
 						"idx": 0,
 						"doctype": "Item Barcode",
@@ -30,5 +30,5 @@ def execute():
 						"parentfield": "barcodes",
 					}
 				).insert()
-			except (frappe.DuplicateEntryError, frappe.UniqueValidationError):
+			except (nts.DuplicateEntryError, nts.UniqueValidationError):
 				continue

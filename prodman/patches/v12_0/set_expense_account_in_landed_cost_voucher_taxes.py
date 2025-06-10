@@ -1,11 +1,11 @@
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doctype("Landed Cost Taxes and Charges")
+	nts.reload_doctype("Landed Cost Taxes and Charges")
 
-	company_account_map = frappe._dict(
-		frappe.db.sql(
+	company_account_map = nts._dict(
+		nts.db.sql(
 			"""
 		SELECT name, expenses_included_in_valuation from `tabCompany`
 	"""
@@ -13,7 +13,7 @@ def execute():
 	)
 
 	for company, account in company_account_map.items():
-		frappe.db.sql(
+		nts.db.sql(
 			"""
 			UPDATE
 				`tabLanded Cost Taxes and Charges` t, `tabLanded Cost Voucher` l
@@ -27,7 +27,7 @@ def execute():
 			(account, company),
 		)
 
-		frappe.db.sql(
+		nts.db.sql(
 			"""
 			UPDATE
 				`tabLanded Cost Taxes and Charges` t, `tabStock Entry` s

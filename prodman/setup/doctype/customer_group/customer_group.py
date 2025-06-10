@@ -1,10 +1,10 @@
-# Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2015, nts Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
-from frappe import _
-from frappe.utils.nestedset import NestedSet, get_root_of
+import nts
+from nts import _
+from nts.utils.nestedset import NestedSet, get_root_of
 
 
 class CustomerGroup(NestedSet):
@@ -14,7 +14,7 @@ class CustomerGroup(NestedSet):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts.types import DF
 
 		from prodman.accounts.doctype.party_account.party_account import PartyAccount
 		from prodman.selling.doctype.customer_credit_limit.customer_credit_limit import (
@@ -46,12 +46,12 @@ class CustomerGroup(NestedSet):
 			advance_account_currency = None
 
 			if x.account:
-				receivable_account_currency = frappe.get_cached_value(
+				receivable_account_currency = nts.get_cached_value(
 					"Account", x.account, "account_currency"
 				)
 
 			if x.advance_account:
-				advance_account_currency = frappe.get_cached_value(
+				advance_account_currency = nts.get_cached_value(
 					"Account", x.advance_account, "account_currency"
 				)
 
@@ -60,13 +60,13 @@ class CustomerGroup(NestedSet):
 				and advance_account_currency
 				and receivable_account_currency != advance_account_currency
 			):
-				frappe.throw(
+				nts.throw(
 					_(
 						"Both Receivable Account: {0} and Advance Account: {1} must be of same currency for company: {2}"
 					).format(
-						frappe.bold(x.account),
-						frappe.bold(x.advance_account),
-						frappe.bold(x.company),
+						nts.bold(x.account),
+						nts.bold(x.advance_account),
+						nts.bold(x.company),
 					)
 				)
 
@@ -76,9 +76,9 @@ class CustomerGroup(NestedSet):
 
 
 def get_parent_customer_groups(customer_group):
-	lft, rgt = frappe.db.get_value("Customer Group", customer_group, ["lft", "rgt"])
+	lft, rgt = nts.db.get_value("Customer Group", customer_group, ["lft", "rgt"])
 
-	return frappe.db.sql(
+	return nts.db.sql(
 		"""select name from `tabCustomer Group`
 		where lft <= %s and rgt >= %s
 		order by lft asc""",
@@ -88,4 +88,4 @@ def get_parent_customer_groups(customer_group):
 
 
 def on_doctype_update():
-	frappe.db.add_index("Customer Group", ["lft", "rgt"])
+	nts.db.add_index("Customer Group", ["lft", "rgt"])

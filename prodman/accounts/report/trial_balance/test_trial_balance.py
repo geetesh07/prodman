@@ -1,14 +1,14 @@
-# Copyright (c) 2022, Frappe Technologies Pvt. Ltd. and Contributors
+# Copyright (c) 2022, nts  Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
-import frappe
-from frappe.tests.utils import FrappeTestCase
-from frappe.utils import today
+import nts 
+from nts .tests.utils import nts TestCase
+from nts .utils import today
 
 from prodman.accounts.report.trial_balance.trial_balance import execute
 
 
-class TestTrialBalance(FrappeTestCase):
+class TestTrialBalance(nts TestCase):
 	def setUp(self):
 		from prodman.accounts.doctype.account.test_account import create_account
 		from prodman.accounts.doctype.cost_center.test_cost_center import create_cost_center
@@ -34,13 +34,13 @@ class TestTrialBalance(FrappeTestCase):
 		"""
 		from prodman.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
 
-		frappe.db.sql("delete from `tabSales Invoice` where company='Trial Balance Company'")
-		frappe.db.sql("delete from `tabGL Entry` where company='Trial Balance Company'")
+		nts .db.sql("delete from `tabSales Invoice` where company='Trial Balance Company'")
+		nts .db.sql("delete from `tabGL Entry` where company='Trial Balance Company'")
 
-		branch1 = frappe.new_doc("Branch")
+		branch1 = nts .new_doc("Branch")
 		branch1.branch = "Location 1"
 		branch1.insert(ignore_if_duplicate=True)
-		branch2 = frappe.new_doc("Branch")
+		branch2 = nts .new_doc("Branch")
 		branch2.branch = "Location 2"
 		branch2.insert(ignore_if_duplicate=True)
 
@@ -56,7 +56,7 @@ class TestTrialBalance(FrappeTestCase):
 		si.save()
 		si.submit()
 
-		filters = frappe._dict(
+		filters = nts ._dict(
 			{"company": self.company, "fiscal_year": self.fiscal_year, "branch": ["Location 1"]}
 		)
 		total_row = execute(filters)[1][-1]
@@ -68,8 +68,8 @@ class TestTrialBalance(FrappeTestCase):
 
 
 def create_company(**args):
-	args = frappe._dict(args)
-	company = frappe.get_doc(
+	args = nts ._dict(args)
+	company = nts .get_doc(
 		{
 			"doctype": "Company",
 			"company_name": args.company_name or "Trial Balance Company",
@@ -82,13 +82,13 @@ def create_company(**args):
 
 
 def create_accounting_dimension(**args):
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 	document_type = args.document_type or "Branch"
-	if frappe.db.exists("Accounting Dimension", document_type):
-		accounting_dimension = frappe.get_doc("Accounting Dimension", document_type)
+	if nts .db.exists("Accounting Dimension", document_type):
+		accounting_dimension = nts .get_doc("Accounting Dimension", document_type)
 		accounting_dimension.disabled = 0
 	else:
-		accounting_dimension = frappe.new_doc("Accounting Dimension")
+		accounting_dimension = nts .new_doc("Accounting Dimension")
 		accounting_dimension.document_type = document_type
 		accounting_dimension.insert()
 
@@ -105,14 +105,14 @@ def create_accounting_dimension(**args):
 
 
 def disable_dimension(**args):
-	args = frappe._dict(args)
+	args = nts ._dict(args)
 	document_type = args.document_type or "Branch"
-	dimension = frappe.get_doc("Accounting Dimension", document_type)
+	dimension = nts .get_doc("Accounting Dimension", document_type)
 	dimension.disabled = 1
 	dimension.save()
 
 
 def clear_dimension_defaults(dimension_name):
-	accounting_dimension = frappe.get_doc("Accounting Dimension", dimension_name)
+	accounting_dimension = nts .get_doc("Accounting Dimension", dimension_name)
 	accounting_dimension.dimension_defaults = []
 	accounting_dimension.save()

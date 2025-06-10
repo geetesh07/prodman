@@ -1,4 +1,4 @@
-frappe.listview_settings["BOM"] = {
+nts.listview_settings["BOM"] = {
 	add_fields: ["is_active", "is_default", "total_cost", "has_variants"],
 	get_indicator: function (doc) {
 		if (doc.is_active && doc.has_variants) {
@@ -13,4 +13,4 @@ frappe.listview_settings["BOM"] = {
 	},
 };
 
-frappe.help.youtube_id["BOM"] = "hDV0c1OeWLo";
+nts.help.youtube_id["BOM"] = "hDV0c1OeWLo";

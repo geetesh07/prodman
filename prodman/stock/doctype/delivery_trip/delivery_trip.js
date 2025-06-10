@@ -1,7 +1,7 @@
-// Copyright (c) 2017, Frappe Technologies Pvt. Ltd. and contributors
+// Copyright (c) 2017, nts Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Delivery Trip", {
+nts.ui.form.on("Delivery Trip", {
 	setup: function (frm) {
 		frm.set_indicator_formatter("customer", (stop) => (stop.visited ? "green" : "orange"));
 
@@ -17,7 +17,7 @@ frappe.ui.form.on("Delivery Trip", {
 			var row = locals[cdt][cdn];
 			if (row.customer) {
 				return {
-					query: "frappe.contacts.doctype.address.address.address_query",
+					query: "nts.contacts.doctype.address.address.address_query",
 					filters: {
 						link_doctype: "Customer",
 						link_name: row.customer,
@@ -30,7 +30,7 @@ frappe.ui.form.on("Delivery Trip", {
 			var row = locals[cdt][cdn];
 			if (row.customer) {
 				return {
-					query: "frappe.contacts.doctype.contact.contact.contact_query",
+					query: "nts.contacts.doctype.contact.contact.contact_query",
 					filters: {
 						link_doctype: "Customer",
 						link_name: row.customer,
@@ -73,7 +73,7 @@ frappe.ui.form.on("Delivery Trip", {
 		frm.add_custom_button(
 			__("Delivery Notes"),
 			function () {
-				frappe.set_route("List", "Delivery Note", {
+				nts.set_route("List", "Delivery Note", {
 					name: [
 						"in",
 						frm.doc.delivery_stops.map((stop) => {
@@ -88,9 +88,9 @@ frappe.ui.form.on("Delivery Trip", {
 
 	calculate_arrival_time: function (frm) {
 		if (!frm.doc.driver_address) {
-			frappe.throw(__("Cannot Calculate Arrival Time as Driver Address is Missing."));
+			nts.throw(__("Cannot Calculate Arrival Time as Driver Address is Missing."));
 		}
-		frappe.show_alert({
+		nts.show_alert({
 			message: "Calculating Arrival Times",
 			indicator: "orange",
 		});
@@ -107,7 +107,7 @@ frappe.ui.form.on("Delivery Trip", {
 
 	driver: function (frm) {
 		if (frm.doc.driver) {
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.doctype.delivery_trip.delivery_trip.get_driver_email",
 				args: {
 					driver: frm.doc.driver,
@@ -121,9 +121,9 @@ frappe.ui.form.on("Delivery Trip", {
 
 	optimize_route: function (frm) {
 		if (!frm.doc.driver_address) {
-			frappe.throw(__("Cannot Optimize Route as Driver Address is Missing."));
+			nts.throw(__("Cannot Optimize Route as Driver Address is Missing."));
 		}
-		frappe.show_alert({
+		nts.show_alert({
 			message: "Optimizing Route",
 			indicator: "orange",
 		});
@@ -141,7 +141,7 @@ frappe.ui.form.on("Delivery Trip", {
 	notify_customers: function (frm) {
 		$.each(frm.doc.delivery_stops || [], function (i, delivery_stop) {
 			if (!delivery_stop.delivery_note) {
-				frappe.msgprint({
+				nts.msgprint({
 					message: __("No Delivery Note selected for Customer {}", [delivery_stop.customer]),
 					title: __("Warning"),
 					indicator: "orange",
@@ -150,12 +150,12 @@ frappe.ui.form.on("Delivery Trip", {
 			}
 		});
 
-		frappe.db.get_value("Delivery Settings", { name: "Delivery Settings" }, "dispatch_template", (r) => {
+		nts.db.get_value("Delivery Settings", { name: "Delivery Settings" }, "dispatch_template", (r) => {
 			if (!r.dispatch_template) {
-				frappe.throw(__("Missing email template for dispatch. Please set one in Delivery Settings."));
+				nts.throw(__("Missing email template for dispatch. Please set one in Delivery Settings."));
 			} else {
-				frappe.confirm(__("Do you want to notify all the customers by email?"), function () {
-					frappe.call({
+				nts.confirm(__("Do you want to notify all the customers by email?"), function () {
+					nts.call({
 						method: "prodman.stock.doctype.delivery_trip.delivery_trip.notify_customers",
 						args: {
 							delivery_trip: frm.doc.name,
@@ -173,28 +173,28 @@ frappe.ui.form.on("Delivery Trip", {
 	},
 });
 
-frappe.ui.form.on("Delivery Stop", {
+nts.ui.form.on("Delivery Stop", {
 	customer: function (frm, cdt, cdn) {
 		var row = locals[cdt][cdn];
 		if (row.customer) {
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.doctype.delivery_trip.delivery_trip.get_contact_and_address",
 				args: { name: row.customer },
 				callback: function (r) {
 					if (r.message) {
 						if (r.message["shipping_address"]) {
-							frappe.model.set_value(cdt, cdn, "address", r.message["shipping_address"].parent);
+							nts.model.set_value(cdt, cdn, "address", r.message["shipping_address"].parent);
 						} else {
-							frappe.model.set_value(cdt, cdn, "address", "");
+							nts.model.set_value(cdt, cdn, "address", "");
 						}
 						if (r.message["contact_person"]) {
-							frappe.model.set_value(cdt, cdn, "contact", r.message["contact_person"].parent);
+							nts.model.set_value(cdt, cdn, "contact", r.message["contact_person"].parent);
 						} else {
-							frappe.model.set_value(cdt, cdn, "contact", "");
+							nts.model.set_value(cdt, cdn, "contact", "");
 						}
 					} else {
-						frappe.model.set_value(cdt, cdn, "address", "");
-						frappe.model.set_value(cdt, cdn, "contact", "");
+						nts.model.set_value(cdt, cdn, "address", "");
+						nts.model.set_value(cdt, cdn, "contact", "");
 					}
 				},
 			});
@@ -204,34 +204,34 @@ frappe.ui.form.on("Delivery Stop", {
 	address: function (frm, cdt, cdn) {
 		var row = locals[cdt][cdn];
 		if (row.address) {
-			frappe.call({
-				method: "frappe.contacts.doctype.address.address.get_address_display",
+			nts.call({
+				method: "nts.contacts.doctype.address.address.get_address_display",
 				args: { address_dict: row.address },
 				callback: function (r) {
 					if (r.message) {
-						frappe.model.set_value(cdt, cdn, "customer_address", r.message);
+						nts.model.set_value(cdt, cdn, "customer_address", r.message);
 					}
 				},
 			});
 		} else {
-			frappe.model.set_value(cdt, cdn, "customer_address", "");
+			nts.model.set_value(cdt, cdn, "customer_address", "");
 		}
 	},
 
 	contact: function (frm, cdt, cdn) {
 		var row = locals[cdt][cdn];
 		if (row.contact) {
-			frappe.call({
+			nts.call({
 				method: "prodman.stock.doctype.delivery_trip.delivery_trip.get_contact_display",
 				args: { contact: row.contact },
 				callback: function (r) {
 					if (r.message) {
-						frappe.model.set_value(cdt, cdn, "customer_contact", r.message);
+						nts.model.set_value(cdt, cdn, "customer_contact", r.message);
 					}
 				},
 			});
 		} else {
-			frappe.model.set_value(cdt, cdn, "customer_contact", "");
+			nts.model.set_value(cdt, cdn, "customer_contact", "");
 		}
 	},
 });

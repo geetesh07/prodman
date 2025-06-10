@@ -1,4 +1,4 @@
-from frappe import _
+from nts import _
 
 
 # Todo: non_standard_fieldnames is to be decided

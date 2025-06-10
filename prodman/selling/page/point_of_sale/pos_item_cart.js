@@ -205,7 +205,7 @@ prodman.PointOfSale.ItemCart = class {
 			if (!this.discount_field || can_edit_discount) this.show_discount_control();
 		});
 
-		frappe.ui.form.on("POS Invoice", "paid_amount", (frm) => {
+		nts.ui.form.on("POS Invoice", "paid_amount", (frm) => {
 			// called when discount is applied
 			this.update_totals_section(frm);
 		});
@@ -216,7 +216,7 @@ prodman.PointOfSale.ItemCart = class {
 			for (let btn of row) {
 				if (typeof btn !== "string") continue; // do not make shortcuts for numbers
 
-				let shortcut_key = `ctrl+${frappe.scrub(String(btn))[0]}`;
+				let shortcut_key = `ctrl+${nts.scrub(String(btn))[0]}`;
 				if (btn === "Delete") shortcut_key = "ctrl+backspace";
 				if (btn === "Remove") shortcut_key = "shift+ctrl+backspace";
 				if (btn === ".") shortcut_key = "ctrl+>";
@@ -225,16 +225,16 @@ prodman.PointOfSale.ItemCart = class {
 				const fieldname = this.number_pad.fieldnames[btn]
 					? this.number_pad.fieldnames[btn]
 					: typeof btn === "string"
-					? frappe.scrub(btn)
+					? nts.scrub(btn)
 					: btn;
 
-				let shortcut_label = shortcut_key.split("+").map(frappe.utils.to_title_case).join("+");
-				shortcut_label = frappe.utils.is_mac() ? shortcut_label.replace("Ctrl", "⌘") : shortcut_label;
+				let shortcut_label = shortcut_key.split("+").map(nts.utils.to_title_case).join("+");
+				shortcut_label = nts.utils.is_mac() ? shortcut_label.replace("Ctrl", "⌘") : shortcut_label;
 				this.$numpad_section
 					.find(`.numpad-btn[data-button-value="${fieldname}"]`)
 					.attr("title", shortcut_label);
 
-				frappe.ui.keys.on(`${shortcut_key}`, () => {
+				nts.ui.keys.on(`${shortcut_key}`, () => {
 					const cart_is_visible = this.$component.is(":visible");
 					if (cart_is_visible && this.item_is_selected && this.$numpad_section.is(":visible")) {
 						this.$numpad_section.find(`.numpad-btn[data-button-value="${fieldname}"]`).click();
@@ -242,9 +242,9 @@ prodman.PointOfSale.ItemCart = class {
 				});
 			}
 		}
-		const ctrl_label = frappe.utils.is_mac() ? "⌘" : "Ctrl";
+		const ctrl_label = nts.utils.is_mac() ? "⌘" : "Ctrl";
 		this.$component.find(".checkout-btn").attr("title", `${ctrl_label}+Enter`);
-		frappe.ui.keys.add_shortcut({
+		nts.ui.keys.add_shortcut({
 			shortcut: "ctrl+enter",
 			action: () => this.$component.find(".checkout-btn").click(),
 			condition: () =>
@@ -254,7 +254,7 @@ prodman.PointOfSale.ItemCart = class {
 			page: cur_page.page.page,
 		});
 		this.$component.find(".edit-cart-btn").attr("title", `${ctrl_label}+E`);
-		frappe.ui.keys.on("ctrl+e", () => {
+		nts.ui.keys.on("ctrl+e", () => {
 			const item_cart_visible = this.$component.is(":visible");
 			const checkout_btn_invisible = !this.$totals_section.find(".checkout-btn").is("visible");
 			if (item_cart_visible && checkout_btn_invisible) {
@@ -262,7 +262,7 @@ prodman.PointOfSale.ItemCart = class {
 			}
 		});
 		this.$component.find(".add-discount-wrapper").attr("title", `${ctrl_label}+D`);
-		frappe.ui.keys.add_shortcut({
+		nts.ui.keys.add_shortcut({
 			shortcut: "ctrl+d",
 			action: () => this.$component.find(".add-discount-wrapper").click(),
 			condition: () => this.$add_discount_elem.is(":visible"),
@@ -270,7 +270,7 @@ prodman.PointOfSale.ItemCart = class {
 			ignore_inputs: true,
 			page: cur_page.page.page,
 		});
-		frappe.ui.keys.on("escape", () => {
+		nts.ui.keys.on("escape", () => {
 			const item_cart_visible = this.$component.is(":visible");
 			if (item_cart_visible && this.discount_field && this.discount_field.parent.is(":visible")) {
 				this.discount_field.set_value(0);
@@ -304,7 +304,7 @@ prodman.PointOfSale.ItemCart = class {
 				customer_group: ["in", allowed_customer_group],
 			};
 		}
-		this.customer_field = frappe.ui.form.make_control({
+		this.customer_field = nts.ui.form.make_control({
 			df: {
 				label: __("Customer"),
 				fieldtype: "Link",
@@ -318,15 +318,15 @@ prodman.PointOfSale.ItemCart = class {
 				onchange: function () {
 					if (this.value) {
 						const frm = me.events.get_frm();
-						frappe.dom.freeze();
-						frappe.model.set_value(frm.doc.doctype, frm.doc.name, "customer", this.value);
+						nts.dom.freeze();
+						nts.model.set_value(frm.doc.doctype, frm.doc.name, "customer", this.value);
 						frm.script_manager.trigger("customer", frm.doc.doctype, frm.doc.name).then(() => {
-							frappe.run_serially([
+							nts.run_serially([
 								() => me.fetch_customer_details(this.value),
 								() => me.events.customer_details_updated(me.customer_info),
 								() => me.update_customer_section(),
 								() => me.update_totals_section(),
-								() => frappe.dom.unfreeze(),
+								() => nts.dom.unfreeze(),
 							]);
 						});
 					}
@@ -341,13 +341,13 @@ prodman.PointOfSale.ItemCart = class {
 	fetch_customer_details(customer) {
 		if (customer) {
 			return new Promise((resolve) => {
-				frappe.db
+				nts.db
 					.get_value("Customer", customer, ["email_id", "mobile_no", "image", "loyalty_program"])
 					.then(({ message }) => {
 						const { loyalty_program } = message;
 						// if loyalty program then fetch loyalty points too
 						if (loyalty_program) {
-							frappe.call({
+							nts.call({
 								method: "prodman.accounts.doctype.loyalty_program.loyalty_program.get_loyalty_program_details_with_points",
 								args: { customer, loyalty_program, silent: true },
 								callback: (r) => {
@@ -384,7 +384,7 @@ prodman.PointOfSale.ItemCart = class {
 		const frm = me.events.get_frm();
 		let discount = frm.doc.additional_discount_percentage;
 
-		this.discount_field = frappe.ui.form.make_control({
+		this.discount_field = nts.ui.form.make_control({
 			df: {
 				label: __("Discount"),
 				fieldtype: "Data",
@@ -393,14 +393,14 @@ prodman.PointOfSale.ItemCart = class {
 				onchange: function () {
 					this.value = flt(this.value);
 					if (this.value > 100) {
-						frappe.msgprint({
+						nts.msgprint({
 							title: __("Invalid Discount"),
 							indicator: "red",
 							message: __("Discount cannot be greater than 100%."),
 						});
 						this.value = 0;
 					}
-					frappe.model.set_value(
+					nts.model.set_value(
 						frm.doc.doctype,
 						frm.doc.name,
 						"additional_discount_percentage",
@@ -481,7 +481,7 @@ prodman.PointOfSale.ItemCart = class {
 		if (image) {
 			return `<div class="customer-image"><img src="${image}" alt="${image}""></div>`;
 		} else {
-			return `<div class="customer-image customer-abbr">${frappe.get_abbr(customer)}</div>`;
+			return `<div class="customer-image customer-abbr">${nts.get_abbr(customer)}</div>`;
 		}
 	}
 
@@ -490,7 +490,7 @@ prodman.PointOfSale.ItemCart = class {
 
 		this.render_net_total(frm.doc.net_total);
 		this.render_total_item_qty(frm.doc.items);
-		const grand_total = cint(frappe.sys_defaults.disable_rounded_total)
+		const grand_total = cint(nts.sys_defaults.disable_rounded_total)
 			? frm.doc.grand_total
 			: frm.doc.rounded_total;
 		this.render_grand_total(grand_total);
@@ -659,7 +659,7 @@ prodman.PointOfSale.ItemCart = class {
 							.replace(/ +/g, " ");
 					}
 				}
-				item_data.description = frappe.ellipsis(item_data.description, 45);
+				item_data.description = nts.ellipsis(item_data.description, 45);
 				return `<div class="item-desc">${item_data.description}</div>`;
 			}
 			return ``;
@@ -672,10 +672,10 @@ prodman.PointOfSale.ItemCart = class {
 					<div class="item-image">
 						<img
 							onerror="cur_pos.cart.handle_broken_image(this)"
-							src="${image}" alt="${frappe.get_abbr(item_name)}"">
+							src="${image}" alt="${nts.get_abbr(item_name)}"">
 					</div>`;
 			} else {
-				return `<div class="item-image item-abbr">${frappe.get_abbr(item_name)}</div>`;
+				return `<div class="item-image item-abbr">${nts.get_abbr(item_name)}</div>`;
 			}
 		}
 	}
@@ -762,11 +762,11 @@ prodman.PointOfSale.ItemCart = class {
 			if (!action_is_allowed) {
 				const label = current_action == "rate" ? "Rate".bold() : "Discount".bold();
 				const message = __("Editing {0} is not allowed as per POS Profile settings", [label]);
-				frappe.show_alert({
+				nts.show_alert({
 					indicator: "red",
 					message: message,
 				});
-				frappe.utils.play_sound("error");
+				nts.utils.play_sound("error");
 				return;
 			}
 			this.highlight_numpad_btn($btn, current_action);
@@ -798,20 +798,20 @@ prodman.PointOfSale.ItemCart = class {
 		const first_click_event_is_not_field_edit = !action_is_field_edit && first_click_event;
 
 		if (first_click_event_is_not_field_edit) {
-			frappe.show_alert({
+			nts.show_alert({
 				indicator: "red",
 				message: __("Please select a field to edit from numpad"),
 			});
-			frappe.utils.play_sound("error");
+			nts.utils.play_sound("error");
 			return;
 		}
 
 		if (flt(this.numpad_value) > 100 && this.prev_action === "discount_percentage") {
-			frappe.show_alert({
+			nts.show_alert({
 				message: __("Discount cannot be greater than 100%"),
 				indicator: "orange",
 			});
-			frappe.utils.play_sound("error");
+			nts.utils.play_sound("error");
 			this.numpad_value = current_action;
 		}
 
@@ -948,7 +948,7 @@ prodman.PointOfSale.ItemCart = class {
 
 		const me = this;
 		dfs.forEach((df) => {
-			this[`customer_${df.fieldname}_field`] = frappe.ui.form.make_control({
+			this[`customer_${df.fieldname}_field`] = nts.ui.form.make_control({
 				df: df,
 				parent: $customer_form.find(`.${df.fieldname}-field`),
 				render_input: true,
@@ -964,7 +964,7 @@ prodman.PointOfSale.ItemCart = class {
 			const current_customer = me.customer_info.customer;
 
 			if (this.value && current_value != this.value && this.df.fieldname != "loyalty_points") {
-				frappe.call({
+				nts.call({
 					method: "prodman.selling.page.point_of_sale.point_of_sale.set_customer_info",
 					args: {
 						fieldname: this.df.fieldname,
@@ -974,11 +974,11 @@ prodman.PointOfSale.ItemCart = class {
 					callback: (r) => {
 						if (!r.exc) {
 							me.customer_info[this.df.fieldname] = this.value;
-							frappe.show_alert({
+							nts.show_alert({
 								message: __("Customer contact updated successfully."),
 								indicator: "green",
 							});
-							frappe.utils.play_sound("submit");
+							nts.utils.play_sound("submit");
 						}
 					},
 				});
@@ -987,7 +987,7 @@ prodman.PointOfSale.ItemCart = class {
 	}
 
 	fetch_customer_transactions() {
-		frappe.db
+		nts.db
 			.get_list("POS Invoice", {
 				filters: { customer: this.customer_info.customer, docstatus: 1 },
 				fields: ["name", "grand_total", "status", "posting_date", "posting_time", "currency"],
@@ -1009,7 +1009,7 @@ prodman.PointOfSale.ItemCart = class {
 					.html(`${__("Last transacted")} ${__(elapsed_time)}`);
 
 				res.forEach((invoice) => {
-					const posting_datetime = frappe.datetime.str_to_user(
+					const posting_datetime = nts.datetime.str_to_user(
 						invoice.posting_date + " " + invoice.posting_time
 					);
 					let indicator_color = {

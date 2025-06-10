@@ -1,26 +1,26 @@
-import frappe
+import nts
 
 
 # accounts
-class PartyFrozen(frappe.ValidationError):
+class PartyFrozen(nts.ValidationError):
 	pass
 
 
-class InvalidAccountCurrency(frappe.ValidationError):
+class InvalidAccountCurrency(nts.ValidationError):
 	pass
 
 
-class InvalidCurrency(frappe.ValidationError):
+class InvalidCurrency(nts.ValidationError):
 	pass
 
 
-class PartyDisabled(frappe.ValidationError):
+class PartyDisabled(nts.ValidationError):
 	pass
 
 
-class InvalidAccountDimensionError(frappe.ValidationError):
+class InvalidAccountDimensionError(nts.ValidationError):
 	pass
 
 
-class MandatoryAccountDimensionError(frappe.ValidationError):
+class MandatoryAccountDimensionError(nts.ValidationError):
 	pass

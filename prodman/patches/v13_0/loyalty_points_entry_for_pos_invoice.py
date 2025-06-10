@@ -1,19 +1,19 @@
-# Copyright (c) 2019, Frappe and Contributors
+# Copyright (c) 2019, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
 	"""`sales_invoice` field from loyalty point entry is splitted into `invoice_type` & `invoice` fields"""
 
-	frappe.reload_doc("Accounts", "doctype", "loyalty_point_entry")
+	nts.reload_doc("Accounts", "doctype", "loyalty_point_entry")
 
-	if not frappe.db.has_column("Loyalty Point Entry", "sales_invoice"):
+	if not nts.db.has_column("Loyalty Point Entry", "sales_invoice"):
 		return
 
-	frappe.db.sql(
+	nts.db.sql(
 		"""UPDATE `tabLoyalty Point Entry` lpe
 		SET lpe.`invoice_type` = 'Sales Invoice', lpe.`invoice` = lpe.`sales_invoice`
 		WHERE lpe.`sales_invoice` IS NOT NULL

@@ -1,16 +1,16 @@
-# Copyright (c) 2019, Frappe and Contributors
+# Copyright (c) 2019, nts and Contributors
 # License: GNU General Public License v3. See license.txt
 
 
-import frappe
+import nts
 
 
 def execute():
-	frappe.reload_doc("manufacturing", "doctype", "job_card")
-	frappe.reload_doc("manufacturing", "doctype", "job_card_item")
-	frappe.reload_doc("manufacturing", "doctype", "work_order_operation")
+	nts.reload_doc("manufacturing", "doctype", "job_card")
+	nts.reload_doc("manufacturing", "doctype", "job_card_item")
+	nts.reload_doc("manufacturing", "doctype", "work_order_operation")
 
-	frappe.db.sql(
+	nts.db.sql(
 		""" update `tabJob Card` jc, `tabWork Order Operation` wo
 		SET	jc.hour_rate =  wo.hour_rate
 		WHERE

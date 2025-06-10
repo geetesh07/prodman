@@ -1,17 +1,17 @@
 // Copyright (c) 2021, Wahni Green Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Ledger Merge", {
+nts .ui.form.on("Ledger Merge", {
 	setup: function (frm) {
-		frappe.realtime.on("ledger_merge_refresh", ({ ledger_merge }) => {
+		nts .realtime.on("ledger_merge_refresh", ({ ledger_merge }) => {
 			if (ledger_merge !== frm.doc.name) return;
-			frappe.model.clear_doc(frm.doc.doctype, frm.doc.name);
-			frappe.model.with_doc(frm.doc.doctype, frm.doc.name).then(() => {
+			nts .model.clear_doc(frm.doc.doctype, frm.doc.name);
+			nts .model.with_doc(frm.doc.doctype, frm.doc.name).then(() => {
 				frm.refresh();
 			});
 		});
 
-		frappe.realtime.on("ledger_merge_progress", (data) => {
+		nts .realtime.on("ledger_merge_progress", (data) => {
 			if (data.ledger_merge !== frm.doc.name) return;
 			let message = __("Merging {0} of {1}", [data.current, data.total]);
 			let percent = Math.floor((data.current * 100) / data.total);
@@ -20,8 +20,8 @@ frappe.ui.form.on("Ledger Merge", {
 		});
 
 		frm.set_query("account", function (doc) {
-			if (!doc.company) frappe.throw(__("Please set Company"));
-			if (!doc.root_type) frappe.throw(__("Please set Root Type"));
+			if (!doc.company) nts .throw(__("Please set Company"));
+			if (!doc.root_type) nts .throw(__("Please set Root Type"));
 			return {
 				filters: {
 					root_type: doc.root_type,
@@ -31,9 +31,9 @@ frappe.ui.form.on("Ledger Merge", {
 		});
 
 		frm.set_query("account", "merge_accounts", function (doc) {
-			if (!doc.company) frappe.throw(__("Please set Company"));
-			if (!doc.root_type) frappe.throw(__("Please set Root Type"));
-			if (!doc.account) frappe.throw(__("Please set Account"));
+			if (!doc.company) nts .throw(__("Please set Company"));
+			if (!doc.root_type) nts .throw(__("Please set Root Type"));
+			if (!doc.account) nts .throw(__("Please set Account"));
 			let acc = [doc.account];
 			frm.doc.merge_accounts.forEach((row) => {
 				acc.push(row.account);
@@ -110,7 +110,7 @@ frappe.ui.form.on("Ledger Merge", {
 	},
 });
 
-frappe.ui.form.on("Ledger Merge Accounts", {
+nts .ui.form.on("Ledger Merge Accounts", {
 	merge_accounts_add: function (frm) {
 		frm.trigger("update_primary_action");
 	},
@@ -120,7 +120,7 @@ frappe.ui.form.on("Ledger Merge Accounts", {
 	},
 
 	account: function (frm, cdt, cdn) {
-		let row = frappe.get_doc(cdt, cdn);
+		let row = nts .get_doc(cdt, cdn);
 		row.account_name = row.account;
 		frm.refresh_field("merge_accounts");
 		frm.trigger("update_primary_action");

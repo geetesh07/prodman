@@ -1,11 +1,11 @@
-# Copyright (c) 2019, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2019, nts  Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
-import frappe
-from frappe import _
-from frappe.model.docstatus import DocStatus
-from frappe.model.document import Document
-from frappe.utils import flt, getdate
+import nts 
+from nts  import _
+from nts .model.docstatus import DocStatus
+from nts .model.document import Document
+from nts .utils import flt, getdate
 
 
 class BankTransaction(Document):
@@ -15,7 +15,7 @@ class BankTransaction(Document):
 	from typing import TYPE_CHECKING
 
 	if TYPE_CHECKING:
-		from frappe.types import DF
+		from nts .types import DF
 
 		from prodman.accounts.doctype.bank_transaction_payments.bank_transaction_payments import (
 			BankTransactionPayments,
@@ -56,17 +56,17 @@ class BankTransaction(Document):
 		Bank Transaction should be on the same currency as the Bank Account.
 		"""
 		if self.currency and self.bank_account:
-			if account := frappe.get_cached_value("Bank Account", self.bank_account, "account"):
-				account_currency = frappe.get_cached_value("Account", account, "account_currency")
+			if account := nts .get_cached_value("Bank Account", self.bank_account, "account"):
+				account_currency = nts .get_cached_value("Account", account, "account_currency")
 
 				if self.currency != account_currency:
-					frappe.throw(
+					nts .throw(
 						_(
 							"Transaction currency: {0} cannot be different from Bank Account({1}) currency: {2}"
 						).format(
-							frappe.bold(self.currency),
-							frappe.bold(self.bank_account),
-							frappe.bold(account_currency),
+							nts .bold(self.currency),
+							nts .bold(self.bank_account),
+							nts .bold(account_currency),
 						)
 					)
 
@@ -88,7 +88,7 @@ class BankTransaction(Document):
 		for row in self.payment_entries:
 			reference = (row.payment_document, row.payment_entry)
 			if reference in references:
-				frappe.throw(
+				nts .throw(
 					_("{0} {1} is allocated twice in this Bank Transaction").format(
 						row.payment_document, row.payment_entry
 					)
@@ -121,7 +121,7 @@ class BankTransaction(Document):
 		self.allocate_payment_entries()
 		self.set_status()
 
-		if frappe.db.get_single_value("Accounts Settings", "enable_party_matching"):
+		if nts .db.get_single_value("Accounts Settings", "enable_party_matching"):
 			self.auto_set_party()
 
 	def before_update_after_submit(self):
@@ -140,7 +140,7 @@ class BankTransaction(Document):
 	def add_payment_entries(self, vouchers):
 		"Add the vouchers with zero allocation. Save() will perform the allocations and clearance"
 		if 0.0 >= self.unallocated_amount:
-			frappe.throw(_("Bank Transaction {0} is already fully reconciled").format(self.name))
+			nts .throw(_("Bank Transaction {0} is already fully reconciled").format(self.name))
 
 		for voucher in vouchers:
 			self.append(
@@ -173,7 +173,7 @@ class BankTransaction(Document):
 		payment_entry_docs = [(pe.payment_document, pe.payment_entry) for pe in self.payment_entries]
 		pe_bt_allocations = get_total_allocated_amount(payment_entry_docs)
 		gl_entries = get_related_bank_gl_entries(payment_entry_docs)
-		gl_bank_account = frappe.db.get_value("Bank Account", self.bank_account, "account")
+		gl_bank_account = nts .db.get_value("Bank Account", self.bank_account, "account")
 
 		for payment_entry in list(self.payment_entries):
 			if payment_entry.allocated_amount != 0:
@@ -188,7 +188,7 @@ class BankTransaction(Document):
 			)
 
 			if allocable_amount < 0:
-				frappe.throw(_("Voucher {0} is over-allocated by {1}").format(allocable_amount))
+				nts .throw(_("Voucher {0} is over-allocated by {1}").format(allocable_amount))
 
 			if remaining_amount <= 0:
 				self.remove(payment_entry)
@@ -216,7 +216,7 @@ class BankTransaction(Document):
 
 		self.update_allocated_amount()
 
-	@frappe.whitelist()
+	@nts .whitelist()
 	def remove_payment_entries(self):
 		for payment_entry in self.payment_entries:
 			self.remove_payment_entry(payment_entry)
@@ -243,7 +243,7 @@ class BankTransaction(Document):
 			return
 
 		if doctype == "Sales Invoice":
-			frappe.db.set_value(
+			nts .db.set_value(
 				"Sales Invoice Payment",
 				dict(parenttype=doctype, parent=docname),
 				"clearance_date",
@@ -251,12 +251,12 @@ class BankTransaction(Document):
 			)
 			return
 
-		frappe.db.set_value(doctype, docname, "clearance_date", clearance_date)
+		nts .db.set_value(doctype, docname, "clearance_date", clearance_date)
 
 	def update_linked_bank_transaction(self, bank_transaction_name, allocated_amount=None):
 		"""For when a second bank transaction has fixed another, e.g. refund"""
 
-		bt = frappe.get_doc(self.doctype, bank_transaction_name)
+		bt = nts .get_doc(self.doctype, bank_transaction_name)
 		if allocated_amount:
 			bt.append(
 				"payment_entries",
@@ -300,7 +300,7 @@ class BankTransaction(Document):
 				deposit=self.deposit,
 			).match()
 		except Exception:
-			frappe.log_error(title=_("Error in party matching for Bank Transaction {0}").format(self.name))
+			nts .log_error(title=_("Error in party matching for Bank Transaction {0}").format(self.name))
 
 		if not result:
 			return
@@ -308,10 +308,10 @@ class BankTransaction(Document):
 		self.party_type, self.party = result
 
 
-@frappe.whitelist()
+@nts .whitelist()
 def get_doctypes_for_bank_reconciliation():
 	"""Get Bank Reconciliation doctypes from all the apps"""
-	return frappe.get_hooks("bank_reconciliation_doctypes")
+	return nts .get_hooks("bank_reconciliation_doctypes")
 
 
 def get_clearance_details(transaction, payment_entry, bt_allocations, gl_entries, gl_bank_account):
@@ -326,7 +326,7 @@ def get_clearance_details(transaction, payment_entry, bt_allocations, gl_entries
 	transaction_date = getdate(transaction.date)
 
 	if payment_entry.payment_document == "Bank Transaction":
-		bt = frappe.db.get_value(
+		bt = nts .db.get_value(
 			"Bank Transaction",
 			payment_entry.payment_entry,
 			("unallocated_amount", "bank_account"),
@@ -334,7 +334,7 @@ def get_clearance_details(transaction, payment_entry, bt_allocations, gl_entries
 		)
 
 		if bt.bank_account != gl_bank_account:
-			frappe.throw(
+			nts .throw(
 				_("Bank Account {} in Bank Transaction {} is not matching with Bank Account {}").format(
 					bt.bank_account, payment_entry.payment_entry, gl_bank_account
 				)
@@ -343,7 +343,7 @@ def get_clearance_details(transaction, payment_entry, bt_allocations, gl_entries
 		return abs(bt.unallocated_amount), True, transaction_date
 
 	if gl_bank_account not in gl_entries:
-		frappe.throw(
+		nts .throw(
 			_("{} {} is not affecting bank account {}").format(
 				payment_entry.payment_document, payment_entry.payment_entry, gl_bank_account
 			)
@@ -351,7 +351,7 @@ def get_clearance_details(transaction, payment_entry, bt_allocations, gl_entries
 
 	allocable_amount = gl_entries.pop(gl_bank_account) or 0
 	if allocable_amount <= 0.0:
-		frappe.throw(
+		nts .throw(
 			_("Invalid amount in accounting entries of {} {} for Account {}: {}").format(
 				payment_entry.payment_document, payment_entry.payment_entry, gl_bank_account, allocable_amount
 			)
@@ -375,11 +375,11 @@ def get_clearance_details(transaction, payment_entry, bt_allocations, gl_entries
 
 
 def get_related_bank_gl_entries(docs):
-	# nosemgrep: frappe-semgrep-rules.rules.frappe-using-db-sql
+	# nosemgrep: nts -semgrep-rules.rules.nts -using-db-sql
 	if not docs:
 		return {}
 
-	result = frappe.db.sql(
+	result = nts .db.sql(
 		"""
         SELECT
             gle.voucher_type AS doctype,
@@ -420,8 +420,8 @@ def get_total_allocated_amount(docs):
 	if not docs:
 		return {}
 
-	# nosemgrep: frappe-semgrep-rules.rules.frappe-using-db-sql
-	result = frappe.db.sql(
+	# nosemgrep: nts -semgrep-rules.rules.nts -using-db-sql
+	result = nts .db.sql(
 		"""
 		SELECT total, latest_date, gl_account, payment_document, payment_entry FROM (
 			SELECT
@@ -458,7 +458,7 @@ def get_total_allocated_amount(docs):
 
 
 def get_reconciled_bank_transactions(doctype, docname):
-	return frappe.get_all(
+	return nts .get_all(
 		"Bank Transaction Payments",
 		filters={"payment_document": doctype, "payment_entry": docname},
 		pluck="parent",
@@ -468,7 +468,7 @@ def get_reconciled_bank_transactions(doctype, docname):
 def remove_from_bank_transaction(doctype, docname):
 	"""Remove a (cancelled) voucher from all Bank Transactions."""
 	for bt_name in get_reconciled_bank_transactions(doctype, docname):
-		bt = frappe.get_doc("Bank Transaction", bt_name)
+		bt = nts .get_doc("Bank Transaction", bt_name)
 		if bt.docstatus == DocStatus.cancelled():
 			continue
 
