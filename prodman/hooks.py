@@ -13,7 +13,7 @@ app_logo_url = "/assets/prodman/images/prodman-logo.svg"
 add_to_apps_screen = [
 	{
 		"name": "prodman",
-		"logo": "/assets/prodman/images/prodman-logo-blue.png",
+		"logo": "/assets/prodman/images/prodman-logo.jpg",
 		"title": "prodman",
 		"route": "/app/home",
 		"has_permission": "prodman.check_app_permission",
@@ -110,7 +110,7 @@ calendars = ["Task", "Work Order", "Sales Order", "Holiday List", "ToDo"]
 website_generators = ["BOM", "Sales Partner"]
 
 website_context = {
-	"favicon": "/assets/prodman/images/prodman-favicon.svg",
+	"favicon": "/assets/prodman/images/prodman-logo.ico",
 	"splash_image": "/assets/prodman/images/prodman-logo.svg",
 }
 
